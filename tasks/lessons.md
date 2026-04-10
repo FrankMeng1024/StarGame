@@ -31,23 +31,32 @@ Full retrospective required: Arch found 1 Blocker + 2 Critical + 1 Medium pre-de
 
 **What failed (root causes):**
 
-1. **[pending] CSS pointer-events inheritance on overlay children**
+1. **[archived: Arch code review checklist]** CSS pointer-events inheritance on overlay children
    - `.hud` overlay uses `pointer-events: none` to pass clicks through to canvas
    - Interactive children (mute button, active item buttons) inherit this and become unclickable
    - Root cause: developer did not account for pointer-events inheritance when placing interactive elements inside a pass-through overlay
-   - Lesson: whenever a parent element has `pointer-events: none`, ALL interactive children need explicit `pointer-events: auto`. Add to code review checklist for HUD/overlay patterns.
+   - Rule added to Arch review: whenever a parent element has `pointer-events: none`, ALL interactive children need explicit `pointer-events: auto`.
 
-2. **[pending] Exported function not wired into SPA router**
+2. **[archived: Frontend Dev rule]** Exported function not wired into SPA router
    - `refreshLevels()` was exported from `levels.js` but `main.js` never called it on `navigate('levels')`
    - Root cause: function written in isolation without verifying the call site exists
-   - Lesson: when writing a function meant to be triggered by a router event, verify the router actually calls it before marking the Story Done.
+   - Rule: when writing a function meant to be triggered by a router event, verify the router actually calls it before marking the Story Done.
 
-3. **[pending] Stale UI state not cleaned on screen re-use**
+3. **[archived: Frontend Dev rule]** Stale UI state not cleaned on screen re-use
    - `showFail()` reused the same `#screen-complete` DOM; `.new-record-badge` injected by `showComplete()` persisted
    - Root cause: screen teardown logic not updated when new dynamic elements were added
-   - Lesson: when adding new dynamic DOM elements to a screen, immediately check whether any sibling screen path (complete/fail) needs to clean them up.
+   - Rule: when adding new dynamic DOM elements to a screen, immediately check whether any sibling screen path (complete/fail) needs to clean them up.
 
-4. **[pending] CSS deduplication — bash `cat >>` appended duplicate blocks**
+4. **[archived: Frontend Dev rule]** CSS deduplication — bash `cat >>` appended duplicate blocks
    - 6 selectors defined twice due to multiple append operations
    - Root cause: incremental CSS editing via append without checking for existing definitions
-   - Lesson: when adding CSS, grep for existing selectors before appending. Prefer Edit tool over bash append for CSS modifications.
+   - Rule: when adding CSS, grep for existing selectors before appending. Prefer Edit tool over bash append for CSS modifications.
+
+## Sprint 6 — 2026-04-10
+Sprint 6: clean Sprint, no retrospective actions.
+- Arch found 1 Medium (empty-Set guard) fixed before QA — caught at correct gate.
+- QA verdict: PASS (all 4 stories, HIGH confidence, 0 bugs).
+- UX verdict: 0 Blockers, 2 Medium (scene transition ceremony, level grouping labels), 2 Low.
+- Navigation regression: all screens clean, 0 JS errors.
+- Lightweight retro rule applied: steps 1-3 skipped. Sprint 5 pending items all archived above.
+- Rule updates made: Sprint 5 lessons 1-4 promoted to Arch/Frontend Dev rules.
