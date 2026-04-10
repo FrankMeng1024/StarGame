@@ -68,6 +68,13 @@ export function showGalleryDetail(navigate, params) {
   document.querySelector('.detail-name-en').textContent = con.nameEn;
   document.querySelector('.detail-lore-text').textContent = con.lore;
 
+  const regionEl = document.getElementById('detail-region');
+  const bestViewEl = document.getElementById('detail-best-view');
+  const mainStarsEl = document.getElementById('detail-main-stars');
+  if (regionEl) regionEl.textContent = con.region || '—';
+  if (bestViewEl) bestViewEl.textContent = con.bestViewMonth || '—';
+  if (mainStarsEl) mainStarsEl.textContent = con.mainStars || '—';
+
   _renderPortrait(idx, con);
 }
 

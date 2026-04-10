@@ -117,3 +117,24 @@
 
 ### Navigation Regression
 - Sprint 7: levels↔menu, game↔levels, gallery-detail→gallery→menu→levels→menu→gallery→gallery-detail: ALL CLEAN, zero console errors.
+
+## Sprint 8 Updates (2026-04-11)
+
+### Menu Mute Button (STORY-00031)
+- Mute button (🔊/🔇 emoji, ~2.4rem square) added to top-right corner of `.menu-inner` (absolutely positioned). Visible immediately on menu load.
+- Toggle works: 🔊 → 🔇 → 🔊, no console errors. Mute state persisted via localStorage key `starcatcher_muted`.
+- Sprint 7 VU complaint "mute button invisible on main menu" RESOLVED.
+
+### Gallery Metadata (STORY-00030)
+- Gallery detail screen now has a `.detail-meta` card between the portrait/name block and the lore text.
+- Three rows: 所属天区 (sky region), 最佳观测时间 (best viewing month), 主要星星 (notable stars).
+- Gold labels, white values, dark card background — consistent with design system.
+- All 30 constellations have non-empty data for all three fields.
+- Sprint 7 VU complaint "gallery metadata missing" RESOLVED.
+
+### New Friction Points (Sprint 8)
+- Mute button has no text label — emoji-only. Standard convention, Low severity only.
+- Metadata star names not interactive (tappable) — informational display is appropriate, Low friction.
+
+### Navigation Regression
+- Sprint 8: menu→gallery→gallery-detail (Orion + Ursa Major)→gallery→menu. ALL CLEAN, 0 JS errors. Only pre-existing Google Fonts offline error.

@@ -109,4 +109,12 @@ No backend, no network requests. All data in localStorage + local files.
 - Canvas readback warnings: 2 non-functional perf warnings from `getImageData` calls in test — expected, not errors.
 - Navigation regression Sprint 7: gallery-detail, levels, game, shop, gallery, complete, fail all PASS. 0 console errors throughout.
 
+## Sprint 8 Verified (2026-04-11)
+
+- Menu mute button: `#menu-mute-btn` (.btn-menu-mute), position: absolute top-right of `.menu-inner`. Reads `isMuted()` on init, toggles on click. localStorage key `starcatcher_muted` = "1" for muted. Icon: 🔊 (unmuted) / 🔇 (muted). Custom star cursor (★ floating element) may visually overlap in screenshots — confirm via accessibility snapshot not screenshot pixel inspection.
+- Menu→game mute state persistence: menu mute button sets localStorage before navigate; `_initMuteButton()` in game.js reads same `isMuted()` fresh on game start — no additional wiring needed.
+- Gallery detail metadata: `.detail-meta` card between portrait/name block and lore text. Three rows: `#detail-region`, `#detail-best-view`, `#detail-main-stars`. All populated via `con.region || '—'` defensive pattern. All 30 constellations have non-empty values for all 3 fields.
+- Metadata field check: use DOM batch query `constellations.filter(c => !c.region || !c.bestViewMonth || !c.mainStars).length` to verify completeness — confirmed 0 missing.
+- Navigation regression Sprint 8: menu→gallery→gallery-detail→gallery→menu, mute round-trip: ALL CLEAN, 0 JS errors.
+
 
