@@ -903,6 +903,31 @@ body {
   margin-top: 2px;
 }
 
+/* ── Sprint 5: Best time on level cards ────────────────────────── */
+.card-best-time {
+  font-size: 10px;
+  color: var(--text2);
+  opacity: 0.8;
+  margin-top: 1px;
+  display: block;
+}
+
+/* ── Sprint 5: New record badge ────────────────────────────────── */
+.new-record-badge {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--star-gold);
+  text-shadow: 0 0 12px rgba(255,215,0,0.8);
+  animation: record-pop 0.3s ease-out forwards;
+  margin-bottom: 8px;
+}
+
+@keyframes record-pop {
+  0%   { opacity: 0; transform: scale(0.7); }
+  60%  { transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
 /* ── Sprint 3: Shop type legend ────────────────────────────────── */
 .shop-type-legend {
   grid-column: 1 / -1;
@@ -944,41 +969,97 @@ body {
   100% { opacity: 0; transform: translateY(-60px) translateX(-50%); }
 }
 
-/* ── Sprint 4: Active items toast ─────────────────────────────── */
+/* ── Sprint 5: Active items toast (gold pill style) ───────────── */
 .active-items-toast {
   position: absolute;
-  top: 80px;
+  top: 60px;
   left: 50%;
   transform: translateX(-50%);
+  background: rgba(30,20,60,0.85);
+  border: 1px solid rgba(255,215,0,0.4);
+  border-radius: 10px;
+  padding: 8px 16px;
   display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-  pointer-events: none;
+  gap: 12px;
+  font-size: 13px;
+  color: var(--star-gold);
   z-index: 25;
-  animation: toast-in 0.3s ease forwards;
+  pointer-events: none;
+  animation: toast-in 0.3s ease-out;
 }
 
 .active-items-toast span {
-  background: rgba(10, 14, 39, 0.88);
-  border: 1px solid rgba(74, 222, 128, 0.4);
-  border-radius: var(--radius-full);
-  padding: 4px 14px;
-  font-size: var(--font-sm);
-  color: var(--success);
   white-space: nowrap;
 }
 
-.active-items-toast.toast-fade-out {
-  animation: toast-out 0.4s ease forwards;
+.toast-fade-out {
+  animation: toast-out 0.4s ease-in forwards;
 }
 
 @keyframes toast-in {
-  from { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  from { opacity: 0; transform: translateX(-50%) translateY(-10px); }
   to   { opacity: 1; transform: translateX(-50%) translateY(0); }
 }
 
 @keyframes toast-out {
-  to { opacity: 0; transform: translateX(-50%) translateY(-8px); }
+  to { opacity: 0; transform: translateX(-50%) translateY(-10px); }
+}
+
+/* ── Sprint 5: time_ext flash + passive item HUD row ─────────── */
+.time-ext-flash {
+  position: absolute;
+  color: #4ade80;
+  font-size: 20px;
+  font-weight: 700;
+  pointer-events: none;
+  transform: translateX(-50%);
+  text-shadow: 0 0 10px rgba(74,222,128,0.9);
+  animation: time-ext-float 1.2s ease-out forwards;
+  z-index: 30;
+}
+
+@keyframes time-ext-float {
+  0%   { opacity: 1; transform: translateX(-50%) translateY(0) scale(1.2); }
+  30%  { opacity: 1; transform: translateX(-50%) translateY(-20px) scale(1); }
+  100% { opacity: 0; transform: translateX(-50%) translateY(-60px) scale(0.9); }
+}
+
+.hud-passive-row {
+  display: flex;
+  gap: 4px;
+  align-items: center;
+  pointer-events: none;
+  flex-shrink: 0;
+}
+
+.hud-passive-icon {
+  font-size: 16px;
+  opacity: 0.75;
+  filter: drop-shadow(0 0 4px rgba(255,255,255,0.4));
+}
+
+
+.hud-mute-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  background: rgba(255,255,255,0.1);
+  border: 1px solid rgba(255,255,255,0.2);
+  border-radius: 8px;
+  color: #fff;
+  font-size: 18px;
+  width: 36px;
+  height: 36px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 20;
+  transition: background 0.15s;
+  pointer-events: auto;
+}
+
+.hud-mute-btn:hover {
+  background: rgba(255,255,255,0.2);
 }
 

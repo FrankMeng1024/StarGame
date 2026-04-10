@@ -2,7 +2,7 @@
 import state from './state.js';
 import { initStarfield } from './starfield.js';
 import { initMenu } from './screens/menu.js';
-import { initLevels } from './screens/levels.js';
+import { initLevels, refreshLevels } from './screens/levels.js';
 import { startGame, stopGame } from './screens/game.js';
 import { showComplete, showFail } from './screens/complete.js';
 import { initGallery, showGalleryDetail, refreshGallery } from './screens/gallery.js';
@@ -48,6 +48,8 @@ function navigate(screen, params = {}) {
     showGalleryDetail(navigate, params);
   } else if (screen === 'shop') {
     initShop(navigate);
+  } else if (screen === 'levels') {
+    refreshLevels();
   }
 }
 

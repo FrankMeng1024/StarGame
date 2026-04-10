@@ -1,6 +1,7 @@
 // game/engine.js — Core game loop, pendulum net, star/debris objects
 import state from '../state.js';
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
+import { playCatch, playDebrisCatch, startCountdownBeeps, stopCountdownBeeps } from '../audio.js';
 
 const TWO_PI = Math.PI * 2;
 const TIME_BY_DIFFICULTY = { 1: 90, 2: 80, 3: 70, 4: 60, 5: 50 };
@@ -262,6 +263,7 @@ export class GameEngine {
     document.removeEventListener('click', this._handleInput);
     document.removeEventListener('keydown', this._handleInput);
     if (this.rafId) cancelAnimationFrame(this.rafId);
+    stopCountdownBeeps();
   }
 
   _loop(now) {
@@ -284,8 +286,18 @@ export class GameEngine {
       this.timeLeft = 0;
       this.finished = true;
       this.stop();
+      stopCountdownBeeps();
       setTimeout(() => this.onFail(), 300);
       return;
+    }
+
+    // Countdown warning beeps at ≤10s
+    if (this.timeLeft <= 10 && !this._beeping) {
+      this._beeping = true;
+      startCountdownBeeps();
+    } else if (this.timeLeft > 10 && this._beeping) {
+      this._beeping = false;
+      stopCountdownBeeps();
     }
 
     // Pendulum swing
@@ -372,6 +384,7 @@ export class GameEngine {
     if (hit.type === 'star') {
       hit.obj.caught = true;
       this.caughtStars++;
+      playCatch();
       this._emitStarParticles(hit.obj.x, hit.obj.y);
       this._updateHUD();
       if (this.caughtStars >= this.totalStars) {
@@ -381,6 +394,7 @@ export class GameEngine {
       }
     } else {
       hit.obj.caught = true;
+      playDebrisCatch();
       this._emitDebrisParticles(hit.obj.x, hit.obj.y);
       // Time penalty for catching debris (waived with glove)
       if (!this.activeItems.has('glove')) {

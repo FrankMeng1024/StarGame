@@ -2,6 +2,7 @@
 import { GameEngine } from '../game/engine.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
 import state from '../state.js';
+import { startMusic, stopMusic, playLevelComplete, playTimeExt, toggleMute, isMuted } from '../audio.js';
 
 let engine = null;
 let _hintClickListener = null;
@@ -38,17 +39,25 @@ export function startGame(navigate) {
   // Active item buttons (space_bomb, time_ext)
   _initActiveItemButtons();
 
+  // Passive item HUD row
+  _initPassiveItemRow();
+
   // Active items toast (show passive items that are active this run)
   _showActiveItemsToast();
 
   // Tutorial hint
   _showHint();
 
+  // Mute button
+  _initMuteButton();
+
   engine.start();
+  startMusic();
 }
 
 export function stopGame() {
   if (engine) { engine.stop(); engine = null; }
+  stopMusic();
   // Clean up hint listener if still attached
   if (_hintClickListener) {
     document.removeEventListener('click', _hintClickListener, true);
@@ -172,6 +181,8 @@ function _activateItem(itemId, btn) {
     });
   } else if (itemId === 'time_ext') {
     engine.timeLeft = Math.min(engine.timeLeft + 20, engine.startTime + 20);
+    _showTimeExtFlash();
+    playTimeExt();
   }
 
   // Hide button after use (qty is now 0)
@@ -184,6 +195,61 @@ function _dismissHint() {
   sessionStorage.setItem('hintSeen', '1');
   hint.classList.add('hint-fade-out');
   setTimeout(() => { hint.style.display = 'none'; }, 400);
+}
+
+function _showTimeExtFlash() {
+  const screen = document.getElementById('screen-game');
+  const timerEl = document.querySelector('.hud-timer');
+  if (!screen || !timerEl) return;
+  const rect = timerEl.getBoundingClientRect();
+  const screenRect = screen.getBoundingClientRect();
+  const el = document.createElement('div');
+  el.className = 'time-ext-flash';
+  el.textContent = '+20秒';
+  el.style.left = `${rect.left - screenRect.left + rect.width / 2}px`;
+  el.style.top  = `${rect.top  - screenRect.top  - 10}px`;
+  screen.appendChild(el);
+  setTimeout(() => el.remove(), 1200);
+}
+
+function _initPassiveItemRow() {
+  if (!engine || engine.activeItems.size === 0) return;
+  const hud = document.querySelector('.hud-top');
+  if (!hud) return;
+  // Remove any existing row
+  const existing = hud.querySelector('.hud-passive-row');
+  if (existing) existing.remove();
+
+  const PASSIVE_ICONS = {
+    net_speed:    '⚡',
+    star_magnet:  '🧲',
+    shrink_debris:'🔬',
+    double_coins: '🪙',
+    star_map:     '🗺️',
+    glove:        '🧤',
+  };
+  const row = document.createElement('div');
+  row.className = 'hud-passive-row';
+  for (const id of engine.activeItems) {
+    const icon = PASSIVE_ICONS[id];
+    if (!icon) continue;
+    const span = document.createElement('span');
+    span.className = 'hud-passive-icon';
+    span.textContent = icon;
+    row.appendChild(span);
+  }
+  hud.appendChild(row);
+}
+
+function _initMuteButton() {
+  const btn = document.getElementById('mute-btn');
+  if (!btn) return;
+  const update = () => {
+    btn.textContent = isMuted() ? '🔇' : '🔊';
+    btn.title = isMuted() ? '取消静音' : '静音';
+  };
+  update();
+  btn.onclick = () => { toggleMute(); update(); };
 }
 
 function _handleComplete(timeLeft, navigate) {
@@ -199,12 +265,19 @@ function _handleComplete(timeLeft, navigate) {
   const ratio = timeLeft / startTime;
   const stars = ratio > 0.5 ? 3 : ratio > 0.2 ? 2 : 1;
 
+  // Check if this run is a new record (before setScore overwrites)
+  const prevScore = state.getScore(idx);
+  const isNewRecord = !prevScore ||
+    stars > prevScore.stars ||
+    (stars === prevScore.stars && timeLeft > prevScore.time);
+
   // Update state
   state.setScore(idx, { stars, time: timeLeft });
   state.addCoins(coins);
   state.unlock(idx + 1);
 
-  navigate('complete', { idx, timeLeft, coins, caught, total });
+  playLevelComplete();
+  navigate('complete', { idx, timeLeft, coins, caught, total, isNewRecord });
 }
 
 function _handleFail(idx, navigate) {

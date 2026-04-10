@@ -9,6 +9,12 @@ Sprint 2: clean Sprint, no retrospective actions.
 - QA verdict: PASS. UX verdict: no Blockers. Arch review: PASS.
 - Lightweight retro rule applied: steps 1-3 skipped.
 
+## Sprint 4 — 2026-04-10
+Sprint 4: clean Sprint, no retrospective actions.
+- Zero bugs found by QA/UX. Arch review: PASS (3 Medium notes, no Blockers).
+- QA verdict: PASS (0 bugs). UX verdict: no Blockers (2 Medium, 3 Low).
+- Key debugging note: ES module cache requires script src version bump (not just page query param) to force fresh evaluation. `window.__state` exposure added for test injection.
+- Lightweight retro rule applied: steps 1-3 skipped.
 ## Sprint 3 — 2026-04-11
 Sprint 3: clean Sprint, no retrospective actions.
 - Zero bugs found by QA/UX. Arch review found 1 Critical + 3 Medium — all fixed before QA verdict.

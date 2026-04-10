@@ -5,7 +5,7 @@ import state from '../state.js';
 const TWO_PI = Math.PI * 2;
 
 export function showComplete(navigate, params) {
-  const { idx, timeLeft, coins, caught, total } = params;
+  const { idx, timeLeft, coins, caught, total, isNewRecord } = params;
   const level = CONSTELLATIONS[idx];
 
   // Star rating from saved score
@@ -20,6 +20,16 @@ export function showComplete(navigate, params) {
   document.querySelector('.stat-coins').textContent = `${coins}枚`;
   document.querySelector('.lore-title').textContent = `${level.nameZh} — ${level.nameEn}`;
   document.querySelector('.lore-text').textContent = level.lore;
+
+  // New record badge
+  const existing = document.querySelector('.new-record-badge');
+  if (existing) existing.remove();
+  if (isNewRecord) {
+    const badge = document.createElement('div');
+    badge.className = 'new-record-badge';
+    badge.textContent = '🏆 新纪录！';
+    document.querySelector('.complete-inner').insertBefore(badge, document.querySelector('.complete-stats'));
+  }
 
   // Reset stat labels for complete context
   const labels = document.querySelectorAll('.stat-label');
@@ -54,6 +64,10 @@ export function showComplete(navigate, params) {
 export function showFail(navigate, params) {
   const { idx, caught = 0, total, elapsed = 90 } = params;
   const level = CONSTELLATIONS[idx];
+
+  // Remove any stale new-record badge from a previous completion
+  const existingBadge = document.querySelector('.new-record-badge');
+  if (existingBadge) existingBadge.remove();
 
   document.querySelector('.complete-title').textContent = '⏰ 时间到了！';
   document.querySelector('.stat-caught').textContent = `${caught}/${total ?? level.stars.length}`;

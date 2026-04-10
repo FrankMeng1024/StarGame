@@ -19,6 +19,7 @@ export function initLevels(navigate) {
     const difficulty = '★'.repeat(c.difficulty) + '☆'.repeat(5 - c.difficulty);
     const score = state.getScore(idx);
     const scoreStars = score ? '★'.repeat(score.stars) + '☆'.repeat(3 - score.stars) : '';
+    const bestTime = score ? `<span class="card-best-time">最佳: ${Math.ceil(score.time)}秒</span>` : '';
     card.innerHTML = `
       <span class="card-num">${idx + 1}</span>
       ${unlocked ? '<span class="unlock-badge"></span>' : ''}
@@ -27,6 +28,7 @@ export function initLevels(navigate) {
       <span class="card-name-en">${c.nameEn}</span>
       <span class="card-stars">${difficulty}</span>
       ${scoreStars ? `<span class="card-score-stars">${scoreStars}</span>` : ''}
+      ${bestTime}
       ${!unlocked ? '<span class="lock-icon">🔒</span>' : ''}
     `;
 
@@ -46,13 +48,15 @@ export function refreshLevels() {
   cards.forEach(card => {
     const idx = parseInt(card.dataset.idx, 10);
     const unlocked = state.isUnlocked(idx);
+    const c = CONSTELLATIONS[idx];
+    const score = state.getScore(idx);
+    const scoreStars = score ? '★'.repeat(score.stars) + '☆'.repeat(3 - score.stars) : '';
+    const bestTime = score ? `<span class="card-best-time">最佳: ${Math.ceil(score.time)}秒</span>` : '';
+    const stars = '★'.repeat(c.difficulty) + '☆'.repeat(5 - c.difficulty);
+
     if (unlocked && card.classList.contains('locked')) {
-      // Re-render card as unlocked
+      // Newly unlocked — full re-render
       card.className = 'level-card unlocked';
-      const c = CONSTELLATIONS[idx];
-      const stars = '★'.repeat(c.difficulty) + '☆'.repeat(5 - c.difficulty);
-      const score = state.getScore(idx);
-      const scoreStars = score ? '★'.repeat(score.stars) + '☆'.repeat(3 - score.stars) : '';
       card.innerHTML = `
         <span class="card-num">${idx + 1}</span>
         <span class="unlock-badge"></span>
@@ -61,12 +65,30 @@ export function refreshLevels() {
         <span class="card-name-en">${c.nameEn}</span>
         <span class="card-stars">${stars}</span>
         ${scoreStars ? `<span class="card-score-stars">${scoreStars}</span>` : ''}
+        ${bestTime}
       `;
       card.addEventListener('click', () => {
         state.currentLevel = idx;
-        // navigate is captured in closure but not available here, use event
         card.dispatchEvent(new CustomEvent('level-select', { detail: idx, bubbles: true }));
       });
+    } else if (unlocked) {
+      // Already unlocked — update score display only
+      const existingScore = card.querySelector('.card-score-stars');
+      const existingBest  = card.querySelector('.card-best-time');
+      if (existingScore) existingScore.remove();
+      if (existingBest)  existingBest.remove();
+      const starsEl = card.querySelector('.card-stars');
+      if (starsEl) {
+        if (scoreStars) {
+          const ss = document.createElement('span');
+          ss.className = 'card-score-stars';
+          ss.textContent = scoreStars;
+          starsEl.after(ss);
+          if (bestTime) ss.insertAdjacentHTML('afterend', bestTime);
+        } else if (bestTime) {
+          starsEl.insertAdjacentHTML('afterend', bestTime);
+        }
+      }
     }
   });
 }
