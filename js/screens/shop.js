@@ -28,6 +28,12 @@ function _renderShop(navigate) {
 
   grid.innerHTML = '';
 
+  // Type legend
+  const legend = document.createElement('div');
+  legend.className = 'shop-type-legend';
+  legend.textContent = '持续型 = 本关全程自动生效 ｜ 消耗型 = 关卡内手动激活，用完即止';
+  grid.appendChild(legend);
+
   ITEMS.forEach(item => {
     const owned  = state.getItemQty(item.id);
     const enough = state.coins >= item.price;
@@ -43,7 +49,7 @@ function _renderShop(navigate) {
       </div>
       <div class="shop-item-footer">
         <span class="shop-item-price">🪙 ${item.price}</span>
-        ${owned > 0 ? `<span class="shop-owned-badge">已持有 ×${owned}</span>` : ''}
+        <span class="shop-owned-count ${owned > 0 ? 'has-items' : ''}">持有: ×${owned}</span>
       </div>
       <button class="btn btn-primary shop-buy-btn ${!enough ? 'disabled' : ''}"
               data-id="${item.id}"

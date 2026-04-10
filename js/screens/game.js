@@ -109,14 +109,19 @@ function _dismissHint() {
 }
 
 function _handleComplete(timeLeft, navigate) {
-  const idx   = state.currentLevel ?? 0;
-  const coins  = Math.floor(timeLeft) * 10;
-  const level  = CONSTELLATIONS[idx];
-  const caught = engine ? engine.caughtStars : level.stars.length;
-  const total  = level.stars.length;
+  const idx      = state.currentLevel ?? 0;
+  const coins    = Math.floor(timeLeft) * 10;
+  const level    = CONSTELLATIONS[idx];
+  const caught   = engine ? engine.caughtStars : level.stars.length;
+  const total    = level.stars.length;
+  const startTime = engine ? engine.startTime : 90;
+
+  // Star rating: 3 = timeLeft > 50% of start; 2 = timeLeft > 20%; 1 = any
+  const ratio = timeLeft / startTime;
+  const stars = ratio > 0.5 ? 3 : ratio > 0.2 ? 2 : 1;
 
   // Update state
-  state.setScore(idx, { stars: 3, time: timeLeft });
+  state.setScore(idx, { stars, time: timeLeft });
   state.addCoins(coins);
   state.unlock(idx + 1);
 
@@ -127,6 +132,6 @@ function _handleFail(idx, navigate) {
   const level    = CONSTELLATIONS[idx];
   const caught   = engine ? engine.caughtStars : 0;
   const total    = level.stars.length;
-  const elapsed  = engine ? Math.floor(90 - engine.timeLeft) : 90;
+  const elapsed  = engine ? Math.floor(engine.startTime - engine.timeLeft) : (engine?.startTime ?? 90);
   navigate('fail', { idx, caught, total, elapsed });
 }

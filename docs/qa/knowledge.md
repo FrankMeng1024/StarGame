@@ -68,3 +68,13 @@ No backend, no network requests. All data in localStorage + local files.
 - `browser_evaluate` immediately after `browser_click` can synthesize an extra event triggering capture-phase listeners — use `browser_run_code` for atomic test sequences
 - State storage key: `starcatcher_save`; structure: `{ unlockedLevels:[], levelScores:{}, coins:N, inventory:{} }`
 - `window.__navigate(screen, params)` is exposed for test navigation
+
+## Sprint 3 Verified (2026-04-10)
+- TIME_BY_DIFFICULTY: {1:90, 2:80, 3:70, 4:60, 5:50} — difficulty 1→90s, difficulty 2→80s confirmed
+- Star rating stored as `{ stars: N, time: T }` under `levelScores[idx]` in localStorage
+- Level cards show `.card-score-stars` span with earned stars (absent if not played)
+- Shop: type legend is `.shop-type-legend` (grid-column: 1/-1); owned count is `.shop-owned-count` (always visible, `.has-items` class when qty > 0)
+- Penalty text: `.penalty-text` positioned at catch coords (`left: Xpx`, `top: Y-20px`), appended to `#screen-game`, auto-removed after 1200ms
+- HUD timer warning: `.hud-timer.warning` class toggled by `classList.toggle('warning', s <= 10)` in `_updateHUD`
+- Shop access path (normal flow): level-complete screen → "🛒 去商店" button only; not accessible from menu/levels directly
+- Navigation regression Sprint 3: all 5 flows pass, 0 JS runtime errors (44 errors = all Google Fonts + favicon, expected offline)

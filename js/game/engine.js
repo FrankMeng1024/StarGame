@@ -3,7 +3,7 @@ import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations
 import state from '../state.js';
 
 const TWO_PI = Math.PI * 2;
-const LEVEL_TIME = 90; // seconds
+const TIME_BY_DIFFICULTY = { 1: 90, 2: 80, 3: 70, 4: 60, 5: 50 };
 
 // ── Particle class ────────────────────────────────────────────
 class Particle {
@@ -123,7 +123,8 @@ export class GameEngine {
     this.H = canvas.height;
 
     // Game state
-    this.timeLeft  = LEVEL_TIME;
+    this.startTime = TIME_BY_DIFFICULTY[this.level.difficulty] ?? 90;
+    this.timeLeft  = this.startTime;
     this.lastTick  = null;
     this.caughtStars = 0;
     this.totalStars  = this.level.stars.length;
@@ -343,7 +344,22 @@ export class GameEngine {
     } else {
       hit.obj.caught = true;
       this._emitDebrisParticles(hit.obj.x, hit.obj.y);
+      // Time penalty for catching debris
+      this.timeLeft = Math.max(0, this.timeLeft - 1);
+      this._showPenaltyText(hit.obj.x, hit.obj.y);
     }
+  }
+
+  _showPenaltyText(x, y) {
+    const screen = document.getElementById('screen-game');
+    if (!screen) return;
+    const el = document.createElement('div');
+    el.className = 'penalty-text';
+    el.textContent = '-1秒';
+    el.style.left = `${x}px`;
+    el.style.top  = `${y - 20}px`;
+    screen.appendChild(el);
+    setTimeout(() => el.remove(), 1200);
   }
 
   _emitStarParticles(x, y) {
@@ -605,6 +621,7 @@ export class GameEngine {
   getStatus() {
     return {
       timeLeft:    this.timeLeft,
+      startTime:   this.startTime,
       caughtStars: this.caughtStars,
       totalStars:  this.totalStars,
       levelName:   `${this.level.nameZh} · 第${this.levelIdx + 1}关`,

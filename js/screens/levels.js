@@ -16,14 +16,17 @@ export function initLevels(navigate) {
     card.className = `level-card ${unlocked ? 'unlocked' : 'locked'}`;
     card.dataset.idx = idx;
 
-    const stars = '★'.repeat(c.difficulty) + '☆'.repeat(5 - c.difficulty);
+    const difficulty = '★'.repeat(c.difficulty) + '☆'.repeat(5 - c.difficulty);
+    const score = state.getScore(idx);
+    const scoreStars = score ? '★'.repeat(score.stars) + '☆'.repeat(3 - score.stars) : '';
     card.innerHTML = `
       <span class="card-num">${idx + 1}</span>
       ${unlocked ? '<span class="unlock-badge"></span>' : ''}
       <span class="card-icon">${c.icon}</span>
       <span class="card-name-zh">${c.nameZh}</span>
       <span class="card-name-en">${c.nameEn}</span>
-      <span class="card-stars">${stars}</span>
+      <span class="card-stars">${difficulty}</span>
+      ${scoreStars ? `<span class="card-score-stars">${scoreStars}</span>` : ''}
       ${!unlocked ? '<span class="lock-icon">🔒</span>' : ''}
     `;
 
@@ -48,6 +51,8 @@ export function refreshLevels() {
       card.className = 'level-card unlocked';
       const c = CONSTELLATIONS[idx];
       const stars = '★'.repeat(c.difficulty) + '☆'.repeat(5 - c.difficulty);
+      const score = state.getScore(idx);
+      const scoreStars = score ? '★'.repeat(score.stars) + '☆'.repeat(3 - score.stars) : '';
       card.innerHTML = `
         <span class="card-num">${idx + 1}</span>
         <span class="unlock-badge"></span>
@@ -55,6 +60,7 @@ export function refreshLevels() {
         <span class="card-name-zh">${c.nameZh}</span>
         <span class="card-name-en">${c.nameEn}</span>
         <span class="card-stars">${stars}</span>
+        ${scoreStars ? `<span class="card-score-stars">${scoreStars}</span>` : ''}
       `;
       card.addEventListener('click', () => {
         state.currentLevel = idx;

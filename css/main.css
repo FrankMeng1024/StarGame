@@ -856,3 +856,52 @@ body {
   background: var(--success);
   box-shadow: 0 0 12px rgba(74, 222, 128, 0.4);
 }
+
+/* ── Sprint 3: Score stars on level cards ─────────────────────── */
+.card-score-stars {
+  font-size: 11px;
+  color: var(--star-gold);
+  letter-spacing: 1px;
+  margin-top: 2px;
+}
+
+/* ── Sprint 3: Shop type legend ────────────────────────────────── */
+.shop-type-legend {
+  grid-column: 1 / -1;
+  font-size: var(--font-xs);
+  color: var(--text2);
+  background: rgba(255,255,255,0.04);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  margin-bottom: var(--spacing-sm);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ── Sprint 3: Shop owned count (always visible) ──────────────── */
+.shop-owned-count {
+  font-size: var(--font-xs);
+  color: var(--text2);
+  padding: 2px 6px;
+}
+.shop-owned-count.has-items {
+  color: var(--success);
+  font-weight: 600;
+}
+
+/* ── Sprint 3: Debris penalty floating text ───────────────────── */
+.penalty-text {
+  position: absolute;
+  color: #ef4444;
+  font-size: 18px;
+  font-weight: 700;
+  pointer-events: none;
+  text-shadow: 0 0 8px rgba(239,68,68,0.8);
+  animation: penalty-float 1.2s ease-out forwards;
+  z-index: 30;
+}
+
+@keyframes penalty-float {
+  0%   { opacity: 1; transform: translateY(0) translateX(-50%); }
+  100% { opacity: 0; transform: translateY(-60px) translateX(-50%); }
+}

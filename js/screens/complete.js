@@ -8,8 +8,13 @@ export function showComplete(navigate, params) {
   const { idx, timeLeft, coins, caught, total } = params;
   const level = CONSTELLATIONS[idx];
 
+  // Star rating from saved score
+  const score = state.getScore(idx);
+  const stars = score ? score.stars : 1;
+  const starStr = '★'.repeat(stars) + '☆'.repeat(3 - stars);
+
   // Update DOM
-  document.querySelector('.complete-title').textContent = '✨ 关卡完成！';
+  document.querySelector('.complete-title').textContent = `✨ 关卡完成！ ${starStr}`;
   document.querySelector('.stat-caught').textContent = `${caught}/${total}`;
   document.querySelector('.stat-time').textContent = `${Math.floor(timeLeft)}秒`;
   document.querySelector('.stat-coins').textContent = `${coins}枚`;
