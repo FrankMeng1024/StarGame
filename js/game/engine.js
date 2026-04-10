@@ -1,6 +1,6 @@
 // game/engine.js — Core game loop, pendulum net, star/debris objects
-import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
 import state from '../state.js';
+import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
 
 const TWO_PI = Math.PI * 2;
 const TIME_BY_DIFFICULTY = { 1: 90, 2: 80, 3: 70, 4: 60, 5: 50 };
@@ -153,6 +153,30 @@ export class GameEngine {
     this.debris  = this._buildDebris(3 + Math.floor(levelIdx / 5));
 
     this.particles = [];
+
+    // ── Apply passive items ────────────────────────────────────
+    // Passive items are consumed at level start and apply for the full run
+    const PASSIVE_ITEMS = ['net_speed', 'shrink_debris', 'glove', 'double_coins', 'star_magnet', 'star_map'];
+    this.activeItems = new Set();
+    for (const id of PASSIVE_ITEMS) {
+      if (state.getItemQty(id) > 0) {
+        state.useItem(id);
+        this.activeItems.add(id);
+      }
+    }
+
+    // Apply net_speed
+    if (this.activeItems.has('net_speed')) {
+      this.netSpeed *= 1.5;
+    }
+
+    // Apply shrink_debris — halve radius of all debris objects
+    if (this.activeItems.has('shrink_debris')) {
+      for (const d of this.debris) d.r *= 0.5;
+    }
+
+    // double_coins multiplier communicated to game.js via this property
+    this.coinMultiplier = this.activeItems.has('double_coins') ? 2 : 1;
 
     // Bind
     this._handleInput = this._handleInput.bind(this);
@@ -325,6 +349,20 @@ export class GameEngine {
       if (!d.caught) d.angle += d.spinSpeed;
     }
 
+    // Star magnet — pull uncaught stars toward net tip
+    if (this.activeItems.has('star_magnet')) {
+      const tip = this._netTip();
+      for (const s of this.stars) {
+        if (s.caught) continue;
+        const dx = tip.x - s.x, dy = tip.y - s.y;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+        if (dist < 50 && dist > 0) {
+          s.x += (dx / dist) * 1.5;
+          s.y += (dy / dist) * 1.5;
+        }
+      }
+    }
+
     // Update particles
     for (const p of this.particles) p.update();
     this.particles = this.particles.filter(p => !p.dead);
@@ -344,9 +382,11 @@ export class GameEngine {
     } else {
       hit.obj.caught = true;
       this._emitDebrisParticles(hit.obj.x, hit.obj.y);
-      // Time penalty for catching debris
-      this.timeLeft = Math.max(0, this.timeLeft - 1);
-      this._showPenaltyText(hit.obj.x, hit.obj.y);
+      // Time penalty for catching debris (waived with glove)
+      if (!this.activeItems.has('glove')) {
+        this.timeLeft = Math.max(0, this.timeLeft - 1);
+        this._showPenaltyText(hit.obj.x, hit.obj.y);
+      }
     }
   }
 
@@ -412,6 +452,7 @@ export class GameEngine {
     ctx.clearRect(0, 0, this.W, this.H);
 
     this._drawBackground();
+    if (this.activeItems.has('star_map')) this._drawStarMap();
     this._drawStars();
     this._drawDebris();
     this._drawNet();
@@ -443,6 +484,23 @@ export class GameEngine {
       ctx.fill();
     }
     ctx.globalAlpha = 1;
+  }
+
+  _drawStarMap() {
+    const ctx = this.ctx;
+    const lines = this.level.lines || [];
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.25)';
+    ctx.lineWidth = 1;
+    for (const [a, b] of lines) {
+      const sA = this.stars[a], sB = this.stars[b];
+      if (!sA || !sB) continue;
+      ctx.beginPath();
+      ctx.moveTo(sA.x, sA.y);
+      ctx.lineTo(sB.x, sB.y);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
 
   _drawStars() {

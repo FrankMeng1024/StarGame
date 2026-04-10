@@ -68,6 +68,7 @@ function init() {
 
   // Expose navigate for test verification only
   window.__navigate = navigate;
+  window.__state = state;
 
   showScreen('menu');
 }

@@ -78,3 +78,16 @@ No backend, no network requests. All data in localStorage + local files.
 - HUD timer warning: `.hud-timer.warning` class toggled by `classList.toggle('warning', s <= 10)` in `_updateHUD`
 - Shop access path (normal flow): level-complete screen → "🛒 去商店" button only; not accessible from menu/levels directly
 - Navigation regression Sprint 3: all 5 flows pass, 0 JS runtime errors (44 errors = all Google Fonts + favicon, expected offline)
+
+## Sprint 4 Verified (2026-04-10)
+- `window.__state` now exposed for test injection (main.js v=10+): `window.__state.addItem(id, qty)`, `getItemQty(id)`, `useItem(id)`
+- ES module cache: version query param on `<script src="js/main.js?vN">` must be incremented to bust module cache; browser ignores page query params for cached modules
+- activeItems Set pattern: constructor iterates PASSIVE_ITEMS, consumes each via state.useItem, builds Set. All 6 passive items qty=0 after level start when owned. Active items NOT consumed at constructor — only on HUD button click.
+- HUD active-item buttons: `[data-item-id="space_bomb"]` and `[data-item-id="time_ext"]`; only rendered if qty > 0 at level start; hidden via `btn.style.display = 'none'` when qty reaches 0 after use.
+- `.active-items-toast`: created by `_showActiveItemsToast()` on `#screen-game`; visible ~3s then fades; not created when activeItems Set is empty.
+- time_ext: `engine.timeLeft += 20` (capped at startTime+20); DOM timer updates on next RAF frame — allow ≥300ms delay before reading HUD timer after click.
+- space_bomb: `engine.debris = engine.debris.filter(d => !d.caught)` — confirmed array reassignment pattern; debris stay cleared.
+- coinMultiplier: engine.coinMultiplier = 2 when double_coins active; applied in _handleComplete as `Math.floor(timeLeft) * 10 * coinMultiplier`.
+- Canvas effects (star_magnet pull, shrink_debris size, net_speed movement) cannot be verified via DOM — code path activation confirmed by qty consumption + activeItems Set membership.
+- Navigation regression Sprint 4: ALL routes clean, 0 JS console errors. Google Fonts errors no longer appearing (was 44 in Sprint 3 — may have cleared from Playwright session reset).
+

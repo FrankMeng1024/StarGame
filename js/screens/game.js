@@ -35,6 +35,12 @@ export function startGame(navigate) {
   document.querySelector('.hud-timer').textContent =
     `${String(Math.floor(t / 60)).padStart(2,'0')}:${String(t % 60).padStart(2,'0')}`;
 
+  // Active item buttons (space_bomb, time_ext)
+  _initActiveItemButtons();
+
+  // Active items toast (show passive items that are active this run)
+  _showActiveItemsToast();
+
   // Tutorial hint
   _showHint();
 
@@ -100,6 +106,78 @@ function _showHint() {
   }, 0);
 }
 
+const ITEM_NAMES = {
+  net_speed:    '⚡ 网兜加速',
+  star_magnet:  '🧲 磁力星引',
+  shrink_debris:'🔬 缩小垃圾',
+  double_coins: '🪙 双倍金币',
+  star_map:     '🗺️ 星图揭示',
+  glove:        '🧤 宇航员手套',
+};
+
+function _showActiveItemsToast() {
+  if (!engine || engine.activeItems.size === 0) return;
+  const screen = document.getElementById('screen-game');
+  if (!screen) return;
+
+  // Remove any existing toast
+  const existing = screen.querySelector('.active-items-toast');
+  if (existing) existing.remove();
+
+  const names = Array.from(engine.activeItems).map(id => ITEM_NAMES[id] || id);
+  const toast = document.createElement('div');
+  toast.className = 'active-items-toast';
+  toast.innerHTML = names.map(n => `<span>${n} 已激活</span>`).join('');
+  screen.appendChild(toast);
+  setTimeout(() => {
+    toast.classList.add('toast-fade-out');
+    setTimeout(() => toast.remove(), 400);
+  }, 3000);
+}
+
+function _initActiveItemButtons() {
+  const container = document.getElementById('hud-active-items');
+  if (!container) return;
+  container.innerHTML = '';
+
+  const ACTIVE_ITEMS = [
+    { id: 'space_bomb', icon: '💣', label: '炸弹' },
+    { id: 'time_ext',   icon: '⏱️', label: '+20秒' },
+  ];
+
+  for (const item of ACTIVE_ITEMS) {
+    if (state.getItemQty(item.id) <= 0) continue;
+
+    const btn = document.createElement('button');
+    btn.className = 'hud-item-btn';
+    btn.dataset.itemId = item.id;
+    btn.innerHTML = `<span class="hud-item-icon">${item.icon}</span><span class="hud-item-label">${item.label}</span>`;
+    btn.addEventListener('click', () => _activateItem(item.id, btn));
+    container.appendChild(btn);
+  }
+}
+
+function _activateItem(itemId, btn) {
+  if (!engine) return;
+  if (!state.useItem(itemId)) return;
+
+  if (itemId === 'space_bomb') {
+    // Remove all uncaught debris
+    engine.debris = engine.debris.filter(d => {
+      if (!d.caught) {
+        engine._emitDebrisParticles(d.x, d.y);
+        return false;
+      }
+      return true;
+    });
+  } else if (itemId === 'time_ext') {
+    engine.timeLeft = Math.min(engine.timeLeft + 20, engine.startTime + 20);
+  }
+
+  // Hide button after use (qty is now 0)
+  if (state.getItemQty(itemId) <= 0) btn.style.display = 'none';
+}
+
 function _dismissHint() {
   const hint = document.getElementById('game-hint');
   if (!hint) return;
@@ -110,7 +188,8 @@ function _dismissHint() {
 
 function _handleComplete(timeLeft, navigate) {
   const idx      = state.currentLevel ?? 0;
-  const coins    = Math.floor(timeLeft) * 10;
+  const coinMultiplier = engine ? (engine.coinMultiplier ?? 1) : 1;
+  const coins    = Math.floor(timeLeft) * 10 * coinMultiplier;
   const level    = CONSTELLATIONS[idx];
   const caught   = engine ? engine.caughtStars : level.stars.length;
   const total    = level.stars.length;

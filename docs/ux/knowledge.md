@@ -57,3 +57,20 @@
 - Gallery → back: 返回 button → navigate('menu') via navigate()
 - Gallery card click → navigate('gallery-detail', {idx})
 - Gallery detail back → navigate('gallery')
+
+## Sprint 4 Updates (2026-04-10)
+
+### Item Effects in Gameplay
+- **Passive items**: consumed at engine constructor time; brief toast (~3.5s) lists active items. No persistent HUD indicator after toast fades.
+- **Active item buttons**: HUD shows 💣炸弹 (space_bomb) and ⏱️+20秒 (time_ext) buttons if qty > 0. Buttons 64-68×68px — adequate touch target.
+- **time_ext**: adds 20s to countdown. Timer jumps up on next RAF frame — no visual flourish. Button hides after single use.
+- **space_bomb**: clears all uncaught debris. Button hides after single use.
+
+### New Friction Points (Sprint 4)
+- Toast lacks explicit "already active" framing — Medium
+- No persistent passive item HUD row after toast fades — Medium
+- time_ext has no visual confirmation overlay (timer jumps but no '+20s' flash) — Low
+- No item preview on level select screen — Low
+
+### Navigation Regression
+- Sprint 4: game→levels→menu and all other routes: CLEAN, zero console errors.

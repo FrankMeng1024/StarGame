@@ -117,3 +117,8 @@ Single-player browser game (HTML5 Canvas, desktop-first, future mobile support)
 - 中国传统星宿内容
 - 实时天文数据对接
 - 手机版（当前迭代）
+
+## Asset Dependency Log
+- M9/M12 (星座展厅图片轮播): 需要真实星座照片资源（每星座5-10张）。无资源前展厅详情页保持当前文字+图标形式，不做轮播。Sprint 4+ 不开发此功能直到资源到位。
+- S1 (背景音乐): 需要音频文件。无资源前跳过。已列为 Should Have（非 Must Have）。
+
