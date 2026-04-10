@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>星捕少女 — StarCatcher</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/main.css">
+</head>
+<body>
+
+<!-- Custom star cursor -->
+<div id="star-cursor" aria-hidden="true">★</div>
+
+<!-- Particle starfield (UI background) -->
+<canvas id="star-canvas" aria-hidden="true"></canvas>
+
+<!-- App root -->
+<div id="app">
+
+  <!-- ① Main Menu ──────────────────────────────────────────── -->
+  <section id="screen-menu" class="screen" role="main">
+    <div class="menu-inner">
+      <h1 class="game-title">星捕少女</h1>
+      <p class="game-subtitle">StarCatcher</p>
+      <div class="menu-buttons">
+        <button class="btn btn-primary btn-play" aria-label="开始游戏">
+          ✦ 挑战关卡
+        </button>
+        <button class="btn btn-secondary btn-gallery" aria-label="星座展厅">
+          ☽ 星座展厅
+        </button>
+      </div>
+      <p class="menu-deco">— 在深邃星空中，追逐每一颗遥远的星光 —</p>
+    </div>
+  </section>
+
+  <!-- ② Level Select ───────────────────────────────────────── -->
+  <section id="screen-levels" class="screen" role="main">
+    <div class="levels-header">
+      <button class="btn btn-ghost btn-back-menu">← 返回主菜单</button>
+      <h2>✦ 挑战关卡</h2>
+      <span style="width:120px"></span><!-- balance -->
+    </div>
+    <div class="level-grid" role="list" aria-label="关卡列表">
+      <!-- Cards injected by JS -->
+    </div>
+  </section>
+
+  <!-- ③ Game Screen ────────────────────────────────────────── -->
+  <section id="screen-game" class="screen" role="main">
+    <canvas id="gameCanvas" aria-label="游戏画面"></canvas>
+    <div class="hud" aria-live="polite">
+      <div class="hud-top">
+        <div class="hud-level-name">猎户座 · 第1关</div>
+        <div class="hud-timer">01:30</div>
+        <div class="hud-stars">
+          <span>★</span>
+          <span class="star-count">0/7</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ④ Level Complete / Fail ──────────────────────────────── -->
+  <section id="screen-complete" class="screen" role="main">
+    <div class="complete-inner">
+      <h2 class="complete-title">✨ 关卡完成！</h2>
+
+      <canvas id="constellation-canvas" width="240" height="240"
+              aria-label="星座连线动画"></canvas>
+
+      <div class="complete-stats">
+        <div class="stat-item">
+          <span class="stat-value stat-caught">0/7</span>
+          <span class="stat-label">已抓星星</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value stat-time">0秒</span>
+          <span class="stat-label">剩余时间</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value stat-coins">0枚</span>
+          <span class="stat-label">获得金币</span>
+        </div>
+      </div>
+
+      <div class="complete-lore">
+        <span class="lore-title">猎户座</span>
+        <span class="lore-text"></span>
+      </div>
+
+      <div class="complete-buttons">
+        <button class="btn btn-primary btn-next-level">下一关 →</button>
+        <button class="btn btn-secondary btn-back-levels">← 返回选关</button>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑤ Gallery (placeholder) ─────────────────────────────── -->
+  <section id="screen-gallery" class="screen" role="main">
+    <h2>☽ 星座展厅</h2>
+    <p style="color:var(--text2);font-size:var(--font-md);">完成关卡后解锁各星座的珍贵图片与传说故事</p>
+    <button class="btn btn-ghost btn-back-from-gallery" onclick="document.getElementById('screen-gallery').classList.remove('active');document.getElementById('screen-menu').classList.add('active');">
+      ← 返回主菜单
+    </button>
+  </section>
+
+</div><!-- /app -->
+
+<script type="module" src="js/main.js"></script>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星捕少女 — Style Demo 1: 梦幻水彩</title>
+<link href="https://fonts.googleapis.com/css2?family=Ma+Shan+Zheng&family=Noto+Sans+SC:wght@300;400;600&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --sky-deep: #070b1f;
+    --sky-mid: #0f1540;
+    --nebula-purple: #2d1060;
+    --nebula-blue: #0a2a6e;
+    --star-gold: #ffd060;
+    --star-warm: #fff0a0;
+    --warm-glow: #e8740a;
+    --text: #e8e4ff;
+    --text2: #8888cc;
+    --card-bg: rgba(15, 21, 64, 0.8);
+    --border: rgba(120, 80, 200, 0.4);
+    --purple: #7c3aed;
+    --purple-light: #a78bfa;
+  }
+
+  body {
+    background: var(--sky-deep);
+    color: var(--text);
+    font-family: 'Noto Sans SC', sans-serif;
+    min-height: 100vh;
+    overflow: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor */
+  #cursor {
+    position: fixed;
+    pointer-events: none;
+    z-index: 9999;
+    width: 20px; height: 20px;
+    margin: -10px 0 0 -10px;
+    transition: transform 0.1s ease;
+  }
+
+  /* Sky background layers */
+  .sky {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 50% 120%, #1a0a40 0%, #0a1060 30%, #070b1f 70%);
+    overflow: hidden;
+  }
+
+  /* Nebula blobs */
+  .nebula {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(80px);
+    opacity: 0.3;
+  }
+  .nebula-1 { width: 600px; height: 400px; background: radial-gradient(#4a0080, transparent); top: -100px; left: -100px; animation: drift1 20s ease-in-out infinite; }
+  .nebula-2 { width: 500px; height: 500px; background: radial-gradient(#001a6e, transparent); top: 20%; right: -150px; animation: drift2 25s ease-in-out infinite; }
+  .nebula-3 { width: 400px; height: 300px; background: radial-gradient(#600040, transparent); bottom: 20%; left: 30%; animation: drift3 18s ease-in-out infinite; }
+
+  @keyframes drift1 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(30px,20px)} }
+  @keyframes drift2 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(-20px,30px)} }
+  @keyframes drift3 { 0%,100%{transform:translate(0,0)} 50%{transform:translate(20px,-15px)} }
+
+  /* Stars particle field */
+  .star-field { position: absolute; inset: 0; }
+  .star {
+    position: absolute;
+    border-radius: 50%;
+    background: white;
+    animation: twinkle var(--t, 3s) ease-in-out infinite var(--d, 0s);
+  }
+  @keyframes twinkle {
+    0%,100%{opacity:var(--min-op,0.3); transform:scale(1)}
+    50%{opacity:1; transform:scale(1.4)}
+  }
+
+  /* Horizon glow — shepherd's hut */
+  .horizon {
+    position: absolute;
+    bottom: 0; left: 0; right: 0; height: 200px;
+    background: linear-gradient(to top, rgba(232,116,10,0.15) 0%, transparent 100%);
+  }
+  .hut-silhouette {
+    position: absolute;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    width: 100%; height: 120px;
+    background: url("data:image/svg+xml,%3Csvg viewBox='0 0 1280 120' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M0 120 L400 120 L400 60 L440 20 L480 60 L480 120 L560 120 L560 80 L580 60 L600 80 L600 120 L800 120 L800 70 L830 40 L860 70 L860 120 L1280 120 Z' fill='%23030614'/%3E%3C/svg%3E") center bottom / cover no-repeat;
+  }
+  .hut-light {
+    position: absolute;
+    bottom: 40px; left: calc(50% - 180px);
+    width: 20px; height: 20px;
+    background: var(--warm-glow);
+    border-radius: 50%;
+    box-shadow: 0 0 20px 10px rgba(232,116,10,0.4), 0 0 60px 30px rgba(232,116,10,0.15);
+    animation: flicker 2s ease-in-out infinite;
+  }
+  @keyframes flicker { 0%,100%{opacity:1} 50%{opacity:0.8} }
+
+  /* Main content */
+  .content {
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh;
+    padding: 40px;
+  }
+
+  /* Title */
+  .game-title {
+    font-family: 'Ma Shan Zheng', cursive;
+    font-size: clamp(52px, 8vw, 88px);
+    background: linear-gradient(135deg, #ffd060 0%, #fff0a0 40%, #ffa040 70%, #ffd060 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+    text-shadow: none;
+    filter: drop-shadow(0 0 30px rgba(255, 200, 50, 0.5));
+    letter-spacing: 0.05em;
+    animation: title-glow 4s ease-in-out infinite;
+    margin-bottom: 8px;
+  }
+  @keyframes title-glow {
+    0%,100%{filter:drop-shadow(0 0 20px rgba(255,200,50,0.4))}
+    50%{filter:drop-shadow(0 0 40px rgba(255,200,50,0.7))}
+  }
+
+  .title-sub {
+    font-size: 14px; letter-spacing: 0.4em; color: var(--purple-light);
+    text-transform: uppercase; margin-bottom: 60px;
+  }
+
+  /* Girl silhouette */
+  .girl-container {
+    position: relative;
+    width: 200px; height: 200px;
+    margin-bottom: 50px;
+    animation: float 4s ease-in-out infinite;
+  }
+  @keyframes float { 0%,100%{transform:translateY(0)} 50%{transform:translateY(-12px)} }
+
+  .girl-svg {
+    width: 100%; height: 100%;
+    filter: drop-shadow(0 0 20px rgba(180, 120, 255, 0.4));
+  }
+
+  /* Net animation arc */
+  .net-arc {
+    position: absolute;
+    top: -20px; left: 50%; transform-origin: bottom center;
+    transform: translateX(-50%) rotate(var(--r, 0deg));
+    animation: swing 2s ease-in-out infinite;
+  }
+  @keyframes swing { 0%,100%{--r:-40deg; transform:translateX(-50%) rotate(-40deg)} 50%{--r:40deg; transform:translateX(-50%) rotate(40deg)} }
+
+  /* Buttons */
+  .btn-group {
+    display: flex; gap: 20px; flex-direction: column; align-items: center;
+  }
+
+  .btn {
+    position: relative;
+    padding: 14px 48px;
+    font-family: 'Noto Sans SC', sans-serif;
+    font-size: 18px; font-weight: 600;
+    letter-spacing: 0.1em;
+    color: white;
+    border: none; border-radius: 50px;
+    cursor: none;
+    overflow: hidden;
+    transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1), box-shadow 0.2s ease;
+  }
+
+  .btn-play {
+    background: linear-gradient(135deg, #7c3aed, #4a90d9);
+    box-shadow: 0 4px 30px rgba(124, 58, 237, 0.4);
+  }
+  .btn-play::before {
+    content: ''; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(255,255,255,0.15), transparent);
+    border-radius: inherit;
+  }
+  .btn-play:hover {
+    transform: scale(1.05) translateY(-2px);
+    box-shadow: 0 8px 40px rgba(124, 58, 237, 0.6);
+  }
+
+  .btn-gallery {
+    background: transparent;
+    border: 1.5px solid rgba(120, 80, 200, 0.6);
+    color: var(--purple-light);
+    box-shadow: 0 0 20px rgba(120, 80, 200, 0.1) inset;
+  }
+  .btn-gallery:hover {
+    border-color: var(--purple-light);
+    background: rgba(120, 80, 200, 0.1);
+    transform: scale(1.03) translateY(-1px);
+    box-shadow: 0 4px 20px rgba(120, 80, 200, 0.3);
+  }
+
+  /* Floating stars */
+  .float-star {
+    position: fixed;
+    font-size: 12px;
+    color: var(--star-gold);
+    opacity: 0;
+    pointer-events: none;
+    animation: floatUp var(--dur,8s) ease-in infinite var(--delay,0s);
+  }
+  @keyframes floatUp {
+    0%{opacity:0;transform:translateY(0) scale(0.5)}
+    20%{opacity:0.8}
+    80%{opacity:0.3}
+    100%{opacity:0;transform:translateY(-200px) scale(1.5)}
+  }
+
+  /* Demo label */
+  .demo-label {
+    position: fixed; bottom: 20px; right: 20px;
+    background: rgba(255,255,255,0.08);
+    border: 1px solid rgba(255,255,255,0.15);
+    border-radius: 8px;
+    padding: 8px 14px;
+    font-size: 12px; color: var(--text2);
+    backdrop-filter: blur(10px);
+  }
+</style>
+</head>
+<body>
+
+<!-- Custom cursor -->
+<svg id="cursor" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M10 1L12.2 7.2L18.8 7.2L13.5 11.1L15.6 17.3L10 13.4L4.4 17.3L6.5 11.1L1.2 7.2L7.8 7.2Z" fill="#ffd060" stroke="#ffaa00" stroke-width="0.5"/>
+</svg>
+
+<!-- Background -->
+<div class="sky">
+  <div class="nebula nebula-1"></div>
+  <div class="nebula nebula-2"></div>
+  <div class="nebula nebula-3"></div>
+  <div class="star-field" id="starField"></div>
+  <div class="horizon"></div>
+  <div class="hut-silhouette"></div>
+  <div class="hut-light"></div>
+</div>
+
+<!-- Floating decorative stars -->
+<div class="float-star" style="left:10%;bottom:20%;--dur:9s;--delay:0s">✦</div>
+<div class="float-star" style="left:25%;bottom:30%;--dur:12s;--delay:2s">★</div>
+<div class="float-star" style="left:70%;bottom:15%;--dur:8s;--delay:4s">✦</div>
+<div class="float-star" style="left:85%;bottom:35%;--dur:11s;--delay:1s">★</div>
+<div class="float-star" style="left:50%;bottom:10%;--dur:10s;--delay:3s">✦</div>
+
+<!-- Main content -->
+<div class="content">
+  <h1 class="game-title">星捕少女</h1>
+  <p class="title-sub">Star Catcher · 星座探索之旅</p>
+
+  <!-- Animated girl with net -->
+  <div class="girl-container">
+    <svg class="girl-svg" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+      <!-- Staff/pole -->
+      <line x1="100" y1="160" x2="100" y2="40" stroke="#c0a080" stroke-width="3" stroke-linecap="round"/>
+      <!-- Net (swinging) -->
+      <g style="transform-origin:100px 40px; animation:swing 2s ease-in-out infinite">
+        <line x1="100" y1="40" x2="85" y2="20" stroke="#c8b8ff" stroke-width="1.5" stroke-dasharray="3,2" opacity="0.8"/>
+        <circle cx="85" cy="18" r="8" fill="none" stroke="#a89ff0" stroke-width="1.5"/>
+        <!-- Net mesh lines -->
+        <path d="M79 14 Q85 22 91 14" stroke="#a89ff0" stroke-width="1" fill="none" opacity="0.6"/>
+        <path d="M80 18 L90 18" stroke="#a89ff0" stroke-width="1" opacity="0.6"/>
+      </g>
+      <!-- Girl body -->
+      <ellipse cx="100" cy="155" rx="14" ry="20" fill="#2a1a5e"/>
+      <!-- Dress -->
+      <path d="M86 145 Q100 170 114 145" fill="#4a2a9e" opacity="0.8"/>
+      <!-- Hair -->
+      <circle cx="100" cy="130" r="14" fill="#1a0a30"/>
+      <path d="M86 128 Q80 138 84 148" stroke="#1a0a30" stroke-width="8" fill="none"/>
+      <path d="M114 128 Q120 138 116 148" stroke="#1a0a30" stroke-width="8" fill="none"/>
+      <!-- Face -->
+      <circle cx="100" cy="130" r="10" fill="#fde0c0"/>
+      <!-- Eyes -->
+      <ellipse cx="96" cy="129" rx="2" ry="2.5" fill="#1a0a30"/>
+      <ellipse cx="104" cy="129" rx="2" ry="2.5" fill="#1a0a30"/>
+      <!-- Star earring -->
+      <text x="86" y="137" font-size="6" fill="#ffd060">★</text>
+      <!-- Arms -->
+      <line x1="86" y1="148" x2="82" y2="135" stroke="#fde0c0" stroke-width="5" stroke-linecap="round"/>
+      <line x1="114" y1="148" x2="100" y2="125" stroke="#fde0c0" stroke-width="5" stroke-linecap="round"/>
+      <!-- Legs -->
+      <line x1="95" y1="173" x2="90" y2="195" stroke="#2a1a5e" stroke-width="6" stroke-linecap="round"/>
+      <line x1="105" y1="173" x2="110" y2="195" stroke="#2a1a5e" stroke-width="6" stroke-linecap="round"/>
+      <!-- Shoes -->
+      <ellipse cx="90" cy="196" rx="7" ry="3" fill="#1a0a30"/>
+      <ellipse cx="110" cy="196" rx="7" ry="3" fill="#1a0a30"/>
+    </svg>
+  </div>
+
+  <!-- Buttons -->
+  <div class="btn-group">
+    <button class="btn btn-play">✦ 挑战关卡</button>
+    <button class="btn btn-gallery">◈ 星座展厅</button>
+  </div>
+</div>
+
+<div class="demo-label">Style Demo 1 — 梦幻水彩星空</div>
+
+<script>
+  // Cursor follow
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+  });
+
+  // Generate star field
+  const field = document.getElementById('starField');
+  for (let i = 0; i < 200; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 2.5 + 0.5;
+    const op = Math.random() * 0.5 + 0.2;
+    s.style.cssText = `
+      left:${Math.random()*100}%;
+      top:${Math.random()*85}%;
+      width:${sz}px; height:${sz}px;
+      --t:${2+Math.random()*5}s;
+      --d:${Math.random()*6}s;
+      --min-op:${op};
+      opacity:${op};
+    `;
+    field.appendChild(s);
+  }
+
+  // Cursor trail
+  const trail = [];
+  document.addEventListener('mousemove', e => {
+    const dot = document.createElement('div');
+    dot.style.cssText = `position:fixed;pointer-events:none;z-index:9998;width:4px;height:4px;border-radius:50%;background:#ffd060;left:${e.clientX-2}px;top:${e.clientY-2}px;opacity:0.6;transition:opacity 0.5s`;
+    document.body.appendChild(dot);
+    setTimeout(()=>{dot.style.opacity='0';setTimeout(()=>dot.remove(),500)},50);
+  });
+</script>
+</body>
+</html>

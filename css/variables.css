@@ -1,0 +1,55 @@
+:root {
+  /* Night Sky Palette */
+  --sky-deep: #0a0e27;
+  --sky-mid: #1a1f4e;
+  --sky-horizon: #2d1b4e;
+
+  /* Star Colors */
+  --star-gold: #ffd700;
+  --star-bright: #fff8e0;
+  --star-blue: #b0c4ff;
+  --star-red: #ff6b6b;
+
+  /* UI Colors */
+  --primary: #7c5cbf;
+  --primary-end: #4a90d9;
+  --primary-gradient: linear-gradient(135deg, var(--primary), var(--primary-end));
+
+  --warm-light: #f5a623;
+  --coin-gold: #ffd700;
+
+  /* Surface */
+  --bg: var(--sky-deep);
+  --card: rgba(26, 31, 78, 0.85);
+  --card-border: rgba(124, 92, 191, 0.4);
+  --text: #e8e8f0;
+  --text2: #9090b8;
+  --border: rgba(124, 92, 191, 0.3);
+
+  /* Semantic */
+  --success: #10b981;
+  --error: #ef4444;
+  --warning: #f59e0b;
+
+  /* Spacing */
+  --spacing-xs: clamp(4px, 1vw, 6px);
+  --spacing-sm: clamp(8px, 1.5vw, 12px);
+  --spacing-md: clamp(12px, 2.5vw, 16px);
+  --spacing-lg: clamp(16px, 3.5vw, 24px);
+  --spacing-xl: clamp(24px, 5vw, 40px);
+
+  /* Typography */
+  --font-xs: clamp(10px, 1.2vw, 12px);
+  --font-sm: clamp(12px, 1.4vw, 14px);
+  --font-md: clamp(14px, 1.6vw, 16px);
+  --font-lg: clamp(18px, 2vw, 22px);
+  --font-xl: clamp(24px, 3vw, 32px);
+  --font-hero: clamp(36px, 5vw, 60px);
+
+  /* Layout */
+  --header-h: 60px;
+  --radius-sm: 6px;
+  --radius-md: 12px;
+  --radius-lg: 20px;
+  --radius-full: 999px;
+}

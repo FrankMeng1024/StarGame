@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星捕少女 — Style Demo 3: 水墨宇宙</title>
+<link href="https://fonts.googleapis.com/css2?family=ZCOOL+QingKe+HuangYou&family=Noto+Serif+SC:wght@300;400;600&family=Noto+Sans+SC:wght@300;400&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+  :root {
+    --ink: #0a0c14;
+    --ink-2: #141820;
+    --ink-3: #1e2430;
+    --silk: #e8e0d0;
+    --silk-dim: rgba(232, 224, 208, 0.6);
+    --gold: #c9a84c;
+    --gold-bright: #e8c870;
+    --gold-dim: rgba(201, 168, 76, 0.4);
+    --jade: #4a9e7a;
+    --vermillion: #c44a2a;
+    --purple: #6a4a9e;
+    --text: #d0c8b8;
+    --text2: #807868;
+  }
+
+  body {
+    background: var(--ink);
+    color: var(--text);
+    font-family: 'Noto Serif SC', serif;
+    min-height: 100vh;
+    overflow: hidden;
+    cursor: none;
+  }
+
+  /* Custom cursor — brush stroke */
+  #cursor {
+    position: fixed; pointer-events: none; z-index: 9999;
+    width: 24px; height: 24px;
+    margin: -12px 0 0 -12px;
+    transition: transform 0.15s ease;
+  }
+
+  /* Background — deep space ink wash */
+  .cosmos {
+    position: fixed; inset: 0;
+    background: radial-gradient(ellipse at 50% 100%, #1a0a2a 0%, #0e0814 30%, #050308 60%, #020204 100%);
+    overflow: hidden;
+  }
+
+  /* Ink wash layers */
+  .ink-wash {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(120px);
+    mix-blend-mode: screen;
+  }
+  .iw-1 { width: 800px; height: 600px; background: radial-gradient(rgba(40,20,80,0.6), transparent); top: -200px; left: -200px; }
+  .iw-2 { width: 600px; height: 800px; background: radial-gradient(rgba(20,10,60,0.5), transparent); bottom: -300px; right: -100px; }
+  .iw-3 { width: 400px; height: 400px; background: radial-gradient(rgba(30,40,100,0.4), transparent); top: 20%; left: 40%; }
+
+  /* Moon */
+  .moon {
+    position: absolute;
+    width: 80px; height: 80px;
+    top: 60px; right: 180px;
+    background: radial-gradient(circle at 35% 35%, #f8f0d8, #e8d8a0 40%, #c8b880);
+    border-radius: 50%;
+    box-shadow: 0 0 40px rgba(248,240,216,0.3), 0 0 80px rgba(200,180,100,0.15);
+    animation: moon-glow 8s ease-in-out infinite;
+  }
+  @keyframes moon-glow {
+    0%,100%{box-shadow:0 0 40px rgba(248,240,216,0.3),0 0 80px rgba(200,180,100,0.15)}
+    50%{box-shadow:0 0 60px rgba(248,240,216,0.5),0 0 120px rgba(200,180,100,0.25)}
+  }
+  /* Moon craters (subtle) */
+  .moon::before { content:''; position:absolute; width:12px;height:12px;border-radius:50%;background:rgba(0,0,0,0.08);top:20px;left:15px; }
+  .moon::after  { content:''; position:absolute; width:8px;height:8px;border-radius:50%;background:rgba(0,0,0,0.06);top:40px;left:45px; }
+
+  /* Mountains silhouette */
+  .mountains {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+  }
+
+  /* Star field */
+  .star {
+    position: absolute;
+    background: white; border-radius: 50%;
+    animation: shimmer var(--t,4s) ease-in-out infinite var(--d,0s);
+  }
+  @keyframes shimmer {
+    0%,100%{opacity:var(--low,0.3); transform:scale(1)}
+    50%{opacity:var(--high,0.9); transform:scale(1.3)}
+  }
+
+  /* Milky Way smear */
+  .milky-way {
+    position: absolute;
+    width: 120%; height: 300px;
+    top: 10%; left: -10%;
+    transform: rotate(-25deg);
+    background: linear-gradient(90deg, transparent, rgba(180,160,220,0.04) 20%, rgba(200,180,240,0.08) 50%, rgba(180,160,220,0.04) 80%, transparent);
+    filter: blur(30px);
+  }
+
+  /* Horizon */
+  .horizon-glow {
+    position: absolute;
+    bottom: 0; left: 0; right: 0;
+    height: 280px;
+    background: linear-gradient(to top, rgba(60,20,10,0.2) 0%, transparent 60%);
+  }
+
+  /* Main layout */
+  .page {
+    position: relative; z-index: 10;
+    display: flex;
+    min-height: 100vh;
+    align-items: stretch;
+  }
+
+  /* Left panel — decorative vertical text + title */
+  .left-panel {
+    width: 120px;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    border-right: 1px solid rgba(201,168,76,0.2);
+    padding: 40px 0;
+    gap: 40px;
+  }
+
+  .vertical-text {
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+    font-family: 'ZCOOL QingKe HuangYou', serif;
+    font-size: 13px;
+    color: var(--text2);
+    letter-spacing: 0.3em;
+  }
+
+  .seal {
+    width: 48px; height: 48px;
+    border: 2px solid var(--vermillion);
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+  }
+  .seal::before, .seal::after {
+    content: ''; position: absolute;
+    width: 6px; height: 6px;
+    background: var(--vermillion);
+  }
+  .seal::before { top: 3px; left: 3px; }
+  .seal::after  { bottom: 3px; right: 3px; }
+  .seal-text {
+    font-family: 'ZCOOL QingKe HuangYou', serif;
+    font-size: 11px; color: var(--vermillion);
+    writing-mode: vertical-rl; letter-spacing: 0.2em;
+    line-height: 1;
+  }
+
+  /* Center panel — main content */
+  .center {
+    flex: 1;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    padding: 60px 40px;
+    position: relative;
+  }
+
+  /* Title treatment */
+  .title-area { text-align: center; margin-bottom: 50px; position: relative; }
+
+  .title-deco {
+    display: flex; align-items: center; gap: 20px; justify-content: center;
+    margin-bottom: 16px;
+  }
+  .deco-line {
+    flex: 1; max-width: 80px; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold));
+  }
+  .deco-line-r { background: linear-gradient(90deg, var(--gold), transparent); }
+  .deco-text { font-size: 11px; color: var(--gold-dim); letter-spacing: 0.5em; }
+
+  .game-title {
+    font-family: 'ZCOOL QingKe HuangYou', cursive;
+    font-size: clamp(56px, 8vw, 96px);
+    color: var(--silk);
+    text-shadow: 0 0 60px rgba(201,168,76,0.3), 0 2px 4px rgba(0,0,0,0.5);
+    letter-spacing: 0.1em;
+    line-height: 1;
+    position: relative;
+  }
+  .game-title::after {
+    content: '星捕少女';
+    position: absolute; inset: 0;
+    color: transparent;
+    -webkit-text-stroke: 1px rgba(201,168,76,0.5);
+    background: linear-gradient(135deg, var(--gold-bright), var(--gold), transparent);
+    -webkit-background-clip: text;
+    background-clip: text;
+    filter: blur(0.5px);
+  }
+
+  .title-sub-area {
+    display: flex; align-items: center; gap: 16px; justify-content: center;
+    margin-top: 12px;
+  }
+  .subtitle-cn { font-size: 13px; color: var(--text2); letter-spacing: 0.3em; }
+  .subtitle-dot { width: 4px; height: 4px; background: var(--gold); border-radius: 50%; opacity: 0.6; }
+  .subtitle-en { font-size: 11px; color: var(--text2); letter-spacing: 0.2em; font-family: 'Noto Sans SC', sans-serif; }
+
+  /* Scene illustration area */
+  .scene-area {
+    width: 100%; max-width: 500px;
+    height: 180px;
+    position: relative;
+    margin-bottom: 50px;
+    overflow: hidden;
+  }
+
+  .scene-svg { width: 100%; height: 100%; }
+
+  /* Buttons — ink/silk style */
+  .btn-group {
+    display: flex; gap: 24px;
+  }
+
+  .btn {
+    padding: 14px 40px;
+    font-family: 'Noto Serif SC', serif;
+    font-size: 16px;
+    letter-spacing: 0.2em;
+    cursor: none;
+    position: relative;
+    transition: all 0.3s ease;
+    overflow: hidden;
+  }
+
+  .btn-play {
+    background: transparent;
+    color: var(--silk);
+    border: 1px solid var(--gold);
+    box-shadow: 0 0 20px rgba(201,168,76,0.15) inset, 0 0 20px rgba(201,168,76,0.1);
+  }
+  .btn-play::before {
+    content: '';
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(201,168,76,0.1), transparent);
+  }
+  .btn-play:hover {
+    background: rgba(201,168,76,0.1);
+    box-shadow: 0 0 30px rgba(201,168,76,0.3) inset, 0 0 30px rgba(201,168,76,0.2);
+    color: var(--gold-bright);
+  }
+  .btn-play:hover::after {
+    content: '';
+    position: absolute; bottom: 0; left: 10%; right: 10%; height: 1px;
+    background: linear-gradient(90deg, transparent, var(--gold), transparent);
+  }
+
+  .btn-gallery {
+    background: transparent;
+    color: var(--text2);
+    border: 1px solid rgba(201,168,76,0.25);
+  }
+  .btn-gallery:hover {
+    color: var(--silk);
+    border-color: rgba(201,168,76,0.5);
+    background: rgba(201,168,76,0.05);
+  }
+
+  /* Right panel — constellation chart */
+  .right-panel {
+    width: 200px;
+    border-left: 1px solid rgba(201,168,76,0.2);
+    padding: 40px 20px;
+    display: flex; flex-direction: column;
+    gap: 20px;
+    align-items: center;
+  }
+
+  .star-chart {
+    width: 120px; height: 120px;
+    position: relative;
+  }
+
+  .info-block {
+    text-align: center;
+  }
+  .info-label {
+    font-size: 10px; color: var(--text2); letter-spacing: 0.3em;
+    font-family: 'Noto Sans SC'; margin-bottom: 4px;
+  }
+  .info-val {
+    font-family: 'ZCOOL QingKe HuangYou';
+    font-size: 18px; color: var(--gold);
+  }
+
+  /* Demo label */
+  .demo-label {
+    position: fixed; bottom: 20px; right: 20px;
+    border: 1px solid rgba(201,168,76,0.3);
+    padding: 8px 14px;
+    font-size: 11px; color: var(--text2);
+    letter-spacing: 0.2em;
+    font-family: 'Noto Sans SC';
+    background: rgba(10,12,20,0.8);
+  }
+</style>
+</head>
+<body>
+
+<!-- Custom cursor — ink drop -->
+<svg id="cursor" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M12 2 L15 8 L22 9 L17 14 L18 21 L12 18 L6 21 L7 14 L2 9 L9 8 Z" fill="none" stroke="#c9a84c" stroke-width="1.5"/>
+  <circle cx="12" cy="12" r="2" fill="#c9a84c"/>
+</svg>
+
+<!-- Background -->
+<div class="cosmos">
+  <div class="ink-wash iw-1"></div>
+  <div class="ink-wash iw-2"></div>
+  <div class="ink-wash iw-3"></div>
+  <div class="milky-way"></div>
+  <div class="moon"></div>
+  <div class="star-field" id="starField"></div>
+  <div class="horizon-glow"></div>
+
+  <!-- Mountains silhouette SVG -->
+  <svg class="mountains" viewBox="0 0 1280 200" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg">
+    <!-- Far mountains -->
+    <path d="M0 200 L0 120 L80 60 L200 100 L350 40 L520 90 L650 30 L780 80 L900 20 L1050 70 L1200 50 L1280 80 L1280 200 Z" fill="#0a0810" opacity="0.8"/>
+    <!-- Near mountains -->
+    <path d="M0 200 L0 150 L60 120 L150 160 L280 100 L400 140 L550 90 L700 130 L850 80 L1000 120 L1150 70 L1280 100 L1280 200 Z" fill="#060509" opacity="0.9"/>
+    <!-- Ground -->
+    <rect x="0" y="180" width="1280" height="20" fill="#040307"/>
+    <!-- Shepherd hut small -->
+    <g transform="translate(180, 155)" opacity="0.8">
+      <rect x="0" y="10" width="30" height="20" fill="#0c0a14"/>
+      <polygon points="15,0 -2,10 32,10" fill="#0a0812"/>
+      <!-- Window light -->
+      <rect x="8" y="16" width="6" height="8" fill="#e8740a" opacity="0.7"/>
+    </g>
+    <!-- Tree silhouettes -->
+    <g fill="#060508">
+      <rect x="100" y="160" width="3" height="30"/>
+      <ellipse cx="101" cy="158" rx="12" ry="15" opacity="0.9"/>
+      <rect x="380" y="155" width="3" height="35"/>
+      <ellipse cx="381" cy="153" rx="10" ry="13" opacity="0.9"/>
+    </g>
+  </svg>
+</div>
+
+<!-- Main page layout -->
+<div class="page">
+  <!-- Left panel -->
+  <div class="left-panel">
+    <div class="vertical-text">星空之下 万象皆有情</div>
+    <div class="seal">
+      <span class="seal-text">星捕</span>
+    </div>
+    <div class="vertical-text">STAR CATCHER</div>
+  </div>
+
+  <!-- Center content -->
+  <div class="center">
+    <div class="title-area">
+      <div class="title-deco">
+        <div class="deco-line"></div>
+        <div class="deco-text">探索星座 · 收集宇宙</div>
+        <div class="deco-line deco-line-r"></div>
+      </div>
+      <h1 class="game-title">星捕少女</h1>
+      <div class="title-sub-area">
+        <span class="subtitle-cn">追星少女的宇宙奇遇</span>
+        <div class="subtitle-dot"></div>
+        <span class="subtitle-en">STAR CATCHER</span>
+      </div>
+    </div>
+
+    <!-- Scene illustration -->
+    <div class="scene-area">
+      <svg class="scene-svg" viewBox="0 0 500 180" xmlns="http://www.w3.org/2000/svg">
+        <!-- Sky gradient -->
+        <defs>
+          <radialGradient id="starGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#ffd060" stop-opacity="1"/>
+            <stop offset="100%" stop-color="#ffd060" stop-opacity="0"/>
+          </radialGradient>
+          <radialGradient id="netGlow" cx="50%" cy="50%" r="50%">
+            <stop offset="0%" stop-color="#c0b0ff" stop-opacity="0.5"/>
+            <stop offset="100%" stop-color="#c0b0ff" stop-opacity="0"/>
+          </radialGradient>
+        </defs>
+
+        <!-- Stars (constellation Orion sketch) -->
+        <!-- Betelgeuse -->
+        <circle cx="160" cy="40" r="5" fill="#ff9060"/>
+        <circle cx="160" cy="40" r="10" fill="url(#starGlow)" opacity="0.4"/>
+        <!-- Rigel -->
+        <circle cx="200" cy="100" r="4" fill="#b0c4ff"/>
+        <circle cx="200" cy="100" r="8" fill="url(#starGlow)" opacity="0.3"/>
+        <!-- Belt -->
+        <circle cx="170" cy="70" r="3" fill="#e0d0ff"/>
+        <circle cx="180" cy="68" r="3" fill="#e0d0ff"/>
+        <circle cx="190" cy="66" r="3" fill="#e0d0ff"/>
+        <!-- Other stars -->
+        <circle cx="150" cy="80" r="2.5" fill="#fff0c0"/>
+        <circle cx="210" cy="50" r="2.5" fill="#fff0c0"/>
+
+        <!-- Constellation lines (faint) -->
+        <g stroke="rgba(200,180,255,0.3)" stroke-width="0.8" stroke-dasharray="4,3">
+          <line x1="160" y1="40" x2="170" y2="70"/>
+          <line x1="170" y1="70" x2="180" y2="68"/>
+          <line x1="180" y1="68" x2="190" y2="66"/>
+          <line x1="190" y1="66" x2="200" y2="100"/>
+          <line x1="160" y1="40" x2="150" y2="80"/>
+          <line x1="210" y1="50" x2="190" y2="66"/>
+        </g>
+
+        <!-- Label -->
+        <text x="175" y="125" text-anchor="middle" font-size="10" fill="rgba(200,180,255,0.5)" font-family="'Noto Serif SC'" letter-spacing="0.3em">猎户座</text>
+
+        <!-- Debris -->
+        <g transform="translate(300,50)" opacity="0.6">
+          <polygon points="0,-12 4,-4 12,-4 6,2 8,10 0,6 -8,10 -6,2 -12,-4 -4,-4" fill="#666880" stroke="#4a4a60" stroke-width="0.5"/>
+        </g>
+        <rect transform="translate(350,80) rotate(30)" x="-8" y="-3" width="16" height="6" rx="2" fill="#707090" stroke="#505070" stroke-width="0.5"/>
+
+        <!-- Girl (elegant line art) -->
+        <g transform="translate(420, 30)">
+          <!-- Staff -->
+          <line x1="0" y1="140" x2="0" y2="20" stroke="#c8a060" stroke-width="2" stroke-linecap="round"/>
+          <!-- Net rope -->
+          <path d="M0 20 Q-15 10 -20 0" stroke="#a090d0" stroke-width="1" fill="none" stroke-dasharray="3,2"/>
+          <!-- Net circle -->
+          <circle cx="-21" cy="-2" r="10" fill="none" stroke="#a090d0" stroke-width="1.5"/>
+          <circle cx="-21" cy="-2" r="10" fill="url(#netGlow)" opacity="0.3"/>
+          <!-- Net mesh -->
+          <path d="M-27-6 Q-21 2 -15-6" stroke="#8080c0" stroke-width="0.8" fill="none"/>
+          <line x1="-28" y1="-2" x2="-14" y2="-2" stroke="#8080c0" stroke-width="0.8"/>
+
+          <!-- Girl body (ink line style) -->
+          <path d="M-6 80 Q-8 100 -6 120 L-4 140" stroke="#c8a060" stroke-width="1.5" fill="none"/>
+          <path d="M6 80 Q8 100 6 120 L4 140" stroke="#c8a060" stroke-width="1.5" fill="none"/>
+          <!-- Dress -->
+          <path d="M-10 60 Q-14 90 -8 120 L8 120 Q14 90 10 60 Z" fill="rgba(80,50,160,0.6)" stroke="#6a3ace" stroke-width="1"/>
+          <!-- Body -->
+          <ellipse cx="0" cy="55" rx="8" ry="12" fill="rgba(60,40,120,0.8)" stroke="#6a3ace" stroke-width="1"/>
+          <!-- Head -->
+          <circle cx="0" cy="30" r="12" fill="#f0c890" stroke="#e0b870" stroke-width="0.5"/>
+          <!-- Hair (flowing) -->
+          <path d="M-12 28 Q-18 40 -14 52" stroke="#2a1240" stroke-width="6" stroke-linecap="round" fill="none"/>
+          <path d="M12 28 Q16 42 12 52" stroke="#2a1240" stroke-width="4" stroke-linecap="round" fill="none"/>
+          <path d="M-12 24 Q-6 14 6 14 Q14 14 14 24" fill="#2a1240"/>
+          <!-- Face features -->
+          <ellipse cx="-4" cy="30" rx="1.5" ry="2" fill="#1a0a30"/>
+          <ellipse cx="4" cy="30" rx="1.5" ry="2" fill="#1a0a30"/>
+          <path d="M-2 36 Q0 38 2 36" stroke="#c88060" stroke-width="1" fill="none"/>
+          <!-- Star hairpin -->
+          <path d="M8 20 L9.5 16 L11 20 L14 20 L11.5 22 L12.5 26 L10 24 L7.5 26 L8.5 22 L6 20 Z" fill="#ffd060" stroke="#ffaa00" stroke-width="0.3"/>
+          <!-- Arms -->
+          <path d="M-8 50 Q-12 42 -2 35" stroke="#f0c890" stroke-width="4" stroke-linecap="round" fill="none"/>
+          <path d="M8 50 Q12 40 2 34" stroke="#f0c890" stroke-width="4" stroke-linecap="round" fill="none"/>
+        </g>
+      </svg>
+    </div>
+
+    <div class="btn-group">
+      <button class="btn btn-play">✦ 挑战关卡</button>
+      <button class="btn btn-gallery">◈ 星座展厅</button>
+    </div>
+  </div>
+
+  <!-- Right panel — info + mini star chart -->
+  <div class="right-panel">
+    <div class="star-chart" id="starChart"></div>
+
+    <div class="info-block">
+      <div class="info-label">已发现</div>
+      <div class="info-val">0 / 30</div>
+    </div>
+
+    <div class="info-block">
+      <div class="info-label">金币</div>
+      <div class="info-val" style="color:var(--gold)">0</div>
+    </div>
+
+    <div class="info-block" style="margin-top:auto">
+      <div class="vertical-text" style="font-size:10px;color:var(--text2)">探索宇宙之奥秘</div>
+    </div>
+  </div>
+</div>
+
+<div class="demo-label">Style Demo 3 — 水墨宇宙</div>
+
+<script>
+  // Cursor
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+  });
+
+  // Stars
+  const field = document.getElementById('starField');
+  for (let i = 0; i < 180; i++) {
+    const s = document.createElement('div');
+    s.className = 'star';
+    const sz = Math.random() * 2 + 0.5;
+    const low = Math.random() * 0.3 + 0.1;
+    const high = low + Math.random() * 0.5 + 0.3;
+    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*80}%;width:${sz}px;height:${sz}px;--t:${3+Math.random()*6}s;--d:${Math.random()*8}s;--low:${low};--high:${high};opacity:${low}`;
+    field.appendChild(s);
+  }
+
+  // Mini star chart — draw random constellation
+  const chart = document.getElementById('starChart');
+  const svg = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+  svg.setAttribute('viewBox', '0 0 120 120');
+  svg.setAttribute('width', '120'); svg.setAttribute('height', '120');
+
+  // Orion-like pattern
+  const stars = [{x:60,y:20,r:4},{x:40,y:45,r:3},{x:50,y:55,r:2.5},{x:60,y:53,r:2.5},{x:70,y:55,r:2.5},{x:80,y:45,r:3},{x:55,y:80,r:3.5}];
+  const lines = [[0,1],[0,5],[1,2],[2,3],[3,4],[4,5],[2,6],[4,6]];
+
+  lines.forEach(([a,b]) => {
+    const l = document.createElementNS('http://www.w3.org/2000/svg','line');
+    l.setAttribute('x1',stars[a].x); l.setAttribute('y1',stars[a].y);
+    l.setAttribute('x2',stars[b].x); l.setAttribute('y2',stars[b].y);
+    l.setAttribute('stroke','rgba(201,168,76,0.3)'); l.setAttribute('stroke-width','0.8');
+    l.setAttribute('stroke-dasharray','3,2');
+    svg.appendChild(l);
+  });
+
+  stars.forEach(({x,y,r}) => {
+    const c = document.createElementNS('http://www.w3.org/2000/svg','circle');
+    c.setAttribute('cx',x); c.setAttribute('cy',y); c.setAttribute('r',r);
+    c.setAttribute('fill','#c9a84c'); c.setAttribute('opacity','0.8');
+    svg.appendChild(c);
+  });
+
+  chart.appendChild(svg);
+</script>
+</body>
+</html>

@@ -1,0 +1,22 @@
+{
+  "service_url": "http://localhost:8080",
+  "start_command": "powershell -File start.ps1",
+  "health_endpoint": "/index.html",
+  "pages": [
+    { "name": "menu", "path": "/", "selectors": { "title": ".game-title", "cta_play": ".btn-play", "cta_gallery": ".btn-gallery" }},
+    { "name": "level_select", "path": "/#levels", "selectors": { "grid": ".level-grid", "level_card": ".level-card" }},
+    { "name": "game", "path": "/#game", "selectors": { "canvas": "#gameCanvas", "hud_timer": ".hud-timer", "hud_stars": ".hud-stars" }},
+    { "name": "gallery", "path": "/#gallery", "selectors": { "grid": ".gallery-grid", "constellation_card": ".constellation-card" }}
+  ],
+  "performance_thresholds": {
+    "health": 0.5,
+    "page_load": 2.0,
+    "feedback_delay": 0.5,
+    "frame_target_ms": 16.7
+  },
+  "data_quality": {
+    "check_duplicates": true,
+    "require_all_levels": 30,
+    "require_canvas_ready": true
+  }
+}

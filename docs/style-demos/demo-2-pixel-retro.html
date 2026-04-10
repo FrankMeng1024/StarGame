@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>星捕少女 — Style Demo 2: 像素复古</title>
+<link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&family=Noto+Sans+SC:wght@400;700&display=swap" rel="stylesheet">
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  image-rendering: pixelated;
+
+  :root {
+    --black: #0d0208;
+    --dark: #1a0a2e;
+    --dark2: #16213e;
+    --purple-dark: #2d1b69;
+    --purple: #7b2d8b;
+    --purple-light: #c77dff;
+    --cyan: #48cae4;
+    --cyan-dark: #023e8a;
+    --gold: #ffd60a;
+    --gold-dark: #e85d04;
+    --white: #e0e0f0;
+    --grey: #8888aa;
+    --red: #ef233c;
+    --green: #06d6a0;
+  }
+
+  @font-face {
+    /* pixel fallback via system */
+  }
+
+  body {
+    background: var(--black);
+    color: var(--white);
+    font-family: 'Noto Sans SC', monospace;
+    min-height: 100vh;
+    overflow: hidden;
+    cursor: none;
+    image-rendering: pixelated;
+  }
+
+  /* Scanline overlay */
+  body::after {
+    content: '';
+    position: fixed; inset: 0;
+    background: repeating-linear-gradient(0deg, transparent, transparent 2px, rgba(0,0,0,0.08) 2px, rgba(0,0,0,0.08) 4px);
+    pointer-events: none; z-index: 9000;
+  }
+
+  /* Custom cursor — pixel crosshair */
+  #cursor {
+    position: fixed; pointer-events: none; z-index: 9999;
+    width: 16px; height: 16px;
+    margin: -8px 0 0 -8px;
+  }
+
+  /* Pixel star cursor SVG */
+  #cursor::before, #cursor::after {
+    content: ''; position: absolute; background: var(--gold);
+  }
+  #cursor::before { width: 16px; height: 2px; top: 7px; left: 0; }
+  #cursor::after  { width: 2px; height: 16px; top: 0; left: 7px; }
+
+  /* Background */
+  .bg {
+    position: fixed; inset: 0;
+    background: linear-gradient(180deg, #050010 0%, #0a0025 40%, #150040 70%, #0a0015 100%);
+  }
+
+  /* Grid lines */
+  .grid-bg {
+    position: fixed; inset: 0;
+    background-image:
+      linear-gradient(rgba(40,0,80,0.3) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(40,0,80,0.3) 1px, transparent 1px);
+    background-size: 40px 40px;
+    opacity: 0.5;
+  }
+
+  /* Pixel stars */
+  .px-star {
+    position: fixed;
+    width: 2px; height: 2px;
+    background: white;
+    animation: px-twinkle var(--t,2s) step-end infinite var(--d,0s);
+  }
+  @keyframes px-twinkle {
+    0%,100%{opacity:1} 33%{opacity:0} 66%{opacity:0.5}
+  }
+
+  /* Main layout */
+  .screen {
+    position: relative; z-index: 10;
+    display: flex; flex-direction: column;
+    align-items: center; justify-content: center;
+    min-height: 100vh;
+    padding: 20px;
+  }
+
+  /* Top bar — retro game header */
+  .top-bar {
+    position: fixed; top: 0; left: 0; right: 0;
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 20px;
+    background: var(--dark);
+    border-bottom: 2px solid var(--purple);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px;
+    color: var(--cyan);
+    z-index: 100;
+  }
+  .score-item { display: flex; gap: 6px; }
+
+  /* Title area */
+  .title-block {
+    margin-bottom: 40px;
+    text-align: center;
+  }
+
+  .game-title {
+    font-family: 'Press Start 2P', monospace;
+    font-size: clamp(20px, 4vw, 36px);
+    color: var(--gold);
+    text-shadow:
+      3px 3px 0 var(--gold-dark),
+      6px 6px 0 rgba(232,93,4,0.4),
+      0 0 30px rgba(255,214,10,0.6);
+    letter-spacing: 0.05em;
+    line-height: 1.4;
+    animation: pixel-glow 1s step-end infinite;
+  }
+  @keyframes pixel-glow {
+    0%,50%{text-shadow:3px 3px 0 #e85d04,6px 6px 0 rgba(232,93,4,0.4),0 0 30px rgba(255,214,10,0.6)}
+    51%,100%{text-shadow:3px 3px 0 #e85d04,6px 6px 0 rgba(232,93,4,0.4),0 0 20px rgba(255,214,10,0.3)}
+  }
+
+  .title-en {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 8px; color: var(--purple-light);
+    letter-spacing: 0.3em;
+    margin-top: 10px;
+  }
+
+  /* Press Start blink */
+  .press-start {
+    font-family: 'Press Start 2P', monospace;
+    font-size: 10px; color: var(--cyan);
+    animation: blink 1s step-end infinite;
+    margin: 30px 0;
+  }
+  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0} }
+
+  /* Pixel art game preview */
+  .preview-box {
+    border: 2px solid var(--purple);
+    box-shadow: 0 0 0 2px var(--dark), 0 0 0 4px var(--purple-dark), inset 0 0 40px rgba(40,0,80,0.5);
+    padding: 20px;
+    margin-bottom: 40px;
+    position: relative;
+    background: rgba(10, 0, 30, 0.8);
+  }
+  .preview-box::before {
+    content: 'PREVIEW';
+    position: absolute; top: -10px; left: 20px;
+    background: var(--dark); padding: 0 8px;
+    font-family: 'Press Start 2P', monospace; font-size: 7px;
+    color: var(--purple-light);
+  }
+
+  /* Pixel game canvas mockup */
+  .px-canvas {
+    width: 400px; height: 220px;
+    position: relative;
+    background: linear-gradient(180deg, #050025 0%, #0a0840 60%, #151060 100%);
+    overflow: hidden;
+    image-rendering: pixelated;
+  }
+
+  /* Pixel stars in canvas */
+  .px-star-c { position: absolute; width: 3px; height: 3px; }
+  .px-star-c::before, .px-star-c::after { content:''; position:absolute; background:white; }
+  .px-star-c::before { width:3px; height:1px; top:1px; }
+  .px-star-c::after  { width:1px; height:3px; left:1px; }
+
+  /* Pixel girl */
+  .px-girl {
+    position: absolute;
+    bottom: 0; left: 50%; transform: translateX(-50%);
+    image-rendering: pixelated;
+  }
+
+  /* XP Bar / HUD */
+  .hud-bar {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 8px 12px;
+    background: var(--dark);
+    border: 1px solid var(--purple);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px;
+    color: var(--white);
+    margin-top: 4px;
+    width: 400px;
+  }
+  .xp-bar-wrap { display: flex; align-items: center; gap: 6px; }
+  .xp-label { color: var(--cyan); }
+  .xp-track { width: 80px; height: 8px; background: var(--dark2); border: 1px solid var(--purple); }
+  .xp-fill { width: 60%; height: 100%; background: linear-gradient(90deg, var(--cyan-dark), var(--cyan)); }
+  .coin-display { color: var(--gold); }
+
+  /* Menu buttons */
+  .menu {
+    display: flex; flex-direction: column; gap: 14px; width: 280px;
+  }
+
+  .menu-btn {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 20px;
+    background: var(--dark);
+    border: 2px solid var(--purple-dark);
+    color: var(--white);
+    font-family: 'Press Start 2P', monospace;
+    font-size: 9px;
+    cursor: none;
+    transition: all 0.05s step-end;
+    position: relative;
+    overflow: hidden;
+  }
+  .menu-btn::before {
+    content: '▶'; color: var(--gold);
+    opacity: 0;
+    transition: opacity 0.05s;
+    flex-shrink: 0;
+  }
+  .menu-btn:hover {
+    background: var(--purple-dark);
+    border-color: var(--purple-light);
+    color: var(--gold);
+  }
+  .menu-btn:hover::before { opacity: 1; }
+  .menu-btn:active { transform: translate(2px, 2px); }
+
+  /* Achievement toast style */
+  .achievement {
+    position: fixed; bottom: 60px; right: 20px;
+    background: var(--dark);
+    border: 2px solid var(--gold);
+    padding: 10px 16px;
+    display: flex; align-items: center; gap: 10px;
+    animation: slide-in 0.1s step-end, fade-out 0.5s step-end 3s forwards;
+    z-index: 200;
+  }
+  @keyframes slide-in { from{transform:translateX(200px)} to{transform:translateX(0)} }
+  @keyframes fade-out { to{opacity:0;transform:translateX(200px)} }
+  .ach-icon { font-size: 20px; }
+  .ach-text { font-family: 'Press Start 2P', monospace; font-size: 7px; }
+  .ach-title { color: var(--gold); margin-bottom: 4px; }
+  .ach-desc { color: var(--grey); }
+
+  /* Demo label */
+  .demo-label {
+    position: fixed; bottom: 20px; right: 20px;
+    background: var(--dark);
+    border: 1px solid var(--purple);
+    padding: 6px 12px;
+    font-family: 'Press Start 2P', monospace;
+    font-size: 7px; color: var(--purple-light);
+    z-index: 500;
+  }
+</style>
+</head>
+<body>
+
+<div id="cursor"></div>
+
+<div class="bg"></div>
+<div class="grid-bg"></div>
+<div id="pixelStars"></div>
+
+<div class="top-bar">
+  <div class="score-item">
+    <span>★ 关卡 1/30</span>
+  </div>
+  <div class="score-item">
+    <span style="color:var(--gold)">COINS: 0</span>
+  </div>
+  <div class="score-item">
+    <span style="color:var(--cyan)">HI: 9999</span>
+  </div>
+</div>
+
+<div class="screen">
+  <div class="title-block">
+    <div class="game-title">STAR<br>CATCHER</div>
+    <div class="title-en">★ 星 捕 少 女 ★</div>
+  </div>
+
+  <!-- Game preview -->
+  <div class="preview-box">
+    <div class="px-canvas" id="pxCanvas">
+      <!-- Pixel stars -->
+      <!-- Generated by JS -->
+      <!-- Pixel girl sprite (SVG pixel art) -->
+      <svg class="px-girl" width="32" height="48" viewBox="0 0 32 48" style="image-rendering:pixelated">
+        <!-- Staff -->
+        <rect x="15" y="8" width="2" height="28" fill="#c8a060"/>
+        <!-- Net circle (pixel) -->
+        <rect x="10" y="4" width="2" height="2" fill="#c0b0ff"/>
+        <rect x="12" y="2" width="8" height="2" fill="#c0b0ff"/>
+        <rect x="20" y="4" width="2" height="2" fill="#c0b0ff"/>
+        <rect x="10" y="6" width="2" height="4" fill="#c0b0ff" opacity="0.6"/>
+        <rect x="20" y="6" width="2" height="4" fill="#c0b0ff" opacity="0.6"/>
+        <rect x="12" y="10" width="8" height="2" fill="#c0b0ff" opacity="0.4"/>
+        <!-- Body -->
+        <rect x="12" y="28" width="8" height="10" fill="#4a2a9e"/>
+        <!-- Dress skirt -->
+        <rect x="10" y="34" width="12" height="4" fill="#6a3ace"/>
+        <!-- Head -->
+        <rect x="12" y="18" width="8" height="8" fill="#f0c890"/>
+        <!-- Hair -->
+        <rect x="11" y="16" width="10" height="4" fill="#1a0a30"/>
+        <rect x="10" y="20" width="2" height="6" fill="#1a0a30"/>
+        <rect x="20" y="20" width="2" height="6" fill="#1a0a30"/>
+        <!-- Eyes -->
+        <rect x="13" y="22" width="2" height="2" fill="#1a0a30"/>
+        <rect x="17" y="22" width="2" height="2" fill="#1a0a30"/>
+        <!-- Legs -->
+        <rect x="12" y="38" width="4" height="8" fill="#4a2a9e"/>
+        <rect x="16" y="38" width="4" height="8" fill="#4a2a9e"/>
+        <!-- Shoes -->
+        <rect x="11" y="44" width="5" height="2" fill="#1a0a30"/>
+        <rect x="16" y="44" width="5" height="2" fill="#1a0a30"/>
+      </svg>
+
+      <!-- Pixel stars in sky (will be added by JS) -->
+      <!-- Debris pixel -->
+      <svg style="position:absolute;top:30px;left:60px;animation:spin 4s linear infinite" viewBox="0 0 16 16" width="16" height="16">
+        <rect x="6" y="0" width="4" height="4" fill="#666"/>
+        <rect x="0" y="6" width="4" height="4" fill="#666"/>
+        <rect x="12" y="6" width="4" height="4" fill="#666"/>
+        <rect x="6" y="12" width="4" height="4" fill="#666"/>
+        <rect x="4" y="4" width="8" height="8" fill="#888"/>
+      </svg>
+
+      <!-- Stars (pixel art) -->
+      <svg style="position:absolute;top:20px;left:120px" viewBox="0 0 12 12" width="12" height="12">
+        <rect x="5" y="0" width="2" height="4" fill="#ffd060"/>
+        <rect x="5" y="8" width="2" height="4" fill="#ffd060"/>
+        <rect x="0" y="5" width="4" height="2" fill="#ffd060"/>
+        <rect x="8" y="5" width="4" height="2" fill="#ffd060"/>
+        <rect x="3" y="3" width="6" height="6" fill="#fff0a0"/>
+        <rect x="4" y="2" width="4" height="8" fill="#ffd060" opacity="0.7"/>
+      </svg>
+
+      <svg style="position:absolute;top:50px;left:240px" viewBox="0 0 8 8" width="8" height="8">
+        <rect x="3" y="0" width="2" height="8" fill="#ffd060"/>
+        <rect x="0" y="3" width="8" height="2" fill="#ffd060"/>
+        <rect x="2" y="2" width="4" height="4" fill="#fff0a0"/>
+      </svg>
+
+      <svg style="position:absolute;top:80px;left:320px" viewBox="0 0 10 10" width="10" height="10">
+        <rect x="4" y="0" width="2" height="10" fill="#b0c4ff"/>
+        <rect x="0" y="4" width="10" height="2" fill="#b0c4ff"/>
+        <rect x="2" y="2" width="6" height="6" fill="#d0e0ff"/>
+      </svg>
+
+      <!-- Net rope (pixel) -->
+      <svg style="position:absolute;top:0;left:0;width:100%;height:100%;pointer-events:none" viewBox="0 0 400 220">
+        <line x1="200" y1="196" x2="170" y2="20" stroke="#c0b0ff" stroke-width="1" stroke-dasharray="3,2" opacity="0.6"/>
+        <circle cx="165" cy="15" r="8" fill="none" stroke="#a890f0" stroke-width="1"/>
+      </svg>
+    </div>
+
+    <div class="hud-bar">
+      <div class="xp-bar-wrap">
+        <span class="xp-label">TIME</span>
+        <div class="xp-track"><div class="xp-fill" style="background:linear-gradient(90deg,#006400,#06d6a0)"></div></div>
+        <span>72s</span>
+      </div>
+      <span>★ 3/7</span>
+      <span class="coin-display">₿ 0</span>
+    </div>
+  </div>
+
+  <div class="press-start">[ PRESS ANY KEY ]</div>
+
+  <div class="menu">
+    <button class="menu-btn btn-play">挑战关卡</button>
+    <button class="menu-btn btn-gallery">星座展厅</button>
+  </div>
+</div>
+
+<!-- Achievement toast -->
+<div class="achievement">
+  <span class="ach-icon">🏆</span>
+  <div class="ach-text">
+    <div class="ach-title">ACHIEVEMENT!</div>
+    <div class="ach-desc">解锁: 猎户座</div>
+  </div>
+</div>
+
+<div class="demo-label">DEMO 2 — PIXEL RETRO</div>
+
+<style>
+@keyframes spin { from{transform:rotate(0deg)} to{transform:rotate(360deg)} }
+</style>
+
+<script>
+  const cursor = document.getElementById('cursor');
+  document.addEventListener('mousemove', e => {
+    cursor.style.left = e.clientX + 'px';
+    cursor.style.top = e.clientY + 'px';
+  });
+
+  // Generate pixel stars
+  const container = document.getElementById('pixelStars');
+  for (let i = 0; i < 150; i++) {
+    const s = document.createElement('div');
+    s.className = 'px-star';
+    s.style.cssText = `left:${Math.random()*100}%;top:${Math.random()*85}%;--t:${1+Math.random()*3}s;--d:${Math.random()*4}s;opacity:${Math.random()*0.6+0.2}`;
+    container.appendChild(s);
+  }
+
+  // Pixel stars in canvas
+  const canvas = document.getElementById('pxCanvas');
+  for (let i = 0; i < 30; i++) {
+    const s = document.createElement('div');
+    s.className = 'px-star-c';
+    s.style.cssText = `left:${Math.random()*380+10}px;top:${Math.random()*160+10}px;animation:px-twinkle ${1+Math.random()*2}s step-end infinite ${Math.random()*3}s`;
+    canvas.appendChild(s);
+  }
+</script>
+</body>
+</html>
