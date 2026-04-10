@@ -2,6 +2,7 @@
 import state from '../state.js';
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
 import { playCatch, playDebrisCatch, startCountdownBeeps, stopCountdownBeeps } from '../audio.js';
+import { SCENE_PALETTES } from '../data/scenes.js';
 
 const TWO_PI = Math.PI * 2;
 const TIME_BY_DIFFICULTY = { 1: 90, 2: 80, 3: 70, 4: 60, 5: 50 };
@@ -477,22 +478,43 @@ export class GameEngine {
 
   _drawBackground() {
     const ctx = this.ctx;
+    const scene = SCENE_PALETTES[Math.min(Math.floor(this.levelIdx / 5), SCENE_PALETTES.length - 1)];
+
+    // Sky gradient
     const grad = ctx.createLinearGradient(0, 0, 0, this.H);
-    grad.addColorStop(0,   '#050816');
-    grad.addColorStop(0.6, '#0d1230');
-    grad.addColorStop(1,   '#1a0d2e');
+    grad.addColorStop(0,   scene.sky0);
+    grad.addColorStop(0.6, scene.sky1);
+    grad.addColorStop(1,   scene.sky2);
     ctx.fillStyle = grad;
     ctx.fillRect(0, 0, this.W, this.H);
 
-    // Background particle stars
-    ctx.fillStyle = 'rgba(255,255,255,0.7)';
+    // Aurora shimmer bands (Scene 4 only)
+    if (scene.aurora) {
+      const t = Date.now() * 0.0004;
+      for (let band = 0; band < 3; band++) {
+        const yBase = this.H * (0.12 + band * 0.10);
+        const alpha = 0.10 + 0.06 * Math.sin(t + band * 1.3);
+        const aGrad = ctx.createLinearGradient(0, yBase - 18, 0, yBase + 18);
+        const colors = ['rgba(60,220,140,', 'rgba(40,180,200,', 'rgba(80,240,160,'];
+        aGrad.addColorStop(0,   colors[band % 3] + '0)');
+        aGrad.addColorStop(0.5, colors[band % 3] + alpha + ')');
+        aGrad.addColorStop(1,   colors[band % 3] + '0)');
+        ctx.fillStyle = aGrad;
+        const waveOff = 12 * Math.sin(t * 0.7 + band);
+        ctx.fillRect(0, yBase - 18 + waveOff, this.W, 36);
+      }
+    }
+
+    // Background particle stars — density and color vary by scene
+    const starCount = scene.aurora ? 80 : (scene === SCENE_PALETTES[5] ? 160 : 120);
     const seed = this.levelIdx * 100;
-    for (let i = 0; i < 120; i++) {
+    for (let i = 0; i < starCount; i++) {
       const x = ((seed * 7 + i * 137.508) % this.W);
-      const y = ((seed * 3 + i * 97.31) % (this.H * 0.9));
+      const y = ((seed * 3 + i * 97.31) % (this.H * 0.88));
       const r = (i % 5 === 0) ? 1.2 : 0.6;
       const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(Date.now() * 0.001 + i));
-      ctx.globalAlpha = twinkle * 0.5;
+      ctx.globalAlpha = twinkle * scene.starAlpha;
+      ctx.fillStyle = scene.starColor;
       ctx.beginPath();
       ctx.arc(x, y, r, 0, TWO_PI);
       ctx.fill();

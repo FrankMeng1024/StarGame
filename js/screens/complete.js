@@ -1,5 +1,6 @@
 // screens/complete.js — Level complete & fail screens
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
+import { SCENE_PALETTES } from '../data/scenes.js';
 import state from '../state.js';
 
 const TWO_PI = Math.PI * 2;
@@ -7,6 +8,8 @@ const TWO_PI = Math.PI * 2;
 export function showComplete(navigate, params) {
   const { idx, timeLeft, coins, caught, total, isNewRecord } = params;
   const level = CONSTELLATIONS[idx];
+
+  _applySceneTint(idx);
 
   // Star rating from saved score
   const score = state.getScore(idx);
@@ -64,6 +67,8 @@ export function showComplete(navigate, params) {
 export function showFail(navigate, params) {
   const { idx, caught = 0, total, elapsed = 90 } = params;
   const level = CONSTELLATIONS[idx];
+
+  _applySceneTint(idx);
 
   // Remove any stale new-record badge from a previous completion
   const existingBadge = document.querySelector('.new-record-badge');
@@ -266,4 +271,13 @@ function _finalGlow(ctx, stars, SIZE) {
     if (count < 3) requestAnimationFrame(pulse);
   }
   requestAnimationFrame(pulse);
+}
+
+function _applySceneTint(levelIdx) {
+  const screen = document.getElementById('screen-complete');
+  if (!screen) return;
+  const sceneIdx = Math.min(Math.floor(levelIdx / 5), SCENE_PALETTES.length - 1);
+  const scene = SCENE_PALETTES[sceneIdx];
+  // Subtle tint over the dark base — preserves readability
+  screen.style.background = `linear-gradient(180deg, ${scene.sky0}ee 0%, ${scene.sky1}cc 60%, ${scene.sky2}aa 100%)`;
 }

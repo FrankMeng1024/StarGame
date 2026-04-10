@@ -1,5 +1,6 @@
 // screens/levels.js — Level select screen
 import { CONSTELLATIONS } from '../data/constellations.js';
+import { SCENE_PALETTES } from '../data/scenes.js';
 import state from '../state.js';
 
 export function initLevels(navigate) {
@@ -8,6 +9,9 @@ export function initLevels(navigate) {
   const backBtn = screen.querySelector('.btn-back-menu');
 
   backBtn.addEventListener('click', () => navigate('menu'));
+
+  // Apply scene background based on current progress
+  _applyLevelsBackground();
 
   // Build level cards
   CONSTELLATIONS.forEach((c, idx) => {
@@ -44,6 +48,7 @@ export function initLevels(navigate) {
 }
 
 export function refreshLevels() {
+  _applyLevelsBackground();
   const cards = document.querySelectorAll('.level-card');
   cards.forEach(card => {
     const idx = parseInt(card.dataset.idx, 10);
@@ -91,4 +96,14 @@ export function refreshLevels() {
       }
     }
   });
+}
+
+function _applyLevelsBackground() {
+  const screen = document.getElementById('screen-levels');
+  if (!screen) return;
+  // Determine scene from highest unlocked level index
+  const maxIdx = Math.max(...Array.from(state.unlockedLevels));
+  const sceneIdx = Math.min(Math.floor(maxIdx / 5), SCENE_PALETTES.length - 1);
+  const scene = SCENE_PALETTES[sceneIdx];
+  screen.style.background = `linear-gradient(180deg, ${scene.sky0} 0%, ${scene.sky1} 60%, ${scene.sky2} 100%)`;
 }
