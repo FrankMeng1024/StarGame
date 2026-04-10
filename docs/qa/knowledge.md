@@ -117,4 +117,9 @@ No backend, no network requests. All data in localStorage + local files.
 - Metadata field check: use DOM batch query `constellations.filter(c => !c.region || !c.bestViewMonth || !c.mainStars).length` to verify completeness — confirmed 0 missing.
 - Navigation regression Sprint 8: menu→gallery→gallery-detail→gallery→menu, mute round-trip: ALL CLEAN, 0 JS errors.
 
+## Sprint 9 Verified (2026-04-11)
 
+- SVG star chart: `#detail-starchart-svg svg` — 480×480, circular clip-path, per-constellation radialGradients (spectral colors: K=orange/gold, A/B=blue-white, M=red), dashed constellation lines, Chinese or Latin star name text labels, "CONSTELLATION NAME" footer. No external URLs. Orion: 137 circles, 15 lines, 9 gradients, 8 text labels. Scorpius: 147 circles, 19 lines (more stars/lines).
+- Lore text: `.detail-lore-text` — all 30 constellations ≥500 chars in DOM (min=501, max=530). Content covers myth keywords (神话/传说) AND astronomy keywords (光年/亮度/天文). Batch verification pattern: loop idx 0-29 with 300ms delay each.
+- Batch test pattern: `for(i=0;i<30;i++){ window.__navigate('gallery-detail',{idx:i}); await delay(300); check DOM; }`
+- Navigation regression Sprint 9: menu→gallery→detail (×3 constellations)→gallery→detail again→menu→detail: ALL CLEAN, 0 JS errors throughout full sequence.

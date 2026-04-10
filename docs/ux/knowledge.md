@@ -138,3 +138,24 @@
 
 ### Navigation Regression
 - Sprint 8: menu→gallery→gallery-detail (Orion + Ursa Major)→gallery→menu. ALL CLEAN, 0 JS errors. Only pre-existing Google Fonts offline error.
+
+## Sprint 9 Updates (2026-04-11)
+
+### SVG Star Chart (STORY-00032)
+- Gallery detail now has a dedicated star chart section below the metadata card, labelled "⭐ 星图 · STAR CHART".
+- 480×480 SVG, circular telescope-style viewport, per-constellation: spectral-type colored stars (orange=K/M, blue-white=A/B), dashed constellation lines, Chinese star name labels, tick marks on rim, constellation name (EN all-caps) at bottom.
+- Visually unambiguous distinction from the canvas portrait above: portrait = artistic starfield painting; chart = technical astronomical diagram.
+- Each constellation produces a unique chart shape — confirmed with Orion (Z-shape) and Ursa Major (Big Dipper).
+- SVG re-renders correctly on repeat visits (no stale state).
+
+### Full Lore Text (STORY-00033)
+- Lore text for all 30 constellations expanded to ≥500 Chinese characters.
+- Content structure: mythology/legend narrative + notable star science + observation facts. Reads as genuine education, not filler.
+- Orion: Betelgeuse size/luminosity, Rigel, belt stars, Orion Nebula M42 — 496 chars in DOM.
+- Ursa Major: Big Dipper navigation tool, Callisto myth, Mizar double star, cultural significance — comparable length.
+
+### New Friction Points (Sprint 9)
+- None (Google Fonts woff2 load failure is pre-existing infrastructure, Low, no visible impact)
+
+### Navigation Regression
+- Sprint 9: menu→gallery→detail(Orion)→gallery→detail(Orion again)→gallery→detail(UrsaMajor). ALL CLEAN, 0 JS errors across all transitions.
