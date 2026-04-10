@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 星捕少女 (StarCatcher)
 
-**Status**: IN PROGRESS — Virtual User Acceptance Pending
-**Current Sprint**: 7 (COMPLETE) — VU Acceptance in progress
+**Status**: IN PROGRESS — VU NOT ACCEPTED (8.5/10), Sprint 9 opening
+**Current Sprint**: 9 (PLANNING)
 **Last Updated**: 2026-04-11
 
 ## Sprint History
@@ -15,20 +15,18 @@
 | Sprint 5 | COMPLETE | 感官完整度：audio, high score, UX polish (QA PASS, UX no Blockers, Arch PASS after 4 fixes) |
 | Sprint 6 | COMPLETE | 场景完整度 — 6 NZ scene backgrounds (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 7 | COMPLETE | 展厅完整度 + 场景体验打磨 (QA PASS, UX no Blockers, Arch PASS after 2 fixes) |
+| Sprint 8 | COMPLETE | VU closure — gallery metadata + menu mute (QA PASS, UX no Blockers, Arch PASS) |
 
-## Open Stories
-None.
+## VU Acceptance History
+| Sprint | Score | Verdict | Gap |
+|---|---|---|---|
+| Sprint 7 | 9.3/10 | NOT ACCEPTED | Gallery metadata missing, mute button missing from menu |
+| Sprint 8 | 8.5/10 | NOT ACCEPTED | Real astrophotography missing (F-007), lore text too short (~215 chars vs 500-800字) |
+
+## Open Stories (Sprint 9)
+- STORY-00032: Gallery Detail Real Astrophotography (5 pts)
+- STORY-00033: Full Constellation Lore Text 500-800字 (3 pts)
 
 ## Acceptance Mode
 auto (Virtual User as final gate)
 
-## VU Invocation Prerequisites — checked 2026-04-11
-- [x] PO: no Must-Have features remaining, no CRs pending
-- [x] Arch: no technical debt requiring action
-- [x] SM: requirement traceability complete (all M1-M12, S1-S4 map to Done Stories)
-- [x] PM: no open Blocker/Critical bugs, no backlog items warranting a Sprint
-- [x] BACKLOG.md: zero Must-Have items remaining
-- [x] All Must-Have PRD features have Story files Status = Done
-- [x] docs/qa/sprint7-verdict.md = PASS
-- [x] docs/ux/sprint7-review.md = no Blocker friction
-- [x] No open Blocker/Critical bugs

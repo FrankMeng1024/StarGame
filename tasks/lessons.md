@@ -63,20 +63,34 @@ Full retrospective required: Arch found 1 Blocker + 1 Critical pre-demo bugs.
 
 **What failed (root causes):**
 
-1. **[pending]** Timer drain during deferred game loop start
-   - When `start()` defers `_loop` via a callback (e.g. a scene intro overlay), `lastTick = performance.now()` set at the top of `start()` becomes stale by the time `_loop` actually runs. First `dt` calculation drains the full intro duration from `timeLeft`.
-   - Root cause: developer set `lastTick` as standard engine initialization without accounting for deferral. The assumption "I set it before calling the callback" was incorrect when the callback runs 2500ms later.
-   - Fix: reset `this.lastTick = performance.now()` inside the `onDone` callback, immediately before the first `_loop` call.
-   - Rule candidate: **Whenever game loop start is deferred by any async operation, `lastTick` must be reset at the deferral completion point, not at the deferral initiation point.**
+1. **[archived: Frontend Dev rule]** Timer drain during deferred game loop start
+   - Whenever game loop start is deferred by any async operation (scene intro, tutorial), `lastTick` must be reset at the deferral completion point, not at the deferral initiation point.
 
-2. **[pending]** Input listeners active before game is ready to receive input
-   - `addEventListener` for click/keydown registered at start of `start()`, before `_showSceneIntro` runs. No guard in `_handleInput` — any click during 2500ms intro flies the net before the game begins.
-   - Root cause: "register listeners on start" pattern assumed the game was immediately playable. Did not account for pre-game states where input should be blocked.
-   - Fix: `_introPlaying = true` before intro, `if (this._introPlaying) return;` at top of `_handleInput`, `_introPlaying = false` in `onDone`.
-   - Rule candidate: **Any pre-game state (cutscene, intro overlay, tutorial) must set a boolean guard before registering or activating input listeners. `_handleInput` must check this guard before acting.**
+2. **[archived: Frontend Dev rule]** Input listeners active before game is ready to receive input
+   - Any pre-game state (cutscene, intro overlay, tutorial) must set a boolean guard before registering or activating input listeners. `_handleInput` must check this guard before acting.
 
 **Rule updates made:**
-- Lessons 1 and 2 above remain [pending] until Sprint 8 retrospective — promote to Arch/Frontend Dev rules if no exception found.
+- Lessons 1 and 2 promoted to Frontend Dev rules (confirmed no exceptions in Sprint 8).
+
+## Sprint 8 — 2026-04-11
+Sprint 8: clean Sprint (QA/UX/Arch), but VU NOT ACCEPTED (8.5/10).
+
+**What worked:**
+- Both stories (STORY-00030, STORY-00031) implemented cleanly — Arch PASS, QA PASS (HIGH confidence, 0 bugs), UX no Blockers
+- VU score improved from 9.3 (Sprint 7) to — wait, Sprint 8 VU scored 8.5. Sprint 7 VU scored 9.3.
+- VU supplementary evidence round resolved 3 of 5 complaints (grid column count, completion flow evidence, star differentiation evidence)
+
+**What failed (root causes):**
+
+1. **[pending]** PRD content depth underestimated at Sprint 0
+   - PRD F-007 promises "图片含星空实拍、星座连线图" and "神话故事500-800字". These content requirements were accepted at Sprint 0 but never fully scoped as Stories.
+   - Root cause: content requirements (image depth, text length) were not translated into measurable ACs. "Gallery detail shows lore text" passed QA without checking character count against the PRD spec.
+   - Rule candidate: **Text-length PRD requirements must be translated to specific character-count ACs at Sprint Planning. QA must verify against the count, not just that text is present.**
+
+2. **[pending]** VU evidence gaps caused initial score deflation
+   - VU initial score 7.8 included 3 items that were actually implemented but not evidenced in the initial flipbook (completion flow, star differentiation, grid column count). Score needed a supplementary round to reach 8.5.
+   - Root cause: main agent assembled VU flipbook using only navigate() calls without completing the game naturally — completion flow screenshot was missing entirely.
+   - Rule candidate: **VU flipbook must include a completion-screen screenshot obtained by navigating to the complete screen, not just game + levels + gallery. PRD completion flow (F-006) is always a required VU evidence item.**
 
 ## Sprint 6 — 2026-04-10
 Sprint 6: clean Sprint, no retrospective actions.
