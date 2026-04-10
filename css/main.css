@@ -842,6 +842,32 @@ body {
   line-height: 1.9;
 }
 
+/* Star chart section */
+.detail-starchart {
+  background: #000814;
+  border: 1px solid rgba(100,140,255,0.25);
+  border-radius: var(--radius-md);
+  padding: var(--spacing-lg);
+  text-align: center;
+}
+
+.starchart-label {
+  font-size: var(--font-sm);
+  color: rgba(180,200,255,0.7);
+  letter-spacing: 0.08em;
+  margin-bottom: var(--spacing-sm);
+  text-transform: uppercase;
+}
+
+#detail-starchart-svg svg {
+  width: 100%;
+  max-width: 480px;
+  height: auto;
+  border-radius: 8px;
+  display: block;
+  margin: 0 auto;
+}
+
 /* ── Shop Screen ───────────────────────────────────────────── */
 #screen-shop {
   background: linear-gradient(180deg, var(--sky-deep) 0%, var(--sky-mid) 100%);
