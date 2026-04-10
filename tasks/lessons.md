@@ -52,6 +52,32 @@ Full retrospective required: Arch found 1 Blocker + 2 Critical + 1 Medium pre-de
    - Root cause: incremental CSS editing via append without checking for existing definitions
    - Rule: when adding CSS, grep for existing selectors before appending. Prefer Edit tool over bash append for CSS modifications.
 
+## Sprint 7 — 2026-04-11
+Full retrospective required: Arch found 1 Blocker + 1 Critical pre-demo bugs.
+
+**What worked:**
+- Arch subagent code review caught both bugs before QA ran — gate working as designed
+- QA/UX ran clean (0 bugs, 0 console errors) once Arch bugs were fixed
+- Navigation regression: all 6 routes clean across gallery-detail, levels, game, shop, gallery, complete, fail
+- seenScenes persistence pattern (Set → array → Set) worked correctly on first attempt
+
+**What failed (root causes):**
+
+1. **[pending]** Timer drain during deferred game loop start
+   - When `start()` defers `_loop` via a callback (e.g. a scene intro overlay), `lastTick = performance.now()` set at the top of `start()` becomes stale by the time `_loop` actually runs. First `dt` calculation drains the full intro duration from `timeLeft`.
+   - Root cause: developer set `lastTick` as standard engine initialization without accounting for deferral. The assumption "I set it before calling the callback" was incorrect when the callback runs 2500ms later.
+   - Fix: reset `this.lastTick = performance.now()` inside the `onDone` callback, immediately before the first `_loop` call.
+   - Rule candidate: **Whenever game loop start is deferred by any async operation, `lastTick` must be reset at the deferral completion point, not at the deferral initiation point.**
+
+2. **[pending]** Input listeners active before game is ready to receive input
+   - `addEventListener` for click/keydown registered at start of `start()`, before `_showSceneIntro` runs. No guard in `_handleInput` — any click during 2500ms intro flies the net before the game begins.
+   - Root cause: "register listeners on start" pattern assumed the game was immediately playable. Did not account for pre-game states where input should be blocked.
+   - Fix: `_introPlaying = true` before intro, `if (this._introPlaying) return;` at top of `_handleInput`, `_introPlaying = false` in `onDone`.
+   - Rule candidate: **Any pre-game state (cutscene, intro overlay, tutorial) must set a boolean guard before registering or activating input listeners. `_handleInput` must check this guard before acting.**
+
+**Rule updates made:**
+- Lessons 1 and 2 above remain [pending] until Sprint 8 retrospective — promote to Arch/Frontend Dev rules if no exception found.
+
 ## Sprint 6 — 2026-04-10
 Sprint 6: clean Sprint, no retrospective actions.
 - Arch found 1 Medium (empty-Set guard) fixed before QA — caught at correct gate.
