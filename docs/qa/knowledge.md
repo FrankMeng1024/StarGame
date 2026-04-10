@@ -91,3 +91,11 @@ No backend, no network requests. All data in localStorage + local files.
 - Canvas effects (star_magnet pull, shrink_debris size, net_speed movement) cannot be verified via DOM — code path activation confirmed by qty consumption + activeItems Set membership.
 - Navigation regression Sprint 4: ALL routes clean, 0 JS console errors. Google Fonts errors no longer appearing (was 44 in Sprint 3 — may have cleared from Playwright session reset).
 
+## Sprint 6 Verified (2026-04-10)
+- Scene system: `js/data/scenes.js` exports `SCENE_PALETTES[6]`, indexed by `Math.floor(levelIdx / 5)`. Only Scene 4 has `aurora: true`.
+- Scene palette applies to three screens: game canvas gradient, level select inline style gradient, complete/fail tint (hex-8 alpha: `sky0ee`, `sky1cc`, `sky2aa`).
+- `window.__state.unlockedLevels` is a Set; inject for scene testing: `window.__state.unlockedLevels = new Set(); for(let i=0;i<=N;i++) window.__state.unlockedLevels.add(i);`
+- Aurora bands (Scene 4): visible horizontal teal-green gradient bands on canvas, driven by `Date.now() * 0.0004` — single screenshot confirms presence.
+- Google Fonts ERR_CONNECTION_REFUSED is a known pre-existing offline environment error — exclude from future JS error counts (it is a network resource error, not a runtime JS error).
+- Navigation regression clean through Sprint 6: menu, levels, game, complete, fail, shop, gallery all survive TO→AWAY→BACK with zero JS errors.
+

@@ -74,3 +74,20 @@
 
 ### Navigation Regression
 - Sprint 4: game→levels→menu and all other routes: CLEAN, zero console errors.
+
+## Sprint 6 Updates (2026-04-10)
+
+### Scene System
+- Game now has 6 distinct night sky scenes across 30 levels (5 levels per scene). Scene assignment: `Math.floor(levelIdx / 5)`.
+- Scene 0 = deep blue-violet (default/beginner), Scene 4 = animated teal-green aurora (most visually distinctive), Scene 5 = near-black dense starfield (advanced).
+- Scene palette applies to game canvas, level select background, and complete/fail tints.
+- Scene system is ambient — no in-game explanation or labeling. Players may not consciously register the progression.
+
+### New Friction Points (Sprint 6)
+- No scene transition ceremony when crossing level boundary (e.g. level 5→6) — Medium
+- Level select has no scene group labeling or dividers — Medium
+- Complete/fail screens share same scene tint; emotional differentiation relies only on text/icons — Low
+- Star map overlay contrast on Scene 4 (aurora) not verified — Low risk
+
+### Navigation Regression
+- Sprint 6: ALL screens (menu, levels, game, complete, fail, shop, gallery) CLEAN, zero JS console errors after TO→AWAY→BACK cycles.
