@@ -30,3 +30,30 @@
 - Net auto-returns (no need to click again) — forgiving
 - Star twinkling = "I'm a target" visual affordance
 - Debris darker/duller = "I'm an obstacle" visual differentiation
+
+## Sprint 2 Updates (2026-04-10)
+
+### New Screens Added
+- **Shop** (#screen-shop): 4-col grid of 8 items with price, effect, type badge, buy button. Coin balance shown in header. Buy button disabled when coins < price. Owned badge appears after purchase.
+- **Gallery grid** (#screen-gallery): 6×5 grid of 30 cards. Locked = grey silhouette + 未探索. Unlocked = colored card with icon + name (ZH/EN), clickable.
+- **Gallery detail** (#screen-gallery-detail): Large icon, ZH/EN name, lore text paragraph. Back button → gallery grid.
+- **Tutorial hint** (#game-hint): Pill overlay on game screen. Appears on first game load (sessionStorage gate). Dismisses on click or after 5s auto-timeout.
+
+### Sprint 1 Friction Resolved
+- Tutorial hint now present — STORY-00008 ✓
+- Fail screen stats now accurate — STORY-00007 ✓
+
+### New UX Gaps (Sprint 2)
+- Shop: no pre-purchase ownership info visible (only appears after buying)
+- Shop: type system (持续型/消耗型) unexplained — first-time user confusion risk
+- Gallery: no "newly unlocked" badge for first visit after level completion
+- Gallery detail: lore text may clip on shorter viewports (no scroll affordance confirmed)
+- Tutorial hint: 5s auto-dismiss may be too short before first action
+
+### Navigation Patterns
+- Complete screen → Shop: 🛒去商店 button (direct navigate)
+- Shop → back: 返回 button → navigate('levels') or navigate('complete') (context TBD — wired to 返回 which goes to levels)
+- Menu → Gallery: 星座展厅 button → navigate('gallery')
+- Gallery → back: 返回 button → navigate('menu') via navigate()
+- Gallery card click → navigate('gallery-detail', {idx})
+- Gallery detail back → navigate('gallery')

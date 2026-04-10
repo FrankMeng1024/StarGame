@@ -1,5 +1,6 @@
 // screens/complete.js — Level complete & fail screens
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
+import state from '../state.js';
 
 const TWO_PI = Math.PI * 2;
 
@@ -15,23 +16,30 @@ export function showComplete(navigate, params) {
   document.querySelector('.lore-title').textContent = `${level.nameZh} — ${level.nameEn}`;
   document.querySelector('.lore-text').textContent = level.lore;
 
+  // Reset stat labels for complete context
+  const labels = document.querySelectorAll('.stat-label');
+  if (labels[1]) labels[1].textContent = '剩余时间';
+
   // Wire buttons
   const btnNext   = document.querySelector('.btn-next-level');
+  const btnShop   = document.querySelector('.btn-shop');
   const btnLevels = document.querySelector('.btn-back-levels');
 
+  btnNext.textContent = '下一关 →';
   btnNext.onclick = () => {
     const nextIdx = idx + 1;
     if (nextIdx < CONSTELLATIONS.length) {
-      const { state: gameState } = window.__gameState || {};
-      import('../state.js').then(m => {
-        m.default.currentLevel = nextIdx;
-        navigate('game');
-      });
+      state.currentLevel = nextIdx;
+      navigate('game');
     } else {
       navigate('levels');
     }
   };
 
+  if (btnShop) {
+    btnShop.style.display = '';
+    btnShop.onclick = () => navigate('shop');
+  }
   btnLevels.onclick = () => navigate('levels');
 
   // Constellation line animation
@@ -39,21 +47,27 @@ export function showComplete(navigate, params) {
 }
 
 export function showFail(navigate, params) {
-  const { idx } = params;
+  const { idx, caught = 0, total, elapsed = 90 } = params;
   const level = CONSTELLATIONS[idx];
 
   document.querySelector('.complete-title').textContent = '⏰ 时间到了！';
-  document.querySelector('.stat-caught').textContent = '—';
-  document.querySelector('.stat-time').textContent = '0秒';
+  document.querySelector('.stat-caught').textContent = `${caught}/${total ?? level.stars.length}`;
+  document.querySelector('.stat-time').textContent = `${elapsed}秒`;
   document.querySelector('.stat-coins').textContent = '0枚';
   document.querySelector('.lore-title').textContent = `${level.nameZh} — 再试一次？`;
   document.querySelector('.lore-text').textContent = level.lore;
 
+  // Update stat labels for fail context
+  const labels = document.querySelectorAll('.stat-label');
+  if (labels[1]) labels[1].textContent = '已用时间';
+
   const btnNext   = document.querySelector('.btn-next-level');
+  const btnShop   = document.querySelector('.btn-shop');
   const btnLevels = document.querySelector('.btn-back-levels');
 
   btnNext.textContent = '🔄 重试';
   btnNext.onclick = () => navigate('game');
+  if (btnShop) btnShop.style.display = 'none';
   btnLevels.onclick = () => navigate('levels');
 
   _runConstellationAnim(level, idx);

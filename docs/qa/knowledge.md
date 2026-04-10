@@ -52,3 +52,19 @@ No backend, no network requests. All data in localStorage + local files.
 ## Test Data
 - Fresh state: clear localStorage before test
 - Level 1: 7 stars (Orion), time limit 90s, difficulty 1
+- Seeded state: `localStorage.setItem('starcatcher_save', JSON.stringify({ unlockedLevels:[0], levelScores:{}, coins:150, inventory:{} }))` — must be set before page load (not after)
+
+## Sprint 2 Verified (2026-04-10)
+- Shop: 8 items render as `.shop-card`; buy button is `.shop-buy-btn`; disabled when coins < price
+- Shop purchase: deducts coins, adds owned badge (`.shop-owned-badge`), re-renders in place
+- Gallery: 30 cards; `.gallery-card.unlocked` / `.gallery-card.locked`; detail shows icon/ZH/EN/lore
+- Gallery detail back: `.btn-back-gallery` → returns to screen-gallery
+- Complete screen stats: caught/total, timeLeft in seconds, coins — all accurate
+- Fail screen stats: "时间到了" title, caught/total, elapsed seconds — accurate (was broken Sprint 1, fixed Sprint 2)
+- Tutorial hint: visible for 5s on first game load; gated by sessionStorage 'hintSeen'; deferred click listener
+
+## Critical Technical Notes (Sprint 2)
+- ES module version suffixes on internal imports (`state.js?v=N`) create duplicate singleton instances — only version the `<script>` entry point tag; all internal imports use bare paths
+- `browser_evaluate` immediately after `browser_click` can synthesize an extra event triggering capture-phase listeners — use `browser_run_code` for atomic test sequences
+- State storage key: `starcatcher_save`; structure: `{ unlockedLevels:[], levelScores:{}, coins:N, inventory:{} }`
+- `window.__navigate(screen, params)` is exposed for test navigation

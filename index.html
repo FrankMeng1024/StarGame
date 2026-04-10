@@ -62,6 +62,13 @@
         </div>
       </div>
     </div>
+    <!-- Tutorial hint overlay -->
+    <div id="game-hint" class="game-hint" aria-live="polite">
+      <div class="hint-inner">
+        <span class="hint-icon">🖱️</span>
+        <span class="hint-text">点击 / 空格 发射网兜</span>
+      </div>
+    </div>
   </section>
 
   <!-- ④ Level Complete / Fail ──────────────────────────────── -->
@@ -94,22 +101,57 @@
 
       <div class="complete-buttons">
         <button class="btn btn-primary btn-next-level">下一关 →</button>
-        <button class="btn btn-secondary btn-back-levels">← 返回选关</button>
+        <button class="btn btn-secondary btn-shop">🛒 去商店</button>
+        <button class="btn btn-ghost btn-back-levels">← 返回选关</button>
       </div>
     </div>
   </section>
 
-  <!-- ⑤ Gallery (placeholder) ─────────────────────────────── -->
+  <!-- ⑤ Gallery ────────────────────────────────────────────── -->
   <section id="screen-gallery" class="screen" role="main">
-    <h2>☽ 星座展厅</h2>
-    <p style="color:var(--text2);font-size:var(--font-md);">完成关卡后解锁各星座的珍贵图片与传说故事</p>
-    <button class="btn btn-ghost btn-back-from-gallery" onclick="document.getElementById('screen-gallery').classList.remove('active');document.getElementById('screen-menu').classList.add('active');">
-      ← 返回主菜单
-    </button>
+    <div class="gallery-header">
+      <button class="btn btn-ghost btn-back-menu-from-gallery">← 返回主菜单</button>
+      <h2>☽ 星座展厅</h2>
+      <span style="width:120px"></span>
+    </div>
+    <div class="gallery-grid" role="list" aria-label="星座展厅">
+      <!-- Cards injected by JS -->
+    </div>
+  </section>
+
+  <!-- ⑤ Gallery Detail ──────────────────────────────────────── -->
+  <section id="screen-gallery-detail" class="screen" role="main">
+    <div class="detail-inner">
+      <button class="btn btn-ghost btn-back-gallery">← 返回展厅</button>
+      <div class="detail-hero">
+        <span class="detail-icon" aria-hidden="true"></span>
+        <h2 class="detail-name-zh"></h2>
+        <p class="detail-name-en"></p>
+      </div>
+      <div class="detail-lore">
+        <p class="detail-lore-text"></p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ⑥ Shop ─────────────────────────────────────────────────── -->
+  <section id="screen-shop" class="screen" role="main">
+    <div class="shop-header">
+      <button class="btn btn-ghost btn-back-levels-from-shop">← 返回选关</button>
+      <h2>🛒 道具商店</h2>
+      <div class="shop-coins">
+        <span class="coin-icon">🪙</span>
+        <span class="shop-coin-balance">0</span>
+        <span class="coin-label">金币</span>
+      </div>
+    </div>
+    <div class="shop-grid" role="list" aria-label="道具列表">
+      <!-- Items injected by JS -->
+    </div>
   </section>
 
 </div><!-- /app -->
 
-<script type="module" src="js/main.js"></script>
+<script type="module" src="js/main.js?v=6"></script>
 </body>
 </html>

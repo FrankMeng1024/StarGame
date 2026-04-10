@@ -5,6 +5,8 @@ import { initMenu } from './screens/menu.js';
 import { initLevels } from './screens/levels.js';
 import { startGame, stopGame } from './screens/game.js';
 import { showComplete, showFail } from './screens/complete.js';
+import { initGallery, showGalleryDetail, refreshGallery } from './screens/gallery.js';
+import { initShop } from './screens/shop.js';
 
 // ── Custom star cursor ─────────────────────────────────────────
 function initCursor() {
@@ -19,7 +21,7 @@ function initCursor() {
 }
 
 // ── Screen navigation ──────────────────────────────────────────
-const SCREENS = ['menu', 'levels', 'game', 'complete', 'gallery'];
+const SCREENS = ['menu', 'levels', 'game', 'complete', 'gallery', 'gallery-detail', 'shop'];
 
 function showScreen(id) {
   for (const sid of SCREENS) {
@@ -40,6 +42,12 @@ function navigate(screen, params = {}) {
     showComplete(navigate, params);
   } else if (screen === 'fail') {
     showFail(navigate, params);
+  } else if (screen === 'gallery') {
+    refreshGallery(navigate);
+  } else if (screen === 'gallery-detail') {
+    showGalleryDetail(navigate, params);
+  } else if (screen === 'shop') {
+    initShop(navigate);
   }
 }
 
@@ -50,6 +58,7 @@ function init() {
   initStarfield('star-canvas');
   initMenu(navigate);
   initLevels(navigate);
+  initGallery(navigate);
 
   // Level-select event from refreshed cards
   document.addEventListener('level-select', e => {
