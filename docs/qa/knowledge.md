@@ -99,3 +99,14 @@ No backend, no network requests. All data in localStorage + local files.
 - Google Fonts ERR_CONNECTION_REFUSED is a known pre-existing offline environment error — exclude from future JS error counts (it is a network resource error, not a runtime JS error).
 - Navigation regression clean through Sprint 6: menu, levels, game, complete, fail, shop, gallery all survive TO→AWAY→BACK with zero JS errors.
 
+## Sprint 7 Verified (2026-04-11)
+
+- Gallery portrait canvas: `#constellation-portrait` (300×300). Background pixel at (150,10) = `[5,8,23]` for scene0 (#050816). M-type star pixel ≈ `[255,204,111]`, B-type ≈ `[170,191,255]`. Constellation lines gold `rgba(255,215,0,0.55)`. Re-renders correctly after navigation.
+- Scene intro overlay: `_introPlaying` flag in engine.js gates `_handleInput`. Game loop (`_loop`) deferred until `onDone` callback — `lastTick` reset in `onDone` prevents timer drain. Timer verified frozen at 01:30 during intro. Second entry immediately starts game.
+- `state.seenScenes`: Set persisted to localStorage as array, deserialized as `new Set(data.seenScenes || [])`. Survives full page reload.
+- Level select dividers: 6 x `.scene-divider` elements with `grid-column: 1 / -1`. Aurora badge: `.scene-aurora-tag` on scene 4 only. Dividers created in `initLevels()` (not `refreshLevels()`) — persist across nav calls.
+- Star-map line colors: scene0 warmest pixel r>b (gold); scene4 coolest pixel b>r (ice-blue). Branching at `engine.js _drawStarMap`: `scene.aurora ? rgba(200,235,255,0.45) : rgba(255,215,0,0.25)`.
+- Canvas readback warnings: 2 non-functional perf warnings from `getImageData` calls in test — expected, not errors.
+- Navigation regression Sprint 7: gallery-detail, levels, game, shop, gallery, complete, fail all PASS. 0 console errors throughout.
+
+

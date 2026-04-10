@@ -219,6 +219,39 @@ body {
   margin: 0 auto;
 }
 
+/* Scene group dividers */
+.scene-divider {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 4px 4px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  margin-bottom: 2px;
+}
+.scene-divider-dot {
+  display: inline-block;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+  opacity: 0.9;
+}
+.scene-divider-name {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.04em;
+  font-family: 'Noto Sans SC', sans-serif;
+}
+.scene-aurora-tag {
+  font-size: 0.68rem;
+  color: #5ef0c0;
+  border: 1px solid rgba(94,240,192,0.4);
+  border-radius: 4px;
+  padding: 1px 5px;
+  letter-spacing: 0.05em;
+}
+
 .level-card {
   aspect-ratio: 3 / 4;
   background: var(--card);
@@ -713,6 +746,12 @@ body {
   align-items: center;
   gap: var(--spacing-md);
   text-align: center;
+}
+
+#constellation-portrait {
+  border-radius: 12px;
+  box-shadow: 0 0 24px rgba(255, 215, 0, 0.2), 0 0 60px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255,255,255,0.1);
 }
 
 .detail-icon {

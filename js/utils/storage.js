@@ -8,6 +8,7 @@ export function saveGame(state) {
       levelScores: Object.fromEntries(state.levelScores),
       coins: state.coins,
       inventory: Object.fromEntries(state.inventory),
+      seenScenes: [...state.seenScenes],
     };
     localStorage.setItem(SAVE_KEY, JSON.stringify(data));
   } catch (e) {
@@ -25,6 +26,7 @@ export function loadGame() {
       levelScores: new Map(Object.entries(data.levelScores || {})),
       coins: data.coins || 0,
       inventory: new Map(Object.entries(data.inventory || {})),
+      seenScenes: new Set(data.seenScenes || []),
     };
   } catch (e) {
     console.warn('Load failed:', e);

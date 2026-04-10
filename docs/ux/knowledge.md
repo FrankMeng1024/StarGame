@@ -91,3 +91,29 @@
 
 ### Navigation Regression
 - Sprint 6: ALL screens (menu, levels, game, complete, fail, shop, gallery) CLEAN, zero JS console errors after TO→AWAY→BACK cycles.
+
+## Sprint 7 Updates (2026-04-11)
+
+### Scene Transition Ceremony (STORY-00027)
+- First entry to a new scene group shows a 2500ms fade-in/hold/fade-out overlay with scene name + level range ("— 第 N–M 关 —"). Timer frozen during intro. Input blocked via `_introPlaying` guard.
+- No-repeat gate via `state.seenScenes` (Set<number>) persisted to localStorage. Second entry to same scene: game starts immediately, no ceremony.
+- Sprint 6 Medium friction "no scene transition" RESOLVED.
+
+### Scene Dividers in Level Select (STORY-00028)
+- Full-width scene dividers with colored dot (`scene.sky1`), location name, and optional "极光" badge tag for aurora scenes.
+- All 6 scene groups labeled. Dividers use `grid-column: 1 / -1` to span the grid.
+- Sprint 6 Medium friction "no scene grouping" RESOLVED.
+- Known Low: divider dots for darkest scenes (0, 5) nearly invisible — dot uses `sky1` which is near-black.
+
+### Gallery Detail Portrait (STORY-00026)
+- Gallery detail now has a 300×300 canvas portrait with scene-matched background gradient, constellation star positions, spectral-type colors, magnitude-based sizes, golden connecting lines, glow effects. Replaces emoji-only display.
+- Portrait renders correctly after full navigation regression. Static (no animation — opportunity for future enhancement).
+
+### New Friction Points (Sprint 7)
+- Scene divider dots for darkest scene palettes (0, 5) are nearly invisible — Low
+- 6-column grid leaves empty cell after each 5-level group — Low (visually subtle)
+- Star cursor overlays scene transition subtitle text — Low (cosmetic)
+- Gallery portrait is static while complete screen has animated line-draw — Low (opportunity)
+
+### Navigation Regression
+- Sprint 7: levels↔menu, game↔levels, gallery-detail→gallery→menu→levels→menu→gallery→gallery-detail: ALL CLEAN, zero console errors.

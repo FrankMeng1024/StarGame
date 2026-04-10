@@ -50,6 +50,7 @@ js/
   }>,
   coins: number,                    // total coin balance
   inventory: Map<string, number>,   // itemId → quantity
+  seenScenes: Set<number>,          // scene group indices (0-5) whose intro has been shown
   
   // Current session
   currentLevel: number|null,        // 0-29

@@ -242,6 +242,7 @@ export class GameEngine {
 
   // ── Input ─────────────────────────────────────────────────
   _handleInput(e) {
+    if (this._introPlaying) return;
     if (e.type === 'keydown' && e.code !== 'Space') return;
     if (this.netState === 'swing' && !this.finished) {
       this.netState   = 'extend';
@@ -256,7 +257,21 @@ export class GameEngine {
     this.lastTick = performance.now();
     document.addEventListener('click', this._handleInput);
     document.addEventListener('keydown', this._handleInput);
-    this._loop(performance.now());
+
+    // Scene transition ceremony — show on first entry to a new scene group
+    const sceneIdx = Math.min(Math.floor(this.levelIdx / 5), SCENE_PALETTES.length - 1);
+    if (!state.seenScenes.has(sceneIdx)) {
+      state.seenScenes.add(sceneIdx);
+      state.save();
+      this._introPlaying = true;
+      this._showSceneIntro(sceneIdx, () => {
+        this._introPlaying = false;
+        this.lastTick = performance.now();
+        this._loop(performance.now());
+      });
+    } else {
+      this._loop(performance.now());
+    }
   }
 
   stop() {
@@ -265,6 +280,65 @@ export class GameEngine {
     document.removeEventListener('keydown', this._handleInput);
     if (this.rafId) cancelAnimationFrame(this.rafId);
     stopCountdownBeeps();
+  }
+
+  _showSceneIntro(sceneIdx, onDone) {
+    const scene = SCENE_PALETTES[sceneIdx];
+    const ctx = this.ctx;
+    const W = this.W, H = this.H;
+    const FADE_IN = 500;     // ms
+    const HOLD    = 1500;    // ms
+    const FADE_OUT = 500;    // ms
+    const TOTAL   = FADE_IN + HOLD + FADE_OUT;
+    const start   = performance.now();
+
+    const draw = (now) => {
+      const elapsed = now - start;
+      let alpha;
+      if (elapsed < FADE_IN) {
+        alpha = elapsed / FADE_IN;
+      } else if (elapsed < FADE_IN + HOLD) {
+        alpha = 1;
+      } else {
+        alpha = 1 - (elapsed - FADE_IN - HOLD) / FADE_OUT;
+      }
+      alpha = Math.max(0, Math.min(1, alpha));
+
+      // Draw background first
+      this._drawBackground();
+
+      // Dark overlay
+      ctx.save();
+      ctx.globalAlpha = alpha * 0.6;
+      ctx.fillStyle = '#000';
+      ctx.fillRect(0, 0, W, H);
+      ctx.restore();
+
+      // Scene name text
+      ctx.save();
+      ctx.globalAlpha = alpha;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      // Location name
+      ctx.font = `bold ${Math.round(H * 0.042)}px 'Noto Sans SC', sans-serif`;
+      ctx.fillStyle = scene.starColor || '#ffffff';
+      ctx.shadowColor = scene.sky1 || '#000';
+      ctx.shadowBlur = 18;
+      ctx.fillText(scene.name, W / 2, H / 2);
+      // Subtitle
+      ctx.font = `${Math.round(H * 0.024)}px 'Noto Sans SC', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.55)';
+      ctx.shadowBlur = 0;
+      ctx.fillText(`— 第 ${sceneIdx * 5 + 1}–${sceneIdx * 5 + 5} 关 —`, W / 2, H / 2 + Math.round(H * 0.058));
+      ctx.restore();
+
+      if (elapsed < TOTAL) {
+        requestAnimationFrame(draw);
+      } else {
+        onDone();
+      }
+    };
+    requestAnimationFrame(draw);
   }
 
   _loop(now) {
@@ -525,8 +599,11 @@ export class GameEngine {
   _drawStarMap() {
     const ctx = this.ctx;
     const lines = this.level.lines || [];
+    const scene = SCENE_PALETTES[Math.min(Math.floor(this.levelIdx / 5), SCENE_PALETTES.length - 1)];
+    // Use light-blue on aurora scene (gold would be lost against teal-green)
+    const lineColor = scene.aurora ? 'rgba(200, 235, 255, 0.45)' : 'rgba(255, 215, 0, 0.25)';
     ctx.save();
-    ctx.strokeStyle = 'rgba(255, 215, 0, 0.25)';
+    ctx.strokeStyle = lineColor;
     ctx.lineWidth = 1;
     for (const [a, b] of lines) {
       const sA = this.stars[a], sB = this.stars[b];

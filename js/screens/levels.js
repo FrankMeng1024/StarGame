@@ -13,8 +13,19 @@ export function initLevels(navigate) {
   // Apply scene background based on current progress
   _applyLevelsBackground();
 
-  // Build level cards
+  // Build level cards with scene group dividers
   CONSTELLATIONS.forEach((c, idx) => {
+    // Insert scene group divider before each group of 5
+    if (idx % 5 === 0) {
+      const sceneIdx = Math.min(idx / 5, SCENE_PALETTES.length - 1);
+      const scene = SCENE_PALETTES[sceneIdx];
+      const divider = document.createElement('div');
+      divider.className = 'scene-divider';
+      const auroraTag = scene.aurora ? '<span class="scene-aurora-tag">极光</span>' : '';
+      divider.innerHTML = `<span class="scene-divider-dot" style="background:${scene.sky1}"></span><span class="scene-divider-name">${scene.name}</span>${auroraTag}`;
+      grid.appendChild(divider);
+    }
+
     const card = document.createElement('div');
     const unlocked = state.isUnlocked(idx);
     card.className = `level-card ${unlocked ? 'unlocked' : 'locked'}`;

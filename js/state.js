@@ -6,6 +6,7 @@ const state = {
   levelScores: new Map(),
   coins: 0,
   inventory: new Map(),
+  seenScenes: new Set(),
   currentLevel: null,
   currentScreen: 'menu',
 
@@ -18,6 +19,7 @@ const state = {
       this.levelScores    = saved.levelScores;
       this.coins          = saved.coins;
       this.inventory      = saved.inventory;
+      this.seenScenes     = saved.seenScenes;
     }
   },
 
