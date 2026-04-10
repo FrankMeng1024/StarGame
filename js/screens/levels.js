@@ -101,8 +101,8 @@ export function refreshLevels() {
 function _applyLevelsBackground() {
   const screen = document.getElementById('screen-levels');
   if (!screen) return;
-  // Determine scene from highest unlocked level index
-  const maxIdx = Math.max(...Array.from(state.unlockedLevels));
+  // Determine scene from highest unlocked level index (default 0 if set is empty)
+  const maxIdx = state.unlockedLevels.size > 0 ? Math.max(...Array.from(state.unlockedLevels)) : 0;
   const sceneIdx = Math.min(Math.floor(maxIdx / 5), SCENE_PALETTES.length - 1);
   const scene = SCENE_PALETTES[sceneIdx];
   screen.style.background = `linear-gradient(180deg, ${scene.sky0} 0%, ${scene.sky1} 60%, ${scene.sky2} 100%)`;
