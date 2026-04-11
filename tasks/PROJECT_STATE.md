@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: COMPLETE
-**Current Sprint**: 13 (COMPLETE — VU ACCEPTED 9.5/10)
+**Status**: IN PROGRESS
+**Current Sprint**: 14 (Sprint Goal: 游戏体验全面提升)
 **Last Updated**: 2026-04-11
 
 ## Sprint History
@@ -21,6 +21,7 @@
 | Sprint 11 | COMPLETE | 视觉精修：碎片升级、通关界面、画廊轮播、角色升级、全局视觉+过渡 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
 | Sprint 12 | COMPLETE | 游戏体验修复：连线显示、垃圾旋转、网兜形状、暂停系统、通关界面重设计、场景分界线 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 13 | COMPLETE | 道具系统修复 + 角色升级 + UI精致化 (QA PASS, UX no Blockers, Arch PASS) |
+| Sprint 14 | IN PROGRESS | 游戏体验全面提升 (CRs 032-044) |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |

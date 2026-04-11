@@ -27,6 +27,11 @@ const state = {
 
   isUnlocked(idx) { return this.unlockedLevels.has(idx); },
 
+  hasCompleted(idx) {
+    const score = this.levelScores.get(String(idx));
+    return !!(score && score.stars > 0);
+  },
+
   unlock(idx) {
     this.unlockedLevels.add(idx);
     this.save();

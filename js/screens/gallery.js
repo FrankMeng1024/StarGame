@@ -21,6 +21,12 @@ export function initGallery(navigate) {
     _buildGrid();
     navigate('gallery');
   });
+
+  const btnBackGalleryBottom = document.querySelector('.btn-back-gallery-bottom');
+  if (btnBackGalleryBottom) btnBackGalleryBottom.addEventListener('click', () => {
+    _buildGrid();
+    navigate('gallery');
+  });
 }
 
 export function refreshGallery(navigate) {
@@ -35,18 +41,27 @@ function _buildGrid() {
   grid.innerHTML = '';
 
   CONSTELLATIONS.forEach((con, idx) => {
-    const unlocked = state.isUnlocked(idx);
+    const unlocked  = state.isUnlocked(idx);
+    const completed = state.hasCompleted(idx);
     const card = document.createElement('div');
-    card.className = `gallery-card ${unlocked ? 'unlocked' : 'locked'}`;
+    card.className = `gallery-card ${completed ? 'unlocked' : unlocked ? 'unlocked-incomplete' : 'locked'}`;
     card.setAttribute('role', 'listitem');
 
-    if (unlocked) {
+    if (completed) {
       card.innerHTML = `
         <div class="gc-icon">${con.icon}</div>
         <div class="gc-name-zh">${con.nameZh}</div>
         <div class="gc-name-en">${con.nameEn}</div>
       `;
       card.addEventListener('click', () => _navigate && _navigate('gallery-detail', { idx }));
+    } else if (unlocked) {
+      // Unlocked but not completed — show icon but not clickable
+      card.innerHTML = `
+        <div class="gc-icon gc-locked-icon">${con.icon}</div>
+        <div class="gc-name-zh">${con.nameZh}</div>
+        <div class="gc-name-en">${con.nameEn}</div>
+        <div class="gc-unexplored">未通关</div>
+      `;
     } else {
       card.innerHTML = `
         <div class="gc-icon gc-locked-icon">✦</div>
@@ -350,8 +365,8 @@ function _renderPhotoCarousel(con) {
   carouselSection.innerHTML = `
     <div class="photo-carousel-label">📷 天文摄影 · Astrophotography</div>
     <div class="photo-carousel-track">
-      ${photos.map(p => `
-        <div class="photo-carousel-card">
+      ${photos.map((p, i) => `
+        <div class="photo-carousel-card" data-photo-idx="${i}" style="cursor:zoom-in;" title="点击放大">
           <div class="photo-carousel-img-wrap">
             <img
               src="${p.url}"
@@ -367,4 +382,83 @@ function _renderPhotoCarousel(con) {
       `).join('')}
     </div>
   `;
+
+  // Click-to-enlarge lightbox
+  carouselSection.querySelectorAll('.photo-carousel-card[data-photo-idx]').forEach(card => {
+    card.addEventListener('click', () => {
+      const idx = parseInt(card.dataset.photoIdx);
+      _openPhotoLightbox(photos, idx);
+    });
+  });
+}
+
+function _openPhotoLightbox(photos, startIdx) {
+  let current = startIdx;
+
+  let lb = document.getElementById('photo-lightbox');
+  if (!lb) {
+    lb = document.createElement('div');
+    lb.id = 'photo-lightbox';
+    lb.className = 'photo-lightbox-overlay';
+    lb.innerHTML = `
+      <div class="photo-lightbox-inner">
+        <button class="photo-lightbox-close" aria-label="关闭">✕</button>
+        <button class="photo-lightbox-prev" aria-label="上一张">‹</button>
+        <div class="photo-lightbox-img-wrap">
+          <img class="photo-lightbox-img" src="" alt="" />
+        </div>
+        <button class="photo-lightbox-next" aria-label="下一张">›</button>
+        <div class="photo-lightbox-caption">
+          <div class="photo-lightbox-title"></div>
+          <div class="photo-lightbox-credit"></div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(lb);
+
+    lb.querySelector('.photo-lightbox-close').addEventListener('click', () => {
+      lb.classList.remove('photo-lightbox-visible');
+      setTimeout(() => { lb.style.display = 'none'; }, 200);
+    });
+    lb.addEventListener('click', e => {
+      if (e.target === lb) {
+        lb.classList.remove('photo-lightbox-visible');
+        setTimeout(() => { lb.style.display = 'none'; }, 200);
+      }
+    });
+    lb.querySelector('.photo-lightbox-prev').addEventListener('click', () => {
+      current = (current - 1 + photos.length) % photos.length;
+      _updateLightbox(lb, photos[current]);
+    });
+    lb.querySelector('.photo-lightbox-next').addEventListener('click', () => {
+      current = (current + 1) % photos.length;
+      _updateLightbox(lb, photos[current]);
+    });
+  }
+
+  // Update photo references when reopened (photos may differ per constellation)
+  lb.querySelector('.photo-lightbox-prev').onclick = () => {
+    current = (current - 1 + photos.length) % photos.length;
+    _updateLightbox(lb, photos[current]);
+  };
+  lb.querySelector('.photo-lightbox-next').onclick = () => {
+    current = (current + 1) % photos.length;
+    _updateLightbox(lb, photos[current]);
+  };
+
+  // Hide nav if only 1 photo
+  lb.querySelector('.photo-lightbox-prev').style.display = photos.length > 1 ? '' : 'none';
+  lb.querySelector('.photo-lightbox-next').style.display = photos.length > 1 ? '' : 'none';
+
+  _updateLightbox(lb, photos[current]);
+  lb.style.display = 'flex';
+  requestAnimationFrame(() => lb.classList.add('photo-lightbox-visible'));
+}
+
+function _updateLightbox(lb, photo) {
+  const img = lb.querySelector('.photo-lightbox-img');
+  img.src = photo.url;
+  img.alt = photo.title;
+  lb.querySelector('.photo-lightbox-title').textContent = photo.title;
+  lb.querySelector('.photo-lightbox-credit').textContent = photo.credit;
 }

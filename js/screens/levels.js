@@ -11,20 +11,16 @@ export function initLevels(navigate) {
 
   backBtn.addEventListener('click', () => navigate('menu'));
 
+  const shopBtn = screen.querySelector('.btn-shop-from-levels');
+  if (shopBtn) shopBtn.addEventListener('click', () => navigate('shop', { from: 'levels' }));
+
   // Apply scene background based on current progress
   _applyLevelsBackground();
 
-  // Build level cards with scene group dividers
+  // Build level cards — no scene dividers (clean 6×5 grid)
   CONSTELLATIONS.forEach((c, idx) => {
-    // Insert scene group divider before each group of 5
-    if (idx % 5 === 0) {
-      const divider = document.createElement('div');
-      divider.className = 'scene-divider';
-      grid.appendChild(divider);
-    }
-
-    const card = document.createElement('div');
     const unlocked = state.isUnlocked(idx);
+    const card = document.createElement('div');
     card.className = `level-card ${unlocked ? 'unlocked' : 'locked'}`;
     card.dataset.idx = idx;
 

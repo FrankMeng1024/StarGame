@@ -36,7 +36,12 @@ export function showComplete(navigate, params) {
   document.querySelector('.stat-time').textContent   = `${Math.floor(timeLeft)}秒`;
   document.querySelector('.stat-coins').textContent  = `${coins}`;
 
-  // Photo
+  // Photo (restore visibility — may have been hidden by showFail)
+  const photoWrap = document.querySelector('.complete-photo-wrap');
+  const loreEl    = document.querySelector('.complete-lore');
+  if (photoWrap) photoWrap.style.display = '';
+  if (loreEl)    loreEl.style.display    = '';
+
   _showPhoto(level);
 
   // Lore
@@ -63,7 +68,7 @@ export function showComplete(navigate, params) {
 
   if (btnShop) {
     btnShop.style.display = '';
-    btnShop.onclick = () => navigate('shop');
+    btnShop.onclick = () => navigate('shop', { from: 'levels' });
   }
   if (btnLevels) btnLevels.onclick = () => navigate('levels');
 
@@ -91,10 +96,11 @@ export function showFail(navigate, params) {
   document.querySelector('.stat-time').textContent   = '0秒';
   document.querySelector('.stat-coins').textContent  = '0';
 
-  _showPhoto(level);
-
-  document.querySelector('.lore-title').textContent = `${level.nameZh} — 再试一次？`;
-  document.querySelector('.lore-text').textContent  = level.lore;
+  // Hide photo and lore on fail — player hasn't earned the story yet
+  const photoWrap = document.querySelector('.complete-photo-wrap');
+  const loreEl    = document.querySelector('.complete-lore');
+  if (photoWrap) photoWrap.style.display = 'none';
+  if (loreEl)    loreEl.style.display    = 'none';
 
   const btnNext   = document.querySelector('.btn-next-level');
   const btnShop   = document.querySelector('.btn-shop');

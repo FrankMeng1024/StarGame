@@ -33,6 +33,9 @@
         <button class="btn btn-secondary btn-gallery" aria-label="星座展厅">
           ☽ 星座展厅
         </button>
+        <button class="btn btn-ghost btn-shop-from-menu" aria-label="道具商店">
+          🛒 道具商店
+        </button>
       </div>
       <p class="menu-deco">— 在深邃星空中，追逐每一颗遥远的星光 —</p>
     </div>
@@ -43,7 +46,7 @@
     <div class="levels-header">
       <button class="btn btn-ghost btn-back-menu">← 返回主菜单</button>
       <h2>✦ 挑战关卡</h2>
-      <span style="width:120px"></span><!-- balance -->
+      <button class="btn btn-ghost btn-shop-from-levels">🛒 商店</button>
     </div>
     <div class="level-grid" role="list" aria-label="关卡列表">
       <!-- Cards injected by JS -->
@@ -67,6 +70,8 @@
           <span>★</span>
           <span class="star-count">0/7</span>
         </div>
+        <!-- Pause button inside HUD top row — right side, no overlap with level name -->
+        <button id="pause-btn" class="pause-btn" aria-label="暂停">⏸</button>
       </div>
       <div class="hud-active-items" id="hud-active-items"></div>
       <button id="mute-btn" class="hud-mute-btn" aria-label="静音">🔊</button>
@@ -78,16 +83,14 @@
         <span class="hint-text">点击 / 空格 发射网兜</span>
       </div>
     </div>
-    <!-- Pause button -->
-    <button id="pause-btn" class="pause-btn" aria-label="暂停">⏸</button>
     <!-- Pause overlay -->
     <div id="pause-overlay" class="pause-overlay hidden" aria-modal="true">
       <div class="pause-panel">
         <h3 class="pause-title">游戏暂停</h3>
-        <button id="pause-resume-btn" class="btn btn-primary pause-action-btn">▶ 继续</button>
+        <button id="pause-resume-btn" class="btn btn-primary pause-action-btn">▶ 继续游戏</button>
         <button id="pause-retry-btn"  class="btn btn-secondary pause-action-btn">重新开始</button>
         <div id="pause-exit-wrap" class="pause-exit-wrap">
-          <button id="pause-exit-btn" class="btn btn-ghost pause-action-btn">返回关卡</button>
+          <button id="pause-exit-btn" class="btn btn-ghost pause-action-btn">退出关卡</button>
           <div id="pause-confirm" class="pause-confirm hidden">
             <span>确认退出?</span>
             <button id="pause-confirm-yes" class="btn btn-danger pause-confirm-btn">✓</button>
@@ -184,13 +187,17 @@
       <div class="detail-lore">
         <p class="detail-lore-text"></p>
       </div>
+      <!-- Return button at bottom for easy access after scrolling -->
+      <div class="detail-bottom-back">
+        <button class="btn btn-ghost btn-back-gallery-bottom">← 返回展厅</button>
+      </div>
     </div>
   </section>
 
   <!-- ⑥ Shop ─────────────────────────────────────────────────── -->
   <section id="screen-shop" class="screen" role="main">
     <div class="shop-header">
-      <button class="btn btn-ghost btn-back-levels-from-shop">← 返回选关</button>
+      <button class="btn btn-ghost btn-back-from-shop">← 返回</button>
       <h2>🛒 道具商店</h2>
       <div class="shop-coins">
         <span class="coin-icon">🪙</span>

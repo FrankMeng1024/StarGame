@@ -175,3 +175,87 @@ User reports items are not working. Investigate and fix all item activation issu
 - Verify glove prevents time penalty when debris is caught
 - Verify double_coins doubles the coin award on level complete
 - Each fix must be QA-verified with observable evidence (before/after quantity check, visual confirmation)
+
+---
+
+## CR-032: 少女角色、垃圾、网兜使用网络真实图片 (Sprint 14 approved)
+Replace all procedurally-drawn game assets with real images sourced via WebSearch (no copyright issues — use CC0/public domain/open license sources):
+- **少女角色**: Find an anime-style girl character sprite (idle/throw/catch states) from itch.io free assets, OpenGameArt, or similar. If a suitable sprite sheet exists, use `drawImage`. Alternatively, find a high-quality anime girl PNG (transparent background) that fits the "star-chasing girl" aesthetic.
+- **太空垃圾**: Replace the 4 hand-drawn debris types (meteor, satellite, rocket, cloth) with real images or high-quality sprites. Search for CC0 space debris / asteroid / satellite pixel art sprites.
+- **网兜**: The net shape is confusing (users don't recognize it). Replace with a clear visual — either a found net/butterfly-net image or a significantly cleaner canvas drawing that looks unmistakably like a catching net.
+- **天文摄影**: The current Wikimedia external URLs are broken/unreachable. Use WebSearch to find direct, accessible URLs for constellation astrophotography images. Test that URLs are actually reachable before embedding. Prioritize NASA apod.nasa.gov, ESA, or other reliable CDNs.
+- Implementation: use `<img>` elements where appropriate, or `drawImage()` on canvas for game objects. Cache loaded images at startup.
+
+## CR-033: 关卡失败界面改为仅重试，隐藏星座简介 (Sprint 14 approved)
+On level fail (`showFail()`):
+- Hide the lore section entirely (`.lore-title` and `.lore-text` invisible/empty, or lore container `display:none`)
+- Hide the photo (`.constellation-photo` or equivalent)
+- Show only: "时间到了！" title, caught/total stat, and "🔄 重试" + "返回选关" buttons
+- The constellation story is the reward for WINNING, not failing. Seeing it on fail removes the incentive to try again.
+
+## CR-034: 展馆需通关（胜利）才能解锁，而非仅开启关卡 (Sprint 14 approved)
+Currently: a constellation's gallery detail unlocks when `state.isUnlocked(idx)` — i.e., when the level becomes available to play, not when it's beaten.
+Change: gallery detail requires `state.hasCompleted(idx)` — only completions (winning a level) should unlock gallery viewing.
+- Add `hasCompleted(idx)` to the state module that checks if a best-score > 0 (or a separate `completed` Set in localStorage)
+- Update `gallery.js` to use this new check instead of `isUnlocked`
+- This means completing level 1 unlocks level 2 to play AND unlocks constellation 1's gallery detail
+
+## CR-035: 商店随时可进入 (Sprint 14 approved)
+Add a shop entry point accessible at all times:
+- Add a "🏪 道具商店" button to the main menu screen (alongside 挑战关卡 and 星座展厅)
+- Add a "道具商店" shortcut button on the level select screen (top area, near the back button)
+- The shop's back button should return to wherever the user came from (menu or levels), not always to levels
+
+## CR-036: 暂停界面交互修复 (Sprint 14 approved)
+The current pause UX is confusing:
+- "返回游戏" button should resume the game directly (call `setPaused(false)`) — no confirmation dialog
+- The "退出" button should show the confirmation (确定退出? Yes/No), but it should be clearly labeled "退出关卡" not "返回游戏"
+- Pause overlay layout: clearly distinguish Resume (large primary button at top) vs Retry / Exit (secondary buttons below)
+- Pause button and HUD elements must not overlap the level name text — pause button should be in top-right corner, not overlapping `.hud-level-name` (top-left)
+
+## CR-037: 抓到垃圾改为减速拖拽，炸弹只炸当前垃圾 (Sprint 14 approved)
+Change debris catch mechanic:
+- When debris is caught: instead of instant 1-second time penalty, the net SLOWS DOWN during retraction (retract speed reduced to 30% normal). No time penalty is deducted immediately. Player can press space_bomb slot to destroy the held debris (freeing the net to swing again).
+- `space_bomb` item effect changes: instead of clearing ALL debris on screen, it ONLY destroys the currently held debris (if any). If no debris is held, it has no effect (or clears the nearest debris as fallback).
+- The `glove` item now prevents the slow-retract penalty (retract at normal speed when glove is active).
+- Visual: during slow retract, show a brief shake animation or a red tint on the net to indicate "caught debris".
+
+## CR-038: 道具槽允许同类型多个（最多3个同类） (Sprint 14 approved)
+Change item selection logic:
+- Currently: max 3 slots total, each slot must be a different item type
+- New rule: a player may select the same item type multiple times, up to 3 slots. E.g., 3× space_bomb or 2× space_bomb + 1× time_ext are all valid.
+- The item selection UI should show a quantity selector (+/-) per item rather than just click-to-select, or allow clicking the same item card 1/2/3 times to assign that many slots.
+- Maximum 3 slots total still applies; same type counts as separate slots.
+
+## CR-039: 关卡选择网格修复（6列×5行） (Sprint 14 approved)
+The current grid shows 5 cards per row with a visual gap on the right (caused by scene-divider elements interrupting the grid flow).
+- Remove the `.scene-divider` elements entirely from the grid flow — the background color change already communicates scene groups.
+- Change CSS grid to `grid-template-columns: repeat(6, 1fr)` to produce 6 columns × 5 rows = 30 cards filling the grid cleanly.
+- If scene separation is still desired, use a CSS `:nth-child` rule or a row-spanning visual separator that does not disrupt the 6-column grid layout.
+
+## CR-040: 游戏内鼠标拖尾效果在游戏内生效 (Sprint 14 approved)
+The star cursor trail (#star-cursor) stops working once the game screen is active (the canvas captures mouse events). Fix:
+- Ensure the cursor trail JS (in main.js) continues to track `mousemove` events even when the game canvas is the active element
+- The trail element should appear above the canvas (z-index higher than canvas)
+- If the current implementation only works on non-canvas screens, extend it to work on ALL screens including the game canvas
+
+## CR-041: 星星颜色含义说明 (Sprint 14 approved)
+Users are confused by the different star colors (gold M-type vs blue A-type etc.) in the game canvas. Add a brief in-game tooltip or HUD label:
+- Add a small "?" help button in the game HUD that, when clicked/hovered, shows a compact legend: "星星颜色代表恒星类型：蓝白色=高温星，金黄色=冷超巨星（如参宿四）"
+- Alternative: show a brief toast/tip at game start (first time only, dismissible): "提示：所有颜色的星星都需要抓取 — 颜色代表恒星温度"
+- This eliminates confusion about whether gold vs silver stars have different gameplay effects (they don't — all are equal targets)
+
+## CR-042: 展馆返回按钮移至底部 (Sprint 14 approved)
+In the gallery detail screen, the "← 返回展厅" button is currently at the top of the content. Move it to the bottom of the page, below the lore text section. A sticky bottom bar or a button at the very end of the scrollable content is acceptable.
+
+## CR-043: 场景名称在进入时短暂展示 (Sprint 14 approved)
+CR-030 removed all scene name text from the level select dividers. The user now clarifies they do NOT want location names shown in the level grid — but they DO want the scene transition (when entering a NEW scene group for the first time in a session) to show the location name briefly.
+- The existing scene intro overlay (`#scene-intro-overlay` or similar) should show the NZ location name (e.g., "✦ 特卡波湖 · Lake Tekapo") as a brief cinematic overlay when transitioning into a new scene group for the first time.
+- This is already partially implemented for scene-change intros — ensure the location name text is visible and prominent in that overlay (not hidden or removed by CR-030).
+
+## CR-044: 背景音乐丰富化 (Sprint 14 approved)
+The current 4-chord Am-F-C-G sine-wave loop is too monotonous. Enrich it:
+- Add a second melodic layer: a simple pentatonic melody (single notes) that plays over the chord progression, using a softer instrument (triangle or soft sine with more reverb/delay simulation via Web Audio)
+- Add subtle variation: occasionally drop a chord beat, add a brief pause, or vary the rhythm slightly so it doesn't feel like a metronome
+- Add a "twinkling" high-register arpeggio layer (random notes from the pentatonic scale, very soft volume) to create a starfield ambience feel
+- The overall character should remain ethereal/space-like but feel alive rather than mechanical

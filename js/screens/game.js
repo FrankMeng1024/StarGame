@@ -47,6 +47,9 @@ export function startGame(navigate) {
   // Tutorial hint
   _showHint();
 
+  // Star color hint — first visit only
+  _showStarColorHint();
+
   // Mute button
   _initMuteButton();
 
@@ -236,6 +239,40 @@ function _dismissHint() {
   sessionStorage.setItem('hintSeen', '1');
   hint.classList.add('hint-fade-out');
   setTimeout(() => { hint.style.display = 'none'; }, 400);
+}
+
+function _showStarColorHint() {
+  if (localStorage.getItem('starColorHintSeen')) return;
+
+  const screen = document.getElementById('screen-game');
+  if (!screen) return;
+
+  const toast = document.createElement('div');
+  toast.className = 'star-color-hint-toast';
+  toast.innerHTML = `
+    <div class="sch-content">
+      <div class="sch-title">⭐ 关于星星颜色</div>
+      <div class="sch-body">所有颜色的星星都是目标！<br>颜色代表恒星温度，不影响得分。<br>蓝色最热 → 橙/金色较凉</div>
+      <button class="sch-close btn btn-ghost">知道了</button>
+    </div>
+  `;
+  screen.appendChild(toast);
+
+  const closeBtn = toast.querySelector('.sch-close');
+  closeBtn.addEventListener('click', () => {
+    localStorage.setItem('starColorHintSeen', '1');
+    toast.classList.add('sch-fade-out');
+    setTimeout(() => toast.remove(), 400);
+  });
+
+  // Auto-dismiss after 8s
+  setTimeout(() => {
+    if (toast.parentNode) {
+      localStorage.setItem('starColorHintSeen', '1');
+      toast.classList.add('sch-fade-out');
+      setTimeout(() => toast.remove(), 400);
+    }
+  }, 8000);
 }
 
 function _showTimeExtFlash() {

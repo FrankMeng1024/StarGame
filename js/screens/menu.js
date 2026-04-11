@@ -7,9 +7,11 @@ export function initMenu(navigate) {
 
   const btnPlay    = screen.querySelector('.btn-play');
   const btnGallery = screen.querySelector('.btn-gallery');
+  const btnShop    = screen.querySelector('.btn-shop-from-menu');
 
   btnPlay.addEventListener('click', () => navigate('levels'));
   btnGallery.addEventListener('click', () => navigate('gallery'));
+  if (btnShop) btnShop.addEventListener('click', () => navigate('shop', { from: 'menu' }));
 
   const muteBtn = document.getElementById('menu-mute-btn');
   if (muteBtn) {

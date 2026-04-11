@@ -8,15 +8,19 @@ const ITEMS = [
   { id: 'time_ext',     name: '时间延长',   effect: '即时+20秒剩余时间',                price: 60,  type: 'active',  icon: '⏱️', duration: '即时' },
   { id: 'shrink_debris',name: '缩小垃圾',   effect: '激活后30秒内所有垃圾缩小50%',      price: 40,  type: 'active',  icon: '🔬', duration: '30秒' },
   { id: 'star_map',     name: '星图揭示',   effect: '激活后60秒显示星座连线提示',        price: 20,  type: 'active',  icon: '🗺️', duration: '60秒' },
-  { id: 'glove',        name: '宇航员手套', effect: '激活后30秒内抓到垃圾不扣时间',      price: 70,  type: 'active',  icon: '🧤', duration: '30秒' },
+  { id: 'glove',        name: '宇航员手套', effect: '激活后30秒内抓到垃圾不减速（正常速度返回）', price: 70,  type: 'active',  icon: '🧤', duration: '30秒' },
   { id: 'double_coins', name: '双倍金币',   effect: '本关金币奖励自动×2（被动，不占槽）', price: 30,  type: 'passive', icon: '🪙', duration: '全局' },
 ];
 
-export function initShop(navigate) {
+export function initShop(navigate, params) {
   _renderShop(navigate);
 
-  const btnBack = document.querySelector('.btn-back-levels-from-shop');
-  if (btnBack) btnBack.onclick = () => navigate('levels');
+  const btnBack = document.querySelector('.btn-back-from-shop');
+  if (btnBack) {
+    const from = params?.from || 'levels';
+    btnBack.textContent = from === 'menu' ? '← 返回主菜单' : '← 返回选关';
+    btnBack.onclick = () => navigate(from === 'menu' ? 'menu' : 'levels');
+  }
 }
 
 function _renderShop(navigate) {

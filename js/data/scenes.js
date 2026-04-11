@@ -6,6 +6,9 @@ export const SCENE_PALETTES = [
   {
     // Scene 0: 特卡波湖牧羊人小屋 (Tekapo Shepherd's Church) — classic deep blue-violet
     name: '特卡波湖·牧羊人小屋',
+    nameEn: 'Lake Tekapo · Shepherd\'s Church',
+    location: '特卡波湖',
+    locationEn: 'Lake Tekapo',
     sky0: '#050816',    // zenith
     sky1: '#0d1230',    // mid sky
     sky2: '#1a0d2e',    // horizon
@@ -20,6 +23,9 @@ export const SCENE_PALETTES = [
   {
     // Scene 1: 库克山山顶雪景 (Aoraki/Mt Cook Summit Snow) — cold blue-white
     name: '库克山·山顶雪景',
+    nameEn: 'Aoraki/Mt Cook · Summit Snow',
+    location: '库克山',
+    locationEn: 'Aoraki/Mt Cook',
     sky0: '#03091a',
     sky1: '#0a1535',
     sky2: '#0f1e45',
@@ -33,6 +39,9 @@ export const SCENE_PALETTES = [
   {
     // Scene 2: 特卡波湖夏夜全景 (Tekapo Summer Night) — warm indigo-blue
     name: '特卡波湖·夏夜全景',
+    nameEn: 'Lake Tekapo · Summer Night',
+    location: '特卡波湖',
+    locationEn: 'Lake Tekapo',
     sky0: '#080618',
     sky1: '#141040',
     sky2: '#241558',
@@ -46,6 +55,9 @@ export const SCENE_PALETTES = [
   {
     // Scene 3: 库克山山谷营地 (Mt Cook Valley Camp) — amber-tinged valley night
     name: '库克山·山谷营地',
+    nameEn: 'Aoraki/Mt Cook · Valley Camp',
+    location: '库克山',
+    locationEn: 'Aoraki/Mt Cook',
     sky0: '#060410',
     sky1: '#120c22',
     sky2: '#261428',
@@ -59,6 +71,9 @@ export const SCENE_PALETTES = [
   {
     // Scene 4: 特卡波湖冬夜极光 (Tekapo Winter Aurora) — aurora green-teal
     name: '特卡波湖·冬夜极光',
+    nameEn: 'Lake Tekapo · Winter Aurora',
+    location: '特卡波湖',
+    locationEn: 'Lake Tekapo',
     sky0: '#030d10',
     sky1: '#071820',
     sky2: '#0d2e1a',
@@ -72,6 +87,9 @@ export const SCENE_PALETTES = [
   {
     // Scene 5: 库克山破晓前最深夜空 (Aoraki Pre-Dawn Deep Sky) — near-black ultra-deep
     name: '库克山·破晓前深空',
+    nameEn: 'Aoraki/Mt Cook · Pre-Dawn Deep Sky',
+    location: '库克山',
+    locationEn: 'Aoraki/Mt Cook',
     sky0: '#010208',
     sky1: '#040810',
     sky2: '#080c18',

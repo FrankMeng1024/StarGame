@@ -417,6 +417,9 @@ export class GameEngine {
     this.charY = this.H * 0.85;
     this.poleLen = this.H * 0.18;
 
+    // Procedural character — no external sprite needed
+    this._charImgReady = false;
+
     // Objects
     this.stars   = this._buildStars();
     this.debris  = this._buildDebris(3 + Math.floor(levelIdx / 5));
@@ -575,10 +578,16 @@ export class GameEngine {
         }, duration * 1000);
         break;
       case 'space_bomb':
-        this.debris = this.debris.filter(d => {
-          if (!d.caught) { this._emitDebrisParticles(d.x, d.y); return false; }
-          return true;
-        });
+        // Destroy only currently held debris
+        if (this.caughtObj && this.caughtObj.type === 'debris') {
+          this._emitDebrisParticles(this.caughtObj.obj.x, this.caughtObj.obj.y);
+          this.debris = this.debris.filter(d => d !== this.caughtObj.obj);
+          this.caughtObj = null;
+          // Resume normal retract speed by returning net to swing immediately
+          this.netPos   = 0;
+          this.netState = 'swing';
+        }
+        // If not holding debris: no effect (don't waste the bomb)
         break;
       case 'time_ext':
         this.timeLeft = Math.min(this.timeLeft + 20, this.startTime + 20);
@@ -668,17 +677,30 @@ export class GameEngine {
       ctx.globalAlpha = alpha;
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      // Location name
-      ctx.font = `bold ${Math.round(H * 0.042)}px 'Noto Sans SC', sans-serif`;
+      // Main location name — prominent, bilingual
+      const fontSize = Math.round(H * 0.052);
+      ctx.font = `bold ${fontSize}px 'Ma Shan Zheng', 'Noto Sans SC', sans-serif`;
       ctx.fillStyle = scene.starColor || '#ffffff';
-      ctx.shadowColor = scene.sky1 || '#000';
-      ctx.shadowBlur = 18;
-      ctx.fillText(scene.name, W / 2, H / 2);
-      // Subtitle
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 24;
+      ctx.fillText(scene.location || scene.name, W / 2, H / 2 - Math.round(H * 0.035));
+      // English name
       ctx.font = `${Math.round(H * 0.024)}px 'Noto Sans SC', sans-serif`;
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';
-      ctx.shadowBlur = 0;
-      ctx.fillText(`— 第 ${sceneIdx * 5 + 1}–${sceneIdx * 5 + 5} 关 —`, W / 2, H / 2 + Math.round(H * 0.058));
+      ctx.fillStyle = 'rgba(255,255,255,0.8)';
+      ctx.shadowBlur = 10;
+      ctx.fillText(scene.locationEn || '', W / 2, H / 2 + Math.round(H * 0.018));
+      // Sub-scene descriptor (牧羊人小屋 etc.) — smaller, dimmer
+      const subName = scene.name.includes('·') ? scene.name.split('·')[1] : '';
+      if (subName) {
+        ctx.font = `${Math.round(H * 0.018)}px 'Noto Sans SC', sans-serif`;
+        ctx.fillStyle = 'rgba(255,255,255,0.45)';
+        ctx.shadowBlur = 0;
+        ctx.fillText(subName, W / 2, H / 2 + Math.round(H * 0.055));
+      }
+      // Level range label
+      ctx.font = `${Math.round(H * 0.018)}px 'Noto Sans SC', sans-serif`;
+      ctx.fillStyle = 'rgba(255,255,255,0.35)';
+      ctx.fillText(`— 第 ${sceneIdx * 5 + 1}–${sceneIdx * 5 + 5} 关 —`, W / 2, H / 2 + Math.round(H * 0.082));
       ctx.restore();
 
       if (elapsed < TOTAL) {
@@ -764,9 +786,12 @@ export class GameEngine {
 
     // Net retract
     if (this.netState === 'retract') {
-      this.netPos -= this.netSpeed * 1.5;
+      // Slow retract when holding debris (30% speed), waived with glove
+      const holdingDebris = this.caughtObj && this.caughtObj.type === 'debris';
+      const retractMult = (holdingDebris && !this._isSlotActive('glove')) ? 0.3 : 1.5;
+      this.netPos -= this.netSpeed * retractMult;
       // Drag caught debris only — stars stay at original position
-      if (this.caughtObj && this.caughtObj.type === 'debris') {
+      if (holdingDebris) {
         const tip = this._netTip();
         this.caughtObj.obj.x = tip.x;
         this.caughtObj.obj.y = tip.y;
@@ -825,11 +850,7 @@ export class GameEngine {
       hit.obj.caught = true;
       playDebrisCatch();
       this._emitDebrisParticles(hit.obj.x, hit.obj.y);
-      // Time penalty for catching debris (waived with glove active slot)
-      if (!this._isSlotActive('glove')) {
-        this.timeLeft = Math.max(0, this.timeLeft - 1);
-        this._showPenaltyText(hit.obj.x, hit.obj.y);
-      }
+      // No time penalty — slow retract is the consequence (see retract logic)
     }
   }
 
@@ -1095,6 +1116,40 @@ export class GameEngine {
     const cy   = this.charY;
     const t    = Date.now() * 0.002;
 
+    // ── Ground shadow ──────────────────────────────────────────
+    ctx.save();
+    const shadowGrad = ctx.createRadialGradient(cx, cy + 4, 0, cx, cy + 4, 32);
+    shadowGrad.addColorStop(0, 'rgba(0,0,0,0.45)');
+    shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = shadowGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy + 4, 32, 7, 0, 0, TWO_PI);
+    ctx.fill();
+    ctx.restore();
+
+    // ── Sprite image if loaded ─────────────────────────────────
+    if (this._charImgReady && this._charImg) {
+      const now = Date.now();
+      // Frame advance: hold each frame for ~200ms (blink effect)
+      if (now - this._charLastFrame > 200) {
+        this._charFrameIdx = (this._charFrameIdx + 1) % this._charFrameCount;
+        this._charLastFrame = now;
+      }
+      const DRAW_H = 110; // height in canvas px
+      const DRAW_W = DRAW_H; // square frame
+      const sx = this._charFrameIdx * this._charFrameW;
+      const sy = 0;
+      ctx.save();
+      ctx.drawImage(
+        this._charImg,
+        sx, sy, this._charFrameW, this._charFrameH,
+        cx - DRAW_W / 2, cy - DRAW_H + 12, DRAW_W, DRAW_H
+      );
+      ctx.restore();
+      return; // skip procedural drawing
+    }
+
+    // ── Procedural fallback (if image not yet loaded) ──────────
     // Anime-style proportions (total ~130px tall)
     // cy = feet level; head center at cy-95; hair crown at cy-120
     const HEAD_CY  = cy - 95;   // head center Y
@@ -1113,17 +1168,6 @@ export class GameEngine {
     const isThrow = netSt === 'extend';
     const isCatch = netSt === 'retract' && this.caughtObj !== null;
     const poleAngle = this.swingAngle;
-
-    // ── Ground shadow ──────────────────────────────────────────
-    ctx.save();
-    const shadowGrad = ctx.createRadialGradient(cx, cy + 4, 0, cx, cy + 4, 32);
-    shadowGrad.addColorStop(0, 'rgba(0,0,0,0.45)');
-    shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.fillStyle = shadowGrad;
-    ctx.beginPath();
-    ctx.ellipse(cx, cy + 4, 32, 7, 0, 0, TWO_PI);
-    ctx.fill();
-    ctx.restore();
 
     // ── Twin tails (drawn BEHIND body) ────────────────────────
     ctx.save();

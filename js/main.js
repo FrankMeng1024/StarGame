@@ -78,7 +78,7 @@ function navigate(screen, params = {}) {
 
   // No transition during gameplay (performance)
   if (screen === 'game') {
-    setTrailEnabled(false);
+    setTrailEnabled(true);  // keep cursor trail active in game
     showScreen('game');
     startGame(navigate);
     return;
@@ -122,7 +122,7 @@ function _activateScreen(screen, screenId, params) {
   } else if (screen === 'gallery-detail') {
     showGalleryDetail(navigate, params);
   } else if (screen === 'shop') {
-    initShop(navigate);
+    initShop(navigate, params);
   } else if (screen === 'levels') {
     refreshLevels();
   }
