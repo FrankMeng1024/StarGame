@@ -539,7 +539,7 @@ export class GameEngine {
   }
 
   _handleKeySlot(e) {
-    if (this._introPlaying || this.finished) return;
+    if (this._introPlaying || this.finished || this._paused) return;
     const slotIdx = e.code === 'Digit1' ? 0 : e.code === 'Digit2' ? 1 : e.code === 'Digit3' ? 2 : -1;
     if (slotIdx < 0) return;
     this.activateSlot(slotIdx);
