@@ -333,7 +333,16 @@ function _renderPhotoCarousel(con) {
 
   const photos = CONSTELLATION_PHOTOS[con.nameEn] || [];
   if (photos.length === 0) {
-    carouselSection.style.display = 'none';
+    carouselSection.style.display = '';
+    carouselSection.innerHTML = `
+      <div class="photo-carousel-label">📷 天文摄影 · Astrophotography</div>
+      <div class="photo-carousel-track">
+        <div class="photo-carousel-card photo-carousel-empty">
+          <div class="photo-carousel-img-wrap no-image">✦</div>
+          <div class="photo-carousel-title">暂无图片</div>
+        </div>
+      </div>
+    `;
     return;
   }
 
@@ -349,6 +358,7 @@ function _renderPhotoCarousel(con) {
               alt="${p.title}"
               class="photo-carousel-img"
               loading="lazy"
+              onerror="this.parentElement.classList.add('no-image'); this.style.display='none'; this.parentElement.innerHTML+='✦';"
             />
           </div>
           <div class="photo-carousel-credit">${p.credit}</div>

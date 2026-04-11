@@ -1214,10 +1214,15 @@ body {
 
 .photo-carousel-label {
   font-size: var(--font-sm);
-  color: var(--star-gold);
   letter-spacing: 0.08em;
   text-transform: uppercase;
   margin-bottom: var(--spacing-sm);
+  background: linear-gradient(90deg, #ffd700, #ffaa00);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  padding-bottom: 6px;
+  border-bottom: 1px solid rgba(255, 215, 0, 0.3);
 }
 
 .photo-carousel-track {
@@ -1252,10 +1257,18 @@ body {
   backdrop-filter: blur(8px);
   -webkit-backdrop-filter: blur(8px);
   border: 1px solid rgba(124, 92, 191, 0.25);
-  border-radius: var(--radius-md);
+  border-radius: 16px;
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 4px 24px rgba(0, 0, 0, 0.6);
+  transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.photo-carousel-card:hover {
+  transform: scale(1.04);
+  border-color: rgba(255, 215, 0, 0.4);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.8), 0 0 16px rgba(255, 215, 0, 0.15);
 }
 
 .photo-carousel-img-wrap {
@@ -1264,6 +1277,24 @@ body {
   overflow: hidden;
   background: #000814;
   flex-shrink: 0;
+  position: relative;
+}
+
+.photo-carousel-img-wrap::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0) 50%);
+  pointer-events: none;
+}
+
+.photo-carousel-img-wrap.no-image {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(135deg, #0a0f2e, #1a1040);
+  color: rgba(180, 200, 255, 0.3);
+  font-size: 32px;
 }
 
 .photo-carousel-img {
@@ -1275,7 +1306,7 @@ body {
 }
 
 .photo-carousel-card:hover .photo-carousel-img {
-  transform: scale(1.04);
+  transform: scale(1.06);
 }
 
 .photo-carousel-title {
@@ -1291,6 +1322,12 @@ body {
   padding: 4px var(--spacing-sm) 0;
   line-height: 1.4;
   opacity: 0.8;
+}
+
+.photo-carousel-empty .photo-carousel-title {
+  text-align: center;
+  color: rgba(180, 200, 255, 0.35);
+  padding: var(--spacing-sm);
 }
 
 /* ── Shop Screen ───────────────────────────────────────────── */
