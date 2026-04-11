@@ -149,3 +149,13 @@ No backend, no network requests. All data in localStorage + local files.
 - Item HUD: `.hud-item-slots` container shows per-slot elements with slot number + item icon. Tested with ⚡ (speed) in slot 1, ⏱️ (time ext) in slot 2, 🪙 (coin magnet passive).
 - Navigation regression Sprint 12: game→levels→menu→gallery→gallery-detail→gallery→menu: ALL CLEAN, 0 JS errors.
 - Regression checklist addition: after any fail-screen change, verify stat-time shows '0秒 剩余' not elapsed seconds.
+
+## Sprint 13 Verified (2026-04-11)
+
+- Item system: localStorage.inventory stores item qtys keyed by item ID. Active items assigned to max 2 slots; passive items auto-activate on game start with toast. HUD renders slot icons + passive icon. Item selection modal shows 主动道具 and 被动道具 sections. No-items: game starts directly (no modal).
+- Difficulty indicator: `.card-diff-bar` inside each `.level-card`; `style="width:N%;background:COLOR"` inline. Width = difficulty/5 × 100%. Color: green `rgb(76,222,128)` for ≤2, amber `rgb(255,184,48)` for 3, red `rgb(255,85,85)` for ≥4. Label: `.card-diff-label` ("难度"). Renders on both unlocked and locked cards.
+- Star chart modal: `#starchart-modal` overlay element with SVG cloned from `#detail-starchart-svg`. Three close methods all work: button click, backdrop click (`dispatchEvent` on modal element), Escape key. Modal display toggles between `flex` and `none`.
+- Star chart hint text: `<p class="starchart-hint">点击放大查看</p>` in gallery detail.
+- Carousel missing images: `.no-image` class on `.photo-carousel-img-wrap` triggers ✦ placeholder (Wikimedia CDN offline). Empty constellations render `.photo-carousel-empty` card with `.photo-carousel-title` "暂无图片" — NOT blank space.
+- Character (Sprint 13): fully procedural canvas drawing, no external sprites. Anime-style with purple/navy dress, brown hair, golden staff, mountain horizon. Arm states: idle, throw, catch visible.
+- Navigation regression Sprint 13: menu↔levels↔gallery↔gallery-detail↔shop↔game (15 nav steps): ALL CLEAN, 0 JS errors. localStorage persists across navigation and page reload.

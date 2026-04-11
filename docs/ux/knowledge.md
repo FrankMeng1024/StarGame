@@ -220,3 +220,30 @@
 ### Navigation Regression
 - Sprint 12: menu → levels → item-select (with item) → game → pause → resume → game → fail: CLEAN
 - 1 console error: Wikimedia CDN timeout (pre-existing, expected offline, no JS errors)
+
+## Sprint 13 Updates (2026-04-11)
+
+### Difficulty Bar (STORY-00057)
+- Level cards now show color-coded progress bar: green (#4cde80) for difficulty 1-2, amber (#ffb830) for 3, red (#ff5555) for 4-5; bar width = difficulty/5 × 100%
+- "难度" label at 9px/60% opacity is the weakest visual element on level cards — functional but below comfortable legibility threshold, especially on unlocked cards
+- Color progression only visible on later levels (cards 1-10 mostly green/amber) — first impression lacks strong color variation
+
+### Star Chart Zoom Modal (STORY-00055)
+- "点击放大查看" hint text at 11px/50% opacity — discoverable but subtle; zoom-in cursor provides secondary affordance on desktop
+- Modal is robust: ✕ button (top-right), Escape key, and backdrop click all close correctly with 200ms fade transition
+- Star labels clearly legible at 90vmin size — significant improvement over 480px inline
+
+### Photo Carousel Enhancement (STORY-00056)
+- Cards upgraded to 16px radius, drop shadow, hover scale(1.04) + gold border glow
+- Gold gradient header with bottom border is polished and consistent with design language
+- onerror fallback (✦ placeholder) works correctly for broken external image URLs
+- "暂无图片" empty state is visually intentional and well-styled
+
+### New Friction Points (Sprint 13)
+- "难度" label at 9px/60% opacity is barely legible on the unlocked card — Medium
+- Star chart hint text too subtle for reliable first-time discovery on touch devices — Low
+- External photo URLs fail to load (CORS/CDN) — existing infrastructure issue, Low
+- Color variation in difficulty bars only apparent after scrolling beyond first scene group — Low
+
+### Navigation Regression
+- Sprint 13: menu → level select → back → gallery → Orion detail → star chart modal (open/close ×3) → carousel → back → unlock idx29 → 猎犬座 detail → empty carousel → back → menu: ALL CLEAN, 0 console errors
