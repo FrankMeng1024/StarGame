@@ -1095,171 +1095,320 @@ export class GameEngine {
     const cy   = this.charY;
     const t    = Date.now() * 0.002;
 
-    // State: 'swing'=idle, 'extend'=throw, 'retract'=catch
-    const state = this.netState;
-    const isThrow   = state === 'extend';
-    const isCatch   = state === 'retract' && this.caughtObj !== null;
+    // Anime-style proportions (total ~130px tall)
+    // cy = feet level; head center at cy-95; hair crown at cy-120
+    const HEAD_CY  = cy - 95;   // head center Y
+    const HEAD_RX  = 18;        // head half-width
+    const HEAD_RY  = 20;        // head half-height (slightly taller)
+    const NECK_Y   = HEAD_CY + HEAD_RY - 2; // neck top
+    const TORSO_T  = NECK_Y + 8;  // torso top (below neck)
+    const TORSO_B  = cy - 38;     // torso bottom / waist
+    const SKIRT_T  = TORSO_B;
+    const SKIRT_B  = cy - 10;
+    const LEG_T    = cy - 10;
+    const LEG_B    = cy + 10;     // ankle
 
-    // --- Arm pose angles (radians, relative to shoulder) ---
-    // Throw: arm reaches upward-toward-pole direction
-    // Idle:  arm at ~45° outward relaxed
-    const poleAngle = this.swingAngle; // radians from center
-    const armBase   = cy - 34;        // shoulder Y
+    // State
+    const netSt   = this.netState;
+    const isThrow = netSt === 'extend';
+    const isCatch = netSt === 'retract' && this.caughtObj !== null;
+    const poleAngle = this.swingAngle;
 
     // ── Ground shadow ──────────────────────────────────────────
     ctx.save();
-    const shadowGrad = ctx.createRadialGradient(cx, cy + 3, 0, cx, cy + 3, 26);
-    shadowGrad.addColorStop(0, 'rgba(0,0,0,0.5)');
+    const shadowGrad = ctx.createRadialGradient(cx, cy + 4, 0, cx, cy + 4, 32);
+    shadowGrad.addColorStop(0, 'rgba(0,0,0,0.45)');
     shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.fillStyle = shadowGrad;
     ctx.beginPath();
-    ctx.ellipse(cx, cy + 3, 26, 6, 0, 0, TWO_PI);
+    ctx.ellipse(cx, cy + 4, 32, 7, 0, 0, TWO_PI);
     ctx.fill();
+    ctx.restore();
+
+    // ── Twin tails (drawn BEHIND body) ────────────────────────
+    ctx.save();
+    const tailSway = Math.sin(t * 0.9) * 6;
+    const hairDark  = '#1a0a00';
+    const hairMid   = '#3d1f00';
+    const hairLight = '#7a4010';
+    // Left twin tail
+    const ltGrad = ctx.createLinearGradient(cx - 22, HEAD_CY, cx - 30, cy - 20);
+    ltGrad.addColorStop(0, hairMid);
+    ltGrad.addColorStop(1, hairDark);
+    ctx.fillStyle = ltGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 16, HEAD_CY - 8);
+    ctx.bezierCurveTo(cx - 28, HEAD_CY + 10, cx - 36 - tailSway, cy - 50, cx - 32 - tailSway * 1.2, cy - 20);
+    ctx.bezierCurveTo(cx - 30 - tailSway, cy - 15, cx - 24 - tailSway * 0.5, cy - 18, cx - 20, cy - 30);
+    ctx.bezierCurveTo(cx - 22, cy - 48, cx - 18, cy - 62, cx - 14, HEAD_CY + 12);
+    ctx.closePath();
+    ctx.fill();
+    // Right twin tail
+    const rtGrad = ctx.createLinearGradient(cx + 22, HEAD_CY, cx + 30, cy - 20);
+    rtGrad.addColorStop(0, hairMid);
+    rtGrad.addColorStop(1, hairDark);
+    ctx.fillStyle = rtGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx + 16, HEAD_CY - 8);
+    ctx.bezierCurveTo(cx + 28, HEAD_CY + 10, cx + 36 + tailSway, cy - 50, cx + 32 + tailSway * 1.2, cy - 20);
+    ctx.bezierCurveTo(cx + 30 + tailSway, cy - 15, cx + 24 + tailSway * 0.5, cy - 18, cx + 20, cy - 30);
+    ctx.bezierCurveTo(cx + 22, cy - 48, cx + 18, cy - 62, cx + 14, HEAD_CY + 12);
+    ctx.closePath();
+    ctx.fill();
+    // Twin tail ribbon ties (gold)
+    ctx.fillStyle = '#ffd700';
+    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 4;
+    // Left ribbon
+    ctx.beginPath();
+    ctx.ellipse(cx - 22, cy - 50, 5, 3, -0.5, 0, TWO_PI);
+    ctx.fill();
+    // Right ribbon
+    ctx.beginPath();
+    ctx.ellipse(cx + 22, cy - 50, 5, 3, 0.5, 0, TWO_PI);
+    ctx.fill();
+    ctx.shadowBlur = 0;
     ctx.restore();
 
     // ── Legs ───────────────────────────────────────────────────
     ctx.save();
-    // Slight idle sway
-    const legSway = Math.sin(t) * 1.5;
-    // Left leg
-    const legGrad = ctx.createLinearGradient(cx - 8, cy + 12, cx - 8, cy + 32);
-    legGrad.addColorStop(0, '#f5d0b0');
-    legGrad.addColorStop(1, '#e8b890');
+    const legSway = Math.sin(t) * 2;
+    const legGrad = ctx.createLinearGradient(cx, LEG_T, cx, LEG_B + 8);
+    legGrad.addColorStop(0, '#f7d5b8');
+    legGrad.addColorStop(1, '#e8b888');
     ctx.fillStyle = legGrad;
+    // Left leg
     ctx.beginPath();
-    ctx.roundRect(cx - 12 + legSway, cy + 14, 9, 16, 3);
+    ctx.roundRect(cx - 14 + legSway, LEG_T, 11, LEG_B - LEG_T + 5, 3);
     ctx.fill();
     // Right leg
     ctx.beginPath();
-    ctx.roundRect(cx + 3 - legSway, cy + 14, 9, 16, 3);
+    ctx.roundRect(cx + 3 - legSway, LEG_T, 11, LEG_B - LEG_T + 5, 3);
     ctx.fill();
-    // Socks (white stripe)
-    ctx.fillStyle = '#f0f0ff';
-    ctx.fillRect(cx - 12 + legSway, cy + 24, 9, 3);
-    ctx.fillRect(cx + 3 - legSway,  cy + 24, 9, 3);
-    // Shoes
-    const shoeGrad = ctx.createLinearGradient(0, cy + 27, 0, cy + 32);
-    shoeGrad.addColorStop(0, '#5a3a80');
-    shoeGrad.addColorStop(1, '#2e1a50');
+    // White knee-high socks
+    ctx.fillStyle = '#f2f2ff';
+    ctx.beginPath();
+    ctx.roundRect(cx - 14 + legSway, cy - 2, 11, 12, 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(cx + 3 - legSway, cy - 2, 11, 12, 2);
+    ctx.fill();
+    // Sock top stripe (light purple)
+    ctx.fillStyle = 'rgba(160,120,220,0.5)';
+    ctx.fillRect(cx - 14 + legSway, cy - 2, 11, 2);
+    ctx.fillRect(cx + 3 - legSway, cy - 2, 11, 2);
+    // Shoes (deep purple with shine)
+    const shoeGrad = ctx.createLinearGradient(0, cy + 8, 0, cy + 18);
+    shoeGrad.addColorStop(0, '#6a3a9a');
+    shoeGrad.addColorStop(1, '#2a0a50');
     ctx.fillStyle = shoeGrad;
     ctx.beginPath();
-    ctx.roundRect(cx - 13 + legSway, cy + 27, 12, 6, 2);
+    ctx.roundRect(cx - 16 + legSway, cy + 8, 15, 9, [4, 4, 5, 5]);
     ctx.fill();
     ctx.beginPath();
-    ctx.roundRect(cx + 2 - legSway, cy + 27, 12, 6, 2);
+    ctx.roundRect(cx + 1 - legSway, cy + 8, 15, 9, [4, 4, 5, 5]);
+    ctx.fill();
+    // Shoe shine
+    ctx.fillStyle = 'rgba(255,255,255,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(cx - 10 + legSway, cy + 10, 4, 2, -0.3, 0, TWO_PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + 8 - legSway, cy + 10, 4, 2, 0.3, 0, TWO_PI);
     ctx.fill();
     ctx.restore();
 
-    // ── Skirt ──────────────────────────────────────────────────
+    // ── Layered skirt ──────────────────────────────────────────
     ctx.save();
-    const skirtSway = Math.sin(t * 0.8) * 2;
-    const skirtGrad = ctx.createLinearGradient(cx, cy - 4, cx, cy + 16);
-    skirtGrad.addColorStop(0, '#9d7de0');
-    skirtGrad.addColorStop(0.5, '#7c5cbf');
-    skirtGrad.addColorStop(1, '#5a3a90');
-    ctx.fillStyle = skirtGrad;
+    const skirtSway = Math.sin(t * 0.8) * 3;
+    // Under-skirt (lighter inner layer)
+    const skirtInner = ctx.createLinearGradient(cx, SKIRT_T, cx, SKIRT_B + 8);
+    skirtInner.addColorStop(0, '#c8a8f8');
+    skirtInner.addColorStop(1, '#9070d0');
+    ctx.fillStyle = skirtInner;
     ctx.beginPath();
-    ctx.moveTo(cx - 14, cy - 4);
-    ctx.lineTo(cx + 14, cy - 4);
-    ctx.bezierCurveTo(cx + 18 + skirtSway, cy + 6, cx + 22 + skirtSway, cy + 12, cx + 19 + skirtSway, cy + 15);
-    ctx.lineTo(cx - 19 - skirtSway, cy + 15);
-    ctx.bezierCurveTo(cx - 22 - skirtSway, cy + 12, cx - 18 - skirtSway, cy + 6, cx - 14, cy - 4);
+    ctx.moveTo(cx - 12, SKIRT_T);
+    ctx.lineTo(cx + 12, SKIRT_T);
+    ctx.bezierCurveTo(cx + 18 + skirtSway, SKIRT_T + 10, cx + 22 + skirtSway, SKIRT_T + 18, cx + 17 + skirtSway, SKIRT_B + 8);
+    ctx.lineTo(cx - 17 - skirtSway, SKIRT_B + 8);
+    ctx.bezierCurveTo(cx - 22 - skirtSway, SKIRT_T + 18, cx - 18 - skirtSway, SKIRT_T + 10, cx - 12, SKIRT_T);
     ctx.closePath();
     ctx.fill();
-    // Skirt fold highlights
-    ctx.strokeStyle = 'rgba(180,140,255,0.4)';
+    // Outer skirt (deep navy → purple, layered on top)
+    const skirtOuter = ctx.createLinearGradient(cx, SKIRT_T, cx, SKIRT_B + 2);
+    skirtOuter.addColorStop(0, '#1a0a4a');
+    skirtOuter.addColorStop(0.5, '#3a1a7a');
+    skirtOuter.addColorStop(1, '#7a40c0');
+    ctx.fillStyle = skirtOuter;
+    ctx.beginPath();
+    ctx.moveTo(cx - 12, SKIRT_T);
+    ctx.lineTo(cx + 12, SKIRT_T);
+    ctx.bezierCurveTo(cx + 17 + skirtSway, SKIRT_T + 8, cx + 20 + skirtSway, SKIRT_T + 14, cx + 15 + skirtSway, SKIRT_B + 2);
+    ctx.lineTo(cx - 15 - skirtSway, SKIRT_B + 2);
+    ctx.bezierCurveTo(cx - 20 - skirtSway, SKIRT_T + 14, cx - 17 - skirtSway, SKIRT_T + 8, cx - 12, SKIRT_T);
+    ctx.closePath();
+    ctx.fill();
+    // Skirt hem sparkle dots
+    ctx.fillStyle = 'rgba(200,160,255,0.6)';
+    for (let si = 0; si < 5; si++) {
+      const sx = cx - 16 + si * 8 + skirtSway * 0.5;
+      const sy = SKIRT_B + 2 + Math.sin(t + si) * 1.5;
+      ctx.beginPath();
+      ctx.arc(sx, sy, 1.2, 0, TWO_PI);
+      ctx.fill();
+    }
+    // Skirt fold lines
+    ctx.strokeStyle = 'rgba(160,100,240,0.35)';
     ctx.lineWidth = 0.8;
     for (let fi = -1; fi <= 1; fi++) {
       ctx.beginPath();
-      ctx.moveTo(cx + fi * 6, cy - 4);
-      ctx.bezierCurveTo(cx + fi * 8 + skirtSway, cy + 4, cx + fi * 10 + skirtSway, cy + 10, cx + fi * 8 + skirtSway, cy + 15);
+      ctx.moveTo(cx + fi * 5, SKIRT_T);
+      ctx.bezierCurveTo(cx + fi * 8 + skirtSway * 0.5, SKIRT_T + 8, cx + fi * 10 + skirtSway, SKIRT_T + 16, cx + fi * 8 + skirtSway, SKIRT_B);
       ctx.stroke();
     }
     ctx.restore();
 
     // ── Dress torso ────────────────────────────────────────────
     ctx.save();
-    const torsoGrad = ctx.createLinearGradient(cx - 11, cy - 34, cx + 11, cy - 4);
-    torsoGrad.addColorStop(0, '#a07ed0');
-    torsoGrad.addColorStop(0.4, '#7c5cbf');
-    torsoGrad.addColorStop(1, '#5a3a90');
+    const torsoGrad = ctx.createLinearGradient(cx, TORSO_T, cx, TORSO_B);
+    torsoGrad.addColorStop(0, '#9a6ed8');
+    torsoGrad.addColorStop(0.5, '#6a40b0');
+    torsoGrad.addColorStop(1, '#3a1a7a');
     ctx.fillStyle = torsoGrad;
     ctx.beginPath();
-    ctx.moveTo(cx - 10, cy - 32);
-    ctx.bezierCurveTo(cx - 12, cy - 18, cx - 12, cy - 10, cx - 14, cy - 4);
-    ctx.lineTo(cx + 14, cy - 4);
-    ctx.bezierCurveTo(cx + 12, cy - 10, cx + 12, cy - 18, cx + 10, cy - 32);
+    ctx.moveTo(cx - 11, TORSO_T);
+    ctx.bezierCurveTo(cx - 13, TORSO_T + 10, cx - 13, TORSO_B - 6, cx - 12, TORSO_B);
+    ctx.lineTo(cx + 12, TORSO_B);
+    ctx.bezierCurveTo(cx + 13, TORSO_B - 6, cx + 13, TORSO_T + 10, cx + 11, TORSO_T);
     ctx.closePath();
     ctx.fill();
-    // Collar/neckline bow
-    ctx.fillStyle = '#ffd700';
+    // White sailor collar
+    ctx.fillStyle = 'rgba(240,240,255,0.85)';
     ctx.beginPath();
-    ctx.moveTo(cx - 4, cy - 32);
-    ctx.lineTo(cx,     cy - 29);
-    ctx.lineTo(cx + 4, cy - 32);
+    ctx.moveTo(cx - 11, TORSO_T);
+    ctx.lineTo(cx, TORSO_T + 10);
+    ctx.lineTo(cx + 11, TORSO_T);
+    ctx.lineTo(cx + 9, TORSO_T - 2);
+    ctx.lineTo(cx, TORSO_T + 7);
+    ctx.lineTo(cx - 9, TORSO_T - 2);
     ctx.closePath();
     ctx.fill();
-    // Star decorations on dress
-    ctx.fillStyle = 'rgba(255,215,0,0.6)';
-    ctx.font = '7px serif';
+    // Collar ribbon bow (gold)
+    ctx.fillStyle = '#ffd700';
+    ctx.shadowColor = 'rgba(255,215,0,0.5)'; ctx.shadowBlur = 5;
+    ctx.beginPath();
+    ctx.moveTo(cx - 5, TORSO_T + 4);
+    ctx.lineTo(cx, TORSO_T + 8);
+    ctx.lineTo(cx + 5, TORSO_T + 4);
+    ctx.lineTo(cx + 3, TORSO_T + 2);
+    ctx.lineTo(cx, TORSO_T + 6);
+    ctx.lineTo(cx - 3, TORSO_T + 2);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+    // Star decorations on torso
+    ctx.fillStyle = 'rgba(255,220,100,0.55)';
+    ctx.font = '8px serif';
     ctx.textAlign = 'center';
-    ctx.fillText('✦', cx - 5, cy - 20);
-    ctx.fillText('✦', cx + 5, cy - 14);
+    ctx.fillText('✦', cx - 5, TORSO_T + 20);
+    ctx.fillText('✦', cx + 5, TORSO_T + 28);
     ctx.restore();
 
     // ── Arms ───────────────────────────────────────────────────
     ctx.save();
-    const skinGrad = ctx.createLinearGradient(cx, cy - 34, cx, cy - 14);
-    skinGrad.addColorStop(0, '#f8d4b4');
-    skinGrad.addColorStop(1, '#e8b880');
+    ctx.lineCap = 'round';
+    ctx.lineWidth = 7;
+    const SHOULDER_Y = TORSO_T + 4;
+    const SLEEVE_COLOR = '#7a50c0'; // dress sleeve colour
 
     if (isThrow) {
-      // Throw: right arm raised toward pole direction
-      const armLen = 18;
-      const rawA   = poleAngle - Math.PI * 0.5; // toward pole tip
-      const armEndX = cx + 10 + Math.cos(rawA) * armLen;
-      const armEndY = (cy - 30) + Math.sin(rawA) * armLen;
-      ctx.strokeStyle = '#f8d4b4';
-      ctx.lineWidth   = 6;
-      ctx.lineCap     = 'round';
-      ctx.shadowColor = 'rgba(255,200,150,0.3)';
-      ctx.shadowBlur  = 4;
+      // RIGHT arm fully raised holding staff — prominent throw pose
+      const armLen  = 26;
+      const rawA    = poleAngle - Math.PI * 0.5;
+      const armEndX = cx + 12 + Math.cos(rawA) * armLen;
+      const armEndY = SHOULDER_Y + Math.sin(rawA) * armLen;
+      // Sleeve
+      ctx.strokeStyle = SLEEVE_COLOR;
+      ctx.lineWidth = 8;
       ctx.beginPath();
-      ctx.moveTo(cx + 10, cy - 30);
+      ctx.moveTo(cx + 12, SHOULDER_Y);
+      ctx.lineTo(cx + 12 + Math.cos(rawA) * 12, SHOULDER_Y + Math.sin(rawA) * 12);
+      ctx.stroke();
+      // Skin forearm
+      ctx.strokeStyle = '#f7d5b8';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(cx + 12 + Math.cos(rawA) * 12, SHOULDER_Y + Math.sin(rawA) * 12);
       ctx.lineTo(armEndX, armEndY);
       ctx.stroke();
-      // Other arm relaxed
-      ctx.shadowBlur = 0;
+      // Left arm relaxed
+      ctx.strokeStyle = SLEEVE_COLOR;
+      ctx.lineWidth = 8;
       ctx.beginPath();
-      ctx.moveTo(cx - 10, cy - 30);
-      ctx.lineTo(cx - 18, cy - 18);
+      ctx.moveTo(cx - 12, SHOULDER_Y);
+      ctx.lineTo(cx - 20, SHOULDER_Y + 14);
+      ctx.stroke();
+      ctx.strokeStyle = '#f7d5b8';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(cx - 20, SHOULDER_Y + 14);
+      ctx.lineTo(cx - 24, SHOULDER_Y + 24);
       ctx.stroke();
     } else if (isCatch) {
-      // Catch: both arms reaching outward-upward (receiving)
-      ctx.strokeStyle = '#f8d4b4';
-      ctx.lineWidth   = 6;
-      ctx.lineCap     = 'round';
+      // Both arms wide open — V-shape catch pose
+      // Left arm
+      ctx.strokeStyle = SLEEVE_COLOR;
+      ctx.lineWidth = 8;
       ctx.beginPath();
-      ctx.moveTo(cx + 10, cy - 30);
-      ctx.lineTo(cx + 20, cy - 40);
+      ctx.moveTo(cx - 12, SHOULDER_Y);
+      ctx.lineTo(cx - 22, SHOULDER_Y - 10);
       ctx.stroke();
+      ctx.strokeStyle = '#f7d5b8';
+      ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.moveTo(cx - 10, cy - 30);
-      ctx.lineTo(cx - 20, cy - 40);
+      ctx.moveTo(cx - 22, SHOULDER_Y - 10);
+      ctx.lineTo(cx - 30, SHOULDER_Y - 22);
+      ctx.stroke();
+      // Right arm
+      ctx.strokeStyle = SLEEVE_COLOR;
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(cx + 12, SHOULDER_Y);
+      ctx.lineTo(cx + 22, SHOULDER_Y - 10);
+      ctx.stroke();
+      ctx.strokeStyle = '#f7d5b8';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(cx + 22, SHOULDER_Y - 10);
+      ctx.lineTo(cx + 30, SHOULDER_Y - 22);
       ctx.stroke();
     } else {
-      // Idle: arms loosely at sides with slight upward sway
-      const idleLift = Math.sin(t * 0.7) * 3;
-      ctx.strokeStyle = '#f8d4b4';
-      ctx.lineWidth   = 6;
-      ctx.lineCap     = 'round';
+      // Idle — arms gently swaying at sides
+      const idleLift = Math.sin(t * 0.7) * 4;
+      // Right arm
+      ctx.strokeStyle = SLEEVE_COLOR;
+      ctx.lineWidth = 8;
       ctx.beginPath();
-      ctx.moveTo(cx + 10, cy - 30);
-      ctx.lineTo(cx + 16 + Math.cos(poleAngle) * 6, cy - 18 - idleLift);
+      ctx.moveTo(cx + 12, SHOULDER_Y);
+      ctx.lineTo(cx + 20, SHOULDER_Y + 10);
       ctx.stroke();
+      ctx.strokeStyle = '#f7d5b8';
+      ctx.lineWidth = 6;
       ctx.beginPath();
-      ctx.moveTo(cx - 10, cy - 30);
-      ctx.lineTo(cx - 14, cy - 20 + idleLift);
+      ctx.moveTo(cx + 20, SHOULDER_Y + 10);
+      ctx.lineTo(cx + 22, SHOULDER_Y + 22 - idleLift);
+      ctx.stroke();
+      // Left arm
+      ctx.strokeStyle = SLEEVE_COLOR;
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(cx - 12, SHOULDER_Y);
+      ctx.lineTo(cx - 20, SHOULDER_Y + 10);
+      ctx.stroke();
+      ctx.strokeStyle = '#f7d5b8';
+      ctx.lineWidth = 6;
+      ctx.beginPath();
+      ctx.moveTo(cx - 20, SHOULDER_Y + 10);
+      ctx.lineTo(cx - 22, SHOULDER_Y + 22 + idleLift);
       ctx.stroke();
     }
     ctx.restore();
@@ -1268,119 +1417,184 @@ export class GameEngine {
     ctx.save();
     ctx.fillStyle = '#f5c5a0';
     ctx.beginPath();
-    ctx.roundRect(cx - 4, cy - 42, 8, 10, 3);
+    ctx.roundRect(cx - 5, NECK_Y, 10, 12, 3);
     ctx.fill();
     ctx.restore();
 
     // ── Head ───────────────────────────────────────────────────
     ctx.save();
-    const headGrad = ctx.createRadialGradient(cx - 3, cy - 50, 2, cx, cy - 48, 14);
-    headGrad.addColorStop(0, '#fce0c0');
-    headGrad.addColorStop(0.7, '#f5c5a0');
-    headGrad.addColorStop(1, '#e0a070');
+    // Skull / face base — warm anime skin
+    const headGrad = ctx.createRadialGradient(cx - 4, HEAD_CY - 5, 3, cx, HEAD_CY, HEAD_RX + 4);
+    headGrad.addColorStop(0, '#fde8cc');
+    headGrad.addColorStop(0.6, '#f8d0a8');
+    headGrad.addColorStop(1, '#e8a870');
     ctx.fillStyle = headGrad;
     ctx.beginPath();
-    ctx.ellipse(cx, cy - 49, 12, 13, 0, 0, TWO_PI);
+    ctx.ellipse(cx, HEAD_CY, HEAD_RX, HEAD_RY, 0, 0, TWO_PI);
     ctx.fill();
-    // Cheek blush
-    ctx.fillStyle = 'rgba(255,150,150,0.25)';
-    ctx.beginPath();
-    ctx.ellipse(cx - 8, cy - 46, 4, 2.5, -0.2, 0, TWO_PI);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx + 8, cy - 46, 4, 2.5, 0.2, 0, TWO_PI);
-    ctx.fill();
-    // Eyes
-    ctx.fillStyle = '#2a1a3a';
-    ctx.beginPath();
-    ctx.ellipse(cx - 5, cy - 49, 2.5, 3, 0, 0, TWO_PI);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.ellipse(cx + 5, cy - 49, 2.5, 3, 0, 0, TWO_PI);
-    ctx.fill();
-    // Eye shine
-    ctx.fillStyle = 'rgba(255,255,255,0.9)';
-    ctx.beginPath();
-    ctx.arc(cx - 4, cy - 50, 0.9, 0, TWO_PI);
-    ctx.fill();
-    ctx.beginPath();
-    ctx.arc(cx + 6, cy - 50, 0.9, 0, TWO_PI);
-    ctx.fill();
-    // Mouth
-    ctx.strokeStyle = '#c0704a';
-    ctx.lineWidth = 1;
-    ctx.beginPath();
-    ctx.arc(cx, cy - 44, 3, 0.1, Math.PI - 0.1);
-    ctx.stroke();
-    ctx.restore();
 
-    // ── Hair ───────────────────────────────────────────────────
-    ctx.save();
-    const hairColor = '#3a2010';
-    const hairHighlight = '#6a4a28';
-    // Hair base cap
-    const hairGrad = ctx.createRadialGradient(cx - 4, cy - 58, 2, cx, cy - 54, 18);
-    hairGrad.addColorStop(0, hairHighlight);
-    hairGrad.addColorStop(0.5, hairColor);
-    hairGrad.addColorStop(1, '#1e1008');
-    ctx.fillStyle = hairGrad;
+    // Jawline / chin taper
+    ctx.fillStyle = '#f0c090';
     ctx.beginPath();
-    ctx.ellipse(cx, cy - 56, 14, 10, 0, 0, TWO_PI);
+    ctx.ellipse(cx, HEAD_CY + HEAD_RY - 4, 8, 6, 0, 0, Math.PI);
     ctx.fill();
-    // Hair volume sides
-    ctx.fillStyle = hairColor;
+
+    // Cheek blush (soft rose)
+    ctx.fillStyle = 'rgba(255,130,130,0.28)';
     ctx.beginPath();
-    ctx.ellipse(cx - 12, cy - 52, 5, 9, -0.3, 0, TWO_PI);
+    ctx.ellipse(cx - HEAD_RX + 4, HEAD_CY + 4, 6, 4, -0.3, 0, TWO_PI);
     ctx.fill();
     ctx.beginPath();
-    ctx.ellipse(cx + 12, cy - 52, 5, 9, 0.3, 0, TWO_PI);
+    ctx.ellipse(cx + HEAD_RX - 4, HEAD_CY + 4, 6, 4, 0.3, 0, TWO_PI);
     ctx.fill();
-    // Front hair fringe strands
-    ctx.strokeStyle = hairColor;
-    ctx.lineWidth = 2.5;
-    ctx.lineCap = 'round';
-    const strandSway = Math.sin(t * 0.5) * 1.5;
-    const strands = [
-      [cx - 9, cy - 56, cx - 12 + strandSway, cy - 42],
-      [cx - 5, cy - 60, cx - 7 + strandSway * 0.5, cy - 43],
-      [cx,     cy - 62, cx + strandSway * 0.3, cy - 44],
-      [cx + 5, cy - 60, cx + 7 - strandSway * 0.5, cy - 43],
-      [cx + 9, cy - 56, cx + 11 - strandSway, cy - 42],
-    ];
-    strands.forEach(([x1, y1, x2, y2]) => {
+
+    // ── Eyes (large almond anime style) ───────────────────────
+    const EYE_Y = HEAD_CY - 3;
+    const eyeOffsets = [-7, 7];
+    eyeOffsets.forEach((ex, i) => {
+      const eyeX = cx + ex;
+      // Eye white
+      ctx.fillStyle = '#ffffff';
       ctx.beginPath();
-      ctx.moveTo(x1, y1);
-      ctx.quadraticCurveTo((x1 + x2) / 2 + strandSway, (y1 + y2) / 2 - 3, x2, y2);
+      ctx.ellipse(eyeX, EYE_Y, 5, 6, 0, 0, TWO_PI);
+      ctx.fill();
+      // Iris gradient (violet-blue anime iris)
+      const irisGrad = ctx.createRadialGradient(eyeX - 1, EYE_Y - 1, 0, eyeX, EYE_Y, 4.5);
+      irisGrad.addColorStop(0, '#a080ff');
+      irisGrad.addColorStop(0.5, '#6040c0');
+      irisGrad.addColorStop(1, '#2a1060');
+      ctx.fillStyle = irisGrad;
+      ctx.beginPath();
+      ctx.ellipse(eyeX, EYE_Y, 4, 5, 0, 0, TWO_PI);
+      ctx.fill();
+      // Pupil
+      ctx.fillStyle = '#100820';
+      ctx.beginPath();
+      ctx.ellipse(eyeX, EYE_Y + 1, 2, 2.5, 0, 0, TWO_PI);
+      ctx.fill();
+      // Main catchlight (top-left)
+      ctx.fillStyle = 'rgba(255,255,255,0.95)';
+      ctx.beginPath();
+      ctx.arc(eyeX - 1.5, EYE_Y - 2, 1.5, 0, TWO_PI);
+      ctx.fill();
+      // Small secondary catchlight
+      ctx.beginPath();
+      ctx.arc(eyeX + 2, EYE_Y + 1, 0.8, 0, TWO_PI);
+      ctx.fill();
+      // Upper eyelid line / lash
+      ctx.strokeStyle = '#1a0830';
+      ctx.lineWidth = 1.2;
+      ctx.beginPath();
+      ctx.arc(eyeX, EYE_Y - 1, 5, Math.PI + 0.3, TWO_PI - 0.3);
+      ctx.stroke();
+      // Eyelash flicks
+      ctx.lineWidth = 0.8;
+      const lashDir = i === 0 ? -1 : 1;
+      ctx.beginPath();
+      ctx.moveTo(eyeX + lashDir * 4.5, EYE_Y - 3);
+      ctx.lineTo(eyeX + lashDir * 7, EYE_Y - 5);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(eyeX + lashDir * 3, EYE_Y - 4.5);
+      ctx.lineTo(eyeX + lashDir * 4.5, EYE_Y - 6.5);
       ctx.stroke();
     });
-    // Long back hair with flowing end
-    const hairFlowSway = Math.sin(t * 0.6) * 4;
-    ctx.fillStyle = hairColor;
+
+    // Eyebrows (thin arched)
+    ctx.strokeStyle = '#2a1000';
+    ctx.lineWidth = 1.5;
+    ctx.lineCap = 'round';
+    [-7, 7].forEach((ex, i) => {
+      const bx = cx + ex;
+      ctx.beginPath();
+      ctx.moveTo(bx - 4 * (i === 0 ? 1 : -1), EYE_Y - 8);
+      ctx.quadraticCurveTo(bx, EYE_Y - 10, bx + 4 * (i === 0 ? 1 : -1), EYE_Y - 7.5);
+      ctx.stroke();
+    });
+
+    // Nose (tiny, anime minimal — just two small dots)
+    ctx.fillStyle = 'rgba(180,100,60,0.5)';
     ctx.beginPath();
-    ctx.moveTo(cx - 12, cy - 56);
-    ctx.bezierCurveTo(cx - 16, cy - 40, cx - 18 + hairFlowSway, cy - 22, cx - 14 + hairFlowSway, cy - 10);
-    ctx.bezierCurveTo(cx - 12 + hairFlowSway, cy - 6, cx - 8, cy - 8, cx - 6, cy - 12);
-    ctx.bezierCurveTo(cx - 10, cy - 20, cx - 13, cy - 36, cx - 10, cy - 52);
-    ctx.closePath();
+    ctx.arc(cx - 2, HEAD_CY + 7, 0.9, 0, TWO_PI);
     ctx.fill();
-    // Hair highlight streaks
-    ctx.strokeStyle = 'rgba(120, 80, 40, 0.6)';
-    ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(cx - 6, cy - 62);
-    ctx.bezierCurveTo(cx - 8, cy - 56, cx - 10, cy - 52, cx - 8, cy - 48);
+    ctx.arc(cx + 2, HEAD_CY + 7, 0.9, 0, TWO_PI);
+    ctx.fill();
+
+    // Mouth (gentle smile arc)
+    ctx.strokeStyle = '#c06848';
+    ctx.lineWidth = 1.3;
+    ctx.lineCap = 'round';
+    ctx.beginPath();
+    ctx.arc(cx, HEAD_CY + 11, 4, 0.15, Math.PI - 0.15);
+    ctx.stroke();
+    // Smile dimple dots
+    ctx.fillStyle = 'rgba(200,100,80,0.4)';
+    ctx.beginPath();
+    ctx.arc(cx - 5, HEAD_CY + 12, 0.8, 0, TWO_PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx + 5, HEAD_CY + 12, 0.8, 0, TWO_PI);
+    ctx.fill();
+    ctx.restore();
+
+    // ── Hair (top cap + fringe — drawn over head, under crown) ─
+    ctx.save();
+    const HAIR_TOP = HEAD_CY - HEAD_RY - 4;
+    const hairCapGrad = ctx.createRadialGradient(cx - 5, HAIR_TOP + 4, 2, cx, HEAD_CY - 8, HEAD_RX + 8);
+    hairCapGrad.addColorStop(0, '#7a4010');
+    hairCapGrad.addColorStop(0.4, '#3d1f00');
+    hairCapGrad.addColorStop(1, '#1a0a00');
+    ctx.fillStyle = hairCapGrad;
+    // Hair cap — covers top of head
+    ctx.beginPath();
+    ctx.ellipse(cx, HEAD_CY - 6, HEAD_RX + 2, HEAD_RY - 2, 0, Math.PI, TWO_PI);
+    ctx.fill();
+    // Hair side puffs
+    ctx.fillStyle = '#3d1f00';
+    ctx.beginPath();
+    ctx.ellipse(cx - HEAD_RX + 2, HEAD_CY - 2, 7, 11, -0.2, 0, TWO_PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + HEAD_RX - 2, HEAD_CY - 2, 7, 11, 0.2, 0, TWO_PI);
+    ctx.fill();
+    // Fringe strands across forehead
+    const strandSway = Math.sin(t * 0.5) * 2;
+    ctx.strokeStyle = '#2a1000';
+    ctx.lineWidth = 3;
+    ctx.lineCap = 'round';
+    const fringeStrands = [
+      [cx - 12, HEAD_CY - 16, cx - 14 + strandSway, HEAD_CY + 4],
+      [cx - 6,  HEAD_CY - 20, cx - 8 + strandSway * 0.6, HEAD_CY + 6],
+      [cx,      HEAD_CY - 22, cx + strandSway * 0.3, HEAD_CY + 8],
+      [cx + 6,  HEAD_CY - 20, cx + 8 - strandSway * 0.6, HEAD_CY + 6],
+      [cx + 12, HEAD_CY - 16, cx + 14 - strandSway, HEAD_CY + 4],
+    ];
+    fringeStrands.forEach(([x1, y1, x2, y2]) => {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.quadraticCurveTo((x1 + x2) * 0.5 + strandSway * 0.5, (y1 + y2) * 0.5 - 2, x2, y2);
+      ctx.stroke();
+    });
+    // Hair shine streak
+    ctx.strokeStyle = 'rgba(140,80,30,0.5)';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(cx - 8, HEAD_CY - 22);
+    ctx.bezierCurveTo(cx - 12, HEAD_CY - 16, cx - 14, HEAD_CY - 10, cx - 10, HEAD_CY - 4);
     ctx.stroke();
     ctx.beginPath();
-    ctx.moveTo(cx + 2, cy - 63);
-    ctx.bezierCurveTo(cx, cy - 57, cx - 2, cy - 52, cx + 1, cy - 47);
+    ctx.moveTo(cx + 2, HEAD_CY - 24);
+    ctx.bezierCurveTo(cx - 1, HEAD_CY - 18, cx - 2, HEAD_CY - 12, cx + 1, HEAD_CY - 5);
     ctx.stroke();
-    // Hair ornament — small star pin
+
+    // Star hair clip (top-right of head)
     ctx.fillStyle = '#ffd700';
-    ctx.shadowColor = '#ffd700';
-    ctx.shadowBlur  = 6;
-    ctx.font = '10px serif';
+    ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 8;
+    ctx.font = '11px serif';
     ctx.textAlign = 'center';
-    ctx.fillText('★', cx + 8, cy - 57);
+    ctx.fillText('★', cx + 14, HEAD_CY - 14);
+    ctx.shadowBlur = 0;
     ctx.restore();
 
     // ── Pole ───────────────────────────────────────────────────
