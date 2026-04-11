@@ -784,16 +784,17 @@ export class GameEngine {
 
       // Check collision
       let hit = null;
+      const catchBonus = this._netEnlargeActive ? 1.5 : 1.0;
       for (const s of this.stars) {
         if (s.caught) continue;
         const dx = tip.x - s.x, dy = tip.y - s.y;
-        if (Math.sqrt(dx * dx + dy * dy) < s.r + 8) { hit = { type: 'star', obj: s }; break; }
+        if (Math.sqrt(dx * dx + dy * dy) < (s.r + 8) * catchBonus) { hit = { type: 'star', obj: s }; break; }
       }
       if (!hit) {
         for (const d of this.debris) {
           if (d.caught) continue;
           const dx = tip.x - d.x, dy = tip.y - d.y;
-          if (Math.sqrt(dx * dx + dy * dy) < d.r + 8) { hit = { type: 'debris', obj: d }; break; }
+          if (Math.sqrt(dx * dx + dy * dy) < (d.r + 8) * catchBonus) { hit = { type: 'debris', obj: d }; break; }
         }
       }
 
