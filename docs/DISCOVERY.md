@@ -1,4 +1,4 @@
-# DISCOVERY.md — 星捕少女 (StarCatcher)
+# DISCOVERY.md — 追星少女 (StarCatcher)
 
 ## Project Type
 Single-player browser game (HTML5 Canvas, desktop-first, future mobile support)

@@ -7,6 +7,7 @@ import { startGame, stopGame } from './screens/game.js';
 import { showComplete, showFail } from './screens/complete.js';
 import { initGallery, showGalleryDetail, refreshGallery } from './screens/gallery.js';
 import { initShop } from './screens/shop.js';
+import { showItemSelect } from './screens/item-select.js';
 
 // ── Custom star cursor ─────────────────────────────────────────
 function initCursor() {
@@ -65,7 +66,7 @@ function init() {
   // Level-select event from refreshed cards
   document.addEventListener('level-select', e => {
     state.currentLevel = e.detail;
-    navigate('game');
+    showItemSelect(() => navigate('game'));
   });
 
   // Expose navigate for test verification only

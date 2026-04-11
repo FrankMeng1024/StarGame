@@ -1,4 +1,4 @@
-# UI_SPEC.md — 星捕少女 (StarCatcher)
+# UI_SPEC.md — 追星少女 (StarCatcher)
 
 ## Product Soul
 

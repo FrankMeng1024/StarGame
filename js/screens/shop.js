@@ -2,14 +2,14 @@
 import state from '../state.js';
 
 const ITEMS = [
-  { id: 'net_speed',    name: '网兜加速',   effect: '本关网兜伸缩速度+50%',       price: 50,  type: 'passive', icon: '⚡' },
-  { id: 'star_magnet',  name: '磁力星引',   effect: '50px内星星主动向网兜靠近',   price: 80,  type: 'passive', icon: '🧲' },
-  { id: 'space_bomb',   name: '宇宙炸弹',   effect: '一键摧毁屏幕内所有垃圾',    price: 100, type: 'active',  icon: '💣' },
-  { id: 'time_ext',     name: '时间延长',   effect: '当前关卡+20秒',             price: 60,  type: 'active',  icon: '⏱️' },
-  { id: 'shrink_debris',name: '缩小垃圾',   effect: '本关所有垃圾缩小50%',       price: 40,  type: 'passive', icon: '🔬' },
-  { id: 'double_coins', name: '双倍金币',   effect: '本关金币奖励×2',            price: 30,  type: 'passive', icon: '🪙' },
-  { id: 'star_map',     name: '星图揭示',   effect: '显示半透明星座连线提示',    price: 20,  type: 'passive', icon: '🗺️' },
-  { id: 'glove',        name: '宇航员手套', effect: '抓到垃圾时不损失时间',      price: 70,  type: 'passive', icon: '🧤' },
+  { id: 'net_speed',    name: '网兜加速',   effect: '激活后15秒内网兜速度+50%',         price: 50,  type: 'active',  icon: '⚡', duration: '15秒' },
+  { id: 'star_magnet',  name: '磁力星引',   effect: '激活后30秒内星星向网兜聚集',       price: 80,  type: 'active',  icon: '🧲', duration: '30秒' },
+  { id: 'space_bomb',   name: '宇宙炸弹',   effect: '即时摧毁屏幕内所有宇宙垃圾',       price: 100, type: 'active',  icon: '💣', duration: '即时' },
+  { id: 'time_ext',     name: '时间延长',   effect: '即时+20秒剩余时间',                price: 60,  type: 'active',  icon: '⏱️', duration: '即时' },
+  { id: 'shrink_debris',name: '缩小垃圾',   effect: '激活后30秒内所有垃圾缩小50%',      price: 40,  type: 'active',  icon: '🔬', duration: '30秒' },
+  { id: 'star_map',     name: '星图揭示',   effect: '激活后60秒显示星座连线提示',        price: 20,  type: 'active',  icon: '🗺️', duration: '60秒' },
+  { id: 'glove',        name: '宇航员手套', effect: '激活后30秒内抓到垃圾不扣时间',      price: 70,  type: 'active',  icon: '🧤', duration: '30秒' },
+  { id: 'double_coins', name: '双倍金币',   effect: '本关金币奖励自动×2（被动，不占槽）', price: 30,  type: 'passive', icon: '🪙', duration: '全局' },
 ];
 
 export function initShop(navigate) {
@@ -20,7 +20,6 @@ export function initShop(navigate) {
 }
 
 function _renderShop(navigate) {
-  // Update coin balance
   _updateBalance();
 
   const grid = document.querySelector('.shop-grid');
@@ -31,7 +30,7 @@ function _renderShop(navigate) {
   // Type legend
   const legend = document.createElement('div');
   legend.className = 'shop-type-legend';
-  legend.textContent = '持续型 = 本关全程自动生效 ｜ 消耗型 = 关卡内手动激活，用完即止';
+  legend.innerHTML = '<strong>主动</strong> = 赛前选最多3个，按 1/2/3 激活，限时生效 ｜ <strong>被动</strong> = 自动生效，不占道具槽';
   grid.appendChild(legend);
 
   ITEMS.forEach(item => {
@@ -44,8 +43,11 @@ function _renderShop(navigate) {
       <div class="shop-item-icon">${item.icon}</div>
       <div class="shop-item-name">${item.name}</div>
       <div class="shop-item-effect">${item.effect}</div>
-      <div class="shop-item-type ${item.type === 'active' ? 'type-active' : 'type-passive'}">
-        ${item.type === 'active' ? '消耗型' : '持续型'}
+      <div class="shop-item-meta">
+        <div class="shop-item-type ${item.type === 'active' ? 'type-active' : 'type-passive'}">
+          ${item.type === 'active' ? '主动' : '被动'}
+        </div>
+        <div class="shop-item-duration">${item.duration}</div>
       </div>
       <div class="shop-item-footer">
         <span class="shop-item-price">🪙 ${item.price}</span>

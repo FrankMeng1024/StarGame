@@ -9,6 +9,8 @@ const state = {
   seenScenes: new Set(),
   currentLevel: null,
   currentScreen: 'menu',
+  // Pre-level item selection: array of up to 3 active item IDs (not persisted)
+  selectedItems: [],
 
   save() { saveGame(this); },
 

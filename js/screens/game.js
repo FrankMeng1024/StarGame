@@ -36,13 +36,10 @@ export function startGame(navigate) {
   document.querySelector('.hud-timer').textContent =
     `${String(Math.floor(t / 60)).padStart(2,'0')}:${String(t % 60).padStart(2,'0')}`;
 
-  // Active item buttons (space_bomb, time_ext)
-  _initActiveItemButtons();
+  // Active item slots HUD
+  _initSlotHUD();
 
-  // Passive item HUD row
-  _initPassiveItemRow();
-
-  // Active items toast (show passive items that are active this run)
+  // Active items toast (passive items that are auto-active)
   _showActiveItemsToast();
 
   // Tutorial hint
@@ -51,6 +48,7 @@ export function startGame(navigate) {
   // Mute button
   _initMuteButton();
 
+  engine.onTimeExt = () => { _showTimeExtFlash(); playTimeExt(); };
   engine.start();
   startMusic();
 }
@@ -58,6 +56,7 @@ export function startGame(navigate) {
 export function stopGame() {
   if (engine) { engine.stop(); engine = null; }
   stopMusic();
+  _stopSlotAnimation();
   // Clean up hint listener if still attached
   if (_hintClickListener) {
     document.removeEventListener('click', _hintClickListener, true);
@@ -122,71 +121,100 @@ const ITEM_NAMES = {
   double_coins: '🪙 双倍金币',
   star_map:     '🗺️ 星图揭示',
   glove:        '🧤 宇航员手套',
+  space_bomb:   '💣 宇宙炸弹',
+  time_ext:     '⏱️ 时间延长',
 };
 
+// ── Slot-based HUD (new item system) ─────────────────────────
+let _slotRafId = null;
+
+function _initSlotHUD() {
+  const container = document.getElementById('hud-active-items');
+  if (!container) return;
+  container.innerHTML = '';
+
+  if (!engine || engine.activeSlots.length === 0) {
+    // Show passive items only if double_coins is active
+    if (engine && engine.activeItems.has('double_coins')) {
+      const row = document.createElement('div');
+      row.className = 'hud-passive-row';
+      row.innerHTML = '<span class="hud-passive-icon" title="双倍金币">🪙</span>';
+      container.appendChild(row);
+    }
+    return;
+  }
+
+  // Build 3 slot buttons
+  engine.activeSlots.forEach((slot, i) => {
+    const el = document.createElement('div');
+    el.className = 'hud-slot';
+    el.dataset.slotIdx = i;
+    el.innerHTML = `
+      <span class="slot-key">${i + 1}</span>
+      <span class="slot-icon">${slot.icon}</span>
+      <div class="slot-bar-wrap"><div class="slot-bar" style="width:100%"></div></div>
+    `;
+    el.addEventListener('click', () => engine && engine.activateSlot(i));
+    container.appendChild(el);
+  });
+
+  // Show passive double_coins badge if active
+  if (engine.activeItems.has('double_coins')) {
+    const passive = document.createElement('span');
+    passive.className = 'hud-passive-icon';
+    passive.title = '双倍金币';
+    passive.textContent = '🪙';
+    container.appendChild(passive);
+  }
+
+  // Start countdown bar animation
+  _startSlotAnimation();
+}
+
+function _startSlotAnimation() {
+  if (_slotRafId) cancelAnimationFrame(_slotRafId);
+  function tick() {
+    if (!engine) return;
+    const now = performance.now();
+    engine.activeSlots.forEach((slot, i) => {
+      const el = document.querySelector(`.hud-slot[data-slot-idx="${i}"]`);
+      if (!el) return;
+      const bar = el.querySelector('.slot-bar');
+      if (slot.used && slot.duration > 0) {
+        const remaining = Math.max(0, slot.endTime - now);
+        const pct = (remaining / (slot.duration * 1000)) * 100;
+        if (bar) bar.style.width = pct + '%';
+        el.classList.toggle('slot-expired', remaining <= 0);
+      } else if (slot.used && slot.duration === 0) {
+        el.classList.add('slot-expired');
+        if (bar) bar.style.width = '0%';
+      }
+    });
+    _slotRafId = requestAnimationFrame(tick);
+  }
+  _slotRafId = requestAnimationFrame(tick);
+}
+
+function _stopSlotAnimation() {
+  if (_slotRafId) { cancelAnimationFrame(_slotRafId); _slotRafId = null; }
+}
+
 function _showActiveItemsToast() {
+  // In new system: show passive items if any
   if (!engine || engine.activeItems.size === 0) return;
   const screen = document.getElementById('screen-game');
   if (!screen) return;
-
-  // Remove any existing toast
   const existing = screen.querySelector('.active-items-toast');
   if (existing) existing.remove();
-
   const names = Array.from(engine.activeItems).map(id => ITEM_NAMES[id] || id);
   const toast = document.createElement('div');
   toast.className = 'active-items-toast';
-  toast.innerHTML = names.map(n => `<span>${n} 已激活</span>`).join('');
+  toast.innerHTML = names.map(n => `<span>${n} 生效中</span>`).join('');
   screen.appendChild(toast);
   setTimeout(() => {
     toast.classList.add('toast-fade-out');
     setTimeout(() => toast.remove(), 400);
   }, 3000);
-}
-
-function _initActiveItemButtons() {
-  const container = document.getElementById('hud-active-items');
-  if (!container) return;
-  container.innerHTML = '';
-
-  const ACTIVE_ITEMS = [
-    { id: 'space_bomb', icon: '💣', label: '炸弹' },
-    { id: 'time_ext',   icon: '⏱️', label: '+20秒' },
-  ];
-
-  for (const item of ACTIVE_ITEMS) {
-    if (state.getItemQty(item.id) <= 0) continue;
-
-    const btn = document.createElement('button');
-    btn.className = 'hud-item-btn';
-    btn.dataset.itemId = item.id;
-    btn.innerHTML = `<span class="hud-item-icon">${item.icon}</span><span class="hud-item-label">${item.label}</span>`;
-    btn.addEventListener('click', () => _activateItem(item.id, btn));
-    container.appendChild(btn);
-  }
-}
-
-function _activateItem(itemId, btn) {
-  if (!engine) return;
-  if (!state.useItem(itemId)) return;
-
-  if (itemId === 'space_bomb') {
-    // Remove all uncaught debris
-    engine.debris = engine.debris.filter(d => {
-      if (!d.caught) {
-        engine._emitDebrisParticles(d.x, d.y);
-        return false;
-      }
-      return true;
-    });
-  } else if (itemId === 'time_ext') {
-    engine.timeLeft = Math.min(engine.timeLeft + 20, engine.startTime + 20);
-    _showTimeExtFlash();
-    playTimeExt();
-  }
-
-  // Hide button after use (qty is now 0)
-  if (state.getItemQty(itemId) <= 0) btn.style.display = 'none';
 }
 
 function _dismissHint() {
@@ -210,35 +238,6 @@ function _showTimeExtFlash() {
   el.style.top  = `${rect.top  - screenRect.top  - 10}px`;
   screen.appendChild(el);
   setTimeout(() => el.remove(), 1200);
-}
-
-function _initPassiveItemRow() {
-  if (!engine || engine.activeItems.size === 0) return;
-  const hud = document.querySelector('.hud-top');
-  if (!hud) return;
-  // Remove any existing row
-  const existing = hud.querySelector('.hud-passive-row');
-  if (existing) existing.remove();
-
-  const PASSIVE_ICONS = {
-    net_speed:    '⚡',
-    star_magnet:  '🧲',
-    shrink_debris:'🔬',
-    double_coins: '🪙',
-    star_map:     '🗺️',
-    glove:        '🧤',
-  };
-  const row = document.createElement('div');
-  row.className = 'hud-passive-row';
-  for (const id of engine.activeItems) {
-    const icon = PASSIVE_ICONS[id];
-    if (!icon) continue;
-    const span = document.createElement('span');
-    span.className = 'hud-passive-icon';
-    span.textContent = icon;
-    row.appendChild(span);
-  }
-  hud.appendChild(row);
 }
 
 function _initMuteButton() {

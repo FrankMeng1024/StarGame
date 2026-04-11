@@ -2,6 +2,7 @@
 import { CONSTELLATIONS } from '../data/constellations.js';
 import { SCENE_PALETTES } from '../data/scenes.js';
 import state from '../state.js';
+import { showItemSelect } from './item-select.js';
 
 export function initLevels(navigate) {
   const screen = document.getElementById('screen-levels');
@@ -50,7 +51,7 @@ export function initLevels(navigate) {
     if (unlocked) {
       card.addEventListener('click', () => {
         state.currentLevel = idx;
-        navigate('game');
+        showItemSelect(() => navigate('game'));
       });
     }
 
