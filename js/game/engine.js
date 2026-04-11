@@ -551,6 +551,10 @@ export class GameEngine {
   activateSlot(slotIdx) {
     const slot = this.activeSlots[slotIdx];
     if (!slot || slot.used) return;
+
+    // space_bomb only works when holding debris — don't consume if no target
+    if (slot.id === 'space_bomb' && !(this.caughtObj && this.caughtObj.type === 'debris')) return;
+
     if (!state.useItem(slot.id)) return; // not owned
 
     slot.used   = true;

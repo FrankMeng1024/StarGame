@@ -3,7 +3,6 @@
 
 let _ctx = null;
 let _masterGain = null;
-let _musicLoop = null;
 let _musicGain = null;
 let _countdownInterval = null;
 

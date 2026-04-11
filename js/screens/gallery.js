@@ -395,6 +395,13 @@ function _renderPhotoCarousel(con) {
 function _openPhotoLightbox(photos, startIdx) {
   let current = startIdx;
 
+  const _close = () => {
+    const lb = document.getElementById('photo-lightbox');
+    if (!lb) return;
+    lb.classList.remove('photo-lightbox-visible');
+    setTimeout(() => { lb.style.display = 'none'; }, 200);
+  };
+
   let lb = document.getElementById('photo-lightbox');
   if (!lb) {
     lb = document.createElement('div');
@@ -416,27 +423,16 @@ function _openPhotoLightbox(photos, startIdx) {
     `;
     document.body.appendChild(lb);
 
-    lb.querySelector('.photo-lightbox-close').addEventListener('click', () => {
-      lb.classList.remove('photo-lightbox-visible');
-      setTimeout(() => { lb.style.display = 'none'; }, 200);
-    });
-    lb.addEventListener('click', e => {
-      if (e.target === lb) {
-        lb.classList.remove('photo-lightbox-visible');
-        setTimeout(() => { lb.style.display = 'none'; }, 200);
-      }
-    });
-    lb.querySelector('.photo-lightbox-prev').addEventListener('click', () => {
-      current = (current - 1 + photos.length) % photos.length;
-      _updateLightbox(lb, photos[current]);
-    });
-    lb.querySelector('.photo-lightbox-next').addEventListener('click', () => {
-      current = (current + 1) % photos.length;
-      _updateLightbox(lb, photos[current]);
+    lb.querySelector('.photo-lightbox-close').addEventListener('click', _close);
+    lb.addEventListener('click', e => { if (e.target === lb) _close(); });
+
+    // Escape key
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' && lb.style.display !== 'none') _close();
     });
   }
 
-  // Update photo references when reopened (photos may differ per constellation)
+  // Re-bind prev/next via onclick (overwrites any prior binding — no stacking)
   lb.querySelector('.photo-lightbox-prev').onclick = () => {
     current = (current - 1 + photos.length) % photos.length;
     _updateLightbox(lb, photos[current]);
