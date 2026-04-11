@@ -1,8 +1,8 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
 **Status**: COMPLETE
-**Current Sprint**: 14 (Sprint Goal: 游戏体验全面提升)
-**Last Updated**: 2026-04-11
+**Current Sprint**: 15 (Sprint Goal: 角色/网兜/星星视觉重绘 + 交互精修 + 展厅/商店UI修复)
+**Last Updated**: 2026-04-12
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -22,6 +22,7 @@
 | Sprint 12 | COMPLETE | 游戏体验修复：连线显示、垃圾旋转、网兜形状、暂停系统、通关界面重设计、场景分界线 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 13 | COMPLETE | 道具系统修复 + 角色升级 + UI精致化 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 14 | COMPLETE | 游戏体验全面提升 (CRs 032-044) (QA PASS, UX no Blockers, VU ACCEPTED 9.5/10) |
+| Sprint 15 | COMPLETE | 角色/网兜/星星视觉重绘 + 交互精修 + 展厅/商店UI修复 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.6/10) |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -32,6 +33,7 @@
 | Sprint 11 | 9.5/10 | ACCEPTED | All PRD + CR features delivered — PROJECT COMPLETE |
 | Sprint 13 | 9.5/10 | ACCEPTED | All PRD + CR (001-031) features verified — PROJECT COMPLETE (final iteration) |
 | Sprint 14 | 9.5/10 | ACCEPTED | All PRD + CR (032-044) features verified — PROJECT COMPLETE |
+| Sprint 15 | 9.6/10 | ACCEPTED | All Sprint 15 user-reported issues resolved — PROJECT COMPLETE |
 
 ## Sprint 10 Stories
 | Story | Title | Status |
@@ -71,6 +73,15 @@
 | STORY-00061 | 暂停HUD修复 (CR-036) | Done |
 | STORY-00062 | 失败界面 + 商店入口 (CR-033/035) | Done |
 | STORY-00063 | 音频系统 + 多项机制修复 (CR-037/038/039/040/044) | Done |
+
+## Sprint 15 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00064 | 少女角色重绘 | Done |
+| STORY-00065 | 网兜视觉重绘 | Done |
+| STORY-00066 | 星星大小/亮度区别 | Done |
+| STORY-00067 | 游戏交互精修 | Done |
+| STORY-00068 | 展厅/商店UI修复 | Done |
 
 ## Acceptance Mode
 auto (Virtual User as final gate)

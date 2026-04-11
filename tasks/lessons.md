@@ -146,3 +146,12 @@ Sprint 13: clean Sprint, no retrospective actions.
 - QA verdict: PASS (all 5 stories, HIGH confidence, 0 bugs).
 - Navigation regression: 15 nav steps (all screens), 0 JS errors throughout.
 - Lightweight retro rule applied: steps 1-3 skipped.
+
+## Sprint 15 — 2026-04-12
+Sprint 15: clean Sprint, no retrospective actions. VU ACCEPTED 9.6/10.
+- 1 Critical bug found by Arch (net_enlarge collision not functional) — fixed before QA ran. Arch gate working as designed.
+- 1 dead function removed (dead `_showStarColorHint`) — logged in Story Notes, confirmed by Arch.
+- QA verdict: PASS (all 5 stories, HIGH confidence, 0 bugs). UX verdict: PASS (0 Blockers, 2 Low deferred).
+- Navigation regression: all screens clean, 0 JS errors.
+- VU score: 9.6/10 — ACCEPTED. Project complete.
+- Lightweight retro rule applied: steps 1-3 skipped. (No VU NOT ACCEPTED in prior Sprint.)
