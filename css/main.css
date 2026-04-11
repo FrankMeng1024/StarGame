@@ -275,37 +275,12 @@ body {
   margin: 0 auto;
 }
 
-/* Scene group dividers */
+/* Scene group dividers — silent separator (no text per CR-030) */
 .scene-divider {
   grid-column: 1 / -1;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  padding: 6px 4px 4px;
-  border-bottom: 1px solid rgba(255,255,255,0.1);
-  margin-bottom: 2px;
-}
-.scene-divider-dot {
-  display: inline-block;
-  width: 10px;
-  height: 10px;
-  border-radius: 50%;
-  flex-shrink: 0;
-  opacity: 0.9;
-}
-.scene-divider-name {
-  font-size: 0.78rem;
-  color: rgba(255,255,255,0.55);
-  letter-spacing: 0.04em;
-  font-family: 'Noto Sans SC', sans-serif;
-}
-.scene-aurora-tag {
-  font-size: 0.68rem;
-  color: #5ef0c0;
-  border: 1px solid rgba(94,240,192,0.4);
-  border-radius: 4px;
-  padding: 1px 5px;
-  letter-spacing: 0.05em;
+  border-top: 1px solid rgba(255,255,255,0.08);
+  margin: 4px 0;
+  padding: 0;
 }
 
 .level-card {
@@ -590,102 +565,195 @@ body {
 .complete-inner {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--spacing-sm);
-  max-width: 600px;
-  width: 90%;
-  text-align: center;
+  align-items: stretch;
+  gap: 8px;
+  max-width: 480px;
+  width: 92%;
+  height: 100vh;
   max-height: 100vh;
-  overflow-y: auto;
-  padding: var(--spacing-md) 0;
+  overflow: hidden;
+  padding: 12px 0 8px;
+  box-sizing: border-box;
+}
+
+/* Header row: mini canvas + title */
+.complete-header-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-height: 52px;
+  min-height: 48px;
+  flex-shrink: 0;
+}
+
+.complete-mini-canvas {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-sm);
+  background: rgba(10,14,39,0.8);
+  border: 1px solid var(--card-border);
+  flex-shrink: 0;
+}
+
+.complete-header-text {
+  flex: 1;
+  min-width: 0;
+  text-align: left;
+}
+
+.complete-title-line {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+.complete-star-rating {
+  color: var(--star-gold);
+  font-size: 1rem;
+  letter-spacing: 0.05em;
 }
 
 .complete-title {
   font-family: 'Ma Shan Zheng', cursive;
-  font-size: var(--font-hero);
+  font-size: 1.15rem;
   color: var(--star-gold);
-  filter: drop-shadow(0 0 20px rgba(255,215,0,0.8));
-  animation: title-twinkle 2s ease-in-out infinite;
+  filter: drop-shadow(0 0 8px rgba(255,215,0,0.6));
+  white-space: nowrap;
+}
+
+.complete-subtitle {
+  font-size: 0.78rem;
+  color: var(--text2);
+  height: 1.2em;
+}
+
+.new-record-inline {
+  color: var(--star-gold);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+/* Stats: one horizontal row */
+.complete-stats {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--text2);
+  max-height: 36px;
+  flex-shrink: 0;
+}
+
+.stat-item-inline {
+  color: var(--text2);
+  font-size: 14px;
+}
+
+.stat-item-inline > span {
+  color: var(--star-gold);
+  font-weight: 600;
+}
+
+.stat-sep {
+  color: rgba(255,255,255,0.25);
+}
+
+/* Photo */
+.complete-photo-wrap {
+  flex-shrink: 0;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.complete-photo {
+  max-height: 180px;
+  width: 100%;
+  object-fit: cover;
+  border-radius: 12px;
+  display: block;
+}
+
+.complete-photo-placeholder {
+  width: 100%;
+  max-height: 60px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 2rem;
+  color: var(--star-gold);
+  opacity: 0.4;
+}
+
+/* Lore — dominant section */
+.complete-lore {
+  flex: 1;
+  background: var(--card);
+  border: 1px solid var(--card-border);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  min-height: 0;
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124,92,191,0.5) rgba(26,31,78,0.4);
+}
+
+.complete-lore::-webkit-scrollbar { width: 5px; }
+.complete-lore::-webkit-scrollbar-track { background: rgba(26,31,78,0.4); border-radius: 3px; }
+.complete-lore::-webkit-scrollbar-thumb { background: rgba(124,92,191,0.5); border-radius: 3px; }
+.complete-lore::-webkit-scrollbar-thumb:hover { background: rgba(124,92,191,0.8); }
+
+.lore-title {
+  font-family: 'Ma Shan Zheng', cursive;
+  font-size: 1rem;
+  color: var(--star-gold);
+  margin-bottom: 6px;
+  display: block;
+}
+
+.lore-text {
+  font-size: 15px;
+  color: var(--text);
+  line-height: 1.8;
+  text-align: left;
+}
+
+/* CTA buttons */
+.complete-buttons {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.complete-cta-btn {
+  min-height: 52px;
+  font-size: 1.05rem;
+  width: 100%;
+  background: linear-gradient(135deg, var(--purple-mid), var(--purple-light));
+  letter-spacing: 0.04em;
+}
+
+.complete-secondary-btns {
+  display: flex;
+  gap: 8px;
+}
+
+.complete-secondary-btns .btn {
+  flex: 1;
+  min-height: 38px;
+  font-size: 0.88rem;
 }
 
 #constellation-canvas {
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   background: rgba(10, 14, 39, 0.8);
   border: 1px solid var(--card-border);
 }
 
-.complete-stats {
-  display: flex;
-  gap: var(--spacing-xl);
-  justify-content: center;
-}
 
-.stat-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
-}
-
-.stat-value {
-  font-size: var(--font-xl);
-  font-weight: 700;
-  color: var(--star-gold);
-}
-
-.stat-label {
-  font-size: var(--font-sm);
-  color: var(--text2);
-}
-
-.complete-lore {
-  background: var(--card);
-  border: 1px solid var(--card-border);
-  border-radius: var(--radius-md);
-  padding: var(--spacing-md) var(--spacing-lg);
-  font-size: var(--font-sm);
-  color: var(--text);
-  line-height: 1.8;
-  text-align: left;
-  max-height: 200px;
-  overflow-y: auto;
-  width: 100%;
-  scrollbar-width: thin;
-  scrollbar-color: rgba(124, 92, 191, 0.5) rgba(26, 31, 78, 0.4);
-}
-
-.complete-lore::-webkit-scrollbar {
-  width: 5px;
-}
-
-.complete-lore::-webkit-scrollbar-track {
-  background: rgba(26, 31, 78, 0.4);
-  border-radius: 3px;
-}
-
-.complete-lore::-webkit-scrollbar-thumb {
-  background: rgba(124, 92, 191, 0.5);
-  border-radius: 3px;
-}
-
-.complete-lore::-webkit-scrollbar-thumb:hover {
-  background: rgba(124, 92, 191, 0.8);
-}
-
-.lore-title {
-  font-family: 'Ma Shan Zheng', cursive;
-  font-size: var(--font-lg);
-  color: var(--star-gold);
-  margin-bottom: var(--spacing-sm);
-  display: block;
-}
-
-.complete-buttons {
-  display: flex;
-  gap: var(--spacing-md);
-  flex-wrap: wrap;
-  justify-content: center;
-}
 
 /* ── Placeholder / Gallery screen ─────────────────────────── */
 #screen-gallery {
@@ -705,6 +773,97 @@ body {
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
 ::-webkit-scrollbar-thumb { background: var(--border); border-radius: var(--radius-full); }
+
+/* ── Pause button & overlay ─────────────────────────────────── */
+.pause-btn {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.12);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(255,255,255,0.2);
+  color: rgba(255,255,255,0.85);
+  font-size: 16px;
+  cursor: pointer;
+  z-index: 20;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.2s;
+}
+.pause-btn:hover { background: rgba(255,255,255,0.22); }
+
+.pause-overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(0,0,15,0.72);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+.pause-overlay.hidden { display: none; }
+
+.pause-panel {
+  background: rgba(18,20,60,0.92);
+  border: 1px solid rgba(124,92,191,0.5);
+  border-radius: var(--radius-lg);
+  padding: 32px 28px;
+  min-width: 240px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  align-items: center;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+}
+
+.pause-title {
+  font-size: 1.25rem;
+  color: var(--accent-gold);
+  letter-spacing: 0.06em;
+  margin: 0 0 8px;
+  font-family: 'Noto Serif SC', serif;
+}
+
+.pause-action-btn {
+  width: 100%;
+  min-height: 44px;
+  font-size: 0.95rem;
+}
+
+.pause-exit-wrap {
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pause-confirm {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  justify-content: center;
+  font-size: 0.88rem;
+  color: rgba(255,255,255,0.75);
+}
+.pause-confirm.hidden { display: none; }
+.pause-confirm-btn {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  padding: 0;
+  font-size: 1rem;
+}
+.btn-danger {
+  background: linear-gradient(135deg, #c0392b, #e74c3c);
+  border-color: #e74c3c;
+  color: #fff;
+}
+.btn-danger:hover { background: linear-gradient(135deg, #e74c3c, #c0392b); }
 
 /* ── Tutorial hint overlay ─────────────────────────────────── */
 .game-hint {

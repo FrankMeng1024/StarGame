@@ -78,40 +78,66 @@
         <span class="hint-text">点击 / 空格 发射网兜</span>
       </div>
     </div>
+    <!-- Pause button -->
+    <button id="pause-btn" class="pause-btn" aria-label="暂停">⏸</button>
+    <!-- Pause overlay -->
+    <div id="pause-overlay" class="pause-overlay hidden" aria-modal="true">
+      <div class="pause-panel">
+        <h3 class="pause-title">游戏暂停</h3>
+        <button id="pause-resume-btn" class="btn btn-primary pause-action-btn">▶ 继续</button>
+        <button id="pause-retry-btn"  class="btn btn-secondary pause-action-btn">重新开始</button>
+        <div id="pause-exit-wrap" class="pause-exit-wrap">
+          <button id="pause-exit-btn" class="btn btn-ghost pause-action-btn">返回关卡</button>
+          <div id="pause-confirm" class="pause-confirm hidden">
+            <span>确认退出?</span>
+            <button id="pause-confirm-yes" class="btn btn-danger pause-confirm-btn">✓</button>
+            <button id="pause-confirm-no"  class="btn btn-ghost  pause-confirm-btn">✗</button>
+          </div>
+        </div>
+      </div>
+    </div>
   </section>
 
   <!-- ④ Level Complete / Fail ──────────────────────────────── -->
   <section id="screen-complete" class="screen" role="main">
     <div class="complete-inner">
-      <h2 class="complete-title">✨ 关卡完成！</h2>
-
-      <canvas id="constellation-canvas" width="160" height="160"
-              aria-label="星座连线动画"></canvas>
-
+      <!-- Header row: mini canvas + title + stars + new record inline -->
+      <div class="complete-header-row">
+        <canvas id="constellation-canvas" width="80" height="80"
+                aria-label="星座连线动画" class="complete-mini-canvas"></canvas>
+        <div class="complete-header-text">
+          <div class="complete-title-line">
+            <span class="complete-star-rating"></span>
+            <span class="complete-title">✨ 关卡完成！</span>
+          </div>
+          <div class="complete-subtitle"></div>
+        </div>
+      </div>
+      <!-- Stats: one horizontal row -->
       <div class="complete-stats">
-        <div class="stat-item">
-          <span class="stat-value stat-caught">0/7</span>
-          <span class="stat-label">已抓星星</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value stat-time">0秒</span>
-          <span class="stat-label">剩余时间</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value stat-coins">0枚</span>
-          <span class="stat-label">获得金币</span>
-        </div>
+        <span class="stat-item-inline"><span class="stat-caught">0/7</span> 已抓</span>
+        <span class="stat-sep">·</span>
+        <span class="stat-item-inline"><span class="stat-time">0秒</span> 剩余</span>
+        <span class="stat-sep">·</span>
+        <span class="stat-item-inline"><span class="stat-coins">0</span> 金币</span>
       </div>
-
+      <!-- Astrophoto -->
+      <div class="complete-photo-wrap">
+        <img id="complete-photo" class="complete-photo" src="" alt="" loading="lazy">
+        <div id="complete-photo-placeholder" class="complete-photo-placeholder" aria-hidden="true">★</div>
+      </div>
+      <!-- Lore (dominant) -->
       <div class="complete-lore">
-        <span class="lore-title">猎户座</span>
-        <span class="lore-text"></span>
+        <span class="lore-title"></span>
+        <div class="lore-text"></div>
       </div>
-
+      <!-- CTAs -->
       <div class="complete-buttons">
-        <button class="btn btn-primary btn-next-level">下一关 →</button>
-        <button class="btn btn-secondary btn-shop">🛒 去商店</button>
-        <button class="btn btn-ghost btn-back-levels">← 返回选关</button>
+        <button class="btn btn-primary btn-shop complete-cta-btn">去商店 →</button>
+        <div class="complete-secondary-btns">
+          <button class="btn btn-secondary btn-next-level">下一关</button>
+          <button class="btn btn-ghost btn-back-levels">返回选关</button>
+        </div>
       </div>
     </div>
   </section>

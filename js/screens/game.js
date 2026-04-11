@@ -8,6 +8,7 @@ let engine = null;
 let _hintClickListener = null;
 let _hintTimer = null;
 let _hintGeneration = 0;
+let _escListener = null;
 
 export function startGame(navigate) {
   const screen = document.getElementById('screen-game');
@@ -49,6 +50,9 @@ export function startGame(navigate) {
   // Mute button
   _initMuteButton();
 
+  // Pause system
+  _initPause(navigate);
+
   engine.onTimeExt = () => { _showTimeExtFlash(); playTimeExt(); };
   engine.start();
   startMusic();
@@ -64,6 +68,14 @@ export function stopGame() {
     _hintClickListener = null;
   }
   if (_hintTimer) { clearTimeout(_hintTimer); _hintTimer = null; }
+  // Clean up Escape listener
+  if (_escListener) {
+    document.removeEventListener('keydown', _escListener);
+    _escListener = null;
+  }
+  // Hide pause overlay
+  const overlay = document.getElementById('pause-overlay');
+  if (overlay) overlay.classList.add('hidden');
 }
 
 function _showHint() {
@@ -250,6 +262,67 @@ function _initMuteButton() {
   };
   update();
   btn.onclick = () => { toggleMute(); update(); };
+}
+
+function _initPause(navigate) {
+  const pauseBtn   = document.getElementById('pause-btn');
+  const overlay    = document.getElementById('pause-overlay');
+  const resumeBtn  = document.getElementById('pause-resume-btn');
+  const retryBtn   = document.getElementById('pause-retry-btn');
+  const exitBtn    = document.getElementById('pause-exit-btn');
+  const confirm    = document.getElementById('pause-confirm');
+  const confirmYes = document.getElementById('pause-confirm-yes');
+  const confirmNo  = document.getElementById('pause-confirm-no');
+  if (!pauseBtn || !overlay) return;
+
+  // Hide confirm panel initially
+  confirm.classList.add('hidden');
+
+  function setPaused(paused) {
+    if (!engine) return;
+    if (paused) {
+      engine._paused = true;
+      overlay.classList.remove('hidden');
+      pauseBtn.textContent = '▶';
+      confirm.classList.add('hidden');
+    } else {
+      overlay.classList.add('hidden');
+      pauseBtn.textContent = '⏸';
+      engine.resume();
+    }
+  }
+
+  pauseBtn.onclick = () => setPaused(overlay.classList.contains('hidden'));
+
+  resumeBtn.onclick = () => setPaused(false);
+
+  retryBtn.onclick = () => {
+    stopGame();
+    navigate('game');
+  };
+
+  exitBtn.onclick = () => {
+    confirm.classList.toggle('hidden');
+  };
+
+  confirmYes.onclick = () => {
+    stopGame();
+    navigate('levels');
+  };
+
+  confirmNo.onclick = () => {
+    confirm.classList.add('hidden');
+  };
+
+  // Remove any old Escape listener
+  if (_escListener) document.removeEventListener('keydown', _escListener);
+
+  _escListener = (e) => {
+    if (e.key !== 'Escape') return;
+    const isPaused = !overlay.classList.contains('hidden');
+    setPaused(!isPaused);
+  };
+  document.addEventListener('keydown', _escListener);
 }
 
 function _handleComplete(timeLeft, navigate) {

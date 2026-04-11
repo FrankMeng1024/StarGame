@@ -1,5 +1,6 @@
 // screens/complete.js — Level complete & fail screens
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
+import { CONSTELLATION_PHOTOS } from '../data/photos.js';
 import { SCENE_PALETTES } from '../data/scenes.js';
 import state from '../state.js';
 
@@ -16,51 +17,57 @@ export function showComplete(navigate, params) {
   const stars = score ? score.stars : 1;
   const starStr = '★'.repeat(stars) + '☆'.repeat(3 - stars);
 
-  // Update DOM
-  document.querySelector('.complete-title').textContent = `✨ 关卡完成！ ${starStr}`;
-  document.querySelector('.stat-caught').textContent = `${caught}/${total}`;
-  document.querySelector('.stat-time').textContent = `${Math.floor(timeLeft)}秒`;
-  document.querySelector('.stat-coins').textContent = `${coins}枚`;
-  document.querySelector('.lore-title').textContent = `${level.nameZh} — ${level.nameEn}`;
-  document.querySelector('.lore-text').textContent = level.lore;
-
-  // New record badge
-  const existing = document.querySelector('.new-record-badge');
-  if (existing) existing.remove();
-  if (isNewRecord) {
-    const badge = document.createElement('div');
-    badge.className = 'new-record-badge';
-    badge.textContent = '🏆 新纪录！';
-    document.querySelector('.complete-inner').insertBefore(badge, document.querySelector('.complete-stats'));
+  // Header
+  const titleEl = document.querySelector('.complete-title');
+  const ratingEl = document.querySelector('.complete-star-rating');
+  const subtitleEl = document.querySelector('.complete-subtitle');
+  if (titleEl)   titleEl.textContent = '关卡完成！';
+  if (ratingEl)  ratingEl.textContent = starStr;
+  if (subtitleEl) {
+    subtitleEl.innerHTML = isNewRecord ? '<span class="new-record-inline">🏆 新纪录！</span>' : '';
   }
 
-  // Reset stat labels for complete context
-  const labels = document.querySelectorAll('.stat-label');
-  if (labels[1]) labels[1].textContent = '剩余时间';
+  // Remove old-style badge if any
+  const existing = document.querySelector('.new-record-badge');
+  if (existing) existing.remove();
 
-  // Wire buttons
+  // Stats row
+  document.querySelector('.stat-caught').textContent = `${caught}/${total}`;
+  document.querySelector('.stat-time').textContent   = `${Math.floor(timeLeft)}秒`;
+  document.querySelector('.stat-coins').textContent  = `${coins}`;
+
+  // Photo
+  _showPhoto(level);
+
+  // Lore
+  document.querySelector('.lore-title').textContent = `${level.nameZh} — ${level.nameEn}`;
+  document.querySelector('.lore-text').textContent  = level.lore;
+
+  // Buttons
   const btnNext   = document.querySelector('.btn-next-level');
   const btnShop   = document.querySelector('.btn-shop');
   const btnLevels = document.querySelector('.btn-back-levels');
 
-  btnNext.textContent = '下一关 →';
-  btnNext.onclick = () => {
-    const nextIdx = idx + 1;
-    if (nextIdx < CONSTELLATIONS.length) {
-      state.currentLevel = nextIdx;
-      navigate('game');
-    } else {
-      navigate('levels');
-    }
-  };
+  if (btnNext) {
+    btnNext.textContent = '下一关';
+    btnNext.onclick = () => {
+      const nextIdx = idx + 1;
+      if (nextIdx < CONSTELLATIONS.length) {
+        state.currentLevel = nextIdx;
+        navigate('game');
+      } else {
+        navigate('levels');
+      }
+    };
+  }
 
   if (btnShop) {
     btnShop.style.display = '';
     btnShop.onclick = () => navigate('shop');
   }
-  btnLevels.onclick = () => navigate('levels');
+  if (btnLevels) btnLevels.onclick = () => navigate('levels');
 
-  // Constellation line animation
+  // Constellation mini animation
   _runConstellationAnim(level, idx);
 }
 
@@ -70,31 +77,56 @@ export function showFail(navigate, params) {
 
   _applySceneTint(idx);
 
-  // Remove any stale new-record badge from a previous completion
-  const existingBadge = document.querySelector('.new-record-badge');
-  if (existingBadge) existingBadge.remove();
+  const existing = document.querySelector('.new-record-badge');
+  if (existing) existing.remove();
 
-  document.querySelector('.complete-title').textContent = '⏰ 时间到了！';
+  const titleEl    = document.querySelector('.complete-title');
+  const ratingEl   = document.querySelector('.complete-star-rating');
+  const subtitleEl = document.querySelector('.complete-subtitle');
+  if (titleEl)    titleEl.textContent  = '⏰ 时间到了！';
+  if (ratingEl)   ratingEl.textContent = '';
+  if (subtitleEl) subtitleEl.innerHTML = '';
+
   document.querySelector('.stat-caught').textContent = `${caught}/${total ?? level.stars.length}`;
-  document.querySelector('.stat-time').textContent = `${elapsed}秒`;
-  document.querySelector('.stat-coins').textContent = '0枚';
-  document.querySelector('.lore-title').textContent = `${level.nameZh} — 再试一次？`;
-  document.querySelector('.lore-text').textContent = level.lore;
+  document.querySelector('.stat-time').textContent   = `${elapsed}秒`;
+  document.querySelector('.stat-coins').textContent  = '0';
 
-  // Update stat labels for fail context
-  const labels = document.querySelectorAll('.stat-label');
-  if (labels[1]) labels[1].textContent = '已用时间';
+  _showPhoto(level);
+
+  document.querySelector('.lore-title').textContent = `${level.nameZh} — 再试一次？`;
+  document.querySelector('.lore-text').textContent  = level.lore;
 
   const btnNext   = document.querySelector('.btn-next-level');
   const btnShop   = document.querySelector('.btn-shop');
   const btnLevels = document.querySelector('.btn-back-levels');
 
-  btnNext.textContent = '🔄 重试';
-  btnNext.onclick = () => navigate('game');
-  if (btnShop) btnShop.style.display = 'none';
-  btnLevels.onclick = () => navigate('levels');
+  if (btnNext) {
+    btnNext.textContent = '🔄 重试';
+    btnNext.onclick = () => navigate('game');
+  }
+  if (btnShop)   btnShop.style.display = 'none';
+  if (btnLevels) btnLevels.onclick = () => navigate('levels');
 
   _runConstellationAnim(level, idx);
+}
+
+function _showPhoto(level) {
+  const photoEl       = document.getElementById('complete-photo');
+  const placeholder   = document.getElementById('complete-photo-placeholder');
+  const photos        = CONSTELLATION_PHOTOS[level.nameEn];
+  const photoUrl      = photos?.[0]?.url;
+
+  if (photoEl && placeholder) {
+    if (photoUrl) {
+      photoEl.src = photoUrl;
+      photoEl.alt = photos[0].title || level.nameZh;
+      photoEl.style.display = '';
+      placeholder.style.display = 'none';
+    } else {
+      photoEl.style.display = 'none';
+      placeholder.style.display = 'flex';
+    }
+  }
 }
 
 // ── Constellation animation ────────────────────────────────────
@@ -102,7 +134,7 @@ function _runConstellationAnim(level, idx) {
   const canvas = document.getElementById('constellation-canvas');
   if (!canvas) return;
 
-  const SIZE = 160;
+  const SIZE = 80;
   canvas.width  = SIZE;
   canvas.height = SIZE;
   const ctx = canvas.getContext('2d');

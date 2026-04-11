@@ -383,6 +383,7 @@ export class GameEngine {
     this.onFail    = onFail;
     this.running   = false;
     this.rafId     = null;
+    this._paused   = false;
 
     this.level = CONSTELLATIONS[levelIdx];
 
@@ -485,15 +486,22 @@ export class GameEngine {
 
   _buildDebris(count) {
     const result = [];
+    const spinSpeeds = {
+      meteor:    () => (Math.random() > 0.5 ? 1 : -1) * (0.012 + Math.random() * 0.006),
+      satellite: () => (Math.random() > 0.5 ? 1 : -1) * (0.016 + Math.random() * 0.008),
+      rocket:    () => (Math.random() > 0.5 ? 1 : -1) * (0.008 + Math.random() * 0.004),
+      cloth:     () => (Math.random() > 0.5 ? 1 : -1) * (0.022 + Math.random() * 0.006),
+    };
     for (let i = 0; i < count; i++) {
+      const type = DEBRIS_TYPES[Math.floor(Math.random() * DEBRIS_TYPES.length)];
       result.push({
         id: i,
         x: this.W * (0.1 + Math.random() * 0.8),
         y: this.H * (0.1 + Math.random() * 0.55),
         r: 14 + Math.random() * 10,
-        type: DEBRIS_TYPES[Math.floor(Math.random() * DEBRIS_TYPES.length)],
+        type,
         angle: Math.random() * TWO_PI,
-        spinSpeed: (Math.random() - 0.5) * 0.02,
+        spinSpeed: spinSpeeds[type](),
         caught: false,
       });
     }
@@ -607,6 +615,13 @@ export class GameEngine {
     }
   }
 
+  resume() {
+    if (!this.running) return;
+    this._paused = false;
+    this.lastTick = performance.now();
+    this._loop(performance.now());
+  }
+
   stop() {
     this.running = false;
     document.removeEventListener('click', this._handleInput);
@@ -677,6 +692,7 @@ export class GameEngine {
 
   _loop(now) {
     if (!this.running) return;
+    if (this._paused) return; // freeze loop while paused
     const dt = now - (this.lastTick || now);
     this.lastTick = now;
 
@@ -902,6 +918,7 @@ export class GameEngine {
     ctx.clearRect(0, 0, this.W, this.H);
 
     this._drawBackground();
+    this._drawConstellationGuide();
     if (this._isSlotActive('star_map')) this._drawStarMap();
     this._drawStars();
     this._drawDebris();
@@ -963,15 +980,36 @@ export class GameEngine {
     drawGroundSilhouette(ctx, this.W, this.H, sceneIdx);
   }
 
-  _drawStarMap() {
+  // Always-on faint guide lines (CR-023): faint when uncaught, brighter when both ends caught
+  _drawConstellationGuide() {
     const ctx = this.ctx;
     const lines = this.level.lines || [];
     const scene = SCENE_PALETTES[Math.min(Math.floor(this.levelIdx / 5), SCENE_PALETTES.length - 1)];
-    // Use light-blue on aurora scene (gold would be lost against teal-green)
-    const lineColor = scene.aurora ? 'rgba(200, 235, 255, 0.45)' : 'rgba(255, 215, 0, 0.25)';
+    const baseColor  = scene.aurora ? 'rgba(200,235,255,' : 'rgba(255,215,0,';
+    ctx.save();
+    ctx.lineWidth = 0.8;
+    for (const [a, b] of lines) {
+      const sA = this.stars[a], sB = this.stars[b];
+      if (!sA || !sB) continue;
+      const bothCaught = sA.caught && sB.caught;
+      ctx.strokeStyle = baseColor + (bothCaught ? '0.28)' : '0.12)');
+      ctx.beginPath();
+      ctx.moveTo(sA.origX ?? sA.x, sA.origY ?? sA.y);
+      ctx.lineTo(sB.origX ?? sB.x, sB.origY ?? sB.y);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  _drawStarMap() {
+    // Star map item: upgrade guide lines to full brightness + star name labels
+    const ctx = this.ctx;
+    const lines = this.level.lines || [];
+    const scene = SCENE_PALETTES[Math.min(Math.floor(this.levelIdx / 5), SCENE_PALETTES.length - 1)];
+    const lineColor = scene.aurora ? 'rgba(200,235,255,0.55)' : 'rgba(255,215,0,0.45)';
     ctx.save();
     ctx.strokeStyle = lineColor;
-    ctx.lineWidth = 1;
+    ctx.lineWidth = 1.2;
     for (const [a, b] of lines) {
       const sA = this.stars[a], sB = this.stars[b];
       if (!sA || !sB) continue;
@@ -979,6 +1017,17 @@ export class GameEngine {
       ctx.moveTo(sA.origX ?? sA.x, sA.origY ?? sA.y);
       ctx.lineTo(sB.origX ?? sB.x, sB.origY ?? sB.y);
       ctx.stroke();
+    }
+    // Draw star name labels
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    for (const s of this.stars) {
+      if (!s.name) continue;
+      ctx.globalAlpha = s.caught ? 0.5 : 0.85;
+      ctx.fillStyle = '#fff';
+      ctx.shadowColor = 'rgba(0,0,0,0.8)';
+      ctx.shadowBlur = 3;
+      ctx.fillText(s.name, s.origX ?? s.x, (s.origY ?? s.y) - (s.r + 5));
     }
     ctx.restore();
   }
@@ -1363,48 +1412,111 @@ export class GameEngine {
 
     if (len < 2) return;
 
-    // Rope
+    // Direction vector (pole tip → net tip)
+    const ux = dx / len, uy = dy / len;
+    // Perpendicular vector
+    const px = -uy, py = ux;
+
     ctx.save();
-    ctx.strokeStyle = 'rgba(220,220,255,0.85)';
+
+    // Rope: slightly curved from pole tip to net mouth
+    const ropeCtrlX = (top.x + tip.x) / 2 + px * 4;
+    const ropeCtrlY = (top.y + tip.y) / 2 + py * 4;
+    ctx.strokeStyle = 'rgba(220,200,140,0.85)';
     ctx.lineWidth   = 1.5;
-    ctx.setLineDash([]);
     ctx.beginPath();
     ctx.moveTo(top.x, top.y);
-    ctx.lineTo(tip.x, tip.y);
+    ctx.quadraticCurveTo(ropeCtrlX, ropeCtrlY, tip.x, tip.y);
     ctx.stroke();
 
-    // Net bag at tip
-    const netR = 18;
-    const hasCatch = this.caughtObj !== null;
-    ctx.strokeStyle = hasCatch ? '#ffd700' : 'rgba(180,200,255,0.9)';
-    ctx.lineWidth   = hasCatch ? 2 : 1.5;
-    if (hasCatch) { ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 8; }
+    // Net bag parameters
+    const hasCatch  = this.caughtObj !== null;
+    const isReturn  = this.netState === 'retract';
+    // Inflate bag when catching a star
+    const bulge     = (hasCatch && isReturn) ? 1.2 : 1.0;
+    const mouthR    = 18 * bulge;  // radius of mouth ring
+    const bagDepth  = mouthR * 1.6; // depth of bag from mouth to tip
 
-    // Draw net as mesh circle
+    // Bag forward direction: from mouth toward bag bottom
+    const bx = ux, by = uy; // forward = extend direction
+
+    // Mouth center = tip position (mouth opens toward "extend" direction)
+    const mx = tip.x, my = tip.y;
+    // Bag bottom point
+    const botX = mx + bx * bagDepth;
+    const botY = my + by * bagDepth;
+
+    // Draw bag mesh fill
+    ctx.save();
+    const bagGrad = ctx.createRadialGradient(mx, my, 0, mx + bx * bagDepth * 0.5, my + by * bagDepth * 0.5, mouthR * 1.4);
+    bagGrad.addColorStop(0, 'rgba(255,240,180,0.18)');
+    bagGrad.addColorStop(1, 'rgba(255,240,180,0.06)');
+
+    // Teardrop shape: wider at mouth, tapering to point at bottom
     ctx.beginPath();
-    ctx.arc(tip.x, tip.y, netR, 0, TWO_PI);
-    ctx.stroke();
+    ctx.moveTo(mx + px * mouthR, my + py * mouthR);
+    ctx.bezierCurveTo(
+      mx + px * mouthR + bx * bagDepth * 0.6, my + py * mouthR + by * bagDepth * 0.6,
+      botX + px * mouthR * 0.1, botY + py * mouthR * 0.1,
+      botX, botY
+    );
+    ctx.bezierCurveTo(
+      botX - px * mouthR * 0.1, botY - py * mouthR * 0.1,
+      mx - px * mouthR + bx * bagDepth * 0.6, my - py * mouthR + by * bagDepth * 0.6,
+      mx - px * mouthR, my - py * mouthR
+    );
+    ctx.closePath();
+    ctx.fillStyle = bagGrad;
+    ctx.fill();
 
-    // Inner cross lines
-    for (let i = 0; i < 4; i++) {
-      const a = (i / 4) * Math.PI;
+    // Mesh lines: horizontal arcs across the bag (4 levels)
+    const meshColor = hasCatch ? 'rgba(255,215,100,0.55)' : 'rgba(255,240,180,0.40)';
+    ctx.strokeStyle = meshColor;
+    ctx.lineWidth   = 0.7;
+    for (let i = 1; i <= 4; i++) {
+      const t2 = i / 5;
+      const spread = mouthR * (1 - t2 * 0.85) * bulge;
+      const cx2 = mx + bx * bagDepth * t2;
+      const cy2 = my + by * bagDepth * t2;
       ctx.beginPath();
-      ctx.moveTo(tip.x + Math.cos(a) * netR, tip.y + Math.sin(a) * netR);
-      ctx.lineTo(tip.x - Math.cos(a) * netR, tip.y - Math.sin(a) * netR);
+      ctx.moveTo(cx2 + px * spread, cy2 + py * spread);
+      ctx.quadraticCurveTo(
+        cx2 + bx * spread * 0.3, cy2 + by * spread * 0.3,
+        cx2 - px * spread, cy2 - py * spread
+      );
       ctx.stroke();
     }
+    // Vertical center line along bag depth
+    ctx.beginPath();
+    ctx.moveTo(mx, my);
+    ctx.lineTo(botX, botY);
+    ctx.stroke();
+    ctx.restore();
 
-    // Trail (white arc)
+    // Mouth ring (hoop) — golden, thicker
+    const hoopColor = hasCatch ? '#ffd040' : '#f0c040';
+    ctx.strokeStyle = hoopColor;
+    ctx.lineWidth   = 2;
+    if (hasCatch) { ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 10; }
+    ctx.beginPath();
+    ctx.arc(mx, my, mouthR, 0, TWO_PI);
+    ctx.stroke();
+
+    // Extending trail
     if (this.netState === 'extend' && len > 10) {
       const grad = ctx.createLinearGradient(top.x, top.y, tip.x, tip.y);
       grad.addColorStop(0,   'rgba(255,255,255,0)');
-      grad.addColorStop(0.6, 'rgba(255,255,255,0.12)');
-      grad.addColorStop(1,   'rgba(255,255,255,0.35)');
+      grad.addColorStop(0.6, 'rgba(255,255,255,0.10)');
+      grad.addColorStop(1,   'rgba(255,255,255,0.28)');
       ctx.strokeStyle = grad;
-      ctx.lineWidth   = 6;
+      ctx.lineWidth   = 7;
       ctx.shadowBlur  = 0;
+      ctx.beginPath();
+      ctx.moveTo(top.x, top.y);
+      ctx.lineTo(tip.x, tip.y);
       ctx.stroke();
     }
+
     ctx.restore();
   }
 
