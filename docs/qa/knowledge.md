@@ -160,6 +160,16 @@ No backend, no network requests. All data in localStorage + local files.
 - Character (Sprint 13): fully procedural canvas drawing, no external sprites. Anime-style with purple/navy dress, brown hair, golden staff, mountain horizon. Arm states: idle, throw, catch visible.
 - Navigation regression Sprint 13: menu↔levels↔gallery↔gallery-detail↔shop↔game (15 nav steps): ALL CLEAN, 0 JS errors. localStorage persists across navigation and page reload.
 
+## Sprint 15 Updates (2026-04-12)
+- Sprint 15: Character visual identity markers: ellipse head (taller than wide), almond eyes with catchlights, twin-tail hair, gold star ornament, purple dress, golden pole. Check these in future character regression.
+- Sprint 15: Net baseline values: netSpeed=0.014, mouthR=26, 6 mesh lines, enlargeFactor=1.5 (net_enlarge — both visual AND collision). star_magnet removed from all UIs.
+- Sprint 15: Star states: uncaught = large (r*1.8) gold glow (#ffd700); caught = small (r*0.5) dim grey (#aaaacc, alpha=0.25). Clear binary visual distinction.
+- Sprint 15: Gallery card states: completed (icon+name+EN), unlocked-incomplete (name+未通关, no icon), locked (？ only — no name/icon). Back button only at BOTTOM of gallery detail (not at top).
+- Sprint 15: Pause button correctly shows ⏸ after resume — regression-worthy.
+- Sprint 15: Shop card bg rgba(26,31,78,0.6) default (no hover needed). Pause exit btn bg rgba(255,255,255,0.08).
+- Sprint 15: Shop inventory = 8 items: 网兜加速, 网兜扩大, 宇宙炸弹, 时间延长, 缩小垃圾, 星图揭示, 宇航员手套, 双倍金币.
+- Sprint 15 regression: all navigation paths clean, 0 JS console errors throughout. Only pre-existing Google Fonts woff2 errors (offline environment).
+
 ## Sprint 14 Updates
 - Sprint 14: Photo lightbox system — '#photo-lightbox' overlay, prev/next nav buttons as circular dark buttons, close button top-right (X). Title + credit text below photo. Escape key closes.
 - Sprint 14: HUD button layout — pause (⏸) and mute (🔊) now side-by-side in top-right of game screen. Previous absolute positioning bug caused pause button to be unclickable via Playwright.

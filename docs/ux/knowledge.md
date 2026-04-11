@@ -248,6 +248,45 @@
 ### Navigation Regression
 - Sprint 13: menu → level select → back → gallery → Orion detail → star chart modal (open/close ×3) → carousel → back → unlock idx29 → 猎犬座 detail → empty carousel → back → menu: ALL CLEAN, 0 console errors
 
+## Sprint 15 Updates (2026-04-12)
+
+### Sprint 15 UX Improvements Verified
+
+#### STORY-00064 — 少女角色重绘
+- Character visually upgraded: anime proportions, twin tails, almond eyes with catchlights, detailed costume
+- Procedural canvas drawing — no external assets required
+
+#### STORY-00065 — 网兜视觉重绘
+- Net: mouthR=26 (was 18), 6 mesh lines (was 4), netSpeed=0.014 (was 0.025)
+- Catching mechanic is now more readable: larger net mouth makes target area obvious
+- Slower speed gives players more time to aim — significant gameplay feel improvement
+
+#### STORY-00066 — 星星大小/亮度区别
+- Uncaught: `visualR = s.r * 1.8`, gold glow (#ffd700), animated twinkle cross — bright, prominent, clearly "grab me"
+- Caught: `r * 0.5`, `#aaaacc` (grey-lavender), `globalAlpha=0.25` — dim, small, clearly "done"
+- Contrast between states is unambiguous — resolves Sprint 10 VU complaint about star confusion
+
+#### STORY-00067 — 游戏交互精修
+- 300ms click delay prevents accidental net launch from level-entry click ✓
+- sessionStorage gate: scene intro shows once per browser session (not once ever) ✓
+- net_enlarge replaces star_magnet in all UIs (shop, item-select, game HUD) ✓
+- Debris size variation: large debris (r=22-32) retracts 2x slower than small (r=12-18) ✓
+
+#### STORY-00068 — 展厅/商店UI修复
+- Shop cards: `rgba(26,31,78,0.6)` default background (no hover required) ✓
+- Exit button: `rgba(255,255,255,0.08)` default background + visible border ✓
+- Gallery detail: NO back button at top, back button at bottom only ✓
+- Gallery locked cards: "？" only (no name/icon leakage) ✓
+- Pause button: correctly shows ⏸ after resuming (was stuck on ▶) ✓
+
+### Navigation Regression — Sprint 15
+- Menu → Shop → Menu → Game → pause → resume → Game → Gallery → Gallery Detail: ALL CLEAN
+- Zero JS errors across entire navigation sequence
+
+### New Friction Points (Sprint 15)
+- Unlocked-incomplete gallery cards (猎户座 style) show no hint that playing the level reveals gallery detail — Low discoverability gap
+- Font loading failure (offline environment) — pre-existing infrastructure, not a UX concern
+
 ## Sprint 14 Updates
 - Sprint 14: All 6 user-reported issue stories verified as resolved from UX perspective
 - Sprint 14: Pause overlay now uses three-tier visual hierarchy (gradient CTA > outline > text link) — good pattern to maintain for all future modal dialogs
