@@ -55,19 +55,15 @@ function _buildGrid() {
       `;
       card.addEventListener('click', () => _navigate && _navigate('gallery-detail', { idx }));
     } else if (unlocked) {
-      // Unlocked but not completed — show icon but not clickable
+      // Unlocked but not completed — show name only (no icon)
       card.innerHTML = `
-        <div class="gc-icon gc-locked-icon">${con.icon}</div>
         <div class="gc-name-zh">${con.nameZh}</div>
-        <div class="gc-name-en">${con.nameEn}</div>
         <div class="gc-unexplored">未通关</div>
       `;
     } else {
+      // Locked — grey placeholder only, no name or icon
       card.innerHTML = `
-        <div class="gc-icon gc-locked-icon">✦</div>
-        <div class="gc-name-zh gc-locked-name">${con.nameZh}</div>
-        <div class="gc-name-en">${con.nameEn}</div>
-        <div class="gc-unexplored">未探索</div>
+        <div class="gc-locked-placeholder">？</div>
       `;
     }
 

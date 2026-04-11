@@ -406,11 +406,12 @@ export class GameEngine {
     this.swingMax     = Math.PI * 60 / 180; // ±60°
 
     // Net / hook
-    this.netState  = 'swing'; // 'swing' | 'extend' | 'retract'
-    this.netPos    = 0;       // 0..1 along pole
-    this.netSpeed  = 0.025;
-    this.netMax    = 0.78;    // ~2/3 canvas height
-    this.caughtObj = null;
+    this.netState   = 'swing'; // 'swing' | 'extend' | 'retract'
+    this.netPos     = 0;       // 0..1 along pole
+    this.netSpeed   = 0.014;   // slowed from 0.025 (CR-046)
+    this.netMax     = 0.78;    // ~2/3 canvas height
+    this.caughtObj  = null;
+    this._netEnlargeActive = false; // set true when net_enlarge slot active
 
     // Character
     this.charX = this.W * 0.5;
@@ -443,7 +444,7 @@ export class GameEngine {
     // Items are NOT consumed from inventory until activated
     const ACTIVE_ITEM_CONFIG = {
       net_speed:     { icon: '⚡', duration: 15 },
-      star_magnet:   { icon: '🧲', duration: 30 },
+      net_enlarge:   { icon: '🪢', duration: 15 }, // CR-048: replaced star_magnet
       space_bomb:    { icon: '💣', duration: 0  },
       time_ext:      { icon: '⏱️', duration: 0  },
       shrink_debris: { icon: '🔬', duration: 30 },
@@ -471,20 +472,23 @@ export class GameEngine {
     const areaW = this.W - padX * 2;
     const areaH = this.H * 0.58; // stars occupy upper 60% of screen
 
-    return this.level.stars.map((s, i) => ({
-      id: i,
-      x: padX + s.x * areaW,
-      y: padY + s.y * areaH,
-      r: magToRadius(s.mag),
-      color: typeToColor(s.type),
-      name: s.name,
-      mag: s.mag,
-      caught: false,
-      twinklePh: Math.random() * TWO_PI,
-      // Store original positions so caught stars remain at their constellation position
-      origX: padX + s.x * areaW,
-      origY: padY + s.y * areaH,
-    }));
+    return this.level.stars.map((s, i) => {
+      // CR-047: all stars gold/white — no spectral color confusion
+      const baseR = Math.max(4, magToRadius(s.mag) * 1.2); // min 4px, slightly enlarged base
+      return {
+        id: i,
+        x: padX + s.x * areaW,
+        y: padY + s.y * areaH,
+        r: baseR,
+        color: '#fff8e0',  // warm white-gold for all stars
+        name: s.name,
+        mag: s.mag,
+        caught: false,
+        twinklePh: Math.random() * TWO_PI,
+        origX: padX + s.x * areaW,
+        origY: padY + s.y * areaH,
+      };
+    });
   }
 
   _buildDebris(count) {
@@ -497,11 +501,15 @@ export class GameEngine {
     };
     for (let i = 0; i < count; i++) {
       const type = DEBRIS_TYPES[Math.floor(Math.random() * DEBRIS_TYPES.length)];
+      // CR-048: debris size variation — large (slow retract) or small (normal retract)
+      const isLarge = Math.random() > 0.5;
+      const r = isLarge ? (22 + Math.random() * 10) : (12 + Math.random() * 6);
       result.push({
         id: i,
         x: this.W * (0.1 + Math.random() * 0.8),
         y: this.H * (0.1 + Math.random() * 0.55),
-        r: 14 + Math.random() * 10,
+        r,
+        isLarge, // used in retract speed calculation
         type,
         angle: Math.random() * TWO_PI,
         spinSpeed: spinSpeeds[type](),
@@ -573,6 +581,11 @@ export class GameEngine {
           setTimeout(() => { if (this.running) this.netSpeed /= 1.5; }, duration * 1000);
         }
         break;
+      case 'net_enlarge':
+        // CR-048: replaced star_magnet — enlarges net mouth radius +50% for 15s
+        this._netEnlargeActive = true;
+        setTimeout(() => { if (this.running) this._netEnlargeActive = false; }, duration * 1000);
+        break;
       case 'shrink_debris':
         for (const d of this.debris) d.r *= 0.5;
         this._shrinkDebrisActive = true;
@@ -597,7 +610,7 @@ export class GameEngine {
         this.timeLeft = Math.min(this.timeLeft + 20, this.startTime + 20);
         if (typeof this.onTimeExt === 'function') this.onTimeExt();
         break;
-      // star_magnet, star_map, glove: checked in _update via active slot state
+      // star_map, glove: checked in _update via active slot state
     }
   }
 
@@ -608,15 +621,19 @@ export class GameEngine {
   start() {
     this.running = true;
     this.lastTick = performance.now();
-    document.addEventListener('click', this._handleInput);
+    // Delay click listener 300ms so the click that launched this level
+    // (from the level-select screen) doesn't trigger an accidental net launch.
+    setTimeout(() => {
+      if (this.running) document.addEventListener('click', this._handleInput);
+    }, 300);
     document.addEventListener('keydown', this._handleInput);
     document.addEventListener('keydown', this._handleKeySlot);
 
-    // Scene transition ceremony — show on first entry to a new scene group
+    // Scene transition ceremony — show once per session per scene group
     const sceneIdx = Math.min(Math.floor(this.levelIdx / 5), SCENE_PALETTES.length - 1);
-    if (!state.seenScenes.has(sceneIdx)) {
-      state.seenScenes.add(sceneIdx);
-      state.save();
+    const seenKey = `seenScene_${sceneIdx}`;
+    if (!sessionStorage.getItem(seenKey)) {
+      sessionStorage.setItem(seenKey, '1');
       this._introPlaying = true;
       this._showSceneIntro(sceneIdx, () => {
         this._introPlaying = false;
@@ -790,9 +807,14 @@ export class GameEngine {
 
     // Net retract
     if (this.netState === 'retract') {
-      // Slow retract when holding debris (30% speed), waived with glove
+      // Slow retract when holding debris; large debris slower than small; waived with glove
       const holdingDebris = this.caughtObj && this.caughtObj.type === 'debris';
-      const retractMult = (holdingDebris && !this._isSlotActive('glove')) ? 0.3 : 1.5;
+      let retractMult;
+      if (holdingDebris && !this._isSlotActive('glove')) {
+        retractMult = this.caughtObj.obj.isLarge ? 0.15 : 0.3; // large debris much slower
+      } else {
+        retractMult = 1.5;
+      }
       this.netPos -= this.netSpeed * retractMult;
       // Drag caught debris only — stars stay at original position
       if (holdingDebris) {
@@ -813,20 +835,6 @@ export class GameEngine {
     // Spin debris
     for (const d of this.debris) {
       if (!d.caught) d.angle += d.spinSpeed;
-    }
-
-    // Star magnet — pull uncaught stars toward net tip (active slot)
-    if (this._isSlotActive('star_magnet')) {
-      const tip = this._netTip();
-      for (const s of this.stars) {
-        if (s.caught) continue;
-        const dx = tip.x - s.x, dy = tip.y - s.y;
-        const dist = Math.sqrt(dx * dx + dy * dy);
-        if (dist < 50 && dist > 0) {
-          s.x += (dx / dist) * 1.5;
-          s.y += (dy / dist) * 1.5;
-        }
-      }
     }
 
     // Update particles
@@ -1062,42 +1070,60 @@ export class GameEngine {
     const t = Date.now() * 0.002;
     for (const s of this.stars) {
       if (s.caught) {
-        // Caught stars: dim glowing dot at original constellation position
+        // CR-047: caught stars — dim, small, at original constellation position
         ctx.save();
-        ctx.globalAlpha = 0.35;
-        ctx.fillStyle = s.color;
-        ctx.shadowColor = s.color;
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = '#aaaacc';
+        ctx.shadowColor = '#8888aa';
         ctx.shadowBlur = s.r;
         ctx.beginPath();
-        ctx.arc(s.origX, s.origY, s.r * 0.7, 0, TWO_PI);
+        ctx.arc(s.origX, s.origY, s.r * 0.5, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
         continue;
       }
-      const twinkle = 0.7 + 0.3 * Math.sin(t + s.twinklePh);
 
-      // Glow
-      const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 2.5);
-      grd.addColorStop(0, s.color);
+      // CR-047: uncaught stars — gold/white, large, prominent twinkling
+      const twinkle = 0.75 + 0.25 * Math.sin(t + s.twinklePh);
+      const visualR = s.r * 1.8; // noticeably larger than caught
+
+      // Outer glow
+      const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, visualR * 3.5);
+      grd.addColorStop(0, '#ffd700');
+      grd.addColorStop(0.4, 'rgba(255,220,100,0.4)');
       grd.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.save();
-      ctx.globalAlpha = twinkle * 0.5;
+      ctx.globalAlpha = twinkle * 0.55;
       ctx.fillStyle = grd;
       ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r * 2.5, 0, TWO_PI);
+      ctx.arc(s.x, s.y, visualR * 3.5, 0, TWO_PI);
       ctx.fill();
       ctx.restore();
 
-      // Core
+      // Core (warm white-gold)
       ctx.save();
       ctx.globalAlpha = twinkle;
-      ctx.fillStyle = s.color;
-      ctx.shadowColor = s.color;
-      ctx.shadowBlur = s.r * 2;
+      ctx.fillStyle = s.color; // '#fff8e0' warm white
+      ctx.shadowColor = '#ffd700';
+      ctx.shadowBlur = visualR * 2.5;
       ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
+      ctx.arc(s.x, s.y, visualR, 0, TWO_PI);
       ctx.fill();
       ctx.restore();
+
+      // Twinkle cross flare on bright stars
+      if (twinkle > 0.9) {
+        const flen = visualR * 2.5 * twinkle;
+        ctx.save();
+        ctx.globalAlpha = (twinkle - 0.9) * 3;
+        ctx.strokeStyle = '#fffacc';
+        ctx.lineWidth = 0.8;
+        ctx.beginPath();
+        ctx.moveTo(s.x - flen, s.y); ctx.lineTo(s.x + flen, s.y);
+        ctx.moveTo(s.x, s.y - flen); ctx.lineTo(s.x, s.y + flen);
+        ctx.stroke();
+        ctx.restore();
+      }
     }
   }
 
@@ -1682,27 +1708,28 @@ export class GameEngine {
     ctx.save();
 
     // Rope: slightly curved from pole tip to net mouth
-    const ropeCtrlX = (top.x + tip.x) / 2 + px * 4;
-    const ropeCtrlY = (top.y + tip.y) / 2 + py * 4;
-    ctx.strokeStyle = 'rgba(220,200,140,0.85)';
-    ctx.lineWidth   = 1.5;
+    const ropeCtrlX = (top.x + tip.x) / 2 + px * 6;
+    const ropeCtrlY = (top.y + tip.y) / 2 + py * 6;
+    ctx.strokeStyle = 'rgba(230,210,150,0.9)';
+    ctx.lineWidth   = 2;
     ctx.beginPath();
     ctx.moveTo(top.x, top.y);
     ctx.quadraticCurveTo(ropeCtrlX, ropeCtrlY, tip.x, tip.y);
     ctx.stroke();
 
-    // Net bag parameters
+    // Net bag parameters — CR-046: larger mouth, more visible
     const hasCatch  = this.caughtObj !== null;
     const isReturn  = this.netState === 'retract';
-    // Inflate bag when catching a star
-    const bulge     = (hasCatch && isReturn) ? 1.2 : 1.0;
-    const mouthR    = 18 * bulge;  // radius of mouth ring
-    const bagDepth  = mouthR * 1.6; // depth of bag from mouth to tip
+    const bulge     = (hasCatch && isReturn) ? 1.25 : 1.0;
+    // CR-048: net_enlarge item enlarges mouthR by 50%
+    const enlargeFactor = this._netEnlargeActive ? 1.5 : 1.0;
+    const mouthR    = 26 * bulge * enlargeFactor;  // CR-046: was 18
+    const bagDepth  = mouthR * 1.7;
 
-    // Bag forward direction: from mouth toward bag bottom
-    const bx = ux, by = uy; // forward = extend direction
+    // Bag forward direction
+    const bx = ux, by = uy;
 
-    // Mouth center = tip position (mouth opens toward "extend" direction)
+    // Mouth center = tip position
     const mx = tip.x, my = tip.y;
     // Bag bottom point
     const botX = mx + bx * bagDepth;
@@ -1710,9 +1737,9 @@ export class GameEngine {
 
     // Draw bag mesh fill
     ctx.save();
-    const bagGrad = ctx.createRadialGradient(mx, my, 0, mx + bx * bagDepth * 0.5, my + by * bagDepth * 0.5, mouthR * 1.4);
-    bagGrad.addColorStop(0, 'rgba(255,240,180,0.18)');
-    bagGrad.addColorStop(1, 'rgba(255,240,180,0.06)');
+    const bagGrad = ctx.createRadialGradient(mx, my, 0, mx + bx * bagDepth * 0.5, my + by * bagDepth * 0.5, mouthR * 1.5);
+    bagGrad.addColorStop(0, hasCatch ? 'rgba(255,240,160,0.25)' : 'rgba(255,245,200,0.15)');
+    bagGrad.addColorStop(1, 'rgba(255,240,180,0.04)');
 
     // Teardrop shape: wider at mouth, tapering to point at bottom
     ctx.beginPath();
@@ -1731,13 +1758,13 @@ export class GameEngine {
     ctx.fillStyle = bagGrad;
     ctx.fill();
 
-    // Mesh lines: horizontal arcs across the bag (4 levels)
-    const meshColor = hasCatch ? 'rgba(255,215,100,0.55)' : 'rgba(255,240,180,0.40)';
+    // Mesh lines: CR-046 — 6 horizontal arcs (was 4) with wider lineWidth
+    const meshColor = hasCatch ? 'rgba(255,220,80,0.65)' : 'rgba(255,245,190,0.55)';
     ctx.strokeStyle = meshColor;
-    ctx.lineWidth   = 0.7;
-    for (let i = 1; i <= 4; i++) {
-      const t2 = i / 5;
-      const spread = mouthR * (1 - t2 * 0.85) * bulge;
+    ctx.lineWidth   = 1.2; // was 0.7
+    for (let i = 1; i <= 6; i++) {
+      const t2 = i / 7;
+      const spread = mouthR * (1 - t2 * 0.88) * bulge;
       const cx2 = mx + bx * bagDepth * t2;
       const cy2 = my + by * bagDepth * t2;
       ctx.beginPath();
@@ -1753,13 +1780,21 @@ export class GameEngine {
     ctx.moveTo(mx, my);
     ctx.lineTo(botX, botY);
     ctx.stroke();
+    // Two diagonal support lines
+    ctx.beginPath();
+    ctx.moveTo(mx + px * mouthR, my + py * mouthR);
+    ctx.lineTo(botX, botY);
+    ctx.moveTo(mx - px * mouthR, my - py * mouthR);
+    ctx.lineTo(botX, botY);
+    ctx.stroke();
     ctx.restore();
 
-    // Mouth ring (hoop) — golden, thicker
-    const hoopColor = hasCatch ? '#ffd040' : '#f0c040';
+    // Mouth ring (hoop) — golden, thicker — CR-046: lineWidth 3.5
+    const hoopColor = hasCatch ? '#ffd040' : '#e8c030';
     ctx.strokeStyle = hoopColor;
-    ctx.lineWidth   = 2;
-    if (hasCatch) { ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 10; }
+    ctx.lineWidth   = 3.5;  // was 2
+    if (hasCatch) { ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 14; }
+    else { ctx.shadowColor = 'rgba(240,200,60,0.5)'; ctx.shadowBlur = 6; }
     ctx.beginPath();
     ctx.arc(mx, my, mouthR, 0, TWO_PI);
     ctx.stroke();
@@ -1768,10 +1803,10 @@ export class GameEngine {
     if (this.netState === 'extend' && len > 10) {
       const grad = ctx.createLinearGradient(top.x, top.y, tip.x, tip.y);
       grad.addColorStop(0,   'rgba(255,255,255,0)');
-      grad.addColorStop(0.6, 'rgba(255,255,255,0.10)');
-      grad.addColorStop(1,   'rgba(255,255,255,0.28)');
+      grad.addColorStop(0.6, 'rgba(255,255,255,0.12)');
+      grad.addColorStop(1,   'rgba(255,255,255,0.32)');
       ctx.strokeStyle = grad;
-      ctx.lineWidth   = 7;
+      ctx.lineWidth   = 8;
       ctx.shadowBlur  = 0;
       ctx.beginPath();
       ctx.moveTo(top.x, top.y);

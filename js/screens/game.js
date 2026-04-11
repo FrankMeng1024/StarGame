@@ -47,9 +47,6 @@ export function startGame(navigate) {
   // Tutorial hint
   _showHint();
 
-  // Star color hint — first visit only
-  _showStarColorHint();
-
   // Mute button
   _initMuteButton();
 
@@ -132,7 +129,7 @@ function _showHint() {
 
 const ITEM_NAMES = {
   net_speed:    '⚡ 网兜加速',
-  star_magnet:  '🧲 磁力星引',
+  net_enlarge:  '🪢 网兜扩大',
   shrink_debris:'🔬 缩小垃圾',
   double_coins: '🪙 双倍金币',
   star_map:     '🗺️ 星图揭示',

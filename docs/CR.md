@@ -259,3 +259,18 @@ The current 4-chord Am-F-C-G sine-wave loop is too monotonous. Enrich it:
 - Add subtle variation: occasionally drop a chord beat, add a brief pause, or vary the rhythm slightly so it doesn't feel like a metronome
 - Add a "twinkling" high-register arpeggio layer (random notes from the pentatonic scale, very soft volume) to create a starfield ambience feel
 - The overall character should remain ethereal/space-like but feel alive rather than mechanical
+
+## CR-045: 少女角色重绘 (Sprint 15 approved)
+The procedural canvas girl character looks like a stick figure. Redesign with better anime-style proportions: larger head (anime 1:4~1:5 head-body ratio), more expressive face details, better hair layering with highlights, natural standing pose with pose variation for throw/catch states. Keep purple color scheme.
+
+## CR-046: 网兜视觉重绘 (Sprint 15 approved)
+The net needs to be more visually clear: larger hoop ring (mouthR 18→26), more mesh lines (4→6), thicker line weights, better color contrast against dark sky. Also reduce net extension speed (netSpeed 0.025→0.014) per user feedback that it's too fast.
+
+## CR-047: 星星抓/未抓视觉区别 (Sprint 15 approved)
+Uncaught stars: larger (r*1.8 visual), bright gold/white, prominent twinkling. Caught stars: smaller (r*0.5), dim (alpha 0.25). Remove multi-color star type system — all stars display as warm white/gold (#fff8e0/#ffd700) to eliminate confusion about gameplay meaning of colors. Remove star color hint toast.
+
+## CR-048: 游戏交互精修 (Sprint 15 approved)
+Multiple gameplay fixes: (1) block accidental net launch on level entry by delaying click listener 300ms; (2) fix pause button icon — should be ⏸ after resuming; (3) change scene intro to use sessionStorage so it shows every session; (4) debris size variation (large r:22-32 with retractMult 0.15, small r:12-18 with retractMult 0.3); (5) replace star_magnet item with net_enlarge (网兜扩大, 15s口径+50%, icon 🪢, price 60).
+
+## CR-049: 展厅/商店UI修复 (Sprint 15 approved)
+(1) Gallery: locked cards show only grey + "？" (no icon/name); unlocked-incomplete cards show name only, no icon; (2) Gallery detail: remove top back button, keep only bottom back button; (3) Shop cards: add visible default background color; (4) Pause exit button: add visible default background.

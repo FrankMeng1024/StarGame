@@ -856,6 +856,14 @@ body {
   font-size: 0.95rem;
 }
 
+#pause-exit-btn.btn-ghost {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+}
+#pause-exit-btn.btn-ghost:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
 .pause-exit-wrap {
   width: 100%;
   display: flex;
@@ -1085,6 +1093,12 @@ body {
   opacity: 0.5;
   letter-spacing: 0.05em;
   margin-top: 2px;
+}
+
+.gc-locked-placeholder {
+  font-size: 1.8rem;
+  color: rgba(255,255,255,0.2);
+  line-height: 1;
 }
 
 /* ── Gallery Detail Screen ─────────────────────────────────── */

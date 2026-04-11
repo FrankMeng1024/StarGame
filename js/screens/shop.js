@@ -3,7 +3,7 @@ import state from '../state.js';
 
 const ITEMS = [
   { id: 'net_speed',    name: '网兜加速',   effect: '激活后15秒内网兜速度+50%',         price: 50,  type: 'active',  icon: '⚡', duration: '15秒' },
-  { id: 'star_magnet',  name: '磁力星引',   effect: '激活后30秒内星星向网兜聚集',       price: 80,  type: 'active',  icon: '🧲', duration: '30秒' },
+  { id: 'net_enlarge',  name: '网兜扩大',   effect: '激活后15秒内网兜口径增大50%',       price: 60,  type: 'active',  icon: '🪢', duration: '15秒' },
   { id: 'space_bomb',   name: '宇宙炸弹',   effect: '激活后即时摧毁当前抓住的垃圾并重置网兜',    price: 100, type: 'active',  icon: '💣', duration: '即时' },
   { id: 'time_ext',     name: '时间延长',   effect: '即时+20秒剩余时间',                price: 60,  type: 'active',  icon: '⏱️', duration: '即时' },
   { id: 'shrink_debris',name: '缩小垃圾',   effect: '激活后30秒内所有垃圾缩小50%',      price: 40,  type: 'active',  icon: '🔬', duration: '30秒' },

@@ -4,7 +4,7 @@ import state from '../state.js';
 // Item definitions for the selection screen
 const ACTIVE_ITEMS = [
   { id: 'net_speed',     name: '网兜加速',    icon: '⚡', desc: '15秒内网兜速度+50%',     duration: 15 },
-  { id: 'star_magnet',   name: '磁力星引',    icon: '🧲', desc: '30秒内星星向网兜聚集',   duration: 30 },
+  { id: 'net_enlarge',   name: '网兜扩大',    icon: '🪢', desc: '15秒内网兜口径增大50%',   duration: 15 },
   { id: 'space_bomb',    name: '宇宙炸弹',    icon: '💣', desc: '即时摧毁当前抓住的垃圾', duration: 0  },
   { id: 'time_ext',      name: '时间延长',    icon: '⏱️', desc: '立即+20秒',              duration: 0  },
   { id: 'shrink_debris', name: '缩小垃圾',    icon: '🔬', desc: '30秒内垃圾缩小50%',      duration: 30 },
