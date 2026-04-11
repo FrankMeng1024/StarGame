@@ -247,3 +247,13 @@
 
 ### Navigation Regression
 - Sprint 13: menu → level select → back → gallery → Orion detail → star chart modal (open/close ×3) → carousel → back → unlock idx29 → 猎犬座 detail → empty carousel → back → menu: ALL CLEAN, 0 console errors
+
+## Sprint 14 Updates
+- Sprint 14: All 6 user-reported issue stories verified as resolved from UX perspective
+- Sprint 14: Pause overlay now uses three-tier visual hierarchy (gradient CTA > outline > text link) — good pattern to maintain for all future modal dialogs
+- Sprint 14: Gallery completion gating uses bright/dim cards + '未通关' label — effective binary state communication
+- Sprint 14: HUD layout stabilized — pause (⏸) and mute (🔊) as separate side-by-side buttons in top-right, level name in top-left, timer center-top, star counter right of timer
+- Sprint 14: Shop accessible from main menu as tertiary text link — appropriate visual weight for utility action
+- Sprint 14: Fail screen simplified to only 重试 + 返回选关 — no extraneous navigation options
+- Sprint 14: Photo lightbox functional with prev/next/close controls — standard gallery interaction pattern
+- Sprint 14: Decorative floating gold star persists across screens — cosmetic, non-blocking, background animation

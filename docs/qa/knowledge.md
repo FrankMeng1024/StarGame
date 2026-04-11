@@ -159,3 +159,13 @@ No backend, no network requests. All data in localStorage + local files.
 - Carousel missing images: `.no-image` class on `.photo-carousel-img-wrap` triggers ✦ placeholder (Wikimedia CDN offline). Empty constellations render `.photo-carousel-empty` card with `.photo-carousel-title` "暂无图片" — NOT blank space.
 - Character (Sprint 13): fully procedural canvas drawing, no external sprites. Anime-style with purple/navy dress, brown hair, golden staff, mountain horizon. Arm states: idle, throw, catch visible.
 - Navigation regression Sprint 13: menu↔levels↔gallery↔gallery-detail↔shop↔game (15 nav steps): ALL CLEAN, 0 JS errors. localStorage persists across navigation and page reload.
+
+## Sprint 14 Updates
+- Sprint 14: Photo lightbox system — '#photo-lightbox' overlay, prev/next nav buttons as circular dark buttons, close button top-right (X). Title + credit text below photo. Escape key closes.
+- Sprint 14: HUD button layout — pause (⏸) and mute (🔊) now side-by-side in top-right of game screen. Previous absolute positioning bug caused pause button to be unclickable via Playwright.
+- Sprint 14: Gallery completion gate — three states: completed (bright, clickable), unlocked-not-completed ('未通关', not clickable), locked ('未探索', not clickable).
+- Sprint 14: Fail screen buttons — only '重试' + '返回选关'. No '简介' or other buttons.
+- Sprint 14: Shop access paths — accessible from main menu ('道具商店'), levels screen ('商店'), and level-complete screen.
+- Sprint 14: Audio system — no duplicate let declaration crash. Zero JS errors on load.
+- Sprint 14: Pause overlay — '▶ 继续游戏' resumes without exit confirmation.
+- Sprint 14 regression: all navigation paths clean, 0 JS console errors throughout.
