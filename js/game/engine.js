@@ -2,7 +2,7 @@
 import state from '../state.js';
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
 import { playCatch, playDebrisCatch, startCountdownBeeps, stopCountdownBeeps } from '../audio.js';
-import { SCENE_PALETTES } from '../data/scenes.js';
+import { SCENE_PALETTES, drawGroundSilhouette } from '../data/scenes.js';
 
 const TWO_PI = Math.PI * 2;
 const TIME_BY_DIFFICULTY = { 1: 90, 2: 80, 3: 70, 4: 60, 5: 50 };
@@ -134,7 +134,7 @@ export class GameEngine {
 
     // Pendulum
     this.swingAngle   = 0;       // current angle in radians (0 = up)
-    this.swingSpeed   = (Math.PI * 2) / (1.5 * 60); // full swing in 1.5s at 60fps
+    this.swingSpeed   = (Math.PI * 2) / (3.5 * 60); // full swing in 3.5s at 60fps
     this.swingDir     = 1;
     this.swingMax     = Math.PI * 60 / 180; // ±60°
 
@@ -156,32 +156,42 @@ export class GameEngine {
 
     this.particles = [];
 
-    // ── Apply passive items ────────────────────────────────────
-    // Passive items are consumed at level start and apply for the full run
-    const PASSIVE_ITEMS = ['net_speed', 'shrink_debris', 'glove', 'double_coins', 'star_magnet', 'star_map'];
-    this.activeItems = new Set();
+    // ── Item system (new: 被动/主动 split) ─────────────────────
+    // 被动 items: auto-consumed from inventory, apply permanently
+    const PASSIVE_ITEMS = ['double_coins'];
+    this.activeItems = new Set(); // currently active passive effects
     for (const id of PASSIVE_ITEMS) {
       if (state.getItemQty(id) > 0) {
         state.useItem(id);
         this.activeItems.add(id);
       }
     }
-
-    // Apply net_speed
-    if (this.activeItems.has('net_speed')) {
-      this.netSpeed *= 1.5;
-    }
-
-    // Apply shrink_debris — halve radius of all debris objects
-    if (this.activeItems.has('shrink_debris')) {
-      for (const d of this.debris) d.r *= 0.5;
-    }
-
-    // double_coins multiplier communicated to game.js via this property
     this.coinMultiplier = this.activeItems.has('double_coins') ? 2 : 1;
+
+    // 主动 items: from state.selectedItems, slots 0/1/2
+    // Each slot: { id, icon, duration_s, endTime, active, used }
+    // Items are NOT consumed from inventory until activated
+    const ACTIVE_ITEM_CONFIG = {
+      net_speed:     { icon: '⚡', duration: 15 },
+      star_magnet:   { icon: '🧲', duration: 30 },
+      space_bomb:    { icon: '💣', duration: 0  },
+      time_ext:      { icon: '⏱️', duration: 0  },
+      shrink_debris: { icon: '🔬', duration: 30 },
+      star_map:      { icon: '🗺️', duration: 60 },
+      glove:         { icon: '🧤', duration: 30 },
+    };
+    this.activeSlots = (state.selectedItems || []).slice(0, 3).map(id => ({
+      id,
+      icon:     ACTIVE_ITEM_CONFIG[id]?.icon || '?',
+      duration: ACTIVE_ITEM_CONFIG[id]?.duration ?? 0,
+      endTime:  0,
+      active:   false,
+      used:     false,
+    }));
 
     // Bind
     this._handleInput = this._handleInput.bind(this);
+    this._handleKeySlot = this._handleKeySlot.bind(this);
   }
 
   // ── Build level objects ────────────────────────────────────
@@ -201,6 +211,9 @@ export class GameEngine {
       mag: s.mag,
       caught: false,
       twinklePh: Math.random() * TWO_PI,
+      // Store original positions so caught stars remain at their constellation position
+      origX: padX + s.x * areaW,
+      origY: padY + s.y * areaH,
     }));
   }
 
@@ -251,12 +264,66 @@ export class GameEngine {
     }
   }
 
-  // ── Game loop ─────────────────────────────────────────────
+  _handleKeySlot(e) {
+    if (this._introPlaying || this.finished) return;
+    const slotIdx = e.code === 'Digit1' ? 0 : e.code === 'Digit2' ? 1 : e.code === 'Digit3' ? 2 : -1;
+    if (slotIdx < 0) return;
+    this.activateSlot(slotIdx);
+  }
+
+  activateSlot(slotIdx) {
+    const slot = this.activeSlots[slotIdx];
+    if (!slot || slot.used) return;
+    if (!state.useItem(slot.id)) return; // not owned
+
+    slot.used   = true;
+    slot.active = true;
+    const now   = performance.now();
+    slot.endTime = slot.duration > 0 ? now + slot.duration * 1000 : now;
+
+    this._applySlotEffect(slot.id, slot.duration);
+  }
+
+  _applySlotEffect(id, duration) {
+    switch (id) {
+      case 'net_speed':
+        this.netSpeed *= 1.5;
+        if (duration > 0) {
+          setTimeout(() => { if (this.running) this.netSpeed /= 1.5; }, duration * 1000);
+        }
+        break;
+      case 'shrink_debris':
+        for (const d of this.debris) d.r *= 0.5;
+        this._shrinkDebrisActive = true;
+        setTimeout(() => {
+          for (const d of this.debris) if (!d.caught) d.r *= 2;
+          this._shrinkDebrisActive = false;
+        }, duration * 1000);
+        break;
+      case 'space_bomb':
+        this.debris = this.debris.filter(d => {
+          if (!d.caught) { this._emitDebrisParticles(d.x, d.y); return false; }
+          return true;
+        });
+        break;
+      case 'time_ext':
+        this.timeLeft = Math.min(this.timeLeft + 20, this.startTime + 20);
+        if (typeof this.onTimeExt === 'function') this.onTimeExt();
+        break;
+      // star_magnet, star_map, glove: checked in _update via active slot state
+    }
+  }
+
+  _isSlotActive(id) {
+    const now = performance.now();
+    return this.activeSlots.some(s => s.id === id && s.active && (s.duration === 0 || now < s.endTime));
+  }
   start() {
     this.running = true;
     this.lastTick = performance.now();
     document.addEventListener('click', this._handleInput);
     document.addEventListener('keydown', this._handleInput);
+    document.addEventListener('keydown', this._handleKeySlot);
 
     // Scene transition ceremony — show on first entry to a new scene group
     const sceneIdx = Math.min(Math.floor(this.levelIdx / 5), SCENE_PALETTES.length - 1);
@@ -278,6 +345,7 @@ export class GameEngine {
     this.running = false;
     document.removeEventListener('click', this._handleInput);
     document.removeEventListener('keydown', this._handleInput);
+    document.removeEventListener('keydown', this._handleKeySlot);
     if (this.rafId) cancelAnimationFrame(this.rafId);
     stopCountdownBeeps();
   }
@@ -415,8 +483,8 @@ export class GameEngine {
     // Net retract
     if (this.netState === 'retract') {
       this.netPos -= this.netSpeed * 1.5;
-      // Drag caught object
-      if (this.caughtObj) {
+      // Drag caught debris only — stars stay at original position
+      if (this.caughtObj && this.caughtObj.type === 'debris') {
         const tip = this._netTip();
         this.caughtObj.obj.x = tip.x;
         this.caughtObj.obj.y = tip.y;
@@ -436,8 +504,8 @@ export class GameEngine {
       if (!d.caught) d.angle += d.spinSpeed;
     }
 
-    // Star magnet — pull uncaught stars toward net tip
-    if (this.activeItems.has('star_magnet')) {
+    // Star magnet — pull uncaught stars toward net tip (active slot)
+    if (this._isSlotActive('star_magnet')) {
       const tip = this._netTip();
       for (const s of this.stars) {
         if (s.caught) continue;
@@ -458,6 +526,10 @@ export class GameEngine {
   _processCatch(hit) {
     if (hit.type === 'star') {
       hit.obj.caught = true;
+      // Snap origX/origY to actual catch position so dim persistence dot
+      // appears where the star was when caught (matters if star_magnet moved it)
+      hit.obj.origX = hit.obj.x;
+      hit.obj.origY = hit.obj.y;
       this.caughtStars++;
       playCatch();
       this._emitStarParticles(hit.obj.x, hit.obj.y);
@@ -471,8 +543,8 @@ export class GameEngine {
       hit.obj.caught = true;
       playDebrisCatch();
       this._emitDebrisParticles(hit.obj.x, hit.obj.y);
-      // Time penalty for catching debris (waived with glove)
-      if (!this.activeItems.has('glove')) {
+      // Time penalty for catching debris (waived with glove active slot)
+      if (!this._isSlotActive('glove')) {
         this.timeLeft = Math.max(0, this.timeLeft - 1);
         this._showPenaltyText(hit.obj.x, hit.obj.y);
       }
@@ -541,7 +613,7 @@ export class GameEngine {
     ctx.clearRect(0, 0, this.W, this.H);
 
     this._drawBackground();
-    if (this.activeItems.has('star_map')) this._drawStarMap();
+    if (this._isSlotActive('star_map')) this._drawStarMap();
     this._drawStars();
     this._drawDebris();
     this._drawNet();
@@ -580,11 +652,13 @@ export class GameEngine {
     }
 
     // Background particle stars — density and color vary by scene
+    // Stars only in sky zone (upper 75% of canvas)
+    const skyHeight = this.H * 0.74;
     const starCount = scene.aurora ? 80 : (scene === SCENE_PALETTES[5] ? 160 : 120);
     const seed = this.levelIdx * 100;
     for (let i = 0; i < starCount; i++) {
       const x = ((seed * 7 + i * 137.508) % this.W);
-      const y = ((seed * 3 + i * 97.31) % (this.H * 0.88));
+      const y = ((seed * 3 + i * 97.31) % skyHeight);
       const r = (i % 5 === 0) ? 1.2 : 0.6;
       const twinkle = 0.4 + 0.6 * Math.abs(Math.sin(Date.now() * 0.001 + i));
       ctx.globalAlpha = twinkle * scene.starAlpha;
@@ -594,6 +668,10 @@ export class GameEngine {
       ctx.fill();
     }
     ctx.globalAlpha = 1;
+
+    // Ground silhouette (drawn on top of sky gradient + stars)
+    const sceneIdx = Math.min(Math.floor(this.levelIdx / 5), SCENE_PALETTES.length - 1);
+    drawGroundSilhouette(ctx, this.W, this.H, sceneIdx);
   }
 
   _drawStarMap() {
@@ -609,8 +687,8 @@ export class GameEngine {
       const sA = this.stars[a], sB = this.stars[b];
       if (!sA || !sB) continue;
       ctx.beginPath();
-      ctx.moveTo(sA.x, sA.y);
-      ctx.lineTo(sB.x, sB.y);
+      ctx.moveTo(sA.origX ?? sA.x, sA.origY ?? sA.y);
+      ctx.lineTo(sB.origX ?? sB.x, sB.origY ?? sB.y);
       ctx.stroke();
     }
     ctx.restore();
@@ -620,7 +698,19 @@ export class GameEngine {
     const ctx = this.ctx;
     const t = Date.now() * 0.002;
     for (const s of this.stars) {
-      if (s.caught) continue;
+      if (s.caught) {
+        // Caught stars: dim glowing dot at original constellation position
+        ctx.save();
+        ctx.globalAlpha = 0.35;
+        ctx.fillStyle = s.color;
+        ctx.shadowColor = s.color;
+        ctx.shadowBlur = s.r;
+        ctx.beginPath();
+        ctx.arc(s.origX, s.origY, s.r * 0.7, 0, TWO_PI);
+        ctx.fill();
+        ctx.restore();
+        continue;
+      }
       const twinkle = 0.7 + 0.3 * Math.sin(t + s.twinklePh);
 
       // Glow

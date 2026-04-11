@@ -1,4 +1,4 @@
-# API_SPEC.md — 星捕少女 (StarCatcher)
+# API_SPEC.md — 追星少女 (StarCatcher)
 
 This is a pure frontend game. No HTTP API. This document defines the **internal JS module interface contracts**.
 
@@ -51,6 +51,7 @@ js/
   coins: number,                    // total coin balance
   inventory: Map<string, number>,   // itemId → quantity
   seenScenes: Set<number>,          // scene group indices (0-5) whose intro has been shown
+  selectedItems: string[],          // item IDs chosen in pre-level item-select (max 3 active items)
   
   // Current session
   currentLevel: number|null,        // 0-29
