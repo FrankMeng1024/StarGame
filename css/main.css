@@ -1145,6 +1145,68 @@ body {
   margin: 0 auto;
 }
 
+#detail-starchart-svg {
+  cursor: zoom-in;
+  transition: opacity 0.15s;
+}
+#detail-starchart-svg:hover { opacity: 0.88; }
+
+.starchart-hint {
+  text-align: center;
+  font-size: 11px;
+  color: rgba(180,200,255,0.5);
+  margin: 4px 0 0;
+  letter-spacing: 0.05em;
+}
+
+/* Star chart full-screen modal */
+.starchart-modal-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.88);
+  z-index: 9000;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s ease;
+}
+.starchart-modal-overlay.starchart-modal-visible { opacity: 1; }
+
+.starchart-modal-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.starchart-modal-svg svg {
+  width: 90vmin;
+  height: 90vmin;
+  border-radius: 50%;
+  box-shadow: 0 0 60px rgba(100,150,255,0.3);
+}
+
+.starchart-modal-close {
+  position: absolute;
+  top: -20px;
+  right: -20px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: rgba(40,40,80,0.95);
+  border: 1px solid rgba(120,160,255,0.4);
+  color: rgba(200,220,255,0.9);
+  font-size: 16px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 9001;
+  transition: background 0.15s;
+}
+.starchart-modal-close:hover { background: rgba(80,80,160,0.95); }
+
 /* ── Gallery Photo Carousel ────────────────────────────────── */
 .detail-photo-carousel {
   width: 100%;

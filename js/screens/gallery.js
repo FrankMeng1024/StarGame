@@ -260,10 +260,66 @@ function _renderStarChart(idx, con) {
   ].join('');
 
   container.innerHTML = svgStr;
+
+  // ── Star chart zoom: click to open full-screen modal ──────────
+  container.style.cursor = 'zoom-in';
+
+  // Hint text below chart
+  let hint = container.nextElementSibling;
+  if (!hint || !hint.classList.contains('starchart-hint')) {
+    hint = document.createElement('p');
+    hint.className = 'starchart-hint';
+    hint.textContent = '点击放大查看';
+    container.insertAdjacentElement('afterend', hint);
+  }
+
+  // Replace click handler each render (avoid stacking)
+  if (container._scClickHandler) container.removeEventListener('click', container._scClickHandler);
+  container._scClickHandler = () => _openStarChartModal(svgStr);
+  container.addEventListener('click', container._scClickHandler);
+}
+
+// ── Star chart full-screen modal ──────────────────────────────
+function _openStarChartModal(svgStr) {
+  let modal = document.getElementById('starchart-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'starchart-modal';
+    modal.className = 'starchart-modal-overlay';
+    modal.innerHTML = `
+      <div class="starchart-modal-inner">
+        <button class="starchart-modal-close" id="starchart-modal-close" aria-label="关闭">✕</button>
+        <div class="starchart-modal-svg" id="starchart-modal-svg"></div>
+      </div>
+    `;
+    document.body.appendChild(modal);
+    modal.addEventListener('click', (e) => { if (e.target === modal) _closeStarChartModal(); });
+    modal.querySelector('#starchart-modal-close').addEventListener('click', _closeStarChartModal);
+  }
+
+  const svgEl = modal.querySelector('#starchart-modal-svg');
+  const scaledSvg = svgStr.replace(/width="\d+"/, 'width="90vmin"').replace(/height="\d+"/, 'height="90vmin"');
+  svgEl.innerHTML = scaledSvg;
+
+  modal.style.display = 'flex';
+  requestAnimationFrame(() => modal.classList.add('starchart-modal-visible'));
+
+  document._scModalKeyHandler = (e) => { if (e.key === 'Escape') _closeStarChartModal(); };
+  document.addEventListener('keydown', document._scModalKeyHandler);
+}
+
+function _closeStarChartModal() {
+  const modal = document.getElementById('starchart-modal');
+  if (!modal) return;
+  modal.classList.remove('starchart-modal-visible');
+  setTimeout(() => { modal.style.display = 'none'; }, 200);
+  if (document._scModalKeyHandler) {
+    document.removeEventListener('keydown', document._scModalKeyHandler);
+    document._scModalKeyHandler = null;
+  }
 }
 
 function _renderPhotoCarousel(con) {
-  // Find or create the carousel container
   let carouselSection = document.getElementById('detail-photo-carousel');
   if (!carouselSection) {
     // Insert after the starchart section
