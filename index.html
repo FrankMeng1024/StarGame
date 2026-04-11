@@ -70,11 +70,13 @@
           <span>★</span>
           <span class="star-count">0/7</span>
         </div>
-        <!-- Pause button inside HUD top row — right side, no overlap with level name -->
-        <button id="pause-btn" class="pause-btn" aria-label="暂停">⏸</button>
+        <!-- Pause + mute grouped at right — no overlap -->
+        <div class="hud-top-right">
+          <button id="pause-btn" class="pause-btn" aria-label="暂停">⏸</button>
+          <button id="mute-btn" class="hud-mute-btn" aria-label="静音">🔊</button>
+        </div>
       </div>
       <div class="hud-active-items" id="hud-active-items"></div>
-      <button id="mute-btn" class="hud-mute-btn" aria-label="静音">🔊</button>
     </div>
     <!-- Tutorial hint overlay -->
     <div id="game-hint" class="game-hint" aria-live="polite">
