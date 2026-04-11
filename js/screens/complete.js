@@ -88,7 +88,7 @@ export function showFail(navigate, params) {
   if (subtitleEl) subtitleEl.innerHTML = '';
 
   document.querySelector('.stat-caught').textContent = `${caught}/${total ?? level.stars.length}`;
-  document.querySelector('.stat-time').textContent   = `${elapsed}秒`;
+  document.querySelector('.stat-time').textContent   = '0秒';
   document.querySelector('.stat-coins').textContent  = '0';
 
   _showPhoto(level);

@@ -70,3 +70,108 @@ Upgrade all UI screens to maximum visual quality:
 - HUD: semi-transparent pill badges, animated countdown ring for timer
 - Shop: item cards with animated type badge glow
 Reference standard: the visual richness of games like Sky: Children of the Light or premium mobile games. Every interactive element should have visible hover/active feedback.
+
+---
+
+## CR-020: 网兜形状升级 (Sprint 12 approved)
+The current net visual is incorrect — it looks like a line or lasso, not a real butterfly/fishing net. Replace with a proper net bag shape:
+- Net is a triangular/teardrop mesh bag that hangs from the pole tip
+- Drawn with canvas 2D: a bag outline + crosshatch mesh lines inside (5-6 horizontal + 5-6 vertical arcs)
+- Net opens/stretches wide at the mouth when flying, narrows as it retracts
+- Color: golden/cream semi-transparent mesh with darker frame ring at mouth
+- When a star is caught, the net visibly bulges slightly before retract starts
+
+## CR-021: 小女孩角色重新设计 (Sprint 12 approved)
+The current procedural character is not appealing. Full redraw of the canvas-drawn girl:
+- Larger, more detailed head: almond eyes with highlights, rosy cheeks, smile, detailed hair (twin tails with ribbon or loose flowing hair)
+- Dress: layered skirt with gradient (deep navy → purple hem), sparkle pattern on bodice
+- Arm: extended holding a glowing golden staff/pole, other arm slightly out for balance
+- Shoes/legs visible (not hidden by skirt edge)
+- Overall silhouette: about 120-140px tall (not tiny), centered at bottom 15% of canvas
+- Character should feel like a 2D anime illustration, not a basic geometric shape
+- Warm skin tone, expressive face. Reference: visual style of 原神 or 星之卡比 fan art (simplified anime, not realistic)
+
+## CR-022: 宇宙垃圾旋转动画 (Sprint 12 approved)
+All debris objects must rotate continuously during gameplay. Each debris type has its own rotation speed:
+- meteor/asteroid: slow tumble (0.015 rad/frame)
+- satellite: medium spin (0.02 rad/frame)
+- rocket: slow rotation (0.01 rad/frame)
+- cloth/mylar: fast irregular flutter (0.025-0.04 rad/frame, oscillating)
+Implementation: each debris object tracks a `rotation` property (radians), incremented each frame before canvas draw. `ctx.save()`, `ctx.translate(x, y)`, `ctx.rotate(obj.rotation)`, draw centered at (0,0), `ctx.restore()`.
+
+## CR-023: 游戏内淡淡星座连线 (Sprint 12 approved)
+Draw faint constellation guide lines in the game canvas at all times (not just when star_map item is active):
+- Lines drawn between all star pairs per the constellation's line definition
+- Style: `rgba(255, 215, 0, 0.12)` (very faint gold), `lineWidth: 0.8`, no shadow
+- Lines update dynamically: when a star is caught, the line between caught and adjacent stars fades to `rgba(255, 215, 0, 0.25)` (slightly brighter, as if the line "activates" to mark what's been completed)
+- This gives the player a visual guide to the constellation shape without making it trivial
+- Always rendered, not gated behind star_map item (star_map item effect can be retired or upgraded to show star names)
+
+## CR-024: 游戏内控制按钮 (Sprint 12 approved)
+Add three control buttons visible during gameplay:
+- **暂停/继续 (Pause/Resume)**: top-left HUD area, icon ⏸/▶. On pause: overlay with "游戏暂停" text, dim canvas. Resume on click or pressing Escape.
+- **重试 (Retry)**: in the pause overlay, button to restart current level from scratch (confirm dialog not needed — just restart immediately)
+- **退出 (Exit)**: in the pause overlay, button to navigate back to level select (`__navigate('levels')`). Asks "确定退出?" with Yes/No inline (no browser dialog — styled inline confirmation).
+- Keyboard shortcut: Escape toggles pause
+- Design: the pause button itself is small (32px icon) and semi-transparent in the HUD corner; the overlay that appears on pause shows Retry + Exit as full-width styled buttons
+
+## CR-025: 通关界面重设计 (Sprint 12 approved)
+Complete screen layout overhaul — the user says "上方字体依旧过大，核心是介绍和图片":
+- Remove or drastically shrink the top title/rating area — compress to a single line: "★★★ 关卡完成" in one row, max 48px height
+- Make lore text the visual focus: at least 40% of screen height, large readable font (16px+), styled container
+- Photo (if available): show one highlight photo from the constellation's photo array, above the lore, max 200px height, rounded corners
+- Stats (coins, time, count): compact horizontal row, small text, below the single-line title
+- Shop button: prominent "去商店 →" button at bottom, styled as a CTA (not just a text link)
+- Overall: feels like an "unlock card" — photo + story is the reward, stats/buttons are secondary
+
+## CR-026: UI组件全面精致化 (Sprint 12 approved)
+All interactive components need polish to match premium game quality:
+- Buttons: minimum 44px height, gradient fill (not flat color), rounded corners (12-16px radius), inset glow effect on hover (box-shadow inward), scale(1.03) on hover
+- The "重试" and "退出" buttons specifically must be styled as proper game UI — gradient, icon+text, rounded
+- Input focus states: glowing border
+- All text labels on UI screens: proper hierarchy (section headers vs body vs caption sizing)
+- Remove any default browser styling artifacts (outline, default button appearance)
+- Every clickable element must have cursor:pointer and hover transition
+
+## CR-027: 关卡选择难度指示器重设计 (Sprint 12 approved)
+User reports "挑战关卡两排星 5个和3个 没看懂" — the current star rating display is confusing.
+Replace the current 5-star difficulty indicator with:
+- A single horizontal bar (progress-bar style) filled proportionally: difficulty 1 = 20%, 2 = 40%, 3 = 60%, 4 = 80%, 5 = 100%
+- Color: difficulty 1-2 = green, 3 = amber, 4-5 = red
+- Label: "难度" with the bar, no star rows
+- Best-score stars (earned after completing) shown separately as "最佳: ★★★" in a different color (gold), clearly distinct from difficulty indicator
+- The two rows (difficulty + score) should be clearly labeled so user knows what each means
+
+## CR-028: 天文星图放大查看 (Sprint 12 approved)
+The SVG star chart in gallery detail is too small (480px) and cannot be inspected in detail. Add a tap/click-to-expand behavior:
+- Click on the star chart container → it expands to a full-screen overlay (modal)
+- Modal: dark background, the SVG fills 90vmin, close button (✕) top-right corner
+- SVG in modal: same data but rendered larger, all star labels legible
+- Clicking outside the modal or pressing Escape closes it
+- Hint text below the chart: "点击放大查看" in small grey text
+
+## CR-029: 展厅图片轮播视觉增强 (Sprint 12 approved)
+The photo carousel CSS effects are not visually impressive. Upgrade:
+- Each photo card: rounded corners (16px), overflow hidden, subtle box-shadow (0 4px 24px rgba(0,0,0,0.6))
+- On hover: scale(1.04) transform with transition, border glow (1px solid rgba(255,215,0,0.4))
+- Card background when image is loading/missing: dark gradient placeholder with a star icon ✦ centered
+- Credit text: semi-transparent overlay at bottom of card (position:absolute, bottom:0, gradient from transparent to rgba(0,0,0,0.7))
+- Section header "天文摄影 · ASTROPHOTOGRAPHY": gold gradient text, with a thin gold border-bottom line
+- If there are no photos for a constellation: show a styled empty state card "暂无图片" with a telescope icon
+
+## CR-030: 关卡选择移除地名显示 (Sprint 12 approved)
+User says scene location names in level select (dividers showing "特卡波湖·牧羊人小屋" etc.) are unnecessary — the surprise of backgrounds changing automatically is better.
+Remove all scene divider location name labels from the level select screen. The scene dividers can remain as visual separators (a styled horizontal line or subtle gradient rule) but must NOT display any text. The background palette change when advancing to a new scene group is the natural discovery mechanism.
+
+## CR-031: 道具系统功能修复 (Sprint 12 approved)
+User reports items are not working. Investigate and fix all item activation issues:
+- Verify item selection modal correctly populates with owned active items
+- Verify key 1/2/3 actually activates the correct slot item during gameplay
+- Verify star_magnet actually pulls stars toward net (visible effect)
+- Verify net_speed actually increases net extension/retraction speed
+- Verify shrink_debris actually reduces debris size on canvas
+- Verify space_bomb actually clears debris from canvas
+- Verify time_ext adds 20s to the timer
+- Verify glove prevents time penalty when debris is caught
+- Verify double_coins doubles the coin award on level complete
+- Each fix must be QA-verified with observable evidence (before/after quantity check, visual confirmation)

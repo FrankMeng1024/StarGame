@@ -777,8 +777,8 @@ body {
 /* ── Pause button & overlay ─────────────────────────────────── */
 .pause-btn {
   position: absolute;
-  top: 12px;
-  right: 12px;
+  top: 8px;
+  right: 52px; /* sit left of the 36px mute button + 8px gap */
   width: 36px;
   height: 36px;
   border-radius: 50%;

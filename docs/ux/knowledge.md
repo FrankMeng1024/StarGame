@@ -202,3 +202,21 @@
 
 ### Navigation Regression
 - Sprint 11: menu → levels → item-select → game → complete → shop → menu → gallery → gallery-detail: ALL CLEAN, 0 JS errors throughout entire sequence.
+
+## Sprint 12 Updates (2026-04-11)
+
+### Gameplay UX Improvements Verified
+- **Constellation guide lines (STORY-00046)**: Faint golden lines connecting stars now always visible — players immediately understand what shape they're forming. Major comprehension improvement.
+- **Debris rotation (STORY-00047)**: Debris (cloth, rocket) visually distinct from star targets — spinning, different shapes/colors. No confusion risk.
+- **Net teardrop shape (STORY-00049)**: Golden circular bag at pole tip clearly reads as a catching net in-flight.
+- **Pause system (STORY-00050)**: Frosted blur overlay, three well-hierarchied options (continue primary, restart secondary, exit ghost). Intuitive for first-time players.
+- **Complete screen (STORY-00051)**: Fits viewport, "去商店 →" CTA dominant, star rating + new-record badge rewarding. Secondary actions below CTA.
+- **Level select (STORY-00052)**: Scene dividers now clean horizontal lines — no location text clutter.
+
+### New Friction Points (Sprint 12)
+- Fail screen "剩余" label misleading when timer expires — shows "90秒 剩余" but means elapsed time. Players confused why they lost. Medium severity.
+- Constellation mini-canvas on complete/fail screens shows as grey square — cosmetic. Low severity.
+
+### Navigation Regression
+- Sprint 12: menu → levels → item-select (with item) → game → pause → resume → game → fail: CLEAN
+- 1 console error: Wikimedia CDN timeout (pre-existing, expected offline, no JS errors)

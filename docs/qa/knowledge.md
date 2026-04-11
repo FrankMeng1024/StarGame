@@ -135,3 +135,17 @@ No backend, no network requests. All data in localStorage + local files.
 - Navigation transition: `.screen-exit` class triggers `screenFadeOut` 250ms, then `.screen-enter` + `.screen-enter-active` triggers `screenFadeIn` 300ms. `_navPending = true` during exit prevents double-nav.
 - Debris: procedural canvas drawing (grey rock shapes, multi-polygon). Verify by pixel color check: debris pixels ≈ grey `[120-160, 120-160, 120-160]`, stars ≈ blue-white `[180-255, 200-255, 255]`.
 - Navigation regression Sprint 11: ALL screens CLEAN throughout complete test sequence. 0 JS console errors.
+
+## Sprint 12 Verified (2026-04-11)
+
+- Constellation guide lines: faint golden lines always visible during gameplay connecting stars in the level pattern. Stars render on top of lines. Lines low-opacity, non-distracting.
+- Debris visual: darker spinning shapes distinct from star targets. Stars = bright blue-white glowing circles. Debris = grey/dark irregular spinning shapes.
+- Net teardrop shape: golden circular bag at tip of net pole during in-flight. Visible in ux-07-net-inflight.png.
+- Pause system: `pause-btn` / `#pause-btn` in HUD. Click or `evaluate()` to trigger. Overlay `#pause-overlay` shows "游戏暂停" heading. Three buttons: `#pause-resume-btn` (▶继续), button for 重新开始, button for 返回关卡. Escape key also resumes. 返回关卡 shows nested confirmation "确认退出?" with ✓/✗ buttons.
+- Timer freeze during pause: verified by DOM read of timer text before/after 3s wait — values match.
+- Fail screen fix: `showFail()` shows '0秒' for stat-time (not elapsed). Label reads "0秒 剩余". Bug was: elapsed time shown next to static "剩余" label.
+- Complete screen: shop CTA button `.btn-shop` text "去商店 →", prominent placement above secondary actions. Set by `showComplete()` which also sets onclick to navigate('shop').
+- Scene dividers: 6 divider elements in level select, 1px height, empty text content (no location names). Clean horizontal lines only.
+- Item HUD: `.hud-item-slots` container shows per-slot elements with slot number + item icon. Tested with ⚡ (speed) in slot 1, ⏱️ (time ext) in slot 2, 🪙 (coin magnet passive).
+- Navigation regression Sprint 12: game→levels→menu→gallery→gallery-detail→gallery→menu: ALL CLEAN, 0 JS errors.
+- Regression checklist addition: after any fail-screen change, verify stat-time shows '0秒 剩余' not elapsed seconds.
