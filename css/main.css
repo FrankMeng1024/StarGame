@@ -347,9 +347,31 @@ body {
 
 .level-card .card-stars {
   display: flex;
-  gap: 2px;
-  font-size: 10px;
-  color: var(--star-gold);
+  align-items: center;
+  gap: 5px;
+  width: 100%;
+}
+
+.card-diff-label {
+  font-size: 9px;
+  color: rgba(180, 200, 255, 0.6);
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+.card-diff-bar-wrap {
+  flex: 1;
+  height: 4px;
+  background: rgba(255, 255, 255, 0.12);
+  border-radius: 2px;
+  overflow: hidden;
+}
+
+.card-diff-bar {
+  display: block;
+  height: 100%;
+  border-radius: 2px;
+  transition: width 0.3s ease;
 }
 
 .level-card .lock-icon {

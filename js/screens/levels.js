@@ -28,9 +28,10 @@ export function initLevels(navigate) {
     card.className = `level-card ${unlocked ? 'unlocked' : 'locked'}`;
     card.dataset.idx = idx;
 
-    const difficulty = '★'.repeat(c.difficulty) + '☆'.repeat(5 - c.difficulty);
+    const diffPct = (c.difficulty / 5 * 100).toFixed(0);
+    const diffColor = c.difficulty <= 2 ? '#4cde80' : c.difficulty === 3 ? '#ffb830' : '#ff5555';
     const score = state.getScore(idx);
-    const scoreStars = score ? '★'.repeat(score.stars) + '☆'.repeat(3 - score.stars) : '';
+    const scoreStars = score ? `最佳: ${'★'.repeat(score.stars)}${'☆'.repeat(3 - score.stars)}` : '';
     const bestTime = score ? `<span class="card-best-time">最佳: ${Math.ceil(score.time)}秒</span>` : '';
     card.innerHTML = `
       <span class="card-num">${idx + 1}</span>
@@ -38,7 +39,10 @@ export function initLevels(navigate) {
       <span class="card-icon">${c.icon}</span>
       <span class="card-name-zh">${c.nameZh}</span>
       <span class="card-name-en">${c.nameEn}</span>
-      <span class="card-stars">${difficulty}</span>
+      <span class="card-stars">
+        <span class="card-diff-label">难度</span>
+        <span class="card-diff-bar-wrap"><span class="card-diff-bar" style="width:${diffPct}%;background:${diffColor}"></span></span>
+      </span>
       ${scoreStars ? `<span class="card-score-stars">${scoreStars}</span>` : ''}
       ${bestTime}
       ${!unlocked ? '<span class="lock-icon">🔒</span>' : ''}
@@ -63,9 +67,11 @@ export function refreshLevels() {
     const unlocked = state.isUnlocked(idx);
     const c = CONSTELLATIONS[idx];
     const score = state.getScore(idx);
-    const scoreStars = score ? '★'.repeat(score.stars) + '☆'.repeat(3 - score.stars) : '';
+    const scoreStars = score ? `最佳: ${'★'.repeat(score.stars)}${'☆'.repeat(3 - score.stars)}` : '';
     const bestTime = score ? `<span class="card-best-time">最佳: ${Math.ceil(score.time)}秒</span>` : '';
-    const stars = '★'.repeat(c.difficulty) + '☆'.repeat(5 - c.difficulty);
+    const diffPct = (c.difficulty / 5 * 100).toFixed(0);
+    const diffColor = c.difficulty <= 2 ? '#4cde80' : c.difficulty === 3 ? '#ffb830' : '#ff5555';
+    const diffBar = `<span class="card-diff-label">难度</span><span class="card-diff-bar-wrap"><span class="card-diff-bar" style="width:${diffPct}%;background:${diffColor}"></span></span>`;
 
     if (unlocked && card.classList.contains('locked')) {
       // Newly unlocked — full re-render
@@ -76,7 +82,7 @@ export function refreshLevels() {
         <span class="card-icon">${c.icon}</span>
         <span class="card-name-zh">${c.nameZh}</span>
         <span class="card-name-en">${c.nameEn}</span>
-        <span class="card-stars">${stars}</span>
+        <span class="card-stars">${diffBar}</span>
         ${scoreStars ? `<span class="card-score-stars">${scoreStars}</span>` : ''}
         ${bestTime}
       `;
