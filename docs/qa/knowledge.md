@@ -123,3 +123,15 @@ No backend, no network requests. All data in localStorage + local files.
 - Lore text: `.detail-lore-text` — all 30 constellations ≥500 chars in DOM (min=501, max=530). Content covers myth keywords (神话/传说) AND astronomy keywords (光年/亮度/天文). Batch verification pattern: loop idx 0-29 with 300ms delay each.
 - Batch test pattern: `for(i=0;i<30;i++){ window.__navigate('gallery-detail',{idx:i}); await delay(300); check DOM; }`
 - Navigation regression Sprint 9: menu→gallery→detail (×3 constellations)→gallery→detail again→menu→detail: ALL CLEAN, 0 JS errors throughout full sequence.
+
+## Sprint 11 Verified (2026-04-11)
+
+- Complete screen: `.complete-inner` max-height 100vh, overflow-y auto. Canvas `#constellation-portrait` fixed 160×160 (JS overrides HTML attrs `width=160 height=160` now matching).
+- HUD timer ring: `#timer-ring-fill` SVG circle driven by `timeLeft/startTime` ratio in `_updateHUD()`. CIRCUM=150.8. `strokeDashoffset = CIRCUM - ratio*CIRCUM`. Color: blue (>30%), orange (#f59e0b, 15-30%), red (#ef4444, <15%). Text in `#hud-timer-text` inside `.hud-timer-ring`. `_showTimeExtFlash()` targets `.hud-timer-ring || .hud-timer`.
+- Photo carousel: `#detail-photo-carousel` inserted dynamically after `.detail-starchart`. Hidden (`display:none`) if `CONSTELLATION_PHOTOS[con.nameEn]` has no entries. 20 constellations have photos. Scroll-snap horizontal track, 280px fixed-width cards.
+- Glass cards: `backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px)` on `.level-card`, `.gallery-card`, `.shop-card`. `background: rgba(26,31,78,0.6)`.
+- Badge glow: `.type-active` → `badge-glow-active` keyframe (amber box-shadow pulse). `.type-passive` → `badge-glow-passive` keyframe (purple box-shadow pulse). Selector `.shop-card .item-type.type-active`.
+- Cursor trail: `.cursor-trail-particle` fixed-position divs. `_trailEnabled` module-level flag in `main.js`. Set `false` on navigate('game'), re-enabled in `_activateScreen()` for all other routes. Trail chars: `['✦','·','✧','★','⋆']`.
+- Navigation transition: `.screen-exit` class triggers `screenFadeOut` 250ms, then `.screen-enter` + `.screen-enter-active` triggers `screenFadeIn` 300ms. `_navPending = true` during exit prevents double-nav.
+- Debris: procedural canvas drawing (grey rock shapes, multi-polygon). Verify by pixel color check: debris pixels ≈ grey `[120-160, 120-160, 120-160]`, stars ≈ blue-white `[180-255, 200-255, 255]`.
+- Navigation regression Sprint 11: ALL screens CLEAN throughout complete test sequence. 0 JS console errors.

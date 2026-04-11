@@ -228,7 +228,7 @@ function _dismissHint() {
 
 function _showTimeExtFlash() {
   const screen = document.getElementById('screen-game');
-  const timerEl = document.querySelector('.hud-timer');
+  const timerEl = document.querySelector('.hud-timer-ring') || document.querySelector('.hud-timer');
   if (!screen || !timerEl) return;
   const rect = timerEl.getBoundingClientRect();
   const screenRect = screen.getBoundingClientRect();

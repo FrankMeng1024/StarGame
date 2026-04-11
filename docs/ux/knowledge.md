@@ -159,3 +159,46 @@
 
 ### Navigation Regression
 - Sprint 9: menu→gallery→detail(Orion)→gallery→detail(Orion again)→gallery→detail(UrsaMajor). ALL CLEAN, 0 JS errors across all transitions.
+
+## Sprint 11 Updates (2026-04-11)
+
+### Visual Polish Sprint — All 6 Stories Verified
+
+#### STORY-00040 — Debris Visual Upgrade
+- Debris renders as procedural rock/asteroid shapes (grey, irregular canvas drawing)
+- Clearly distinct from glowing star targets — user can identify without prior knowledge
+- Sprint 10 VU complaint "debris not convincing enough" RESOLVED
+
+#### STORY-00041 — Complete Screen Layout
+- Complete screen redesigned to fit 100vh: canvas 160×160, `max-height:100vh; overflow-y:auto` on `.complete-inner`, lore in scrollable area
+- All key elements (title, stars, portrait, stats, lore, buttons) visible without external scroll
+- Sprint 10 VU complaint "complete screen too tall" RESOLVED
+
+#### STORY-00042 — Gallery Photo Carousel
+- Bottom of gallery detail now has horizontal scroll-snap photo carousel `#detail-photo-carousel`
+- 20 constellations covered with real NASA/ESA/Wikimedia images (public domain / CC-BY)
+- Cards: image + credit line + title. Layout: `scroll-snap-type: x mandatory`, 280px cards
+- Sprint 10 VU complaint "gallery lacks visual richness" RESOLVED
+
+#### STORY-00043 — Character Animation Upgrade
+- Anime girl replaced with procedurally-drawn character: purple skirt, brown hair, golden pole
+- Silhouetted mountain landscape horizon in game background (tekapo style)
+- Character has idle/throw/catch arm states driven by engine state
+- Sprint 10 VU complaint "character too simple" RESOLVED
+
+#### STORY-00044 — Global Visual Upgrade Part 1
+- Screen transitions: `screenFadeIn`/`screenFadeOut` keyframes with scale. `_navPending` guard prevents double-fire.
+- Glass-morphism cards: `backdrop-filter: blur(10px)` + semi-transparent background on all card types
+- Gradient text headers on levels, gallery, shop sections
+
+#### STORY-00045 — Global Visual Upgrade Part 2
+- SVG ring timer at HUD top-center: depletes as time passes, color changes orange→red at low time
+- Shop badge glow: `badge-glow-active` (amber pulse) + `badge-glow-passive` (purple pulse) keyframes
+- Cursor star trail: `_trailEnabled` flag (disabled during gameplay), `.cursor-trail-particle` floats upward
+
+### New Friction Points (Sprint 11)
+- Photo carousel images require external network (Wikimedia CDN) — alt text shown offline (Low, by design)
+- No "new photos" indicator when first visiting gallery after level completion — Low
+
+### Navigation Regression
+- Sprint 11: menu → levels → item-select → game → complete → shop → menu → gallery → gallery-detail: ALL CLEAN, 0 JS errors throughout entire sequence.
