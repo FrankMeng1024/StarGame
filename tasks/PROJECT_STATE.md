@@ -1,6 +1,6 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: IN PROGRESS
+**Status**: COMPLETE
 **Current Sprint**: 14 (Sprint Goal: 游戏体验全面提升)
 **Last Updated**: 2026-04-11
 
@@ -21,7 +21,7 @@
 | Sprint 11 | COMPLETE | 视觉精修：碎片升级、通关界面、画廊轮播、角色升级、全局视觉+过渡 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
 | Sprint 12 | COMPLETE | 游戏体验修复：连线显示、垃圾旋转、网兜形状、暂停系统、通关界面重设计、场景分界线 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 13 | COMPLETE | 道具系统修复 + 角色升级 + UI精致化 (QA PASS, UX no Blockers, Arch PASS) |
-| Sprint 14 | IN PROGRESS | 游戏体验全面提升 (CRs 032-044) |
+| Sprint 14 | COMPLETE | 游戏体验全面提升 (CRs 032-044) (QA PASS, UX no Blockers, VU ACCEPTED 9.5/10) |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -31,6 +31,7 @@
 | Sprint 9 | 9.5/10 | ACCEPTED | All PRD Must-Have features delivered |
 | Sprint 11 | 9.5/10 | ACCEPTED | All PRD + CR features delivered — PROJECT COMPLETE |
 | Sprint 13 | 9.5/10 | ACCEPTED | All PRD + CR (001-031) features verified — PROJECT COMPLETE (final iteration) |
+| Sprint 14 | 9.5/10 | ACCEPTED | All PRD + CR (032-044) features verified — PROJECT COMPLETE |
 
 ## Sprint 10 Stories
 | Story | Title | Status |
@@ -60,6 +61,16 @@
 | STORY-00055 | 天文星图放大查看 — CR-028 | Done |
 | STORY-00056 | 展厅图片轮播视觉增强 — CR-029 | Done |
 | STORY-00057 | 关卡选择难度指示器重设计 — CR-027 | Done |
+
+## Sprint 14 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00058 | 天文摄影图片资源 (CR-032) | Done |
+| STORY-00059 | 关卡名称修复 (CR-030/043) | Done |
+| STORY-00060 | 展馆通关解锁 + 星星说明 (CR-034/041) | Done |
+| STORY-00061 | 暂停HUD修复 (CR-036) | Done |
+| STORY-00062 | 失败界面 + 商店入口 (CR-033/035) | Done |
+| STORY-00063 | 音频系统 + 多项机制修复 (CR-037/038/039/040/044) | Done |
 
 ## Acceptance Mode
 auto (Virtual User as final gate)
