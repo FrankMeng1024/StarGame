@@ -68,6 +68,31 @@ body {
   display: flex;
 }
 
+/* ── Screen transition animations ─────────────────────────── */
+@keyframes screenFadeIn {
+  from { opacity: 0; transform: scale(0.97); }
+  to   { opacity: 1; transform: scale(1); }
+}
+
+@keyframes screenFadeOut {
+  from { opacity: 1; transform: scale(1); }
+  to   { opacity: 0; transform: scale(1.02); }
+}
+
+.screen-exit {
+  animation: screenFadeOut 0.25s ease forwards;
+  pointer-events: none;
+}
+
+.screen-enter {
+  opacity: 0;
+  transform: scale(0.97);
+}
+
+.screen-enter.screen-enter-active {
+  animation: screenFadeIn 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
 /* ── Main Menu ─────────────────────────────────────────────── */
 #screen-menu {
   background: linear-gradient(180deg, var(--sky-deep) 0%, var(--sky-mid) 60%, var(--sky-horizon) 100%);
@@ -173,11 +198,16 @@ body {
 .btn-primary {
   background: var(--primary-gradient);
   color: #fff;
-  box-shadow: 0 4px 24px rgba(124, 92, 191, 0.5);
+  box-shadow: 0 4px 24px rgba(124, 92, 191, 0.5), inset 0 1px 0 rgba(255,255,255,0.15);
+  transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1), box-shadow 0.18s ease;
 }
 .btn-primary:hover {
-  transform: translateY(-3px) scale(1.03);
-  box-shadow: 0 8px 32px rgba(124, 92, 191, 0.7);
+  transform: translateY(-3px) scale(1.04);
+  box-shadow: 0 12px 40px rgba(124, 92, 191, 0.8), 0 0 20px rgba(176, 154, 238, 0.4), inset 0 1px 0 rgba(255,255,255,0.2);
+}
+.btn-primary:active {
+  transform: scale(0.97) !important;
+  box-shadow: 0 2px 12px rgba(124, 92, 191, 0.4), inset 0 2px 4px rgba(0,0,0,0.2) !important;
 }
 
 .btn-secondary {
@@ -229,7 +259,10 @@ body {
 .levels-header h2 {
   font-family: 'Ma Shan Zheng', cursive;
   font-size: var(--font-xl);
-  color: var(--star-gold);
+  background: linear-gradient(135deg, var(--star-gold), var(--warm-light), var(--primary-light, #b09aee));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   letter-spacing: 0.08em;
 }
 
@@ -277,8 +310,10 @@ body {
 
 .level-card {
   aspect-ratio: 3 / 4;
-  background: var(--card);
-  border: 1.5px solid var(--card-border);
+  background: rgba(26, 31, 78, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(124, 92, 191, 0.3);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
@@ -288,7 +323,7 @@ body {
   padding: var(--spacing-sm);
   position: relative;
   transition: transform 0.18s cubic-bezier(0.34, 1.56, 0.64, 1),
-              box-shadow 0.18s ease;
+              box-shadow 0.18s ease, border-color 0.18s ease;
   overflow: hidden;
 }
 
@@ -460,19 +495,74 @@ body {
   text-shadow: 0 0 12px rgba(255,215,0,0.5);
 }
 
-.hud-timer {
-  font-size: var(--font-xl);
-  font-weight: 700;
-  color: var(--star-bright);
-  text-shadow: 0 0 10px rgba(255,248,224,0.7);
-  font-variant-numeric: tabular-nums;
-  transition: color 0.3s;
+/* ── HUD Timer Ring ────────────────────────────────────────── */
+.hud-timer-ring {
+  position: relative;
+  width: 64px;
+  height: 64px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
 }
 
-.hud-timer.warning {
+.timer-ring-svg {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg);
+}
+
+.timer-ring-bg {
+  fill: none;
+  stroke: rgba(255,255,255,0.08);
+  stroke-width: 4;
+}
+
+.timer-ring-fill {
+  fill: none;
+  stroke: #4a90d9;
+  stroke-width: 4;
+  stroke-linecap: round;
+  stroke-dasharray: 150.8;
+  stroke-dashoffset: 0;
+  transition: stroke-dashoffset 0.5s linear, stroke 0.4s ease;
+  filter: drop-shadow(0 0 4px rgba(74, 144, 217, 0.6));
+}
+
+.hud-timer {
+  position: relative;
+  font-size: var(--font-xs);
+  font-weight: 700;
+  color: var(--star-bright);
+  text-shadow: 0 0 8px rgba(255,248,224,0.7);
+  font-variant-numeric: tabular-nums;
+  z-index: 1;
+  line-height: 1;
+}
+
+.hud-timer-ring.warning .timer-ring-fill {
+  filter: drop-shadow(0 0 5px rgba(245, 158, 11, 0.8));
+}
+
+.hud-timer-ring.critical .timer-ring-fill {
+  filter: drop-shadow(0 0 6px rgba(239, 68, 68, 0.9));
+  animation: timer-ring-pulse 0.5s ease-in-out infinite;
+}
+
+.hud-timer-ring.critical .hud-timer {
   color: var(--error);
-  text-shadow: 0 0 12px rgba(239,68,68,0.7);
-  animation: timer-pulse 0.5s ease-in-out infinite;
+  text-shadow: 0 0 10px rgba(239,68,68,0.8);
+}
+
+.hud-timer-ring.warning .hud-timer {
+  color: var(--warning);
+}
+
+@keyframes timer-ring-pulse {
+  0%, 100% { transform: rotate(-90deg) scale(1); }
+  50%       { transform: rotate(-90deg) scale(1.04); }
 }
 
 @keyframes timer-pulse {
@@ -501,10 +591,13 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-lg);
+  gap: var(--spacing-sm);
   max-width: 600px;
   width: 90%;
   text-align: center;
+  max-height: 100vh;
+  overflow-y: auto;
+  padding: var(--spacing-md) 0;
 }
 
 .complete-title {
@@ -549,14 +642,34 @@ body {
   background: var(--card);
   border: 1px solid var(--card-border);
   border-radius: var(--radius-md);
-  padding: var(--spacing-lg);
+  padding: var(--spacing-md) var(--spacing-lg);
   font-size: var(--font-sm);
   color: var(--text);
   line-height: 1.8;
   text-align: left;
-  max-height: 160px;
+  max-height: 200px;
   overflow-y: auto;
   width: 100%;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 92, 191, 0.5) rgba(26, 31, 78, 0.4);
+}
+
+.complete-lore::-webkit-scrollbar {
+  width: 5px;
+}
+
+.complete-lore::-webkit-scrollbar-track {
+  background: rgba(26, 31, 78, 0.4);
+  border-radius: 3px;
+}
+
+.complete-lore::-webkit-scrollbar-thumb {
+  background: rgba(124, 92, 191, 0.5);
+  border-radius: 3px;
+}
+
+.complete-lore::-webkit-scrollbar-thumb:hover {
+  background: rgba(124, 92, 191, 0.8);
 }
 
 .lore-title {
@@ -662,7 +775,10 @@ body {
 .gallery-header h2 {
   font-family: 'Ma Shan Zheng', cursive;
   font-size: var(--font-xl);
-  color: var(--star-gold);
+  background: linear-gradient(135deg, var(--star-gold), var(--warm-light), var(--primary-light, #b09aee));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   letter-spacing: 0.08em;
 }
 
@@ -677,8 +793,10 @@ body {
 
 .gallery-card {
   aspect-ratio: 3 / 4;
-  background: var(--card);
-  border: 1.5px solid var(--card-border);
+  background: rgba(26, 31, 78, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(124, 92, 191, 0.3);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
@@ -868,6 +986,92 @@ body {
   margin: 0 auto;
 }
 
+/* ── Gallery Photo Carousel ────────────────────────────────── */
+.detail-photo-carousel {
+  width: 100%;
+}
+
+.photo-carousel-label {
+  font-size: var(--font-sm);
+  color: var(--star-gold);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin-bottom: var(--spacing-sm);
+}
+
+.photo-carousel-track {
+  display: flex;
+  gap: var(--spacing-md);
+  overflow-x: auto;
+  scroll-snap-type: x mandatory;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--spacing-sm);
+  scrollbar-width: thin;
+  scrollbar-color: rgba(124, 92, 191, 0.5) rgba(26, 31, 78, 0.3);
+}
+
+.photo-carousel-track::-webkit-scrollbar {
+  height: 4px;
+}
+
+.photo-carousel-track::-webkit-scrollbar-track {
+  background: rgba(26, 31, 78, 0.3);
+  border-radius: 2px;
+}
+
+.photo-carousel-track::-webkit-scrollbar-thumb {
+  background: rgba(124, 92, 191, 0.5);
+  border-radius: 2px;
+}
+
+.photo-carousel-card {
+  flex: 0 0 280px;
+  scroll-snap-align: center;
+  background: rgba(26, 31, 78, 0.6);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+  border: 1px solid rgba(124, 92, 191, 0.25);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+.photo-carousel-img-wrap {
+  width: 280px;
+  height: 170px;
+  overflow: hidden;
+  background: #000814;
+  flex-shrink: 0;
+}
+
+.photo-carousel-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+  transition: transform 0.3s ease;
+}
+
+.photo-carousel-card:hover .photo-carousel-img {
+  transform: scale(1.04);
+}
+
+.photo-carousel-title {
+  font-size: var(--font-sm);
+  color: var(--text);
+  padding: var(--spacing-xs) var(--spacing-sm);
+  font-weight: 500;
+}
+
+.photo-carousel-credit {
+  font-size: var(--font-xs);
+  color: var(--text2);
+  padding: 4px var(--spacing-sm) 0;
+  line-height: 1.4;
+  opacity: 0.8;
+}
+
 /* ── Shop Screen ───────────────────────────────────────────── */
 #screen-shop {
   background: linear-gradient(180deg, var(--sky-deep) 0%, var(--sky-mid) 100%);
@@ -889,7 +1093,10 @@ body {
 .shop-header h2 {
   font-family: 'Ma Shan Zheng', cursive;
   font-size: var(--font-xl);
-  color: var(--star-gold);
+  background: linear-gradient(135deg, var(--star-gold), var(--warm-light), var(--primary-light, #b09aee));
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
   letter-spacing: 0.08em;
 }
 
@@ -919,8 +1126,10 @@ body {
 }
 
 .shop-card {
-  background: var(--card);
-  border: 1.5px solid var(--card-border);
+  background: rgba(26, 31, 78, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(124, 92, 191, 0.3);
   border-radius: var(--radius-md);
   padding: var(--spacing-lg);
   display: flex;
@@ -964,15 +1173,27 @@ body {
 }
 
 .type-active {
-  background: rgba(239, 68, 68, 0.15);
-  color: var(--error);
-  border: 1px solid rgba(239, 68, 68, 0.3);
+  background: rgba(245, 158, 11, 0.15);
+  color: var(--warm-light);
+  border: 1px solid rgba(245, 158, 11, 0.4);
+  animation: badge-glow-active 2s ease-in-out infinite;
 }
 
 .type-passive {
   background: rgba(124, 92, 191, 0.15);
-  color: var(--primary);
-  border: 1px solid rgba(124, 92, 191, 0.3);
+  color: var(--primary-light, #b09aee);
+  border: 1px solid rgba(124, 92, 191, 0.4);
+  animation: badge-glow-passive 2s ease-in-out infinite;
+}
+
+@keyframes badge-glow-active {
+  0%, 100% { box-shadow: 0 0 4px rgba(245, 158, 11, 0.3), 0 0 0 0 rgba(245, 158, 11, 0); }
+  50%       { box-shadow: 0 0 10px rgba(245, 158, 11, 0.6), 0 0 16px rgba(245, 158, 11, 0.2); }
+}
+
+@keyframes badge-glow-passive {
+  0%, 100% { box-shadow: 0 0 4px rgba(124, 92, 191, 0.3), 0 0 0 0 rgba(124, 92, 191, 0); }
+  50%       { box-shadow: 0 0 10px rgba(124, 92, 191, 0.6), 0 0 16px rgba(124, 92, 191, 0.2); }
 }
 
 .shop-item-footer {
@@ -1418,5 +1639,24 @@ body {
   border-radius: 6px;
   padding: 2px 7px;
   border: 1px solid rgba(255,255,255,0.1);
+}
+
+/* ── Cursor star trail ─────────────────────────────────────── */
+.cursor-trail-particle {
+  position: fixed;
+  pointer-events: none;
+  z-index: 9998;
+  color: var(--star-gold);
+  text-shadow: 0 0 6px var(--star-gold), 0 0 12px rgba(255, 215, 0, 0.4);
+  transform: translate(-50%, -50%);
+  animation: trail-fade 0.5s ease-out forwards;
+  user-select: none;
+  will-change: opacity, transform;
+}
+
+@keyframes trail-fade {
+  0%   { opacity: 0.9; transform: translate(-50%, -50%) scale(1);    }
+  60%  { opacity: 0.6; transform: translate(-50%, -60%) scale(0.85); }
+  100% { opacity: 0;   transform: translate(-50%, -75%) scale(0.5);  }
 }
 

@@ -13,6 +13,7 @@
   /* UI Colors */
   --primary: #7c5cbf;
   --primary-end: #4a90d9;
+  --primary-light: #b09aee;
   --primary-gradient: linear-gradient(135deg, var(--primary), var(--primary-end));
 
   --warm-light: #f5a623;

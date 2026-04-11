@@ -33,7 +33,8 @@ export function startGame(navigate) {
   document.querySelector('.hud-level-name').textContent = status.levelName;
   document.querySelector('.star-count').textContent = `${status.caughtStars}/${status.totalStars}`;
   const t = Math.ceil(status.timeLeft);
-  document.querySelector('.hud-timer').textContent =
+  const timerText = document.getElementById('hud-timer-text') || document.querySelector('.hud-timer');
+  if (timerText) timerText.textContent =
     `${String(Math.floor(t / 60)).padStart(2,'0')}:${String(t % 60).padStart(2,'0')}`;
 
   // Active item slots HUD

@@ -102,7 +102,7 @@ function _runConstellationAnim(level, idx) {
   const canvas = document.getElementById('constellation-canvas');
   if (!canvas) return;
 
-  const SIZE = 240;
+  const SIZE = 160;
   canvas.width  = SIZE;
   canvas.height = SIZE;
   const ctx = canvas.getContext('2d');

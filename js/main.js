@@ -21,6 +21,40 @@ function initCursor() {
   document.addEventListener('mouseenter', () => { cursor.style.opacity = '1'; });
 }
 
+// ── Cursor star trail ──────────────────────────────────────────
+let _trailEnabled = true;
+let _trailTimer   = null;
+
+function _spawnTrailParticle(x, y) {
+  const p = document.createElement('div');
+  p.className = 'cursor-trail-particle';
+  const chars = ['✦', '·', '✧', '★', '⋆'];
+  p.textContent = chars[Math.floor(Math.random() * chars.length)];
+  const offX = (Math.random() - 0.5) * 10;
+  const offY = (Math.random() - 0.5) * 10;
+  p.style.left = (x + offX) + 'px';
+  p.style.top  = (y + offY) + 'px';
+  p.style.fontSize = (8 + Math.random() * 8) + 'px';
+  document.body.appendChild(p);
+  setTimeout(() => p.remove(), 500);
+}
+
+function initTrail() {
+  let lastSpawn = 0;
+  document.addEventListener('mousemove', e => {
+    if (!_trailEnabled) return;
+    const now = Date.now();
+    if (now - lastSpawn < 40) return;  // ~25 particles/s max
+    lastSpawn = now;
+    _spawnTrailParticle(e.clientX, e.clientY);
+  });
+}
+
+// Disable trail during active gameplay; re-enable on other screens
+function setTrailEnabled(enabled) {
+  _trailEnabled = enabled;
+}
+
 // ── Screen navigation ──────────────────────────────────────────
 const SCREENS = ['menu', 'levels', 'game', 'complete', 'gallery', 'gallery-detail', 'shop'];
 
@@ -31,15 +65,55 @@ function showScreen(id) {
   }
 }
 
+let _navPending = false;
 function navigate(screen, params = {}) {
+  if (_navPending) return;
+
   // Stop game if leaving game screen
   if (screen !== 'game') stopGame();
 
-  showScreen(screen === 'complete' || screen === 'fail' ? 'complete' : screen);
+  // Determine the DOM screen id
+  const screenId = (screen === 'complete' || screen === 'fail') ? 'complete' : screen;
+  const nextEl = document.getElementById(`screen-${screenId}`);
 
+  // No transition during gameplay (performance)
   if (screen === 'game') {
+    setTrailEnabled(false);
+    showScreen('game');
     startGame(navigate);
-  } else if (screen === 'complete') {
+    return;
+  }
+
+  // Re-enable trail on non-gameplay screens
+  setTrailEnabled(true);
+
+  // Fade-out current active screen, then fade-in new one
+  const currentEl = document.querySelector('.screen.active:not(#star-canvas)');
+  if (currentEl && currentEl !== nextEl) {
+    _navPending = true;
+    currentEl.classList.add('screen-exit');
+    setTimeout(() => {
+      currentEl.classList.remove('active', 'screen-exit');
+      _navPending = false;
+      _activateScreen(screen, screenId, params);
+    }, 250);
+  } else {
+    _activateScreen(screen, screenId, params);
+  }
+}
+
+function _activateScreen(screen, screenId, params) {
+  showScreen(screenId);
+  const el = document.getElementById(`screen-${screenId}`);
+  if (el) {
+    el.classList.add('screen-enter');
+    requestAnimationFrame(() => {
+      el.classList.add('screen-enter-active');
+      setTimeout(() => el.classList.remove('screen-enter', 'screen-enter-active'), 300);
+    });
+  }
+
+  if (screen === 'complete') {
     showComplete(navigate, params);
   } else if (screen === 'fail') {
     showFail(navigate, params);
@@ -58,6 +132,7 @@ function navigate(screen, params = {}) {
 function init() {
   state.load();
   initCursor();
+  initTrail();
   initStarfield('star-canvas');
   initMenu(navigate);
   initLevels(navigate);

@@ -43,20 +43,63 @@ function drawMeteor(ctx, x, y, r, angle) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
-  ctx.fillStyle = '#8a8a9a';
-  ctx.strokeStyle = '#5a5a6a';
-  ctx.lineWidth = 1;
+
+  // Glow trail behind the meteor
+  const trailGrad = ctx.createLinearGradient(-r * 2.2, 0, r * 0.5, 0);
+  trailGrad.addColorStop(0,   'rgba(255,120,30,0)');
+  trailGrad.addColorStop(0.5, 'rgba(255,150,50,0.22)');
+  trailGrad.addColorStop(1,   'rgba(255,180,80,0.42)');
+  ctx.fillStyle = trailGrad;
   ctx.beginPath();
-  const pts = 7;
-  for (let i = 0; i < pts; i++) {
-    const a = (i / pts) * TWO_PI;
-    const rad = r * (0.7 + 0.3 * Math.sin(i * 2.5));
-    if (i === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
-    else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
-  }
-  ctx.closePath();
+  ctx.ellipse(-r * 0.9, 0, r * 1.3, r * 0.55, 0, 0, TWO_PI);
   ctx.fill();
-  ctx.stroke();
+
+  // Outer glow halo
+  const halo = ctx.createRadialGradient(0, 0, r * 0.5, 0, 0, r * 1.7);
+  halo.addColorStop(0,   'rgba(255,140,40,0.35)');
+  halo.addColorStop(1,   'rgba(255,80,10,0)');
+  ctx.fillStyle = halo;
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 1.7, 0, TWO_PI);
+  ctx.fill();
+
+  // Irregular rocky body
+  ctx.beginPath();
+  const pts = [
+    [0.95, 0.1], [0.7, -0.55], [0.2, -0.9], [-0.3, -0.8],
+    [-0.85, -0.45], [-1.0, 0.05], [-0.75, 0.6], [-0.2, 0.92],
+    [0.45, 0.85], [0.88, 0.45],
+  ];
+  pts.forEach(([px, py], i) => {
+    const jitter = 0.06 * (i % 3 === 0 ? -1 : 1);
+    const nx = (px + jitter) * r, ny = (py + jitter * 0.7) * r;
+    if (i === 0) ctx.moveTo(nx, ny); else ctx.lineTo(nx, ny);
+  });
+  ctx.closePath();
+  const bodyGrad = ctx.createRadialGradient(-r * 0.15, -r * 0.2, 0, 0, 0, r);
+  bodyGrad.addColorStop(0,   '#c0886a');
+  bodyGrad.addColorStop(0.5, '#8a5840');
+  bodyGrad.addColorStop(1,   '#5a3020');
+  ctx.fillStyle = bodyGrad;
+  ctx.fill();
+
+  // Dark crater pits
+  ctx.fillStyle = 'rgba(20,8,4,0.55)';
+  [[0.2, -0.2, 0.18], [-0.35, 0.25, 0.13], [0.5, 0.35, 0.10]].forEach(([cx2, cy2, cr2]) => {
+    ctx.beginPath();
+    ctx.arc(cx2 * r, cy2 * r, cr2 * r, 0, TWO_PI);
+    ctx.fill();
+  });
+
+  // Surface highlight
+  ctx.save();
+  ctx.globalAlpha = 0.22;
+  ctx.fillStyle = '#ffe0c0';
+  ctx.beginPath();
+  ctx.ellipse(-0.1 * r, -0.38 * r, r * 0.32, r * 0.18, -0.6, 0, TWO_PI);
+  ctx.fill();
+  ctx.restore();
+
   ctx.restore();
 }
 
@@ -64,15 +107,101 @@ function drawSatellite(ctx, x, y, r, angle) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
-  ctx.fillStyle = '#7a8a9a';
-  ctx.strokeStyle = '#b0c4de';
+
+  // Glow aura
+  const aura = ctx.createRadialGradient(0, 0, r * 0.3, 0, 0, r * 2);
+  aura.addColorStop(0,   'rgba(120,180,255,0.2)');
+  aura.addColorStop(1,   'rgba(60,100,200,0)');
+  ctx.fillStyle = aura;
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 2, 0, TWO_PI);
+  ctx.fill();
+
+  // Main body — metallic box
+  const bodyGrad = ctx.createLinearGradient(-r * 0.5, -r * 0.38, r * 0.5, r * 0.38);
+  bodyGrad.addColorStop(0,   '#d8e8f4');
+  bodyGrad.addColorStop(0.4, '#9ab8d0');
+  bodyGrad.addColorStop(1,   '#607890');
+  ctx.fillStyle = bodyGrad;
+  ctx.strokeStyle = 'rgba(180,220,255,0.6)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.roundRect(-r * 0.5, -r * 0.38, r, r * 0.76, r * 0.08);
+  ctx.fill();
+  ctx.stroke();
+
+  // Panel lines on body
+  ctx.save();
+  ctx.strokeStyle = 'rgba(60,100,140,0.45)';
+  ctx.lineWidth = 0.6;
+  for (let i = -1; i <= 1; i++) {
+    ctx.beginPath();
+    ctx.moveTo(i * r * 0.16, -r * 0.38);
+    ctx.lineTo(i * r * 0.16,  r * 0.38);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Solar panels — left & right
+  const panelGrad = ctx.createLinearGradient(-r * 1.5, 0, r * 1.5, 0);
+  panelGrad.addColorStop(0,   '#1a4090');
+  panelGrad.addColorStop(0.5, '#2a60c8');
+  panelGrad.addColorStop(1,   '#1a3880');
+  ctx.fillStyle = panelGrad;
+  ctx.strokeStyle = 'rgba(100,160,255,0.5)';
+  ctx.lineWidth = 0.7;
+
+  // Left panel (3 cells)
+  ctx.fillRect(-r * 1.55, -r * 0.18, r * 0.95, r * 0.36);
+  ctx.strokeRect(-r * 1.55, -r * 0.18, r * 0.95, r * 0.36);
+  // Panel cell dividers
+  ctx.save();
+  ctx.strokeStyle = 'rgba(180,220,255,0.35)';
+  ctx.lineWidth = 0.5;
+  for (let i = 1; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(-r * 1.55 + i * r * 0.315, -r * 0.18);
+    ctx.lineTo(-r * 1.55 + i * r * 0.315,  r * 0.18);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Right panel (3 cells)
+  ctx.fillStyle = panelGrad;
+  ctx.fillRect(r * 0.6, -r * 0.18, r * 0.95, r * 0.36);
+  ctx.strokeRect(r * 0.6, -r * 0.18, r * 0.95, r * 0.36);
+  ctx.save();
+  ctx.strokeStyle = 'rgba(180,220,255,0.35)';
+  ctx.lineWidth = 0.5;
+  for (let i = 1; i < 3; i++) {
+    ctx.beginPath();
+    ctx.moveTo(r * 0.6 + i * r * 0.315, -r * 0.18);
+    ctx.lineTo(r * 0.6 + i * r * 0.315,  r * 0.18);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  // Antenna — thin rod + dish
+  ctx.save();
+  ctx.strokeStyle = 'rgba(200,230,255,0.8)';
   ctx.lineWidth = 1;
-  // Body
-  ctx.fillRect(-r * 0.5, -r * 0.35, r, r * 0.7);
-  // Solar panels
-  ctx.fillStyle = '#4a7abf';
-  ctx.fillRect(-r * 1.4, -r * 0.15, r * 0.8, r * 0.3);
-  ctx.fillRect(r * 0.6, -r * 0.15, r * 0.8, r * 0.3);
+  ctx.beginPath();
+  ctx.moveTo(0, -r * 0.38);
+  ctx.lineTo(0, -r * 0.72);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(0, -r * 0.72, r * 0.12, Math.PI, TWO_PI);
+  ctx.stroke();
+  ctx.restore();
+
+  // Window/sensor dot
+  ctx.fillStyle = '#80e0ff';
+  ctx.shadowColor = '#40c0ff';
+  ctx.shadowBlur = 4;
+  ctx.beginPath();
+  ctx.arc(0, 0, r * 0.11, 0, TWO_PI);
+  ctx.fill();
+
   ctx.restore();
 }
 
@@ -80,13 +209,93 @@ function drawRocket(ctx, x, y, r, angle) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
-  ctx.fillStyle = '#8a6050';
-  ctx.strokeStyle = '#b08070';
-  ctx.lineWidth = 1;
+
+  // Exhaust particle trail behind nozzle
+  const exhaustGrad = ctx.createLinearGradient(0, r * 0.7, 0, r * 1.8);
+  exhaustGrad.addColorStop(0,   'rgba(255,200,80,0.6)');
+  exhaustGrad.addColorStop(0.4, 'rgba(255,100,20,0.35)');
+  exhaustGrad.addColorStop(1,   'rgba(255,60,0,0)');
+  ctx.fillStyle = exhaustGrad;
   ctx.beginPath();
-  ctx.ellipse(0, 0, r * 0.35, r, 0, 0, TWO_PI);
+  ctx.ellipse(0, r * 1.25, r * 0.28, r * 0.55, 0, 0, TWO_PI);
+  ctx.fill();
+
+  // Glow from engine
+  const engineGlow = ctx.createRadialGradient(0, r * 0.7, 0, 0, r * 0.7, r * 0.9);
+  engineGlow.addColorStop(0,   'rgba(255,180,60,0.45)');
+  engineGlow.addColorStop(1,   'rgba(255,80,0,0)');
+  ctx.fillStyle = engineGlow;
+  ctx.beginPath();
+  ctx.arc(0, r * 0.7, r * 0.9, 0, TWO_PI);
+  ctx.fill();
+
+  // Main body cylinder
+  const bodyGrad = ctx.createLinearGradient(-r * 0.36, 0, r * 0.36, 0);
+  bodyGrad.addColorStop(0,   '#504030');
+  bodyGrad.addColorStop(0.3, '#9a7860');
+  bodyGrad.addColorStop(0.7, '#7a5a48');
+  bodyGrad.addColorStop(1,   '#3a2818');
+  ctx.fillStyle = bodyGrad;
+  ctx.strokeStyle = 'rgba(180,140,100,0.6)';
+  ctx.lineWidth = 0.8;
+  ctx.beginPath();
+  ctx.roundRect(-r * 0.32, -r * 0.72, r * 0.64, r * 1.44, r * 0.06);
   ctx.fill();
   ctx.stroke();
+
+  // Nose cone
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.32, -r * 0.72);
+  ctx.quadraticCurveTo(-r * 0.32, -r * 1.1, 0, -r * 1.15);
+  ctx.quadraticCurveTo(r * 0.32, -r * 1.1, r * 0.32, -r * 0.72);
+  ctx.fillStyle = '#c0a080';
+  ctx.fill();
+  ctx.stroke();
+
+  // Scorch marks — diagonal burn streaks
+  ctx.save();
+  ctx.globalAlpha = 0.45;
+  [[-0.18, -0.4, 0.08, 0.55], [0.05, -0.2, 0.12, 0.6], [-0.05, -0.55, 0.07, 0.42]].forEach(
+    ([bx, by, bw, bh]) => {
+      ctx.fillStyle = '#1a0a04';
+      ctx.beginPath();
+      ctx.ellipse(bx * r, by * r, bw * r, bh * r, -0.3, 0, TWO_PI);
+      ctx.fill();
+    }
+  );
+  ctx.restore();
+
+  // Nozzle bell
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.28, r * 0.72);
+  ctx.lineTo(-r * 0.35, r * 0.96);
+  ctx.lineTo(r * 0.35, r * 0.96);
+  ctx.lineTo(r * 0.28, r * 0.72);
+  ctx.closePath();
+  ctx.fillStyle = '#604040';
+  ctx.strokeStyle = 'rgba(200,140,100,0.5)';
+  ctx.fill();
+  ctx.stroke();
+
+  // Stabilizer fins
+  ctx.fillStyle = '#3a2818';
+  ctx.strokeStyle = 'rgba(180,120,80,0.4)';
+  ctx.lineWidth = 0.6;
+  // Left fin
+  ctx.beginPath();
+  ctx.moveTo(-r * 0.32, r * 0.2);
+  ctx.lineTo(-r * 0.68, r * 0.85);
+  ctx.lineTo(-r * 0.32, r * 0.72);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+  // Right fin
+  ctx.beginPath();
+  ctx.moveTo(r * 0.32, r * 0.2);
+  ctx.lineTo(r * 0.68, r * 0.85);
+  ctx.lineTo(r * 0.32, r * 0.72);
+  ctx.closePath();
+  ctx.fill(); ctx.stroke();
+
   ctx.restore();
 }
 
@@ -94,16 +303,73 @@ function drawCloth(ctx, x, y, r, angle) {
   ctx.save();
   ctx.translate(x, y);
   ctx.rotate(angle);
-  ctx.strokeStyle = '#9090a0';
-  ctx.lineWidth = 1.5;
-  // Simple jagged cloth shape
+
+  // Shimmer glow
+  const shimmer = ctx.createRadialGradient(0, 0, 0, 0, 0, r * 1.3);
+  shimmer.addColorStop(0,   'rgba(200,220,255,0.18)');
+  shimmer.addColorStop(1,   'rgba(100,120,200,0)');
+  ctx.fillStyle = shimmer;
   ctx.beginPath();
-  ctx.moveTo(-r, -r * 0.3);
-  ctx.lineTo(-r * 0.3, r * 0.5);
-  ctx.lineTo(r * 0.2, -r * 0.2);
-  ctx.lineTo(r * 0.8, r * 0.6);
-  ctx.lineTo(r, -r * 0.1);
+  ctx.arc(0, 0, r * 1.3, 0, TWO_PI);
+  ctx.fill();
+
+  // Drift flutter — slight time-based wobble baked into the vertex offsets
+  const t = Date.now() * 0.002;
+  const wobble = (i) => Math.sin(t + i * 1.7) * r * 0.08;
+
+  // Torn mylar sheet shape with jagged edges
+  const verts = [
+    [-r,     -r * 0.35 + wobble(0)],
+    [-r * 0.6, -r * 0.75 + wobble(1)],
+    [-r * 0.1, -r * 0.55 + wobble(2)],
+    [ r * 0.2,  -r * 0.9 + wobble(3)],
+    [ r * 0.65, -r * 0.5 + wobble(4)],
+    [ r,         r * 0.0 + wobble(5)],
+    [ r * 0.7,   r * 0.6 + wobble(6)],
+    [ r * 0.1,   r * 0.8 + wobble(7)],
+    [-r * 0.4,   r * 0.55 + wobble(8)],
+    [-r * 0.8,   r * 0.9 + wobble(9)],
+    [-r * 0.9,   r * 0.3 + wobble(10)],
+  ];
+
+  // Fill with mylar foil gradient (silver-blue)
+  const foilGrad = ctx.createLinearGradient(-r, -r, r, r);
+  foilGrad.addColorStop(0,   'rgba(200,215,240,0.85)');
+  foilGrad.addColorStop(0.3, 'rgba(160,180,220,0.7)');
+  foilGrad.addColorStop(0.6, 'rgba(200,220,255,0.82)');
+  foilGrad.addColorStop(1,   'rgba(120,140,190,0.65)');
+
+  ctx.beginPath();
+  verts.forEach(([vx, vy], i) => {
+    if (i === 0) ctx.moveTo(vx, vy); else ctx.lineTo(vx, vy);
+  });
+  ctx.closePath();
+  ctx.fillStyle = foilGrad;
+  ctx.fill();
+
+  // Torn edge stroke
+  ctx.beginPath();
+  verts.forEach(([vx, vy], i) => {
+    if (i === 0) ctx.moveTo(vx, vy); else ctx.lineTo(vx, vy);
+  });
+  ctx.closePath();
+  ctx.strokeStyle = 'rgba(180,200,255,0.6)';
+  ctx.lineWidth = 1.2;
   ctx.stroke();
+
+  // Reflective shimmer patches
+  ctx.save();
+  ctx.globalAlpha = 0.3 + 0.2 * Math.sin(t * 1.5);
+  ctx.fillStyle = 'rgba(240,250,255,0.8)';
+  ctx.beginPath();
+  ctx.ellipse(-r * 0.25, -r * 0.2, r * 0.22, r * 0.12, 0.6, 0, TWO_PI);
+  ctx.fill();
+  ctx.globalAlpha = 0.2 + 0.15 * Math.sin(t * 1.2 + 1);
+  ctx.beginPath();
+  ctx.ellipse(r * 0.3, r * 0.25, r * 0.16, r * 0.1, -0.4, 0, TWO_PI);
+  ctx.fill();
+  ctx.restore();
+
   ctx.restore();
 }
 
@@ -599,11 +865,34 @@ export class GameEngine {
   _updateHUD() {
     const el = document.querySelector('.hud-stars .star-count');
     if (el) el.textContent = `${this.caughtStars}/${this.totalStars}`;
-    const timerEl = document.querySelector('.hud-timer');
-    if (timerEl) {
+
+    const timerText = document.getElementById('hud-timer-text') || document.querySelector('.hud-timer');
+    const ringFill  = document.getElementById('timer-ring-fill');
+    if (timerText) {
       const s = Math.ceil(this.timeLeft);
-      timerEl.textContent = `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
-      timerEl.classList.toggle('warning', s <= 10);
+      timerText.textContent = `${String(Math.floor(s / 60)).padStart(2,'0')}:${String(s % 60).padStart(2,'0')}`;
+
+      const ratio  = this.timeLeft / this.startTime;
+      const R      = 24;
+      const CIRCUM = 2 * Math.PI * R;
+
+      if (ringFill) {
+        const dash = Math.max(0, ratio * CIRCUM);
+        ringFill.style.strokeDasharray  = `${CIRCUM}`;
+        ringFill.style.strokeDashoffset = `${CIRCUM - dash}`;
+
+        if (ratio <= 0.15) {
+          ringFill.style.stroke = '#ef4444';
+        } else if (ratio <= 0.30) {
+          ringFill.style.stroke = '#f59e0b';
+        } else {
+          ringFill.style.stroke = '';
+        }
+      }
+
+      const ringEl = timerText.closest('.hud-timer-ring') || timerText;
+      ringEl.classList.toggle('warning',  ratio <= 0.30 && ratio > 0.15);
+      ringEl.classList.toggle('critical', ratio <= 0.15);
     }
   }
 
@@ -752,68 +1041,313 @@ export class GameEngine {
   }
 
   _drawCharacter() {
-    const ctx = this.ctx;
-    const cx = this.charX;
-    const cy = this.charY;
+    const ctx  = this.ctx;
+    const cx   = this.charX;
+    const cy   = this.charY;
+    const t    = Date.now() * 0.002;
 
-    // Ground shadow
+    // State: 'swing'=idle, 'extend'=throw, 'retract'=catch
+    const state = this.netState;
+    const isThrow   = state === 'extend';
+    const isCatch   = state === 'retract' && this.caughtObj !== null;
+
+    // --- Arm pose angles (radians, relative to shoulder) ---
+    // Throw: arm reaches upward-toward-pole direction
+    // Idle:  arm at ~45° outward relaxed
+    const poleAngle = this.swingAngle; // radians from center
+    const armBase   = cy - 34;        // shoulder Y
+
+    // ── Ground shadow ──────────────────────────────────────────
     ctx.save();
-    ctx.fillStyle = 'rgba(0,0,0,0.4)';
+    const shadowGrad = ctx.createRadialGradient(cx, cy + 3, 0, cx, cy + 3, 26);
+    shadowGrad.addColorStop(0, 'rgba(0,0,0,0.5)');
+    shadowGrad.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = shadowGrad;
     ctx.beginPath();
-    ctx.ellipse(cx, cy + 2, 22, 5, 0, 0, TWO_PI);
+    ctx.ellipse(cx, cy + 3, 26, 6, 0, 0, TWO_PI);
     ctx.fill();
     ctx.restore();
 
-    // Body
+    // ── Legs ───────────────────────────────────────────────────
     ctx.save();
-    ctx.fillStyle = '#f5c5a0'; // skin
-    // Head
+    // Slight idle sway
+    const legSway = Math.sin(t) * 1.5;
+    // Left leg
+    const legGrad = ctx.createLinearGradient(cx - 8, cy + 12, cx - 8, cy + 32);
+    legGrad.addColorStop(0, '#f5d0b0');
+    legGrad.addColorStop(1, '#e8b890');
+    ctx.fillStyle = legGrad;
     ctx.beginPath();
-    ctx.arc(cx, cy - 44, 14, 0, TWO_PI);
+    ctx.roundRect(cx - 12 + legSway, cy + 14, 9, 16, 3);
     ctx.fill();
-    // Hair
-    ctx.fillStyle = '#3a2010';
+    // Right leg
     ctx.beginPath();
-    ctx.arc(cx, cy - 48, 14, Math.PI, TWO_PI);
+    ctx.roundRect(cx + 3 - legSway, cy + 14, 9, 16, 3);
     ctx.fill();
-    ctx.beginPath();
-    ctx.arc(cx - 6, cy - 38, 5, Math.PI * 0.5, Math.PI * 1.5);
-    ctx.fill();
-    // Dress body
-    ctx.fillStyle = '#7c5cbf';
-    ctx.beginPath();
-    ctx.moveTo(cx - 12, cy - 30);
-    ctx.lineTo(cx + 12, cy - 30);
-    ctx.lineTo(cx + 16, cy - 2);
-    ctx.lineTo(cx - 16, cy - 2);
-    ctx.closePath();
-    ctx.fill();
-    // Skirt
-    ctx.beginPath();
-    ctx.moveTo(cx - 16, cy - 2);
-    ctx.lineTo(cx + 16, cy - 2);
-    ctx.lineTo(cx + 20, cy + 12);
-    ctx.lineTo(cx - 20, cy + 12);
-    ctx.closePath();
-    ctx.fill();
-    // Legs
-    ctx.fillStyle = '#f0d0b0';
-    ctx.fillRect(cx - 10, cy + 12, 8, 14);
-    ctx.fillRect(cx + 2,  cy + 12, 8, 14);
+    // Socks (white stripe)
+    ctx.fillStyle = '#f0f0ff';
+    ctx.fillRect(cx - 12 + legSway, cy + 24, 9, 3);
+    ctx.fillRect(cx + 3 - legSway,  cy + 24, 9, 3);
     // Shoes
-    ctx.fillStyle = '#3a2010';
-    ctx.fillRect(cx - 11, cy + 24, 10, 5);
-    ctx.fillRect(cx + 1,  cy + 24, 10, 5);
+    const shoeGrad = ctx.createLinearGradient(0, cy + 27, 0, cy + 32);
+    shoeGrad.addColorStop(0, '#5a3a80');
+    shoeGrad.addColorStop(1, '#2e1a50');
+    ctx.fillStyle = shoeGrad;
+    ctx.beginPath();
+    ctx.roundRect(cx - 13 + legSway, cy + 27, 12, 6, 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(cx + 2 - legSway, cy + 27, 12, 6, 2);
+    ctx.fill();
     ctx.restore();
 
-    // Pole
+    // ── Skirt ──────────────────────────────────────────────────
+    ctx.save();
+    const skirtSway = Math.sin(t * 0.8) * 2;
+    const skirtGrad = ctx.createLinearGradient(cx, cy - 4, cx, cy + 16);
+    skirtGrad.addColorStop(0, '#9d7de0');
+    skirtGrad.addColorStop(0.5, '#7c5cbf');
+    skirtGrad.addColorStop(1, '#5a3a90');
+    ctx.fillStyle = skirtGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 14, cy - 4);
+    ctx.lineTo(cx + 14, cy - 4);
+    ctx.bezierCurveTo(cx + 18 + skirtSway, cy + 6, cx + 22 + skirtSway, cy + 12, cx + 19 + skirtSway, cy + 15);
+    ctx.lineTo(cx - 19 - skirtSway, cy + 15);
+    ctx.bezierCurveTo(cx - 22 - skirtSway, cy + 12, cx - 18 - skirtSway, cy + 6, cx - 14, cy - 4);
+    ctx.closePath();
+    ctx.fill();
+    // Skirt fold highlights
+    ctx.strokeStyle = 'rgba(180,140,255,0.4)';
+    ctx.lineWidth = 0.8;
+    for (let fi = -1; fi <= 1; fi++) {
+      ctx.beginPath();
+      ctx.moveTo(cx + fi * 6, cy - 4);
+      ctx.bezierCurveTo(cx + fi * 8 + skirtSway, cy + 4, cx + fi * 10 + skirtSway, cy + 10, cx + fi * 8 + skirtSway, cy + 15);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // ── Dress torso ────────────────────────────────────────────
+    ctx.save();
+    const torsoGrad = ctx.createLinearGradient(cx - 11, cy - 34, cx + 11, cy - 4);
+    torsoGrad.addColorStop(0, '#a07ed0');
+    torsoGrad.addColorStop(0.4, '#7c5cbf');
+    torsoGrad.addColorStop(1, '#5a3a90');
+    ctx.fillStyle = torsoGrad;
+    ctx.beginPath();
+    ctx.moveTo(cx - 10, cy - 32);
+    ctx.bezierCurveTo(cx - 12, cy - 18, cx - 12, cy - 10, cx - 14, cy - 4);
+    ctx.lineTo(cx + 14, cy - 4);
+    ctx.bezierCurveTo(cx + 12, cy - 10, cx + 12, cy - 18, cx + 10, cy - 32);
+    ctx.closePath();
+    ctx.fill();
+    // Collar/neckline bow
+    ctx.fillStyle = '#ffd700';
+    ctx.beginPath();
+    ctx.moveTo(cx - 4, cy - 32);
+    ctx.lineTo(cx,     cy - 29);
+    ctx.lineTo(cx + 4, cy - 32);
+    ctx.closePath();
+    ctx.fill();
+    // Star decorations on dress
+    ctx.fillStyle = 'rgba(255,215,0,0.6)';
+    ctx.font = '7px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('✦', cx - 5, cy - 20);
+    ctx.fillText('✦', cx + 5, cy - 14);
+    ctx.restore();
+
+    // ── Arms ───────────────────────────────────────────────────
+    ctx.save();
+    const skinGrad = ctx.createLinearGradient(cx, cy - 34, cx, cy - 14);
+    skinGrad.addColorStop(0, '#f8d4b4');
+    skinGrad.addColorStop(1, '#e8b880');
+
+    if (isThrow) {
+      // Throw: right arm raised toward pole direction
+      const armLen = 18;
+      const rawA   = poleAngle - Math.PI * 0.5; // toward pole tip
+      const armEndX = cx + 10 + Math.cos(rawA) * armLen;
+      const armEndY = (cy - 30) + Math.sin(rawA) * armLen;
+      ctx.strokeStyle = '#f8d4b4';
+      ctx.lineWidth   = 6;
+      ctx.lineCap     = 'round';
+      ctx.shadowColor = 'rgba(255,200,150,0.3)';
+      ctx.shadowBlur  = 4;
+      ctx.beginPath();
+      ctx.moveTo(cx + 10, cy - 30);
+      ctx.lineTo(armEndX, armEndY);
+      ctx.stroke();
+      // Other arm relaxed
+      ctx.shadowBlur = 0;
+      ctx.beginPath();
+      ctx.moveTo(cx - 10, cy - 30);
+      ctx.lineTo(cx - 18, cy - 18);
+      ctx.stroke();
+    } else if (isCatch) {
+      // Catch: both arms reaching outward-upward (receiving)
+      ctx.strokeStyle = '#f8d4b4';
+      ctx.lineWidth   = 6;
+      ctx.lineCap     = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx + 10, cy - 30);
+      ctx.lineTo(cx + 20, cy - 40);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx - 10, cy - 30);
+      ctx.lineTo(cx - 20, cy - 40);
+      ctx.stroke();
+    } else {
+      // Idle: arms loosely at sides with slight upward sway
+      const idleLift = Math.sin(t * 0.7) * 3;
+      ctx.strokeStyle = '#f8d4b4';
+      ctx.lineWidth   = 6;
+      ctx.lineCap     = 'round';
+      ctx.beginPath();
+      ctx.moveTo(cx + 10, cy - 30);
+      ctx.lineTo(cx + 16 + Math.cos(poleAngle) * 6, cy - 18 - idleLift);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(cx - 10, cy - 30);
+      ctx.lineTo(cx - 14, cy - 20 + idleLift);
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // ── Neck ───────────────────────────────────────────────────
+    ctx.save();
+    ctx.fillStyle = '#f5c5a0';
+    ctx.beginPath();
+    ctx.roundRect(cx - 4, cy - 42, 8, 10, 3);
+    ctx.fill();
+    ctx.restore();
+
+    // ── Head ───────────────────────────────────────────────────
+    ctx.save();
+    const headGrad = ctx.createRadialGradient(cx - 3, cy - 50, 2, cx, cy - 48, 14);
+    headGrad.addColorStop(0, '#fce0c0');
+    headGrad.addColorStop(0.7, '#f5c5a0');
+    headGrad.addColorStop(1, '#e0a070');
+    ctx.fillStyle = headGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - 49, 12, 13, 0, 0, TWO_PI);
+    ctx.fill();
+    // Cheek blush
+    ctx.fillStyle = 'rgba(255,150,150,0.25)';
+    ctx.beginPath();
+    ctx.ellipse(cx - 8, cy - 46, 4, 2.5, -0.2, 0, TWO_PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + 8, cy - 46, 4, 2.5, 0.2, 0, TWO_PI);
+    ctx.fill();
+    // Eyes
+    ctx.fillStyle = '#2a1a3a';
+    ctx.beginPath();
+    ctx.ellipse(cx - 5, cy - 49, 2.5, 3, 0, 0, TWO_PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + 5, cy - 49, 2.5, 3, 0, 0, TWO_PI);
+    ctx.fill();
+    // Eye shine
+    ctx.fillStyle = 'rgba(255,255,255,0.9)';
+    ctx.beginPath();
+    ctx.arc(cx - 4, cy - 50, 0.9, 0, TWO_PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(cx + 6, cy - 50, 0.9, 0, TWO_PI);
+    ctx.fill();
+    // Mouth
+    ctx.strokeStyle = '#c0704a';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.arc(cx, cy - 44, 3, 0.1, Math.PI - 0.1);
+    ctx.stroke();
+    ctx.restore();
+
+    // ── Hair ───────────────────────────────────────────────────
+    ctx.save();
+    const hairColor = '#3a2010';
+    const hairHighlight = '#6a4a28';
+    // Hair base cap
+    const hairGrad = ctx.createRadialGradient(cx - 4, cy - 58, 2, cx, cy - 54, 18);
+    hairGrad.addColorStop(0, hairHighlight);
+    hairGrad.addColorStop(0.5, hairColor);
+    hairGrad.addColorStop(1, '#1e1008');
+    ctx.fillStyle = hairGrad;
+    ctx.beginPath();
+    ctx.ellipse(cx, cy - 56, 14, 10, 0, 0, TWO_PI);
+    ctx.fill();
+    // Hair volume sides
+    ctx.fillStyle = hairColor;
+    ctx.beginPath();
+    ctx.ellipse(cx - 12, cy - 52, 5, 9, -0.3, 0, TWO_PI);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.ellipse(cx + 12, cy - 52, 5, 9, 0.3, 0, TWO_PI);
+    ctx.fill();
+    // Front hair fringe strands
+    ctx.strokeStyle = hairColor;
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    const strandSway = Math.sin(t * 0.5) * 1.5;
+    const strands = [
+      [cx - 9, cy - 56, cx - 12 + strandSway, cy - 42],
+      [cx - 5, cy - 60, cx - 7 + strandSway * 0.5, cy - 43],
+      [cx,     cy - 62, cx + strandSway * 0.3, cy - 44],
+      [cx + 5, cy - 60, cx + 7 - strandSway * 0.5, cy - 43],
+      [cx + 9, cy - 56, cx + 11 - strandSway, cy - 42],
+    ];
+    strands.forEach(([x1, y1, x2, y2]) => {
+      ctx.beginPath();
+      ctx.moveTo(x1, y1);
+      ctx.quadraticCurveTo((x1 + x2) / 2 + strandSway, (y1 + y2) / 2 - 3, x2, y2);
+      ctx.stroke();
+    });
+    // Long back hair with flowing end
+    const hairFlowSway = Math.sin(t * 0.6) * 4;
+    ctx.fillStyle = hairColor;
+    ctx.beginPath();
+    ctx.moveTo(cx - 12, cy - 56);
+    ctx.bezierCurveTo(cx - 16, cy - 40, cx - 18 + hairFlowSway, cy - 22, cx - 14 + hairFlowSway, cy - 10);
+    ctx.bezierCurveTo(cx - 12 + hairFlowSway, cy - 6, cx - 8, cy - 8, cx - 6, cy - 12);
+    ctx.bezierCurveTo(cx - 10, cy - 20, cx - 13, cy - 36, cx - 10, cy - 52);
+    ctx.closePath();
+    ctx.fill();
+    // Hair highlight streaks
+    ctx.strokeStyle = 'rgba(120, 80, 40, 0.6)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(cx - 6, cy - 62);
+    ctx.bezierCurveTo(cx - 8, cy - 56, cx - 10, cy - 52, cx - 8, cy - 48);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + 2, cy - 63);
+    ctx.bezierCurveTo(cx, cy - 57, cx - 2, cy - 52, cx + 1, cy - 47);
+    ctx.stroke();
+    // Hair ornament — small star pin
+    ctx.fillStyle = '#ffd700';
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur  = 6;
+    ctx.font = '10px serif';
+    ctx.textAlign = 'center';
+    ctx.fillText('★', cx + 8, cy - 57);
+    ctx.restore();
+
+    // ── Pole ───────────────────────────────────────────────────
     const poleTop = this._poleTop();
     ctx.save();
-    ctx.strokeStyle = '#c8a060';
-    ctx.lineWidth = 3;
+    const poleGrad = ctx.createLinearGradient(cx, cy - 20, poleTop.x, poleTop.y);
+    poleGrad.addColorStop(0, '#d4a854');
+    poleGrad.addColorStop(0.5, '#f0c870');
+    poleGrad.addColorStop(1, '#c89040');
+    ctx.strokeStyle = poleGrad;
+    ctx.lineWidth = 3.5;
     ctx.lineCap = 'round';
+    ctx.shadowColor = 'rgba(200,160,60,0.4)';
+    ctx.shadowBlur  = 4;
     ctx.beginPath();
-    ctx.moveTo(cx, cy - 20);
+    ctx.moveTo(cx, cy - 22);
     ctx.lineTo(poleTop.x, poleTop.y);
     ctx.stroke();
     ctx.restore();

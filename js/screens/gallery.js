@@ -1,6 +1,7 @@
 // screens/gallery.js — Constellation gallery grid + detail view
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
 import { SCENE_PALETTES } from '../data/scenes.js';
+import { CONSTELLATION_PHOTOS } from '../data/photos.js';
 import state from '../state.js';
 
 const TWO_PI = Math.PI * 2;
@@ -77,6 +78,7 @@ export function showGalleryDetail(navigate, params) {
 
   _renderPortrait(idx, con);
   _renderStarChart(idx, con);
+  _renderPhotoCarousel(con);
 }
 
 function _renderPortrait(idx, con) {
@@ -258,4 +260,45 @@ function _renderStarChart(idx, con) {
   ].join('');
 
   container.innerHTML = svgStr;
+}
+
+function _renderPhotoCarousel(con) {
+  // Find or create the carousel container
+  let carouselSection = document.getElementById('detail-photo-carousel');
+  if (!carouselSection) {
+    // Insert after the starchart section
+    const starchartEl = document.querySelector('.detail-starchart');
+    if (!starchartEl) return;
+    carouselSection = document.createElement('div');
+    carouselSection.id = 'detail-photo-carousel';
+    carouselSection.className = 'detail-photo-carousel';
+    starchartEl.insertAdjacentElement('afterend', carouselSection);
+  }
+
+  const photos = CONSTELLATION_PHOTOS[con.nameEn] || [];
+  if (photos.length === 0) {
+    carouselSection.style.display = 'none';
+    return;
+  }
+
+  carouselSection.style.display = '';
+  carouselSection.innerHTML = `
+    <div class="photo-carousel-label">📷 天文摄影 · Astrophotography</div>
+    <div class="photo-carousel-track">
+      ${photos.map(p => `
+        <div class="photo-carousel-card">
+          <div class="photo-carousel-img-wrap">
+            <img
+              src="${p.url}"
+              alt="${p.title}"
+              class="photo-carousel-img"
+              loading="lazy"
+            />
+          </div>
+          <div class="photo-carousel-credit">${p.credit}</div>
+          <div class="photo-carousel-title">${p.title}</div>
+        </div>
+      `).join('')}
+    </div>
+  `;
 }
