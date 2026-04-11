@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: IN PROGRESS
-**Current Sprint**: 12
+**Status**: COMPLETE
+**Current Sprint**: 13 (COMPLETE — VU ACCEPTED 9.5/10)
 **Last Updated**: 2026-04-11
 
 ## Sprint History
@@ -19,6 +19,8 @@
 | Sprint 9 | COMPLETE | VU content closure — SVG star chart + full lore text (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
 | Sprint 10 | COMPLETE | 核心体验升级：改名、摆速、连线保持、背景地景、道具重设计、场景介绍修复 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 11 | COMPLETE | 视觉精修：碎片升级、通关界面、画廊轮播、角色升级、全局视觉+过渡 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
+| Sprint 12 | COMPLETE | 游戏体验修复：连线显示、垃圾旋转、网兜形状、暂停系统、通关界面重设计、场景分界线 (QA PASS, UX no Blockers, Arch PASS) |
+| Sprint 13 | COMPLETE | 道具系统修复 + 角色升级 + UI精致化 (QA PASS, UX no Blockers, Arch PASS) |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -27,6 +29,7 @@
 | Sprint 8 | 8.5/10 | NOT ACCEPTED | Real astrophotography missing (F-007), lore text too short (~215 chars vs 500-800字) |
 | Sprint 9 | 9.5/10 | ACCEPTED | All PRD Must-Have features delivered |
 | Sprint 11 | 9.5/10 | ACCEPTED | All PRD + CR features delivered — PROJECT COMPLETE |
+| Sprint 13 | 9.5/10 | ACCEPTED | All PRD + CR (001-031) features verified — PROJECT COMPLETE (final iteration) |
 
 ## Sprint 10 Stories
 | Story | Title | Status |
@@ -47,6 +50,15 @@
 | STORY-00043 | 少女角色升级 | Done |
 | STORY-00044 | 全局视觉升级 Part 1 | Done |
 | STORY-00045 | 全局视觉升级 Part 2 | Done |
+
+## Sprint 13 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00053 | 道具系统修复 — CR-031 items | Done |
+| STORY-00054 | 少女角色精灵图动画 — CR-018 | Done |
+| STORY-00055 | 天文星图放大查看 — CR-028 | Done |
+| STORY-00056 | 展厅图片轮播视觉增强 — CR-029 | Done |
+| STORY-00057 | 关卡选择难度指示器重设计 — CR-027 | Done |
 
 ## Acceptance Mode
 auto (Virtual User as final gate)

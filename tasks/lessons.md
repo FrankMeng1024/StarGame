@@ -130,3 +130,19 @@ Sprint 11: clean Sprint, no retrospective actions.
 - QA verdict: PASS (all 6 stories, HIGH confidence, 0 bugs). UX verdict: PASS (2 Low friction items only).
 - Navigation regression: ALL screens clean, 0 JS errors throughout complete test sequence.
 - Lightweight retro rule applied: steps 1-3 skipped.
+
+## Sprint 12 — 2026-04-11
+Sprint 12: 1 UX Medium bug found+fixed (fail screen stat label), no other bugs.
+- Arch review: PASS (2 Medium notes: `_initPause` null guard, pause/mute button z-index overlap).
+- UX review: PASS. 1 Medium bug (fail screen "90秒 剩余") fixed during integration. 1 Low deferred (grey mini-canvas).
+- QA verdict: PASS (all 6 stories, HIGH confidence, 0 bugs).
+- Navigation regression: game→levels→menu→gallery→gallery-detail→gallery→menu: ALL CLEAN, 0 JS errors.
+- Lightweight retro rule applied: steps 1-3 skipped. (1 bug found, but VU not previously NOT ACCEPTED — condition (d) not triggered.)
+
+## Sprint 13 — 2026-04-11
+Sprint 13: clean Sprint, no retrospective actions.
+- Zero bugs found by QA/UX. Arch review: PASS (3 Medium notes → backlog).
+- UX verdict: no Blockers, 1 Medium ("难度" label legibility), 3 Low → backlog.
+- QA verdict: PASS (all 5 stories, HIGH confidence, 0 bugs).
+- Navigation regression: 15 nav steps (all screens), 0 JS errors throughout.
+- Lightweight retro rule applied: steps 1-3 skipped.
