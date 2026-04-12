@@ -163,7 +163,7 @@ function _startDrone() {
   subOsc.frequency.value = 110; // A2
   subGain.gain.value = 0.008;
   subOsc.connect(subGain);
-  subGain.connect(_masterGain);
+  subGain.connect(_droneGain); // route through _droneGain so it fades on stopMusic()
   subOsc.start();
   _droneOscs.push(subOsc);
 }

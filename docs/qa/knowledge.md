@@ -179,3 +179,14 @@ No backend, no network requests. All data in localStorage + local files.
 - Sprint 14: Audio system — no duplicate let declaration crash. Zero JS errors on load.
 - Sprint 14: Pause overlay — '▶ 继续游戏' resumes without exit confirmation.
 - Sprint 14 regression: all navigation paths clean, 0 JS console errors throughout.
+
+## Sprint 17 Updates (2026-04-12)
+
+- Sprint 17: net visible at idle — golden ring on pole to the right of girl character; during throw, large net connected by a line; returns to idle after throw. No disappearance between states.
+- Sprint 17: star sizing confirmed visually — small proportional pinpoints (3-9px radius range). Background decorative dots clearly smaller than catchable stars.
+- Sprint 17: fail screen vertically centered with opaque dark constellation canvas. No transparency bleed-through. All content fits single viewport.
+- Sprint 17: complete screen '返回选关' has dark tinted background — not ghost. Buttons: 去商店 (primary), 下一关 (secondary), 返回选关 (tertiary dark tint).
+- Sprint 17: coin system — fresh player = 100 coins (confirmed s17-08), fail = 0 coins (confirmed s17-04), success = Math.floor(remaining_seconds) × 10 (72s → 720 confirmed s17-10), 3★ repeat = Math.floor(coins/2) before award (code-verified at game.js:362).
+- Sprint 17: preloading working — game canvas fully rendered at 0s entry with girl, net, stars, constellation lines, debris all visible. No blank canvas frame.
+- Sprint 17: `window.__navigate('complete', {idx, timeLeft, coins, caught, total, isNewRecord})` can inject complete screen state for controlled coin formula testing.
+- Sprint 17 regression: ALL navigation transitions clean, 0 JS console errors throughout.

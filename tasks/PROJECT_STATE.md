@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: COMPLETE
-**Current Sprint**: 16 (Sprint Goal: 图片精灵替换全角色资源 + 星座点亮动画 + 展厅/UI修复)
+**Status**: IN PROGRESS
+**Current Sprint**: 17 (Sprint Goal: 7项用户反馈修复 — 网兜/星星/失败界面/金币/预加载/音乐)
 **Last Updated**: 2026-04-12
 
 ## Sprint History
@@ -24,6 +24,7 @@
 | Sprint 14 | COMPLETE | 游戏体验全面提升 (CRs 032-044) (QA PASS, UX no Blockers, VU ACCEPTED 9.5/10) |
 | Sprint 15 | COMPLETE | 角色/网兜/星星视觉重绘 + 交互精修 + 展厅/商店UI修复 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.6/10) |
 | Sprint 16 | COMPLETE | 图片精灵替换全角色资源 + 星座点亮动画 + 展厅/UI修复 (QA PASS, UX no Blockers, VU ACCEPTED 9.5/10) |
+| Sprint 17 | IN PROGRESS | 7项用户反馈修复 — 网兜显示/星星大小/失败界面/按钮背景/金币系统/预加载/音乐 |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -36,6 +37,17 @@
 | Sprint 14 | 9.5/10 | ACCEPTED | All PRD + CR (032-044) features verified — PROJECT COMPLETE |
 | Sprint 15 | 9.6/10 | ACCEPTED | All Sprint 15 user-reported issues resolved — PROJECT COMPLETE |
 | Sprint 16 | 9.5/10 | ACCEPTED | All Sprint 16 SVG sprites, constellation reveal, UI fixes verified — PROJECT COMPLETE |
+
+## Sprint 17 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00080 | 网兜空闲时可见 | Done |
+| STORY-00081 | 星星大小2/3缩小 + min/max限制 | Done |
+| STORY-00082 | 失败界面布局修复 | Done |
+| STORY-00083 | 返回选关按钮背景色 | Done |
+| STORY-00084 | 背景音乐重构 | Done |
+| STORY-00085 | 金币系统重构 | Done |
+| STORY-00086 | 关卡预加载 | Done |
 
 ## Sprint 10 Stories
 | Story | Title | Status |

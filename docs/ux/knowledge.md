@@ -296,3 +296,12 @@
 - Sprint 14: Fail screen simplified to only 重试 + 返回选关 — no extraneous navigation options
 - Sprint 14: Photo lightbox functional with prev/next/close controls — standard gallery interaction pattern
 - Sprint 14: Decorative floating gold star persists across screens — cosmetic, non-blocking, background animation
+
+## Sprint 17 Updates (2026-04-12)
+
+- Sprint 17: Net confirmed visible at idle — golden ring on pole, positioned to girl's right. No longer disappears between throws. Issue resolved.
+- Sprint 17: Game preloading working — all assets visible at 0s entry. No blank canvas.
+- Sprint 17: Coin formula confirmed: fail=0, success=remaining_seconds×10. Initial 100 coins for fresh players.
+- Sprint 17: Complete screen button set: 去商店 (primary/large), 下一关 (secondary), 返回选关 (tertiary with dark tint — now has visible background).
+- Sprint 17: Fail screen layout improved — centered vertically with generous spacing. Hierarchy: title → stats → constellation canvas → encouragement → buttons. No longer cramped.
+- Sprint 17: Zero console errors across all navigation transitions.
