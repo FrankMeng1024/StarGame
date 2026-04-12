@@ -147,6 +147,10 @@ Sprint 13: clean Sprint, no retrospective actions.
 - Navigation regression: 15 nav steps (all screens), 0 JS errors throughout.
 - Lightweight retro rule applied: steps 1-3 skipped.
 
+## Sprint 14 — 2026-04-12
+Sprint 14: clean Sprint, no retrospective actions. VU ACCEPTED 9.5/10.
+- Lightweight retro rule applied: steps 1-3 skipped.
+
 ## Sprint 15 — 2026-04-12
 Sprint 15: clean Sprint, no retrospective actions. VU ACCEPTED 9.6/10.
 - 1 Critical bug found by Arch (net_enlarge collision not functional) — fixed before QA ran. Arch gate working as designed.
@@ -155,3 +159,18 @@ Sprint 15: clean Sprint, no retrospective actions. VU ACCEPTED 9.6/10.
 - Navigation regression: all screens clean, 0 JS errors.
 - VU score: 9.6/10 — ACCEPTED. Project complete.
 - Lightweight retro rule applied: steps 1-3 skipped. (No VU NOT ACCEPTED in prior Sprint.)
+
+## Sprint 16 — 2026-04-12
+Sprint 16: clean Sprint, no retrospective actions. VU ACCEPTED 9.5/10.
+- Zero bugs found by QA/UX during Integration. QA verdict: PASS (all 4 stories, HIGH confidence, 0 bugs). UX verdict: PASS (0 Blockers, 2 Low deferred).
+- Navigation regression: all routes clean, 0 JS errors.
+- VU score: 9.5/10 — ACCEPTED. Key observations from VU:
+  - Anime SVG girl sprite, golden hoop net, SVG debris all accepted as fulfilling CR-032 "real images" promise.
+  - Constellation reveal animation is the product's emotional highlight — VU specifically called it out as excellent.
+  - 3 minor "not good enough" items: fail screen empty space, gallery card state distinction, star sizing. None blocked acceptance.
+  - Gallery detail described as "a genuine constellation encyclopedia entry."
+- [pending] VU noted fail screen lower 70% is empty dead space — could add brief encouragement text or constellation silhouette without violating CR-033.
+- [pending] VU noted gallery unlocked-incomplete cards visually too similar to locked ？ cards — subtle color/border distinction would help.
+- Lightweight retro rule applied: steps 1-3 skipped. (No VU NOT ACCEPTED in prior Sprint.)
+- ES module browser caching lesson (reinforced): Python http.server ignores query string params; only full Chrome restart clears module cache. For future QA sessions requiring test hooks in ES modules, plan for Chrome restart as mandatory step.
+- Timer management lesson: VU test sessions that reuse level state from prior QA sessions inherit partially depleted timers. In future VU sessions, clear localStorage game state before starting to ensure fresh 90s timer on Level 1.

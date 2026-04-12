@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
 **Status**: COMPLETE
-**Current Sprint**: 15 (Sprint Goal: 角色/网兜/星星视觉重绘 + 交互精修 + 展厅/商店UI修复)
+**Current Sprint**: 16 (Sprint Goal: 图片精灵替换全角色资源 + 星座点亮动画 + 展厅/UI修复)
 **Last Updated**: 2026-04-12
 
 ## Sprint History
@@ -23,6 +23,7 @@
 | Sprint 13 | COMPLETE | 道具系统修复 + 角色升级 + UI精致化 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 14 | COMPLETE | 游戏体验全面提升 (CRs 032-044) (QA PASS, UX no Blockers, VU ACCEPTED 9.5/10) |
 | Sprint 15 | COMPLETE | 角色/网兜/星星视觉重绘 + 交互精修 + 展厅/商店UI修复 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.6/10) |
+| Sprint 16 | COMPLETE | 图片精灵替换全角色资源 + 星座点亮动画 + 展厅/UI修复 (QA PASS, UX no Blockers, VU ACCEPTED 9.5/10) |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -34,6 +35,7 @@
 | Sprint 13 | 9.5/10 | ACCEPTED | All PRD + CR (001-031) features verified — PROJECT COMPLETE (final iteration) |
 | Sprint 14 | 9.5/10 | ACCEPTED | All PRD + CR (032-044) features verified — PROJECT COMPLETE |
 | Sprint 15 | 9.6/10 | ACCEPTED | All Sprint 15 user-reported issues resolved — PROJECT COMPLETE |
+| Sprint 16 | 9.5/10 | ACCEPTED | All Sprint 16 SVG sprites, constellation reveal, UI fixes verified — PROJECT COMPLETE |
 
 ## Sprint 10 Stories
 | Story | Title | Status |
@@ -82,6 +84,14 @@
 | STORY-00066 | 星星大小/亮度区别 | Done |
 | STORY-00067 | 游戏交互精修 | Done |
 | STORY-00068 | 展厅/商店UI修复 | Done |
+
+## Sprint 16 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00069 | 少女/网兜/垃圾全部换成SVG图片资源 | Done |
+| STORY-00070 | 星座点亮动画 (抓完全部星星后) | Done |
+| STORY-00071 | 场景介绍文字移除 + 展厅顺序修复 + 画廊灰色 + UI修复 | Done |
+| STORY-00072 | 网兜碰撞修复 + 抓取手感优化 | Done |
 
 ## Acceptance Mode
 auto (Virtual User as final gate)
