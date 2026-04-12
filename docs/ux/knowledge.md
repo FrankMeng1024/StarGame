@@ -305,3 +305,12 @@
 - Sprint 17: Complete screen button set: 去商店 (primary/large), 下一关 (secondary), 返回选关 (tertiary with dark tint — now has visible background).
 - Sprint 17: Fail screen layout improved — centered vertically with generous spacing. Hierarchy: title → stats → constellation canvas → encouragement → buttons. No longer cramped.
 - Sprint 17: Zero console errors across all navigation transitions.
+
+## Sprint 19 Updates (2026-04-12)
+
+- Sprint 19: Item-select overlay has clear "← 返回" back button top-left — dismisses cleanly to levels screen, no friction. One-tap back navigation confirmed.
+- Sprint 19: Stars appear immediately on game entry (<50ms) — no blank canvas delay. Sprite pre-warming on levels screen eliminates previous 400ms delay.
+- Sprint 19: Gallery detail layout confirmed photos (天文摄影) above star chart (星图) — correct information hierarchy for visual-first discovery.
+- Sprint 19: Ursa Major M81/M82 astrophotos load correctly (ESA Hubble CDN). All photos verified HTTP 200.
+- Sprint 19: Full navigation regression passed with 0 console errors across all tested paths (menu↔levels, levels↔item-select, gallery↔detail, game→fail→levels). SPA routing is stable.
+- Sprint 19: Fail screen is clean — shows star count (0/7), "时间到了！" message, two unambiguous action buttons (重试/返回选关).

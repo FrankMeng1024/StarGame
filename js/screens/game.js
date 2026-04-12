@@ -30,7 +30,7 @@ export function startGame(navigate) {
     img.onerror = () => resolve(null); // don't stall on error
     img.src = src;
   });
-  const _preloadTimeout = new Promise(resolve => setTimeout(resolve, 400));
+  const _preloadTimeout = new Promise(resolve => setTimeout(resolve, 50)); // CR-059: reduced; sprites pre-warmed by levels screen
 
   Promise.race([
     Promise.all([_preloadSprite('assets/sprites/girl.svg'), _preloadSprite('assets/sprites/net.svg')]),

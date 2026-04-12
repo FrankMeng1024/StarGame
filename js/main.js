@@ -141,7 +141,7 @@ function init() {
   // Level-select event from refreshed cards
   document.addEventListener('level-select', e => {
     state.currentLevel = e.detail;
-    showItemSelect(() => navigate('game'));
+    showItemSelect(() => navigate('game'), () => navigate('levels'));
   });
 
   // Expose navigate for test verification only

@@ -88,7 +88,7 @@ export function showGalleryDetail(navigate, params) {
 
   _renderStarChart(idx, con);
   _renderPhotoCarousel(con);
-  _renderPortrait(idx, con);
+  // Portrait canvas removed per CR-064 layout reorder
 
   // CR-058: Prev/next navigation between completed constellations
   _renderGalleryNav(navigate, idx);
@@ -335,7 +335,7 @@ function _closeStarChartModal() {
 function _renderPhotoCarousel(con) {
   let carouselSection = document.getElementById('detail-photo-carousel');
   if (!carouselSection) {
-    // Insert after the starchart section
+    // CR-064: Insert AFTER starchart — layout order: name → star chart → astro photos → lore
     const starchartEl = document.querySelector('.detail-starchart');
     if (!starchartEl) return;
     carouselSection = document.createElement('div');
@@ -370,7 +370,7 @@ function _renderPhotoCarousel(con) {
               src="${p.url}"
               alt="${p.title}"
               class="photo-carousel-img"
-              loading="lazy"
+              loading="eager"
               onerror="this.parentElement.classList.add('no-image'); this.style.display='none'; this.parentElement.innerHTML+='✦';"
             />
           </div>

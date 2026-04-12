@@ -403,7 +403,7 @@ export class GameEngine {
     this.swingAngle   = 0;       // current angle in radians (0 = up)
     this.swingSpeed   = (Math.PI * 2) / (3.5 * 60); // full swing in 3.5s at 60fps
     this.swingDir     = 1;
-    this.swingMax     = Math.PI * 60 / 180; // ±60°
+    this.swingMax     = Math.PI * 80 / 180; // ±80° — CR-062: wider range so edge stars are reachable
 
     // Net / hook
     this.netState   = 'swing'; // 'swing' | 'extend' | 'retract'
@@ -416,7 +416,10 @@ export class GameEngine {
     // Character
     this.charX = this.W * 0.5;
     this.charY = this.H * 0.85;
-    this.poleLen = this.H * 0.18;
+    this.poleLen = this.H * 0.06; // CR-062: shortened so net hangs close to hand
+    // Hand position (updated each frame by _drawCharacter, used by _poleTop/_netTip)
+    this._handX = this.charX + 22;
+    this._handY = this.charY - 56; // approximate idle shoulder+arm height
 
     // ── Sprite assets — load SVG image files ──────────────────
     // Girl sprite sheet (4 frames: idle, blink, throw, catch)
@@ -524,8 +527,8 @@ export class GameEngine {
     return this.level.stars.map((s, i) => {
       // CR-047: all stars gold/white — no spectral color confusion
       // CR-051: 2/3 size reduction with min/max caps
-      const MIN_STAR_R = 3;
-      const MAX_STAR_R = 22; // CR-058: 2.5× size increase (was 9)
+      const MIN_STAR_R = 5;
+      const MAX_STAR_R = 14; // CR-063: user spec max reduced by 1px
       const baseR = Math.min(MAX_STAR_R, Math.max(MIN_STAR_R, magToRadius(s.mag) * 2.5));
       return {
         id: i,
@@ -573,10 +576,11 @@ export class GameEngine {
 
   // ── Geometry helpers ───────────────────────────────────────
   _poleTop() {
+    // Use actual hand position (updated each frame by _drawCharacter) as pole base
     const angle = this.swingAngle - Math.PI / 2; // 0 = pointing straight up
     return {
-      x: this.charX + Math.cos(angle) * this.poleLen,
-      y: this.charY + Math.sin(angle) * this.poleLen,
+      x: this._handX + Math.cos(angle) * this.poleLen,
+      y: this._handY + Math.sin(angle) * this.poleLen,
     };
   }
 
@@ -1122,6 +1126,7 @@ export class GameEngine {
     if (this._isSlotActive('star_map')) this._drawStarMap();
     this._drawStars();
     this._drawDebris();
+    this._updateHandPos(); // update hand coords before drawing net
     this._drawNet();
     this._drawCharacter();
     this._drawParticles();
@@ -1315,6 +1320,34 @@ export class GameEngine {
           default:          drawCloth(ctx, d.x, d.y, d.r, d.angle);
         }
       }
+    }
+  }
+
+  _updateHandPos() {
+    // Compute right hand position from current character state — used by _poleTop()
+    const cx = this.charX;
+    const cy = this.charY;
+    const HEAD_CY   = cy - 95;
+    const HEAD_RY   = 20;
+    const NECK_Y    = HEAD_CY + HEAD_RY - 2;
+    const TORSO_T   = NECK_Y + 8;
+    const SHOULDER_Y_POLE = TORSO_T + 4;
+    const netSt   = this.netState;
+    const isThrow = netSt === 'extend';
+    const isCatch = netSt === 'retract' && this.caughtObj !== null;
+    const t = Date.now() * 0.002;
+    if (isThrow) {
+      const armLen = 26;
+      const rawA   = this.swingAngle - Math.PI * 0.5;
+      this._handX = cx + 14 + Math.cos(rawA) * armLen;
+      this._handY = SHOULDER_Y_POLE + 16 + Math.sin(rawA) * armLen;
+    } else if (isCatch) {
+      this._handX = cx + 24;
+      this._handY = SHOULDER_Y_POLE + 6;
+    } else {
+      const idleLift = Math.sin(t * 0.7) * 4;
+      this._handX = cx + 24;
+      this._handY = SHOULDER_Y_POLE + 32 - idleLift; // CR-062: lower to match sprite hand position
     }
   }
 
@@ -1871,22 +1904,9 @@ export class GameEngine {
 
     // ── Pole (attached to right hand) ──────────────────────────
     const poleTop = this._poleTop();
-    // Compute right-hand position to anchor the pole base
-    const SHOULDER_Y_POLE = TORSO_T + 4;
-    let poleBaseX, poleBaseY;
-    if (isThrow) {
-      const armLen  = 26;
-      const rawA    = poleAngle - Math.PI * 0.5;
-      poleBaseX = cx + 12 + Math.cos(rawA) * armLen;
-      poleBaseY = SHOULDER_Y_POLE + Math.sin(rawA) * armLen;
-    } else if (isCatch) {
-      poleBaseX = cx + 22;
-      poleBaseY = SHOULDER_Y_POLE - 10;
-    } else {
-      const idleLift = Math.sin(t * 0.7) * 4;
-      poleBaseX = cx + 22;
-      poleBaseY = SHOULDER_Y_POLE + 22 - idleLift;
-    }
+    // Use hand position pre-computed by _updateHandPos() (called before _drawNet)
+    const poleBaseX = this._handX;
+    const poleBaseY = this._handY;
     ctx.save();
     const poleGrad = ctx.createLinearGradient(poleBaseX, poleBaseY, poleTop.x, poleTop.y);
     poleGrad.addColorStop(0, '#d4a854');

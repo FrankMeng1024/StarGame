@@ -116,7 +116,8 @@ export function stopCountdownBeeps() {
 }
 
 // ── Background music (ambient loop) ──────────────────────────
-// Am-F-C-G chord progression with melody and twinkling arpeggio layers
+// CR-059: Reverted to Sprint 5 original — pure Am-F-C-G sine chord loop
+// Simple 4-note chord progression at low volume, no melody/arpeggio layers
 const CHORDS = [
   [220, 261, 329, 392], // Am  (A3 C4 E4 G4)
   [174, 220, 261, 349], // F   (F3 A3 C4 F4)
@@ -125,18 +126,6 @@ const CHORDS = [
 ];
 const CHORD_DUR = 2.0; // seconds per chord
 const CHORD_VOL = 0.04;
-
-// Am pentatonic scale: A C D E G (and octave variants)
-const PENTATONIC = [220, 261, 294, 329, 392, 440, 523, 587, 659, 784];
-// Melody motif: E-D-C-A-C-D-E-G over 2 chord cycles (8 beats x 0.5s each)
-const MELODY_MOTIF = [329, 294, 261, 220, 261, 294, 329, 392];
-const MELODY_VOL  = 0.025; // softer than chords
-const MELODY_DUR  = 0.45;  // slightly shorter than the beat for a staccato feel
-
-// Twinkling: random high pentatonic notes via triangle oscillator
-const TWINKLE_HIGH = [659, 784, 880, 1047, 1175]; // E5-G5-A5-C6-D6
-const TWINKLE_VOL  = 0.015;
-const TWINKLE_DUR  = 0.3;
 
 function _scheduleChord(chordIdx, startTime) {
   const ctx = _getCtx();
@@ -157,83 +146,19 @@ function _scheduleChord(chordIdx, startTime) {
   }
 }
 
-// Schedule one melody note
-function _scheduleMelodyNote(noteIdx, startTime) {
-  const ctx = _getCtx();
-  const freq = MELODY_MOTIF[noteIdx % MELODY_MOTIF.length];
-  const osc  = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.value = freq * 2; // one octave up from chord
-  gain.gain.setValueAtTime(0, startTime);
-  gain.gain.linearRampToValueAtTime(MELODY_VOL, startTime + 0.03);
-  gain.gain.exponentialRampToValueAtTime(0.001, startTime + MELODY_DUR);
-  osc.connect(gain);
-  gain.connect(_masterGain);
-  osc.start(startTime);
-  osc.stop(startTime + MELODY_DUR + 0.05);
-}
-
-// Schedule random twinkle arpeggio note
-function _scheduleTwinkle(startTime) {
-  const ctx  = _getCtx();
-  const freq = TWINKLE_HIGH[Math.floor(Math.random() * TWINKLE_HIGH.length)];
-  const osc  = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.value = freq;
-  gain.gain.setValueAtTime(0, startTime);
-  gain.gain.linearRampToValueAtTime(TWINKLE_VOL, startTime + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.001, startTime + TWINKLE_DUR);
-  osc.connect(gain);
-  gain.connect(_masterGain);
-  osc.start(startTime);
-  osc.stop(startTime + TWINKLE_DUR + 0.05);
-}
-
 let _musicRunning = false;
-let _musicChordIdx  = 0;
-let _musicBeatIdx   = 0;  // sub-beat counter within the motif (0-7)
-let _musicCycleIdx  = 0;  // which 8-beat cycle we're on (for variation)
-let _musicNextTime  = 0;
-let _musicLoop      = null;
-
-// Half-beat interval: each chord lasts 2s, melody has 8 notes per 2 chords = 0.5s/note
-const BEAT = CHORD_DUR / 4; // 0.5s per melody note
+let _musicChordIdx = 0;
+let _musicNextTime = 0;
+let _musicLoop     = null;
 
 function _musicTick() {
   if (!_musicRunning) return;
   const ctx = _getCtx();
-
-  while (_musicNextTime < ctx.currentTime + 0.8) {
-    // Schedule chord (every 4 beats = every CHORD_DUR seconds)
-    if (_musicBeatIdx % 4 === 0) {
-      // Subtle rhythm variation: skip chord on every 16th cycle beat-0 (slight pause feel)
-      const skipChord = (_musicCycleIdx % 16 === 15 && _musicBeatIdx === 0);
-      if (!skipChord) {
-        _scheduleChord(_musicChordIdx, _musicNextTime);
-      }
-      _musicChordIdx = (_musicChordIdx + 1) % CHORDS.length;
-    }
-
-    // Schedule melody note
-    _scheduleMelodyNote(_musicBeatIdx, _musicNextTime);
-
-    // Schedule 0-2 twinkles at random offsets within this beat
-    const twinkleCount = Math.random() < 0.5 ? 1 : (Math.random() < 0.4 ? 2 : 0);
-    for (let i = 0; i < twinkleCount; i++) {
-      const offset = Math.random() * BEAT * 0.8;
-      _scheduleTwinkle(_musicNextTime + offset);
-    }
-
-    _musicBeatIdx++;
-    if (_musicBeatIdx >= 8) {
-      _musicBeatIdx = 0;
-      _musicCycleIdx++;
-    }
-    _musicNextTime += BEAT;
+  while (_musicNextTime < ctx.currentTime + 0.5) {
+    _scheduleChord(_musicChordIdx, _musicNextTime);
+    _musicChordIdx = (_musicChordIdx + 1) % CHORDS.length;
+    _musicNextTime += CHORD_DUR;
   }
-
   _musicLoop = setTimeout(_musicTick, 200);
 }
 
@@ -242,8 +167,6 @@ export function startMusic() {
   _musicRunning = true;
   const ctx = _getCtx();
   _musicChordIdx = 0;
-  _musicBeatIdx  = 0;
-  _musicCycleIdx = 0;
   _musicNextTime = ctx.currentTime + 0.1;
   _musicTick();
 }

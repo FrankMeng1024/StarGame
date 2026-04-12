@@ -18,7 +18,7 @@ const PASSIVE_ITEMS = [
 
 const MAX_SLOTS = 3;
 
-export function showItemSelect(onConfirm) {
+export function showItemSelect(onConfirm, onBack) {
   // CR-058: Clear previous selection to ensure fresh evaluation each level
   state.selectedItems = [];
 
@@ -45,7 +45,10 @@ export function showItemSelect(onConfirm) {
   function render() {
     overlay.innerHTML = `
       <div class="item-select-modal">
-        <h2 class="item-select-title">选择道具</h2>
+        <div class="item-select-header">
+          <button class="btn btn-ghost item-select-back-btn" aria-label="返回">← 返回</button>
+          <h2 class="item-select-title">选择道具</h2>
+        </div>
         <p class="item-select-hint">最多选择 <strong>${MAX_SLOTS}</strong> 个主动道具（可选多个同类），按 1/2/3 键激活</p>
 
         ${ownedActive.length > 0 ? `
@@ -145,7 +148,22 @@ export function showItemSelect(onConfirm) {
       overlay.remove();
       onConfirm();
     });
+
+    // Wire back button
+    overlay.querySelector('.item-select-back-btn').addEventListener('click', (e) => {
+      e.stopPropagation();
+      overlay.remove();
+      if (onBack) onBack();
+    });
   }
+
+  // Backdrop click (outside modal) = back/cancel
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      overlay.remove();
+      if (onBack) onBack();
+    }
+  });
 
   render();
   document.body.appendChild(overlay);

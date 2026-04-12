@@ -1,8 +1,8 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
 **Status**: COMPLETE
-**Current Sprint**: 18 (Sprint Goal: 8项用户反馈修复 — 网兜手持/展厅顺序/照片修复/展厅导航/道具重置/音乐恢复/暂停图标/星星放大)
-**Last Updated**: 2026-04-12
+**Current Sprint**: 20 (Sprint Goal: 6项用户反馈修复 — 网兜手部对齐/摆角扩大/星星缩小/展厅布局重排/照片预加载/关卡资源预热)
+**Last Updated**: 2026-04-13
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -26,6 +26,8 @@
 | Sprint 16 | COMPLETE | 图片精灵替换全角色资源 + 星座点亮动画 + 展厅/UI修复 (QA PASS, UX no Blockers, VU ACCEPTED 9.5/10) |
 | Sprint 17 | COMPLETE | 7项用户反馈修复 — 网兜显示/星星大小/失败界面/按钮背景/金币系统/预加载/音乐 |
 | Sprint 18 | COMPLETE | 8项用户反馈修复 — 网兜手持/展厅顺序/照片修复/展厅导航/道具重置/音乐恢复/暂停图标/星星放大 |
+| Sprint 19 | COMPLETE | Sprint 19 — VU ACCEPTED 9.5/10 (Sprint 18 features verified) |
+| Sprint 20 | IN PROGRESS | 6项用户反馈修复 — 网兜手部对齐/摆角扩大/星星缩小/展厅布局重排/照片预加载/关卡资源预热 |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -40,6 +42,17 @@
 | Sprint 16 | 9.5/10 | ACCEPTED | All Sprint 16 SVG sprites, constellation reveal, UI fixes verified — PROJECT COMPLETE |
 | Sprint 17 | 9.5/10 | ACCEPTED | All Sprint 17 user-reported fixes verified — PROJECT COMPLETE |
 | Sprint 18 | 9.5/10 | ACCEPTED | All Sprint 18 user-reported fixes verified — PROJECT COMPLETE |
+| Sprint 19 | 9.5/10 | ACCEPTED | All Sprint 18+19 features verified — PROJECT COMPLETE |
+
+## Sprint 20 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00102 | 网兜连接点修复 — 绳子从角色手部出发 | Done |
+| STORY-00103 | 摆动角度扩大至±80° — 边缘星星可达 | Done |
+| STORY-00104 | 星星最大半径从15减小至14 | Done |
+| STORY-00105 | 展厅详情页布局重排 — 名字→大星图→天文摄影→介绍，删除小星图 | Done |
+| STORY-00106 | 天文摄影图片预加载 — 展厅打开无延迟 | Done |
+| STORY-00107 | 关卡入口全资源预热 — 包含垃圾精灵图 | Done |
 
 ## Sprint 18 Stories
 | Story | Title | Status |

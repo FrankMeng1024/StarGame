@@ -3,6 +3,25 @@ import { CONSTELLATIONS } from '../data/constellations.js';
 import { SCENE_PALETTES } from '../data/scenes.js';
 import state from '../state.js';
 import { showItemSelect } from './item-select.js';
+import { CONSTELLATION_PHOTOS } from '../data/photos.js?v=29';
+
+// CR-065: Pre-warm all game assets and gallery photos on levels screen load
+(function _prewarmAssets() {
+  // Sprite assets (girl, net, all debris types)
+  [
+    'assets/sprites/girl.svg',
+    'assets/sprites/net.svg',
+    'assets/sprites/debris-meteor.svg',
+    'assets/sprites/debris-satellite.svg',
+    'assets/sprites/debris-rocket.svg',
+    'assets/sprites/debris-cloth.svg',
+  ].forEach(src => { const img = new Image(); img.src = src; });
+
+  // Gallery astrophotography images — preload all so gallery opens without delay
+  Object.values(CONSTELLATION_PHOTOS).flat().forEach(p => {
+    const img = new Image(); img.src = p.url;
+  });
+})();
 
 export function initLevels(navigate) {
   const screen = document.getElementById('screen-levels');
@@ -47,7 +66,7 @@ export function initLevels(navigate) {
     if (unlocked) {
       card.addEventListener('click', () => {
         state.currentLevel = idx;
-        showItemSelect(() => navigate('game'));
+        showItemSelect(() => navigate('game'), () => navigate('levels'));
       });
     }
 

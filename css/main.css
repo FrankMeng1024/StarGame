@@ -1944,7 +1944,22 @@ body {
   to   { opacity: 1; transform: translateY(0) scale(1); }
 }
 
+.item-select-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 4px;
+}
+
+.item-select-back-btn {
+  flex-shrink: 0;
+  font-size: var(--font-sm);
+  padding: 4px 10px;
+  color: var(--text2);
+}
+
 .item-select-title {
+  flex: 1;
   font-size: var(--font-xl);
   background: linear-gradient(135deg, var(--star-gold), var(--primary));
   -webkit-background-clip: text;

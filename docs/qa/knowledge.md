@@ -190,3 +190,23 @@ No backend, no network requests. All data in localStorage + local files.
 - Sprint 17: preloading working — game canvas fully rendered at 0s entry with girl, net, stars, constellation lines, debris all visible. No blank canvas frame.
 - Sprint 17: `window.__navigate('complete', {idx, timeLeft, coins, caught, total, isNewRecord})` can inject complete screen state for controlled coin formula testing.
 - Sprint 17 regression: ALL navigation transitions clean, 0 JS console errors throughout.
+
+## Sprint 19 Updates (2026-04-13)
+
+- Sprint 19: Gallery detail page renders 天文摄影 (photos) section ABOVE 星图 (star chart) section. Confirmed on Ursa Major, Orion, and Scorpius. This is the correct layout (previously reversed).
+- Sprint 19: Item-select overlay now has "← 返回" button in top-left header. Back navigation returns to levels screen. Console errors after back navigation: 0.
+- Sprint 19: Photo loading is reliable — ESA Hubble CDN replaces Wikimedia (was HTTP 429 rate-limited). M81+M82 (Ursa Major), M42+Bok Globules (Orion), NGC 6302+M17 (Scorpius) all load without errors.
+- Sprint 19: Stars render immediately on game entry — no blank canvas delay. Sprite pre-caching on levels screen load + 50ms preload timeout confirms instant appearance.
+- Sprint 19: Net visible during throw animation on game screen. Pole and net bag visible at right side during throw state.
+- Sprint 19: Full navigation regression CLEAN across all screens: gallery detail → gallery list → menu → levels → item-select → game → fail screen → levels. Zero JS console errors throughout.
+- Sprint 19: Item-select re-evaluated on each entry — items show correct quantities (网兜加速 ×14, 宇宙炸弹 ×8, 时间延长 ×4 in test session). All items with qty > 0 displayed.
+- Sprint 19: Audio system active with zero audio-related console errors. Actual waveform content unverifiable via screenshots.
+- Sprint 19: Fail screen confirmed: "时间到了！" heading, X/7 已抓, 0秒剩余, 0金币, constellation silhouette, "🔄 重试" and "返回选关" buttons.
+
+## Sprint 20 Updates (2026-04-13)
+- Net-hand alignment: poleLen=H*0.06 keeps net close to hand. If character proportions change, net attachment offsets need recalibration.
+- Swing angle: ±80° (PI*80/180). Further increases may cause net to swing off-screen on narrow viewports.
+- Photo preload: 29 ESA Hubble CDN resources loaded on levels screen. If photo count grows, may need pagination strategy.
+- Gallery detail DOM order: hero→starchart→photo-carousel→meta→lore→back. Portrait canvas fully removed.
+- Sprite prewarm: all 6 sprites prewarmed. Any new sprite types must be added to the prewarm list in levels.js.
+- Navigation regression: all major screens (menu/levels/game/gallery/shop/complete) produce 0 console errors.
