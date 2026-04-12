@@ -1,7 +1,7 @@
 // screens/gallery.js — Constellation gallery grid + detail view
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
 import { SCENE_PALETTES } from '../data/scenes.js';
-import { CONSTELLATION_PHOTOS } from '../data/photos.js';
+import { CONSTELLATION_PHOTOS } from '../data/photos.js?v=29';
 import state from '../state.js';
 
 const TWO_PI = Math.PI * 2;
@@ -86,9 +86,12 @@ export function showGalleryDetail(navigate, params) {
   if (bestViewEl) bestViewEl.textContent = con.bestViewMonth || '—';
   if (mainStarsEl) mainStarsEl.textContent = con.mainStars || '—';
 
-  _renderPortrait(idx, con);
   _renderStarChart(idx, con);
   _renderPhotoCarousel(con);
+  _renderPortrait(idx, con);
+
+  // CR-058: Prev/next navigation between completed constellations
+  _renderGalleryNav(navigate, idx);
 }
 
 function _renderPortrait(idx, con) {
@@ -452,4 +455,46 @@ function _updateLightbox(lb, photo) {
   img.alt = photo.title;
   lb.querySelector('.photo-lightbox-title').textContent = photo.title;
   lb.querySelector('.photo-lightbox-credit').textContent = photo.credit;
+}
+
+// CR-058: Prev/Next gallery navigation between completed constellations
+function _renderGalleryNav(navigate, currentIdx) {
+  // Build list of completed constellation indices
+  const completedIndices = [];
+  CONSTELLATIONS.forEach((_, i) => {
+    if (state.hasCompleted(i)) completedIndices.push(i);
+  });
+
+  // Find position of current in completed list
+  const posInCompleted = completedIndices.indexOf(currentIdx);
+
+  const hero = document.querySelector('.detail-hero');
+  if (!hero) return;
+
+  // Remove any existing nav buttons
+  let navRow = hero.querySelector('.gallery-detail-nav');
+  if (navRow) navRow.remove();
+
+  // Only show nav if there are multiple completed constellations
+  if (completedIndices.length < 2) return;
+
+  const prevIdx = completedIndices[(posInCompleted - 1 + completedIndices.length) % completedIndices.length];
+  const nextIdx = completedIndices[(posInCompleted + 1) % completedIndices.length];
+
+  navRow = document.createElement('div');
+  navRow.className = 'gallery-detail-nav';
+  navRow.innerHTML = `
+    <button class="btn btn-ghost gallery-nav-prev" aria-label="上一个星座">← ${CONSTELLATIONS[prevIdx].nameZh}</button>
+    <span class="gallery-nav-counter">${posInCompleted + 1} / ${completedIndices.length}</span>
+    <button class="btn btn-ghost gallery-nav-next" aria-label="下一个星座">${CONSTELLATIONS[nextIdx].nameZh} →</button>
+  `;
+
+  hero.appendChild(navRow);
+
+  navRow.querySelector('.gallery-nav-prev').addEventListener('click', () => {
+    navigate('gallery-detail', { idx: prevIdx });
+  });
+  navRow.querySelector('.gallery-nav-next').addEventListener('click', () => {
+    navigate('gallery-detail', { idx: nextIdx });
+  });
 }

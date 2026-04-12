@@ -525,8 +525,8 @@ export class GameEngine {
       // CR-047: all stars gold/white — no spectral color confusion
       // CR-051: 2/3 size reduction with min/max caps
       const MIN_STAR_R = 3;
-      const MAX_STAR_R = 9; // cap at Ursa Major brightest (mag 1.8 → 11 * 1.2 * 2/3 ≈ 8.8)
-      const baseR = Math.min(MAX_STAR_R, Math.max(MIN_STAR_R, magToRadius(s.mag) * 1.2 * (2 / 3)));
+      const MAX_STAR_R = 22; // CR-058: 2.5× size increase (was 9)
+      const baseR = Math.min(MAX_STAR_R, Math.max(MIN_STAR_R, magToRadius(s.mag) * 2.5));
       return {
         id: i,
         x: padX + s.x * areaW,
@@ -958,8 +958,8 @@ export class GameEngine {
         // Re-lit: bright gold glow
         const t = Date.now() * 0.003;
         const pulse = 0.85 + 0.15 * Math.sin(t + s.id);
-        const visualR = s.r * 2.2 * pulse;
-        const grd = ctx.createRadialGradient(s.origX, s.origY, 0, s.origX, s.origY, visualR * 3);
+        const visualR = s.r * 1.2 * pulse; // scaled down for reveal (stars already 2.5x)
+        const grd = ctx.createRadialGradient(s.origX, s.origY, 0, s.origX, s.origY, visualR * 2.5);
         grd.addColorStop(0, '#ffffff');
         grd.addColorStop(0.2, '#ffd700');
         grd.addColorStop(0.6, 'rgba(255,180,0,0.4)');
@@ -968,7 +968,7 @@ export class GameEngine {
         ctx.globalAlpha = pulse;
         ctx.fillStyle = grd;
         ctx.beginPath();
-        ctx.arc(s.origX, s.origY, visualR * 3, 0, TWO_PI);
+        ctx.arc(s.origX, s.origY, visualR * 2.5, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
         // Core bright
@@ -977,7 +977,7 @@ export class GameEngine {
         ctx.shadowBlur = 14;
         ctx.fillStyle = '#fffde0';
         ctx.beginPath();
-        ctx.arc(s.origX, s.origY, s.r * 1.5, 0, TWO_PI);
+        ctx.arc(s.origX, s.origY, s.r * 0.8, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
       } else {
@@ -986,7 +986,7 @@ export class GameEngine {
         ctx.globalAlpha = 0.25;
         ctx.fillStyle = '#aaaacc';
         ctx.beginPath();
-        ctx.arc(s.origX, s.origY, s.r * 0.5, 0, TWO_PI);
+        ctx.arc(s.origX, s.origY, s.r * 0.4, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
       }
@@ -1242,21 +1242,20 @@ export class GameEngine {
         ctx.globalAlpha = 0.25;
         ctx.fillStyle = '#aaaacc';
         ctx.shadowColor = '#8888aa';
-        ctx.shadowBlur = s.r;
+        ctx.shadowBlur = s.r * 0.6;
         ctx.beginPath();
-        ctx.arc(s.origX, s.origY, s.r * 0.5, 0, TWO_PI);
+        ctx.arc(s.origX, s.origY, s.r * 0.4, 0, TWO_PI);
         ctx.fill();
         ctx.restore();
         continue;
       }
 
-      // CR-047/CR-051: uncaught stars — gold/white, prominent twinkling
-      // CR-051: MAX_STAR_R=9, visualR kept at 1.0× (true star size, glow only from shadowBlur)
+      // CR-058: uncaught stars — gold/white, prominent twinkling, 2.5× size
       const twinkle = 0.75 + 0.25 * Math.sin(t + s.twinklePh);
-      const visualR = s.r; // 1× — actual star disc; glow handled by shadowBlur only
+      const visualR = s.r; // actual star disc radius (now 2.5× via _buildStars)
 
-      // Outer glow (soft halo, smaller than before)
-      const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, visualR * 2.0);
+      // Outer glow (soft halo)
+      const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, visualR * 2.2);
       grd.addColorStop(0, '#ffd700');
       grd.addColorStop(0.4, 'rgba(255,220,100,0.3)');
       grd.addColorStop(1, 'rgba(0,0,0,0)');
@@ -1264,7 +1263,7 @@ export class GameEngine {
       ctx.globalAlpha = twinkle * 0.5;
       ctx.fillStyle = grd;
       ctx.beginPath();
-      ctx.arc(s.x, s.y, visualR * 2.0, 0, TWO_PI);
+      ctx.arc(s.x, s.y, visualR * 2.2, 0, TWO_PI);
       ctx.fill();
       ctx.restore();
 
@@ -1273,7 +1272,7 @@ export class GameEngine {
       ctx.globalAlpha = twinkle;
       ctx.fillStyle = s.color; // '#fff8e0' warm white
       ctx.shadowColor = '#ffd700';
-      ctx.shadowBlur = visualR * 1.5;
+      ctx.shadowBlur = visualR * 1.2;
       ctx.beginPath();
       ctx.arc(s.x, s.y, visualR, 0, TWO_PI);
       ctx.fill();
@@ -1281,11 +1280,11 @@ export class GameEngine {
 
       // Twinkle cross flare on bright stars
       if (twinkle > 0.9) {
-        const flen = visualR * 1.8 * twinkle;
+        const flen = visualR * 2.0 * twinkle;
         ctx.save();
         ctx.globalAlpha = (twinkle - 0.9) * 3;
         ctx.strokeStyle = '#fffacc';
-        ctx.lineWidth = 0.8;
+        ctx.lineWidth = 1.0;
         ctx.beginPath();
         ctx.moveTo(s.x - flen, s.y); ctx.lineTo(s.x + flen, s.y);
         ctx.moveTo(s.x, s.y - flen); ctx.lineTo(s.x, s.y + flen);
@@ -1870,10 +1869,26 @@ export class GameEngine {
     ctx.shadowBlur = 0;
     ctx.restore();
 
-    // ── Pole ───────────────────────────────────────────────────
+    // ── Pole (attached to right hand) ──────────────────────────
     const poleTop = this._poleTop();
+    // Compute right-hand position to anchor the pole base
+    const SHOULDER_Y_POLE = TORSO_T + 4;
+    let poleBaseX, poleBaseY;
+    if (isThrow) {
+      const armLen  = 26;
+      const rawA    = poleAngle - Math.PI * 0.5;
+      poleBaseX = cx + 12 + Math.cos(rawA) * armLen;
+      poleBaseY = SHOULDER_Y_POLE + Math.sin(rawA) * armLen;
+    } else if (isCatch) {
+      poleBaseX = cx + 22;
+      poleBaseY = SHOULDER_Y_POLE - 10;
+    } else {
+      const idleLift = Math.sin(t * 0.7) * 4;
+      poleBaseX = cx + 22;
+      poleBaseY = SHOULDER_Y_POLE + 22 - idleLift;
+    }
     ctx.save();
-    const poleGrad = ctx.createLinearGradient(cx, cy - 20, poleTop.x, poleTop.y);
+    const poleGrad = ctx.createLinearGradient(poleBaseX, poleBaseY, poleTop.x, poleTop.y);
     poleGrad.addColorStop(0, '#d4a854');
     poleGrad.addColorStop(0.5, '#f0c870');
     poleGrad.addColorStop(1, '#c89040');
@@ -1883,7 +1898,7 @@ export class GameEngine {
     ctx.shadowColor = 'rgba(200,160,60,0.4)';
     ctx.shadowBlur  = 4;
     ctx.beginPath();
-    ctx.moveTo(cx, cy - 22);
+    ctx.moveTo(poleBaseX, poleBaseY);
     ctx.lineTo(poleTop.x, poleTop.y);
     ctx.stroke();
     ctx.restore();

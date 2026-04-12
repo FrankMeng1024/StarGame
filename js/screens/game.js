@@ -297,11 +297,10 @@ function _initPause(navigate) {
     if (paused) {
       engine._paused = true;
       overlay.classList.remove('hidden');
-      pauseBtn.textContent = '▶';
+      // CR-058: keep gear icon always (no toggle to play symbol)
       confirm.classList.add('hidden');
     } else {
       overlay.classList.add('hidden');
-      pauseBtn.textContent = '⏸';
       engine.resume();
     }
   }

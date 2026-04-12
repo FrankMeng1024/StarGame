@@ -1,6 +1,6 @@
 // screens/complete.js — Level complete & fail screens
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
-import { CONSTELLATION_PHOTOS } from '../data/photos.js';
+import { CONSTELLATION_PHOTOS } from '../data/photos.js?v=29';
 import { SCENE_PALETTES } from '../data/scenes.js';
 import state from '../state.js';
 

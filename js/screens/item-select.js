@@ -19,6 +19,9 @@ const PASSIVE_ITEMS = [
 const MAX_SLOTS = 3;
 
 export function showItemSelect(onConfirm) {
+  // CR-058: Clear previous selection to ensure fresh evaluation each level
+  state.selectedItems = [];
+
   // Check if player has any active items
   const ownedActive = ACTIVE_ITEMS.filter(item => state.getItemQty(item.id) > 0);
   const ownedPassive = PASSIVE_ITEMS.filter(item => state.getItemQty(item.id) > 0);
