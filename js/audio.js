@@ -86,6 +86,18 @@ export function playTimeExt() {
   _sweep(400, 800, 'sine', 0.15, 0.35);
 }
 
+// Constellation reveal: ascending pentatonic tone for each edge lit
+// idx = 0-based edge index, total = total number of edges
+export function playRevealNote(idx, total) {
+  // C major pentatonic ascending: C4 D4 E4 G4 A4 C5 D5 E5 G5 A5
+  const PENTA = [261, 294, 330, 392, 440, 523, 587, 659, 784, 880];
+  const noteIdx = Math.round((idx / Math.max(total - 1, 1)) * (PENTA.length - 1));
+  const freq = PENTA[Math.min(noteIdx, PENTA.length - 1)];
+  _tone(freq, 'sine', 0.25, 0.35);
+  // Small harmonic shimmer (5th above)
+  _tone(freq * 1.5, 'triangle', 0.15, 0.18);
+}
+
 // ── Countdown warning ─────────────────────────────────────────
 export function startCountdownBeeps() {
   if (_countdownInterval) return;

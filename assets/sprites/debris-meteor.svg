@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64">
+  <!-- Meteor / asteroid — rocky grey-brown irregular shape -->
+  <defs>
+    <radialGradient id="rg" cx="35%" cy="30%" r="65%">
+      <stop offset="0%" stop-color="#9ca3af"/>
+      <stop offset="60%" stop-color="#6b7280"/>
+      <stop offset="100%" stop-color="#374151"/>
+    </radialGradient>
+    <filter id="shadow"><feDropShadow dx="1" dy="2" stdDeviation="2" flood-color="rgba(0,0,0,0.5)"/></filter>
+  </defs>
+  <!-- Main rock body — irregular polygon -->
+  <polygon points="32,4 52,12 60,30 55,50 40,60 20,58 8,42 6,22 18,8"
+           fill="url(#rg)" stroke="#4b5563" stroke-width="1" filter="url(#shadow)"/>
+  <!-- Surface craters -->
+  <circle cx="28" cy="22" r="5" fill="none" stroke="#4b5563" stroke-width="1.5" opacity="0.7"/>
+  <circle cx="44" cy="36" r="4" fill="none" stroke="#4b5563" stroke-width="1.5" opacity="0.6"/>
+  <circle cx="20" cy="40" r="3" fill="none" stroke="#374151" stroke-width="1" opacity="0.6"/>
+  <!-- Surface highlight -->
+  <path d="M18,12 Q30,8 44,16" fill="none" stroke="rgba(200,210,220,0.4)" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Rock texture lines -->
+  <path d="M32,4 Q26,18 18,30" fill="none" stroke="rgba(55,65,81,0.5)" stroke-width="1"/>
+  <path d="M52,12 Q50,28 46,38" fill="none" stroke="rgba(55,65,81,0.4)" stroke-width="1"/>
+  <!-- Glowing trail hint -->
+  <ellipse cx="16" cy="10" rx="8" ry="4" fill="rgba(255,120,50,0.25)" transform="rotate(-45 16 10)"/>
+</svg>

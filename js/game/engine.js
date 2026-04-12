@@ -1,7 +1,7 @@
 // game/engine.js — Core game loop, pendulum net, star/debris objects
 import state from '../state.js';
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
-import { playCatch, playDebrisCatch, startCountdownBeeps, stopCountdownBeeps } from '../audio.js';
+import { playCatch, playDebrisCatch, startCountdownBeeps, stopCountdownBeeps, playRevealNote } from '../audio.js';
 import { SCENE_PALETTES, drawGroundSilhouette } from '../data/scenes.js';
 
 const TWO_PI = Math.PI * 2;
@@ -418,8 +418,57 @@ export class GameEngine {
     this.charY = this.H * 0.85;
     this.poleLen = this.H * 0.18;
 
-    // Procedural character — no external sprite needed
+    // ── Sprite assets — load SVG image files ──────────────────
+    // Girl sprite sheet (4 frames: idle, blink, throw, catch)
     this._charImgReady = false;
+    this._charFrameIdx = 0;
+    this._charFrameCount = 4;
+    this._charFrameW = 110;
+    this._charFrameH = 110;
+    this._charLastFrame = 0;
+    this._charThrowFrame = 2;
+    this._charCatchFrame = 3;
+    this._charBlinkTimer = 0;
+    this._charState = 'idle'; // 'idle' | 'throw' | 'catch'
+    const charImg = new Image();
+    charImg.onload = () => {
+      this._charImg = charImg;
+      this._charFrameW = charImg.naturalWidth / this._charFrameCount;
+      this._charFrameH = charImg.naturalHeight;
+      this._charImgReady = true;
+    };
+    charImg.src = 'assets/sprites/girl.svg';
+
+    // Net sprite sheet (2 frames: empty, catch)
+    this._netImgReady = false;
+    this._netFrameW = 60;
+    this._netFrameH = 60;
+    const netImg = new Image();
+    netImg.onload = () => {
+      this._netImg = netImg;
+      this._netFrameW = netImg.naturalWidth / 2;
+      this._netFrameH = netImg.naturalHeight;
+      this._netImgReady = true;
+    };
+    netImg.src = 'assets/sprites/net.svg';
+
+    // Debris sprites (keyed by type)
+    this._debrisImgs = {};
+    const DEBRIS_SPRITE_TYPES = ['meteor', 'satellite', 'rocket', 'cloth'];
+    this._debrisImgsReady = {};
+    for (const t of DEBRIS_SPRITE_TYPES) {
+      const img = new Image();
+      img.onload = () => { this._debrisImgs[t] = img; this._debrisImgsReady[t] = true; };
+      img.src = `assets/sprites/debris-${t}.svg`;
+    }
+
+    // Constellation reveal state
+    this._revealPhase = false;
+    this._revealEdgeIdx = 0;
+    this._revealEdges = [];
+    this._revealLitStars = new Set();
+    this._revealLitLines = [];
+    this._revealComplete = false;
 
     // Objects
     this.stars   = this._buildStars();
@@ -693,36 +742,7 @@ export class GameEngine {
       ctx.fillRect(0, 0, W, H);
       ctx.restore();
 
-      // Scene name text
-      ctx.save();
-      ctx.globalAlpha = alpha;
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      // Main location name — prominent, bilingual
-      const fontSize = Math.round(H * 0.052);
-      ctx.font = `bold ${fontSize}px 'Ma Shan Zheng', 'Noto Sans SC', sans-serif`;
-      ctx.fillStyle = scene.starColor || '#ffffff';
-      ctx.shadowColor = 'rgba(0,0,0,0.8)';
-      ctx.shadowBlur = 24;
-      ctx.fillText(scene.location || scene.name, W / 2, H / 2 - Math.round(H * 0.035));
-      // English name
-      ctx.font = `${Math.round(H * 0.024)}px 'Noto Sans SC', sans-serif`;
-      ctx.fillStyle = 'rgba(255,255,255,0.8)';
-      ctx.shadowBlur = 10;
-      ctx.fillText(scene.locationEn || '', W / 2, H / 2 + Math.round(H * 0.018));
-      // Sub-scene descriptor (牧羊人小屋 etc.) — smaller, dimmer
-      const subName = scene.name.includes('·') ? scene.name.split('·')[1] : '';
-      if (subName) {
-        ctx.font = `${Math.round(H * 0.018)}px 'Noto Sans SC', sans-serif`;
-        ctx.fillStyle = 'rgba(255,255,255,0.45)';
-        ctx.shadowBlur = 0;
-        ctx.fillText(subName, W / 2, H / 2 + Math.round(H * 0.055));
-      }
-      // Level range label
-      ctx.font = `${Math.round(H * 0.018)}px 'Noto Sans SC', sans-serif`;
-      ctx.fillStyle = 'rgba(255,255,255,0.35)';
-      ctx.fillText(`— 第 ${sceneIdx * 5 + 1}–${sceneIdx * 5 + 5} 关 —`, W / 2, H / 2 + Math.round(H * 0.082));
-      ctx.restore();
+      // (Location text removed — was causing scene names to flash briefly)
 
       if (elapsed < TOTAL) {
         requestAnimationFrame(draw);
@@ -788,13 +808,13 @@ export class GameEngine {
       for (const s of this.stars) {
         if (s.caught) continue;
         const dx = tip.x - s.x, dy = tip.y - s.y;
-        if (Math.sqrt(dx * dx + dy * dy) < (s.r + 8) * catchBonus) { hit = { type: 'star', obj: s }; break; }
+        if (Math.sqrt(dx * dx + dy * dy) < (s.r + 26 * 0.7) * catchBonus) { hit = { type: 'star', obj: s }; break; }
       }
       if (!hit) {
         for (const d of this.debris) {
           if (d.caught) continue;
           const dx = tip.x - d.x, dy = tip.y - d.y;
-          if (Math.sqrt(dx * dx + dy * dy) < (d.r + 8) * catchBonus) { hit = { type: 'debris', obj: d }; break; }
+          if (Math.sqrt(dx * dx + dy * dy) < (d.r + 26 * 0.7) * catchBonus) { hit = { type: 'debris', obj: d }; break; }
         }
       }
 
@@ -852,12 +872,14 @@ export class GameEngine {
       hit.obj.origY = hit.obj.y;
       this.caughtStars++;
       playCatch();
+      // Catch flash: bright particles + glow burst
       this._emitStarParticles(hit.obj.x, hit.obj.y);
+      this._emitCatchFlash(hit.obj.x, hit.obj.y);
       this._updateHUD();
       if (this.caughtStars >= this.totalStars) {
         this.finished = true;
         this.stop();
-        setTimeout(() => this.onComplete(Math.floor(this.timeLeft)), 400);
+        setTimeout(() => this._playConstellationReveal(), 300);
       }
     } else {
       hit.obj.caught = true;
@@ -865,6 +887,122 @@ export class GameEngine {
       this._emitDebrisParticles(hit.obj.x, hit.obj.y);
       // No time penalty — slow retract is the consequence (see retract logic)
     }
+  }
+
+  // ── Constellation reveal animation (after all stars caught) ──
+  _playConstellationReveal() {
+    this._revealPhase = true;
+    this._revealLitStars = new Set();
+    this._revealLitLines = [];
+
+    // Build ordered edge list from constellation lines data
+    const lines = this.level.lines || [];
+    this._revealEdges = lines.map(([a, b]) => ({ a, b }));
+    // If no line data, just re-light all stars in index order
+    if (this._revealEdges.length === 0) {
+      this.stars.forEach((s, i) => this._revealEdges.push({ a: i, b: i }));
+    }
+    this._revealEdgeIdx = 0;
+
+    // Start render loop for reveal
+    const revealLoop = (now) => {
+      if (!this._revealPhase) return;
+      this._drawRevealFrame();
+      this._revealRafId = requestAnimationFrame(revealLoop);
+    };
+    this._revealRafId = requestAnimationFrame(revealLoop);
+
+    // Schedule each edge lighting
+    const INTERVAL = 420; // ms between each edge
+    const totalEdges = this._revealEdges.length || this.stars.length;
+
+    const lightNext = (idx) => {
+      if (idx >= totalEdges) {
+        // All lit — hold then complete
+        setTimeout(() => {
+          this._revealPhase = false;
+          if (this._revealRafId) cancelAnimationFrame(this._revealRafId);
+          this.onComplete(Math.floor(this.timeLeft));
+        }, 900);
+        return;
+      }
+      const edge = this._revealEdges[idx];
+      this._revealLitStars.add(edge.a);
+      this._revealLitStars.add(edge.b);
+      if (edge.a !== edge.b) this._revealLitLines.push(edge);
+      playRevealNote(idx, totalEdges);
+      this._emitStarParticles(
+        this.stars[edge.a]?.origX ?? this.stars[0].origX,
+        this.stars[edge.a]?.origY ?? this.stars[0].origY
+      );
+      setTimeout(() => lightNext(idx + 1), INTERVAL);
+    };
+    lightNext(0);
+  }
+
+  _drawRevealFrame() {
+    const ctx = this.ctx;
+    // Draw background
+    this._drawBackground();
+    this._drawStarMap();
+    this._drawParticles();
+    // Draw all stars — lit ones bright gold, rest stay dim
+    for (const s of this.stars) {
+      if (this._revealLitStars.has(s.id)) {
+        // Re-lit: bright gold glow
+        const t = Date.now() * 0.003;
+        const pulse = 0.85 + 0.15 * Math.sin(t + s.id);
+        const visualR = s.r * 2.2 * pulse;
+        const grd = ctx.createRadialGradient(s.origX, s.origY, 0, s.origX, s.origY, visualR * 3);
+        grd.addColorStop(0, '#ffffff');
+        grd.addColorStop(0.2, '#ffd700');
+        grd.addColorStop(0.6, 'rgba(255,180,0,0.4)');
+        grd.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.save();
+        ctx.globalAlpha = pulse;
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(s.origX, s.origY, visualR * 3, 0, TWO_PI);
+        ctx.fill();
+        ctx.restore();
+        // Core bright
+        ctx.save();
+        ctx.shadowColor = '#ffd700';
+        ctx.shadowBlur = 14;
+        ctx.fillStyle = '#fffde0';
+        ctx.beginPath();
+        ctx.arc(s.origX, s.origY, s.r * 1.5, 0, TWO_PI);
+        ctx.fill();
+        ctx.restore();
+      } else {
+        // Still dim
+        ctx.save();
+        ctx.globalAlpha = 0.25;
+        ctx.fillStyle = '#aaaacc';
+        ctx.beginPath();
+        ctx.arc(s.origX, s.origY, s.r * 0.5, 0, TWO_PI);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+    // Draw revealed lines (bright golden)
+    for (const edge of this._revealLitLines) {
+      const sa = this.stars[edge.a], sb = this.stars[edge.b];
+      if (!sa || !sb) continue;
+      ctx.save();
+      ctx.beginPath();
+      ctx.moveTo(sa.origX, sa.origY);
+      ctx.lineTo(sb.origX, sb.origY);
+      ctx.strokeStyle = '#ffd700';
+      ctx.lineWidth = 2;
+      ctx.globalAlpha = 0.8;
+      ctx.shadowColor = '#ffd700';
+      ctx.shadowBlur = 6;
+      ctx.stroke();
+      ctx.restore();
+    }
+    // Draw character
+    this._drawCharacter();
   }
 
   _showPenaltyText(x, y) {
@@ -896,6 +1034,28 @@ export class GameEngine {
         x, y, '#fff8e0',
         Math.cos(angle) * 3, Math.sin(angle) * 3,
         18, 1.5
+      ));
+    }
+  }
+
+  // Brief ring-burst flash at catch point — makes the catch feel snappy
+  _emitCatchFlash(x, y) {
+    for (let i = 0; i < 12; i++) {
+      const angle = (i / 12) * TWO_PI;
+      const spd = 2.5 + Math.random() * 2;
+      this.particles.push(new Particle(
+        x, y, '#ffffff',
+        Math.cos(angle) * spd, Math.sin(angle) * spd,
+        12 + Math.random() * 8, 3 + Math.random() * 2
+      ));
+    }
+    // Golden ring expansion (large fast particles outward)
+    for (let i = 0; i < 8; i++) {
+      const angle = (i / 8) * TWO_PI;
+      this.particles.push(new Particle(
+        x, y, '#ffd700',
+        Math.cos(angle) * 6, Math.sin(angle) * 6,
+        10, 4
       ));
     }
   }
@@ -1132,11 +1292,22 @@ export class GameEngine {
     const ctx = this.ctx;
     for (const d of this.debris) {
       if (d.caught) continue;
-      switch (d.type) {
-        case 'meteor':    drawMeteor(ctx, d.x, d.y, d.r, d.angle); break;
-        case 'satellite': drawSatellite(ctx, d.x, d.y, d.r, d.angle); break;
-        case 'rocket':    drawRocket(ctx, d.x, d.y, d.r, d.angle); break;
-        default:          drawCloth(ctx, d.x, d.y, d.r, d.angle);
+      const img = this._debrisImgs[d.type];
+      if (img && this._debrisImgsReady[d.type]) {
+        const size = d.r * 2;
+        ctx.save();
+        ctx.translate(d.x, d.y);
+        ctx.rotate(d.angle || 0);
+        ctx.drawImage(img, -size / 2, -size / 2, size, size);
+        ctx.restore();
+      } else {
+        // Procedural fallback
+        switch (d.type) {
+          case 'meteor':    drawMeteor(ctx, d.x, d.y, d.r, d.angle); break;
+          case 'satellite': drawSatellite(ctx, d.x, d.y, d.r, d.angle); break;
+          case 'rocket':    drawRocket(ctx, d.x, d.y, d.r, d.angle); break;
+          default:          drawCloth(ctx, d.x, d.y, d.r, d.angle);
+        }
       }
     }
   }
@@ -1161,19 +1332,39 @@ export class GameEngine {
     // ── Sprite image if loaded ─────────────────────────────────
     if (this._charImgReady && this._charImg) {
       const now = Date.now();
-      // Frame advance: hold each frame for ~200ms (blink effect)
-      if (now - this._charLastFrame > 200) {
-        this._charFrameIdx = (this._charFrameIdx + 1) % this._charFrameCount;
-        this._charLastFrame = now;
+      // Determine state from net
+      const netSt = this.netState;
+      const holdingStar = this.caughtObj && this.caughtObj.type === 'star';
+      if (netSt === 'extend') {
+        this._charState = 'throw';
+      } else if (netSt === 'retract' && holdingStar) {
+        this._charState = 'catch';
+      } else {
+        this._charState = 'idle';
+      }
+      // Select frame based on state
+      if (this._charState === 'throw') {
+        this._charFrameIdx = 2; // throw frame
+      } else if (this._charState === 'catch') {
+        this._charFrameIdx = 3; // catch/joy frame
+      } else {
+        // Idle: cycle between frame 0 (open eyes) and frame 1 (blink) slowly
+        const blinkInterval = now - this._charLastFrame;
+        if (blinkInterval > 3500 && this._charFrameIdx === 0) {
+          this._charFrameIdx = 1; // blink
+          this._charLastFrame = now;
+        } else if (blinkInterval > 150 && this._charFrameIdx === 1) {
+          this._charFrameIdx = 0; // eyes open again
+          this._charLastFrame = now;
+        }
       }
       const DRAW_H = 110; // height in canvas px
       const DRAW_W = DRAW_H; // square frame
       const sx = this._charFrameIdx * this._charFrameW;
-      const sy = 0;
       ctx.save();
       ctx.drawImage(
         this._charImg,
-        sx, sy, this._charFrameW, this._charFrameH,
+        sx, 0, this._charFrameW, this._charFrameH,
         cx - DRAW_W / 2, cy - DRAW_H + 12, DRAW_W, DRAW_H
       );
       ctx.restore();

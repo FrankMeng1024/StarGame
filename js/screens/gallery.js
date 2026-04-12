@@ -55,10 +55,9 @@ function _buildGrid() {
       `;
       card.addEventListener('click', () => _navigate && _navigate('gallery-detail', { idx }));
     } else if (unlocked) {
-      // Unlocked but not completed — show name only (no icon)
+      // Unlocked but not completed — grey placeholder same as locked (no name exposed)
       card.innerHTML = `
-        <div class="gc-name-zh">${con.nameZh}</div>
-        <div class="gc-unexplored">未通关</div>
+        <div class="gc-locked-placeholder">？</div>
       `;
     } else {
       // Locked — grey placeholder only, no name or icon

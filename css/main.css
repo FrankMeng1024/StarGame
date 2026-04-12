@@ -232,6 +232,19 @@ body {
   transform: translateY(-1px);
 }
 
+/* Shop button on main menu always has a visible background */
+.btn-shop-from-menu {
+  background: rgba(124, 92, 191, 0.18);
+  border: 1px solid rgba(124, 92, 191, 0.35);
+  color: var(--text);
+}
+.btn-shop-from-menu:hover {
+  background: rgba(124, 92, 191, 0.32);
+  border-color: var(--primary);
+  color: var(--text);
+  transform: translateY(-1px);
+}
+
 .menu-deco {
   font-size: var(--font-sm);
   color: var(--text2);
@@ -1133,7 +1146,11 @@ body {
   border: 1px solid rgba(255,255,255,0.1);
 }
 
-.detail-icon {
+.detail-portrait-row {
+  display: flex;
+  justify-content: center;
+  padding: var(--spacing-sm) 0;
+}
   font-size: 80px;
   line-height: 1;
   filter: drop-shadow(0 0 24px rgba(255, 215, 0, 0.5));
