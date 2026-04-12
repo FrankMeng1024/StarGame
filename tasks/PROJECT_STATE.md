@@ -1,6 +1,6 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: IN PROGRESS
+**Status**: COMPLETE
 **Current Sprint**: 17 (Sprint Goal: 7项用户反馈修复 — 网兜/星星/失败界面/金币/预加载/音乐)
 **Last Updated**: 2026-04-12
 
@@ -37,6 +37,7 @@
 | Sprint 14 | 9.5/10 | ACCEPTED | All PRD + CR (032-044) features verified — PROJECT COMPLETE |
 | Sprint 15 | 9.6/10 | ACCEPTED | All Sprint 15 user-reported issues resolved — PROJECT COMPLETE |
 | Sprint 16 | 9.5/10 | ACCEPTED | All Sprint 16 SVG sprites, constellation reveal, UI fixes verified — PROJECT COMPLETE |
+| Sprint 17 | 9.5/10 | ACCEPTED | All Sprint 17 user-reported fixes verified — PROJECT COMPLETE |
 
 ## Sprint 17 Stories
 | Story | Title | Status |
