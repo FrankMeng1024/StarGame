@@ -523,7 +523,10 @@ export class GameEngine {
 
     return this.level.stars.map((s, i) => {
       // CR-047: all stars gold/white — no spectral color confusion
-      const baseR = Math.max(4, magToRadius(s.mag) * 1.2); // min 4px, slightly enlarged base
+      // CR-051: 2/3 size reduction with min/max caps
+      const MIN_STAR_R = 3;
+      const MAX_STAR_R = 9; // cap at Ursa Major brightest (mag 1.8 → 11 * 1.2 * 2/3 ≈ 8.8)
+      const baseR = Math.min(MAX_STAR_R, Math.max(MIN_STAR_R, magToRadius(s.mag) * 1.2 * (2 / 3)));
       return {
         id: i,
         x: padX + s.x * areaW,
@@ -1247,20 +1250,21 @@ export class GameEngine {
         continue;
       }
 
-      // CR-047: uncaught stars — gold/white, large, prominent twinkling
+      // CR-047/CR-051: uncaught stars — gold/white, prominent twinkling
+      // CR-051: MAX_STAR_R=9, visualR kept at 1.0× (true star size, glow only from shadowBlur)
       const twinkle = 0.75 + 0.25 * Math.sin(t + s.twinklePh);
-      const visualR = s.r * 1.8; // noticeably larger than caught
+      const visualR = s.r; // 1× — actual star disc; glow handled by shadowBlur only
 
-      // Outer glow
-      const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, visualR * 3.5);
+      // Outer glow (soft halo, smaller than before)
+      const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, visualR * 2.0);
       grd.addColorStop(0, '#ffd700');
-      grd.addColorStop(0.4, 'rgba(255,220,100,0.4)');
+      grd.addColorStop(0.4, 'rgba(255,220,100,0.3)');
       grd.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.save();
-      ctx.globalAlpha = twinkle * 0.55;
+      ctx.globalAlpha = twinkle * 0.5;
       ctx.fillStyle = grd;
       ctx.beginPath();
-      ctx.arc(s.x, s.y, visualR * 3.5, 0, TWO_PI);
+      ctx.arc(s.x, s.y, visualR * 2.0, 0, TWO_PI);
       ctx.fill();
       ctx.restore();
 
@@ -1269,7 +1273,7 @@ export class GameEngine {
       ctx.globalAlpha = twinkle;
       ctx.fillStyle = s.color; // '#fff8e0' warm white
       ctx.shadowColor = '#ffd700';
-      ctx.shadowBlur = visualR * 2.5;
+      ctx.shadowBlur = visualR * 1.5;
       ctx.beginPath();
       ctx.arc(s.x, s.y, visualR, 0, TWO_PI);
       ctx.fill();
@@ -1277,7 +1281,7 @@ export class GameEngine {
 
       // Twinkle cross flare on bright stars
       if (twinkle > 0.9) {
-        const flen = visualR * 2.5 * twinkle;
+        const flen = visualR * 1.8 * twinkle;
         ctx.save();
         ctx.globalAlpha = (twinkle - 0.9) * 3;
         ctx.strokeStyle = '#fffacc';
@@ -1888,12 +1892,26 @@ export class GameEngine {
   _drawNet() {
     const ctx  = this.ctx;
     const top  = this._poleTop();
-    const tip  = this._netTip();
-    const dx   = tip.x - top.x;
-    const dy   = tip.y - top.y;
-    const len  = Math.sqrt(dx * dx + dy * dy);
+    let tip    = this._netTip();
+    let dx     = tip.x - top.x;
+    let dy     = tip.y - top.y;
+    let len    = Math.sqrt(dx * dx + dy * dy);
 
-    if (len < 2) return;
+    // When swinging at rest (netPos=0), tip===top and len=0.
+    // Render net at idle position using a small fixed offset so hoop is always visible.
+    if (len < 2 && this.netState === 'swing') {
+      const swingAngle = this.swingAngle - Math.PI / 2;
+      const IDLE_LEN = 32; // px offset to show net hoop at pole tip
+      tip = {
+        x: top.x + Math.cos(swingAngle) * IDLE_LEN,
+        y: top.y + Math.sin(swingAngle) * IDLE_LEN,
+      };
+      dx  = tip.x - top.x;
+      dy  = tip.y - top.y;
+      len = IDLE_LEN;
+    } else if (len < 2) {
+      return;
+    }
 
     // Direction angle for rotation
     const angle = Math.atan2(dy, dx);

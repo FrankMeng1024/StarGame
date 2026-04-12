@@ -239,6 +239,11 @@ body {
   color: var(--text);
 }
 .btn-shop-from-menu:hover {
+  background: rgba(124, 92, 191, 0.18);
+  border: 1px solid rgba(124, 92, 191, 0.35);
+  color: var(--text);
+}
+.btn-shop-from-menu:hover {
   background: rgba(124, 92, 191, 0.32);
   border-color: var(--primary);
   color: var(--text);
@@ -782,10 +787,53 @@ body {
   font-size: 0.88rem;
 }
 
+/* CR-053: "返回选关" button needs visible background (btn-ghost is transparent by default) */
+.btn-back-levels {
+  background: rgba(255, 255, 255, 0.08);
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  color: var(--text2);
+}
+.btn-back-levels:hover {
+  background: rgba(255, 255, 255, 0.14);
+  color: var(--text);
+}
+
 #constellation-canvas {
   border-radius: var(--radius-sm);
   background: rgba(10, 14, 39, 0.8);
   border: 1px solid var(--card-border);
+}
+
+/* CR-052: Fail screen encouragement area */
+.fail-encouragement {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 18px;
+  padding: 16px 0;
+}
+
+/* CR-052: Fail mode — compact, vertically centered layout */
+.complete-inner.fail-mode {
+  height: auto;
+  max-height: 100vh;
+  justify-content: center;
+  gap: 16px;
+}
+
+.fail-mini-canvas {
+  border-radius: var(--radius-sm);
+  opacity: 0.8;
+  border: 1px solid rgba(160, 180, 255, 0.12);
+}
+
+.fail-encouragement-text {
+  color: rgba(180, 200, 255, 0.65);
+  font-size: 0.95rem;
+  text-align: center;
+  letter-spacing: 0.03em;
+  margin: 0;
 }
 
 

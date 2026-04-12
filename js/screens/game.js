@@ -23,39 +23,53 @@ export function startGame(navigate) {
 
   if (engine) { engine.stop(); engine = null; }
 
-  engine = new GameEngine(
-    canvas, idx,
-    (timeLeft) => _handleComplete(timeLeft, navigate),
-    ()         => _handleFail(idx, navigate)
-  );
+  // CR-056: preload sprites before starting engine to avoid blank-canvas flash
+  const _preloadSprite = (src) => new Promise(resolve => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(null); // don't stall on error
+    img.src = src;
+  });
+  const _preloadTimeout = new Promise(resolve => setTimeout(resolve, 400));
 
-  // Init HUD
-  const status = engine.getStatus();
-  document.querySelector('.hud-level-name').textContent = status.levelName;
-  document.querySelector('.star-count').textContent = `${status.caughtStars}/${status.totalStars}`;
-  const t = Math.ceil(status.timeLeft);
-  const timerText = document.getElementById('hud-timer-text') || document.querySelector('.hud-timer');
-  if (timerText) timerText.textContent =
-    `${String(Math.floor(t / 60)).padStart(2,'0')}:${String(t % 60).padStart(2,'0')}`;
+  Promise.race([
+    Promise.all([_preloadSprite('assets/sprites/girl.svg'), _preloadSprite('assets/sprites/net.svg')]),
+    _preloadTimeout,
+  ]).then(() => {
+    engine = new GameEngine(
+      canvas, idx,
+      (timeLeft) => _handleComplete(timeLeft, navigate),
+      ()         => _handleFail(idx, navigate)
+    );
 
-  // Active item slots HUD
-  _initSlotHUD();
+    // Init HUD
+    const status = engine.getStatus();
+    document.querySelector('.hud-level-name').textContent = status.levelName;
+    document.querySelector('.star-count').textContent = `${status.caughtStars}/${status.totalStars}`;
+    const t = Math.ceil(status.timeLeft);
+    const timerText = document.getElementById('hud-timer-text') || document.querySelector('.hud-timer');
+    if (timerText) timerText.textContent =
+      `${String(Math.floor(t / 60)).padStart(2,'0')}:${String(t % 60).padStart(2,'0')}`;
 
-  // Active items toast (passive items that are auto-active)
-  _showActiveItemsToast();
+    // Active item slots HUD
+    _initSlotHUD();
 
-  // Tutorial hint
-  _showHint();
+    // Active items toast (passive items that are auto-active)
+    _showActiveItemsToast();
 
-  // Mute button
-  _initMuteButton();
+    // Tutorial hint
+    _showHint();
 
-  // Pause system
-  _initPause(navigate);
+    // Mute button
+    _initMuteButton();
 
-  engine.onTimeExt = () => { _showTimeExtFlash(); playTimeExt(); };
-  engine.start();
-  startMusic();
+    // Pause system
+    _initPause(navigate);
+
+    engine.onTimeExt = () => { _showTimeExtFlash(); playTimeExt(); };
+    engine.start();
+    startMusic();
+  });
 }
 
 export function stopGame() {
@@ -328,7 +342,7 @@ function _initPause(navigate) {
 function _handleComplete(timeLeft, navigate) {
   const idx      = state.currentLevel ?? 0;
   const coinMultiplier = engine ? (engine.coinMultiplier ?? 1) : 1;
-  const coins    = Math.floor(timeLeft) * 10 * coinMultiplier;
+  let   coins    = Math.floor(timeLeft) * 10 * coinMultiplier;
   const level    = CONSTELLATIONS[idx];
   const caught   = engine ? engine.caughtStars : level.stars.length;
   const total    = level.stars.length;
@@ -343,6 +357,11 @@ function _handleComplete(timeLeft, navigate) {
   const isNewRecord = !prevScore ||
     stars > prevScore.stars ||
     (stars === prevScore.stars && timeLeft > prevScore.time);
+
+  // CR-055: half coins if level was already cleared with 3 stars
+  if (prevScore && prevScore.stars === 3) {
+    coins = Math.floor(coins / 2);
+  }
 
   // Update state
   state.setScore(idx, { stars, time: timeLeft });

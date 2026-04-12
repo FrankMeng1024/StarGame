@@ -22,6 +22,13 @@ const state = {
       this.coins          = saved.coins;
       this.inventory      = saved.inventory;
       this.seenScenes     = saved.seenScenes;
+      // CR-055: initialize 100 coins for genuinely fresh players (0 coins, no level history)
+      if (this.coins === 0 && this.levelScores.size === 0) {
+        this.coins = 100;
+      }
+    } else {
+      // Brand new save: start with 100 coins
+      this.coins = 100;
     }
   },
 

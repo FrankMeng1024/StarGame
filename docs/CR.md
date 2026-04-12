@@ -274,3 +274,24 @@ Multiple gameplay fixes: (1) block accidental net launch on level entry by delay
 
 ## CR-049: 展厅/商店UI修复 (Sprint 15 approved)
 (1) Gallery: locked cards show only grey + "？" (no icon/name); unlocked-incomplete cards show name only, no icon; (2) Gallery detail: remove top back button, keep only bottom back button; (3) Shop cards: add visible default background color; (4) Pause exit button: add visible default background.
+
+## CR-050: 网兜静止可见 (Sprint 17 approved)
+Net (网兜) is invisible at rest — only appears when Space is pressed. Fix: net should always be visible at its idle/swing position, not require input to appear. The hoop and mesh should be drawn continuously each frame regardless of whether the player has pressed Space.
+
+## CR-051: 星星尺寸缩小 + 上下限 (Sprint 17 approved)
+Stars are too large. Reduce all star radii to 2/3 of current values. Add hard caps: minimum radius and maximum radius. Use Ursa Major (Level 2, 大熊座) star proportions as the reference for a good size range — its current min/max define the new target. Stars should then scale within those new bounds according to each constellation's relative proportions.
+
+## CR-052: 失败界面布局修复 (Sprint 17 approved)
+The fail screen ("时间到了") layout is cramped/squished. Fix the layout so elements are properly spaced and the screen feels as polished as the complete screen. Lower portion of screen (currently empty dead space per Sprint 16 VU observation) should include a brief encouragement message or constellation silhouette.
+
+## CR-053: "返回关卡"按钮背景色 (Sprint 17 approved)
+On the level complete screen, the "返回关卡" / "返回选关" button has no background color (appears transparent). Add a visible default background color consistent with other CTA buttons in the app.
+
+## CR-054: 背景音乐重制 (Sprint 17 approved)
+Current background music sounds like 2 tracks merged poorly — incoherent and not fitting. Rework the audio synthesis to produce a single coherent ethereal/space-like track: softer, more spacious, atmospheric. Research Web Audio API synthesis techniques for ambient/ethereal music. Avoid the feel of two separate tracks playing simultaneously.
+
+## CR-055: 金币系统重设计 (Sprint 17 approved)
+Rework the coin reward system: (1) Starting balance = 100 coins (one-time initialization if no saved balance exists); (2) Fail = 0 coins awarded; (3) Success = time_remaining × 10 coins; (4) If a level was already cleared with 3 stars and player clears it again, award only half coins. The goal is to reward skill and first-clears more than grinding.
+
+## CR-056: 关卡资源预加载 (Sprint 17 approved)
+Entering a level shows a blank canvas initially — game content appears after a delay. Add asset preloading so all required sprites/images for the level are loaded before the game canvas renders, eliminating the blank-canvas flash on level entry.

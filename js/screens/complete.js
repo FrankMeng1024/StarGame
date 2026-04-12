@@ -42,6 +42,14 @@ export function showComplete(navigate, params) {
   if (photoWrap) photoWrap.style.display = '';
   if (loreEl)    loreEl.style.display    = '';
 
+  // Remove fail-mode class (may have been added by showFail)
+  const innerEl = document.querySelector('.complete-inner');
+  if (innerEl) innerEl.classList.remove('fail-mode');
+
+  // Hide fail encouragement (may have been shown by showFail)
+  const encourageEl = document.querySelector('.fail-encouragement');
+  if (encourageEl) encourageEl.style.display = 'none';
+
   _showPhoto(level);
 
   // Lore
@@ -102,6 +110,17 @@ export function showFail(navigate, params) {
   if (photoWrap) photoWrap.style.display = 'none';
   if (loreEl)    loreEl.style.display    = 'none';
 
+  // Compact layout for fail: no tall scrollable lore section
+  const innerEl = document.querySelector('.complete-inner');
+  if (innerEl) innerEl.classList.add('fail-mode');
+
+  // Show fail encouragement area with dimmed constellation silhouette
+  const encourageEl = document.querySelector('.fail-encouragement');
+  if (encourageEl) {
+    encourageEl.style.display = '';
+    _drawFailConstellation(level);
+  }
+
   const btnNext   = document.querySelector('.btn-next-level');
   const btnShop   = document.querySelector('.btn-shop');
   const btnLevels = document.querySelector('.btn-back-levels');
@@ -132,6 +151,53 @@ function _showPhoto(level) {
       photoEl.style.display = 'none';
       placeholder.style.display = 'flex';
     }
+  }
+}
+
+// ── Fail constellation silhouette ─────────────────────────────
+function _drawFailConstellation(level) {
+  const canvas = document.getElementById('fail-constellation-canvas');
+  if (!canvas) return;
+
+  const W = 320, H = 220;
+  canvas.width  = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  ctx.fillStyle = 'rgba(5, 8, 30, 0.85)';
+  ctx.fillRect(0, 0, W, H);
+
+  // Map normalized star positions to canvas
+  const PAD  = 24;
+  const AREA_W = W - PAD * 2;
+  const AREA_H = H - PAD * 2;
+  const stars = level.stars.map(s => ({
+    x: PAD + s.x * AREA_W,
+    y: PAD + s.y * AREA_H,
+  }));
+
+  // Draw dim constellation lines
+  if (level.lines) {
+    ctx.strokeStyle = 'rgba(160, 180, 255, 0.18)';
+    ctx.lineWidth = 1.5;
+    for (const [a, b] of level.lines) {
+      const sa = stars[a], sb = stars[b];
+      if (!sa || !sb) continue;
+      ctx.beginPath();
+      ctx.moveTo(sa.x, sa.y);
+      ctx.lineTo(sb.x, sb.y);
+      ctx.stroke();
+    }
+  }
+
+  // Draw dim star dots
+  for (const s of stars) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(200, 210, 255, 0.28)';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 2.5, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
   }
 }
 

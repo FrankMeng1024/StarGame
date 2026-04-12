@@ -3,7 +3,6 @@
 
 let _ctx = null;
 let _masterGain = null;
-let _musicGain = null;
 let _countdownInterval = null;
 
 function _getCtx() {
@@ -114,140 +113,129 @@ export function stopCountdownBeeps() {
   }
 }
 
-// ── Background music (ambient loop) ──────────────────────────
-// Am-F-C-G chord progression with melody and twinkling arpeggio layers
-const CHORDS = [
-  [220, 261, 329, 392], // Am  (A3 C4 E4 G4)
-  [174, 220, 261, 349], // F   (F3 A3 C4 F4)
-  [261, 329, 392, 523], // C   (C4 E4 G4 C5)
-  [196, 246, 294, 392], // G   (G3 B3 D4 G4)
-];
-const CHORD_DUR = 2.0; // seconds per chord
-const CHORD_VOL = 0.04;
+// ── Background music (ambient drone pad) ─────────────────────
+// CR-054: Single coherent ethereal ambient track — drone pad + sparse high arpeggios.
+// No chord+melody dual-layer that caused "two merged tracks" feel.
+// Architecture: slow-attack drone root (A3+A4 detuned) + LFO filter sweep + sparse high arpeggio notes.
 
-// Am pentatonic scale: A C D E G (and octave variants)
-const PENTATONIC = [220, 261, 294, 329, 392, 440, 523, 587, 659, 784];
-// Melody motif: E-D-C-A-C-D-E-G over 2 chord cycles (8 beats × 0.5s each)
-const MELODY_MOTIF = [329, 294, 261, 220, 261, 294, 329, 392];
-const MELODY_VOL  = 0.025; // softer than chords
-const MELODY_DUR  = 0.45;  // slightly shorter than the beat for a staccato feel
+const DRONE_NOTES  = [220, 440.8]; // A3 + A4 slightly detuned (+0.8 Hz) for subtle beating shimmer
+const DRONE_VOL    = 0.028;        // quiet drone pad volume
+const ARPEGGIO_SCALE = [440, 494, 554, 659, 740, 880, 988]; // A pentatonic + passing tones (A4-A5)
+const ARPEGGIO_VOL = 0.012;        // sparse arpeggio very soft
+const ARPEGGIO_SUSTAIN = 1.4;      // each note sustains gently
 
-// Twinkling: random high pentatonic notes via triangle oscillator
-const TWINKLE_HIGH = [659, 784, 880, 1047, 1175]; // E5-G5-A5-C6-D6
-const TWINKLE_VOL  = 0.015;
-const TWINKLE_DUR  = 0.3;
+let _musicRunning = false;
+let _droneOscs    = [];            // persistent drone oscillators
+let _droneGain    = null;          // drone gain node
+let _filterNode   = null;          // shared LPF for drone
+let _filterLfoDir = 1;             // LFO sweep direction
+let _filterFreq   = 500;           // current filter frequency
+let _arpeggioLoop = null;          // arpeggio scheduling interval
+let _arpeggioPhase = 0;            // arpeggio note index (cycles through scale)
 
-function _scheduleChord(chordIdx, startTime) {
+function _startDrone() {
   const ctx = _getCtx();
-  const freqs = CHORDS[chordIdx % CHORDS.length];
-  for (const freq of freqs) {
+  _droneGain = ctx.createGain();
+  _droneGain.gain.setValueAtTime(0, ctx.currentTime);
+  _droneGain.gain.linearRampToValueAtTime(DRONE_VOL, ctx.currentTime + 3.5); // slow fade-in
+
+  _filterNode = ctx.createBiquadFilter();
+  _filterNode.type = 'lowpass';
+  _filterNode.frequency.value = _filterFreq;
+  _filterNode.Q.value = 1.2;
+
+  _droneGain.connect(_filterNode);
+  _filterNode.connect(_masterGain);
+
+  for (const baseFreq of DRONE_NOTES) {
     const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
     osc.type = 'sine';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0, startTime);
-    gain.gain.linearRampToValueAtTime(CHORD_VOL, startTime + 0.1);
-    gain.gain.setValueAtTime(CHORD_VOL, startTime + CHORD_DUR - 0.2);
-    gain.gain.linearRampToValueAtTime(0, startTime + CHORD_DUR);
-    osc.connect(gain);
-    gain.connect(_masterGain);
-    osc.start(startTime);
-    osc.stop(startTime + CHORD_DUR + 0.05);
+    osc.frequency.value = baseFreq;
+    osc.connect(_droneGain);
+    osc.start();
+    _droneOscs.push(osc);
   }
+
+  // Soft sub-drone: triangle wave one octave below, very quiet
+  const subOsc = ctx.createOscillator();
+  const subGain = ctx.createGain();
+  subOsc.type = 'triangle';
+  subOsc.frequency.value = 110; // A2
+  subGain.gain.value = 0.008;
+  subOsc.connect(subGain);
+  subGain.connect(_masterGain);
+  subOsc.start();
+  _droneOscs.push(subOsc);
 }
 
-// Schedule one melody note
-function _scheduleMelodyNote(noteIdx, startTime) {
+function _stopDrone() {
+  const ctx = _ctx;
+  if (!ctx) return;
+  if (_droneGain) {
+    _droneGain.gain.setValueAtTime(_droneGain.gain.value, ctx.currentTime);
+    _droneGain.gain.linearRampToValueAtTime(0, ctx.currentTime + 1.0);
+  }
+  setTimeout(() => {
+    for (const osc of _droneOscs) { try { osc.stop(); } catch (_) {} }
+    _droneOscs = [];
+    _droneGain = null;
+    _filterNode = null;
+  }, 1100);
+}
+
+function _tickFilter() {
+  if (!_musicRunning || !_filterNode) return;
+  // Slowly sweep filter frequency: 400→1200→400 Hz, step every 250ms
+  _filterFreq += _filterLfoDir * 4;
+  if (_filterFreq >= 1200) { _filterFreq = 1200; _filterLfoDir = -1; }
+  if (_filterFreq <= 400)  { _filterFreq = 400;  _filterLfoDir = 1; }
+  _filterNode.frequency.setTargetAtTime(_filterFreq, _ctx.currentTime, 0.3);
+}
+
+function _scheduleArpeggioNote() {
+  if (!_musicRunning) return;
+  // Only fire with ~40% probability each interval to keep sparse
+  if (Math.random() > 0.4) return;
+
   const ctx = _getCtx();
-  const freq = MELODY_MOTIF[noteIdx % MELODY_MOTIF.length];
-  const osc  = ctx.createOscillator();
-  const gain = ctx.createGain();
-  osc.type = 'triangle';
-  osc.frequency.value = freq * 2; // one octave up from chord
-  gain.gain.setValueAtTime(0, startTime);
-  gain.gain.linearRampToValueAtTime(MELODY_VOL, startTime + 0.03);
-  gain.gain.exponentialRampToValueAtTime(0.001, startTime + MELODY_DUR);
-  osc.connect(gain);
-  gain.connect(_masterGain);
-  osc.start(startTime);
-  osc.stop(startTime + MELODY_DUR + 0.05);
-}
+  const freq = ARPEGGIO_SCALE[_arpeggioPhase % ARPEGGIO_SCALE.length];
+  _arpeggioPhase++;
 
-// Schedule random twinkle arpeggio note
-function _scheduleTwinkle(startTime) {
-  const ctx  = _getCtx();
-  const freq = TWINKLE_HIGH[Math.floor(Math.random() * TWINKLE_HIGH.length)];
   const osc  = ctx.createOscillator();
   const gain = ctx.createGain();
   osc.type = 'triangle';
   osc.frequency.value = freq;
-  gain.gain.setValueAtTime(0, startTime);
-  gain.gain.linearRampToValueAtTime(TWINKLE_VOL, startTime + 0.01);
-  gain.gain.exponentialRampToValueAtTime(0.001, startTime + TWINKLE_DUR);
+
+  const t = ctx.currentTime;
+  gain.gain.setValueAtTime(0, t);
+  gain.gain.linearRampToValueAtTime(ARPEGGIO_VOL, t + 0.12); // gentle attack
+  gain.gain.setValueAtTime(ARPEGGIO_VOL, t + ARPEGGIO_SUSTAIN * 0.6);
+  gain.gain.exponentialRampToValueAtTime(0.0001, t + ARPEGGIO_SUSTAIN);
+
   osc.connect(gain);
   gain.connect(_masterGain);
-  osc.start(startTime);
-  osc.stop(startTime + TWINKLE_DUR + 0.05);
+  osc.start(t);
+  osc.stop(t + ARPEGGIO_SUSTAIN + 0.1);
 }
 
-let _musicRunning = false;
-let _musicChordIdx  = 0;
-let _musicBeatIdx   = 0;  // sub-beat counter within the motif (0-7)
-let _musicCycleIdx  = 0;  // which 8-beat cycle we're on (for variation)
-let _musicNextTime  = 0;
-let _musicLoop      = null;
-
-// Half-beat interval: each chord lasts 2s, melody has 8 notes per 2 chords = 0.5s/note
-const BEAT = CHORD_DUR / 4; // 0.5s per melody note
-
-function _musicTick() {
-  if (!_musicRunning) return;
-  const ctx = _getCtx();
-
-  while (_musicNextTime < ctx.currentTime + 0.8) {
-    // Schedule chord (every 4 beats = every CHORD_DUR seconds)
-    if (_musicBeatIdx % 4 === 0) {
-      // Subtle rhythm variation: skip chord on every 16th cycle beat-0 (slight pause feel)
-      const skipChord = (_musicCycleIdx % 16 === 15 && _musicBeatIdx === 0);
-      if (!skipChord) {
-        _scheduleChord(_musicChordIdx, _musicNextTime);
-      }
-      _musicChordIdx = (_musicChordIdx + 1) % CHORDS.length;
-    }
-
-    // Schedule melody note
-    _scheduleMelodyNote(_musicBeatIdx, _musicNextTime);
-
-    // Schedule 0–2 twinkles at random offsets within this beat
-    const twinkleCount = Math.random() < 0.5 ? 1 : (Math.random() < 0.4 ? 2 : 0);
-    for (let i = 0; i < twinkleCount; i++) {
-      const offset = Math.random() * BEAT * 0.8;
-      _scheduleTwinkle(_musicNextTime + offset);
-    }
-
-    _musicBeatIdx++;
-    if (_musicBeatIdx >= 8) {
-      _musicBeatIdx = 0;
-      _musicCycleIdx++;
-    }
-    _musicNextTime += BEAT;
-  }
-
-  _musicLoop = setTimeout(_musicTick, 200);
-}
+let _filterTick = null;
 
 export function startMusic() {
   if (_musicRunning) return;
   _musicRunning = true;
-  const ctx = _getCtx();
-  _musicChordIdx = 0;
-  _musicBeatIdx  = 0;
-  _musicCycleIdx = 0;
-  _musicNextTime = ctx.currentTime + 0.1;
-  _musicTick();
+  _filterFreq  = 500;
+  _filterLfoDir = 1;
+  _arpeggioPhase = 0;
+  _startDrone();
+  // Filter LFO: tick every 250ms
+  _filterTick = setInterval(_tickFilter, 250);
+  // Sparse arpeggio: fire every 1.8s (with 40% probability = ~0.8 notes/s on avg)
+  _arpeggioLoop = setInterval(_scheduleArpeggioNote, 1800);
 }
 
 export function stopMusic() {
   _musicRunning = false;
-  if (_musicLoop) { clearTimeout(_musicLoop); _musicLoop = null; }
+  if (_filterTick)   { clearInterval(_filterTick);   _filterTick   = null; }
+  if (_arpeggioLoop) { clearInterval(_arpeggioLoop); _arpeggioLoop = null; }
+  _stopDrone();
 }
