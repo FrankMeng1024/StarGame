@@ -27,7 +27,7 @@
 | Sprint 17 | COMPLETE | 7项用户反馈修复 — 网兜显示/星星大小/失败界面/按钮背景/金币系统/预加载/音乐 |
 | Sprint 18 | COMPLETE | 8项用户反馈修复 — 网兜手持/展厅顺序/照片修复/展厅导航/道具重置/音乐恢复/暂停图标/星星放大 |
 | Sprint 19 | COMPLETE | Sprint 19 — VU ACCEPTED 9.5/10 (Sprint 18 features verified) |
-| Sprint 20 | IN PROGRESS | 6项用户反馈修复 — 网兜手部对齐/摆角扩大/星星缩小/展厅布局重排/照片预加载/关卡资源预热 |
+| Sprint 20 | COMPLETE | 6项用户反馈修复 — 网兜手部对齐/摆角扩大/星星缩小/展厅布局重排/照片预加载/关卡资源预热 |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -43,6 +43,7 @@
 | Sprint 17 | 9.5/10 | ACCEPTED | All Sprint 17 user-reported fixes verified — PROJECT COMPLETE |
 | Sprint 18 | 9.5/10 | ACCEPTED | All Sprint 18 user-reported fixes verified — PROJECT COMPLETE |
 | Sprint 19 | 9.5/10 | ACCEPTED | All Sprint 18+19 features verified — PROJECT COMPLETE |
+| Sprint 20 | 9.5/10 | ACCEPTED | All Sprint 20 user-reported fixes verified — PROJECT COMPLETE |
 
 ## Sprint 20 Stories
 | Story | Title | Status |
