@@ -703,10 +703,12 @@ export class GameEngine {
 
   stop() {
     this.running = false;
+    this._revealPhase = false; // stop any in-progress constellation reveal + its setTimeout chain
     document.removeEventListener('click', this._handleInput);
     document.removeEventListener('keydown', this._handleInput);
     document.removeEventListener('keydown', this._handleKeySlot);
     if (this.rafId) cancelAnimationFrame(this.rafId);
+    if (this._revealRafId) cancelAnimationFrame(this._revealRafId);
     stopCountdownBeeps();
   }
 
@@ -917,6 +919,7 @@ export class GameEngine {
     const totalEdges = this._revealEdges.length || this.stars.length;
 
     const lightNext = (idx) => {
+      if (!this._revealPhase) return; // guard: user navigated away during reveal
       if (idx >= totalEdges) {
         // All lit — hold then complete
         setTimeout(() => {
@@ -1892,10 +1895,9 @@ export class GameEngine {
 
     if (len < 2) return;
 
-    // Direction vector (pole tip → net tip)
-    const ux = dx / len, uy = dy / len;
-    // Perpendicular vector
-    const px = -uy, py = ux;
+    // Direction angle for rotation
+    const angle = Math.atan2(dy, dx);
+    const px = -dy / len, py = dx / len; // perpendicular
 
     ctx.save();
 
@@ -1909,87 +1911,72 @@ export class GameEngine {
     ctx.quadraticCurveTo(ropeCtrlX, ropeCtrlY, tip.x, tip.y);
     ctx.stroke();
 
-    // Net bag parameters — CR-046: larger mouth, more visible
+    // Net bag — SVG sprite if loaded, otherwise procedural
     const hasCatch  = this.caughtObj !== null;
-    const isReturn  = this.netState === 'retract';
-    const bulge     = (hasCatch && isReturn) ? 1.25 : 1.0;
-    // CR-048: net_enlarge item enlarges mouthR by 50%
     const enlargeFactor = this._netEnlargeActive ? 1.5 : 1.0;
-    const mouthR    = 26 * bulge * enlargeFactor;  // CR-046: was 18
-    const bagDepth  = mouthR * 1.7;
+    const displaySize = 52 * enlargeFactor; // visual size in canvas px
 
-    // Bag forward direction
-    const bx = ux, by = uy;
-
-    // Mouth center = tip position
-    const mx = tip.x, my = tip.y;
-    // Bag bottom point
-    const botX = mx + bx * bagDepth;
-    const botY = my + by * bagDepth;
-
-    // Draw bag mesh fill
-    ctx.save();
-    const bagGrad = ctx.createRadialGradient(mx, my, 0, mx + bx * bagDepth * 0.5, my + by * bagDepth * 0.5, mouthR * 1.5);
-    bagGrad.addColorStop(0, hasCatch ? 'rgba(255,240,160,0.25)' : 'rgba(255,245,200,0.15)');
-    bagGrad.addColorStop(1, 'rgba(255,240,180,0.04)');
-
-    // Teardrop shape: wider at mouth, tapering to point at bottom
-    ctx.beginPath();
-    ctx.moveTo(mx + px * mouthR, my + py * mouthR);
-    ctx.bezierCurveTo(
-      mx + px * mouthR + bx * bagDepth * 0.6, my + py * mouthR + by * bagDepth * 0.6,
-      botX + px * mouthR * 0.1, botY + py * mouthR * 0.1,
-      botX, botY
-    );
-    ctx.bezierCurveTo(
-      botX - px * mouthR * 0.1, botY - py * mouthR * 0.1,
-      mx - px * mouthR + bx * bagDepth * 0.6, my - py * mouthR + by * bagDepth * 0.6,
-      mx - px * mouthR, my - py * mouthR
-    );
-    ctx.closePath();
-    ctx.fillStyle = bagGrad;
-    ctx.fill();
-
-    // Mesh lines: CR-046 — 6 horizontal arcs (was 4) with wider lineWidth
-    const meshColor = hasCatch ? 'rgba(255,220,80,0.65)' : 'rgba(255,245,190,0.55)';
-    ctx.strokeStyle = meshColor;
-    ctx.lineWidth   = 1.2; // was 0.7
-    for (let i = 1; i <= 6; i++) {
-      const t2 = i / 7;
-      const spread = mouthR * (1 - t2 * 0.88) * bulge;
-      const cx2 = mx + bx * bagDepth * t2;
-      const cy2 = my + by * bagDepth * t2;
-      ctx.beginPath();
-      ctx.moveTo(cx2 + px * spread, cy2 + py * spread);
-      ctx.quadraticCurveTo(
-        cx2 + bx * spread * 0.3, cy2 + by * spread * 0.3,
-        cx2 - px * spread, cy2 - py * spread
+    if (this._netImgReady && this._netImg) {
+      // Frame 0 = empty net, Frame 1 = net with catch
+      const frameX = hasCatch ? this._netFrameW : 0;
+      ctx.save();
+      ctx.translate(tip.x, tip.y);
+      ctx.rotate(angle - Math.PI / 2); // SVG net opens downward, rotate to match direction
+      ctx.drawImage(
+        this._netImg,
+        frameX, 0, this._netFrameW, this._netFrameH,
+        -displaySize / 2, -displaySize * 0.2, displaySize, displaySize
       );
+      ctx.restore();
+    } else {
+      // Procedural fallback
+      const ux = dx / len, uy = dy / len;
+      const perp_x = -uy, perp_y = ux;
+      const bulge   = (hasCatch) ? 1.25 : 1.0;
+      const mouthR  = 26 * bulge * enlargeFactor;
+      const bagDepth = mouthR * 1.7;
+      const mx = tip.x, my = tip.y;
+      const botX = mx + ux * bagDepth, botY = my + uy * bagDepth;
+      ctx.save();
+      const bagGrad = ctx.createRadialGradient(mx, my, 0, mx + ux * bagDepth * 0.5, my + uy * bagDepth * 0.5, mouthR * 1.5);
+      bagGrad.addColorStop(0, hasCatch ? 'rgba(255,240,160,0.25)' : 'rgba(255,245,200,0.15)');
+      bagGrad.addColorStop(1, 'rgba(255,240,180,0.04)');
+      ctx.beginPath();
+      ctx.moveTo(mx + perp_x * mouthR, my + perp_y * mouthR);
+      ctx.bezierCurveTo(
+        mx + perp_x * mouthR + ux * bagDepth * 0.6, my + perp_y * mouthR + uy * bagDepth * 0.6,
+        botX + perp_x * mouthR * 0.1, botY + perp_y * mouthR * 0.1, botX, botY
+      );
+      ctx.bezierCurveTo(
+        botX - perp_x * mouthR * 0.1, botY - perp_y * mouthR * 0.1,
+        mx - perp_x * mouthR + ux * bagDepth * 0.6, my - perp_y * mouthR + uy * bagDepth * 0.6,
+        mx - perp_x * mouthR, my - perp_y * mouthR
+      );
+      ctx.closePath();
+      ctx.fillStyle = bagGrad;
+      ctx.fill();
+      const meshColor = hasCatch ? 'rgba(255,220,80,0.65)' : 'rgba(255,245,190,0.55)';
+      ctx.strokeStyle = meshColor;
+      ctx.lineWidth   = 1.2;
+      for (let i = 1; i <= 6; i++) {
+        const t2 = i / 7;
+        const spread = mouthR * (1 - t2 * 0.88) * bulge;
+        const cx2 = mx + ux * bagDepth * t2, cy2 = my + uy * bagDepth * t2;
+        ctx.beginPath();
+        ctx.moveTo(cx2 + perp_x * spread, cy2 + perp_y * spread);
+        ctx.quadraticCurveTo(cx2 + ux * spread * 0.3, cy2 + uy * spread * 0.3, cx2 - perp_x * spread, cy2 - perp_y * spread);
+        ctx.stroke();
+      }
+      ctx.restore();
+      const hoopColor = hasCatch ? '#ffd040' : '#e8c030';
+      ctx.strokeStyle = hoopColor;
+      ctx.lineWidth   = 3.5;
+      if (hasCatch) { ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 14; }
+      else { ctx.shadowColor = 'rgba(240,200,60,0.5)'; ctx.shadowBlur = 6; }
+      ctx.beginPath();
+      ctx.arc(mx, my, mouthR, 0, TWO_PI);
       ctx.stroke();
     }
-    // Vertical center line along bag depth
-    ctx.beginPath();
-    ctx.moveTo(mx, my);
-    ctx.lineTo(botX, botY);
-    ctx.stroke();
-    // Two diagonal support lines
-    ctx.beginPath();
-    ctx.moveTo(mx + px * mouthR, my + py * mouthR);
-    ctx.lineTo(botX, botY);
-    ctx.moveTo(mx - px * mouthR, my - py * mouthR);
-    ctx.lineTo(botX, botY);
-    ctx.stroke();
-    ctx.restore();
-
-    // Mouth ring (hoop) — golden, thicker — CR-046: lineWidth 3.5
-    const hoopColor = hasCatch ? '#ffd040' : '#e8c030';
-    ctx.strokeStyle = hoopColor;
-    ctx.lineWidth   = 3.5;  // was 2
-    if (hasCatch) { ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 14; }
-    else { ctx.shadowColor = 'rgba(240,200,60,0.5)'; ctx.shadowBlur = 6; }
-    ctx.beginPath();
-    ctx.arc(mx, my, mouthR, 0, TWO_PI);
-    ctx.stroke();
 
     // Extending trail
     if (this.netState === 'extend' && len > 10) {
