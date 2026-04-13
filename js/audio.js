@@ -1,6 +1,7 @@
 // audio.js — Web Audio API procedural sound system
 // Lazy AudioContext creation (Chrome autoplay policy: requires user gesture)
 // CR-058: Reverted to original chord-progression music (pre-Sprint 17)
+// CR-093: Background music replaced with MP3 file (04-impact-moderato.mp3)
 
 let _ctx = null;
 let _masterGain = null;
@@ -26,6 +27,7 @@ export function isMuted() {
 export function setMuted(val) {
   localStorage.setItem('starcatcher_muted', val ? '1' : '0');
   if (_masterGain) _masterGain.gain.value = val ? 0 : 1;
+  if (_bgAudio) _bgAudio.muted = val;
 }
 
 export function toggleMute() {
@@ -115,74 +117,39 @@ export function stopCountdownBeeps() {
   }
 }
 
-// ── Background music (ambient loop) ──────────────────────────
-// CR-059: Reverted to Sprint 5 original — pure Am-F-C-G sine chord loop
-// Simple 4-note chord progression at low volume, no melody/arpeggio layers
-const CHORDS = [
-  [220, 261, 329, 392], // Am  (A3 C4 E4 G4)
-  [174, 220, 261, 349], // F   (F3 A3 C4 F4)
-  [261, 329, 392, 523], // C   (C4 E4 G4 C5)
-  [196, 246, 294, 392], // G   (G3 B3 D4 G4)
-];
-const CHORD_DUR = 2.0; // seconds per chord
-const CHORD_VOL = 0.04;
+// ── Background music (MP3 file loop) ─────────────────────────
+// CR-093: Use 04-impact-moderato.mp3 as looping background music
+const BG_MUSIC_SRC = 'audio-samples/04-impact-moderato.mp3';
+const BG_MUSIC_VOLUME = 0.18;
 
-function _scheduleChord(chordIdx, startTime) {
-  const ctx = _getCtx();
-  const freqs = CHORDS[chordIdx % CHORDS.length];
-  for (const freq of freqs) {
-    const osc = ctx.createOscillator();
-    const gain = ctx.createGain();
-    osc.type = 'sine';
-    osc.frequency.value = freq;
-    gain.gain.setValueAtTime(0, startTime);
-    gain.gain.linearRampToValueAtTime(CHORD_VOL, startTime + 0.1);
-    gain.gain.setValueAtTime(CHORD_VOL, startTime + CHORD_DUR - 0.2);
-    gain.gain.linearRampToValueAtTime(0, startTime + CHORD_DUR);
-    osc.connect(gain);
-    gain.connect(_masterGain);
-    osc.start(startTime);
-    osc.stop(startTime + CHORD_DUR + 0.05);
-  }
-}
+let _bgAudio = null;
 
-let _musicRunning = false;
-let _musicChordIdx = 0;
-let _musicNextTime = 0;
-let _musicLoop     = null;
-let _currentChordDur = CHORD_DUR; // mutable per setMusicTempo
-
-function _musicTick() {
-  if (!_musicRunning) return;
-  const ctx = _getCtx();
-  while (_musicNextTime < ctx.currentTime + 0.5) {
-    _scheduleChord(_musicChordIdx, _musicNextTime);
-    _musicChordIdx = (_musicChordIdx + 1) % CHORDS.length;
-    _musicNextTime += _currentChordDur;
-  }
-  _musicLoop = setTimeout(_musicTick, 200);
+function _ensureBgAudio() {
+  if (_bgAudio) return _bgAudio;
+  _bgAudio = new Audio(BG_MUSIC_SRC);
+  _bgAudio.loop = true;
+  _bgAudio.volume = BG_MUSIC_VOLUME;
+  _bgAudio.muted = isMuted();
+  return _bgAudio;
 }
 
 export function startMusic() {
-  if (_musicRunning) return;
-  _musicRunning = true;
-  _currentChordDur = CHORD_DUR; // reset tempo on start
-  const ctx = _getCtx();
-  _musicChordIdx = 0;
-  _musicNextTime = ctx.currentTime + 0.1;
-  _musicTick();
+  const audio = _ensureBgAudio();
+  if (!audio.paused) return;
+  audio.currentTime = 0;
+  audio.play().catch(() => {}); // autoplay policy: silently ignore if blocked
 }
 
 export function stopMusic() {
-  _musicRunning = false;
-  _currentChordDur = CHORD_DUR; // reset tempo on stop
-  if (_musicLoop) { clearTimeout(_musicLoop); _musicLoop = null; }
+  if (!_bgAudio) return;
+  _bgAudio.pause();
+  _bgAudio.currentTime = 0;
 }
 
 /**
- * Set music playback tempo factor. Takes effect at the next chord boundary.
+ * Set music playback tempo factor (countdown urgency effect).
  * factor=1.0 = normal speed, factor=1.35 = 35% faster.
  */
 export function setMusicTempo(factor) {
-  _currentChordDur = CHORD_DUR / Math.max(0.1, factor);
+  if (_bgAudio) _bgAudio.playbackRate = Math.max(0.1, factor);
 }
