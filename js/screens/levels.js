@@ -5,10 +5,11 @@ import state from '../state.js';
 import { showItemSelect } from './item-select.js';
 import { CONSTELLATION_PHOTOS } from '../data/photos.js?v=29';
 
-// CR-065/069: Pre-warm all game assets at module load. Store refs to prevent GC.
+// CR-065/069/086: Pre-warm all game assets at module load. Store refs to prevent GC.
 // Export sprite map so game.js can reuse the SAME objects (already decoded).
 const _prewarmedImages = [];
-const _spriteCache = {};
+const _spriteCache = {};      // src → HTMLImageElement
+const _decodeCache  = {};     // src → Promise<HTMLImageElement> (resolved once, reused)
 
 (function _prewarmAssets() {
   const SPRITE_SRCS = [
@@ -21,6 +22,12 @@ const _spriteCache = {};
   ];
   SPRITE_SRCS.forEach(src => {
     const img = new Image();
+    // Kick off decode immediately once the network fetch completes.
+    // Store the promise so getSpriteReady() returns it instantly — no re-decode.
+    _decodeCache[src] = new Promise(resolve => {
+      img.onload  = () => img.decode().catch(() => {}).then(() => resolve(img));
+      img.onerror = () => resolve(img); // resolve even on error so game can start
+    });
     img.src = src;
     _prewarmedImages.push(img);
     _spriteCache[src] = img;
@@ -47,25 +54,21 @@ export function prewarmSprites() {
   return Promise.all(_SPRITE_SRCS.map(src => getSpriteReady(src)));
 }
 
-// Returns a Promise<HTMLImageElement> for a sprite src, reusing cached object if available.
+// Returns a Promise<HTMLImageElement> for a sprite src, reusing the decode promise
+// created at module load — so decode() is never called twice for the same sprite.
 export function getSpriteReady(src) {
-  const cached = _spriteCache[src];
-  if (cached) {
-    return cached.complete
-      ? cached.decode().catch(() => cached).then(() => cached)
-      : new Promise(resolve => {
-          const done = () => resolve(cached);
-          cached.addEventListener('load', done, { once: true });
-          cached.addEventListener('error', done, { once: true });
-        });
-  }
-  // Fallback: load fresh
+  // Fast path: return the already-resolving (or resolved) decode promise
+  if (_decodeCache[src]) return _decodeCache[src];
+
+  // Fallback for any src not pre-warmed (shouldn't happen in normal flow)
   const img = new Image();
   img.src = src;
-  return new Promise(resolve => {
-    img.onload = () => resolve(img);
+  _decodeCache[src] = new Promise(resolve => {
+    img.onload  = () => img.decode().catch(() => {}).then(() => resolve(img));
     img.onerror = () => resolve(img);
   });
+  _spriteCache[src] = img;
+  return _decodeCache[src];
 }
 
 export function initLevels(navigate) {

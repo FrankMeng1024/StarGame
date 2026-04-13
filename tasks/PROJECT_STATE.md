@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
 **Status**: COMPLETE
-**Current Sprint**: 31 (Sprint Goal: 封面体验全面精修 — 流星雨开场动画 + 星座上移放大 + 按钮透明化 + 信息栏优雅化)
+**Current Sprint**: 32 (Sprint Goal: 关卡加载极速化 — 消除进关等待，任何关卡直接可玩)
 **Last Updated**: 2026-04-13
 
 ## Sprint History
@@ -39,6 +39,7 @@
 | Sprint 29 | COMPLETE | 三栏布局探索 — 评估后保留Sprint 28居中方案 (CR-082) |
 | Sprint 30 | COMPLETE | 开场动画精修 + 封面居中修复 + 按钮透明度调整 (CR-083) |
 | Sprint 31 | COMPLETE | 封面体验全面精修 — 流星雨开场 + 星座上移放大 + 信息栏优雅化 (CR-084) |
+| Sprint 32 | COMPLETE | 关卡加载极速化 — decode Promise缓存复用 + 开场动画F5播放 (CR-085/086) |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -63,7 +64,15 @@
 | Sprint 30 | — | COMPLETE | CR-083 开场动画精修 + 封面居中 + 按钮透明度 — committed |
 | Sprint 31 | — | COMPLETE | CR-084 流星雨开场 + 星座上移 + 信息栏优雅化 — committed |
 
-## Sprint 31 Stories
+| Sprint 32 | — | COMPLETE | CR-085/086 关卡加载极速化 + 开场动画F5播放 — committed |
+
+## Sprint 32 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00132 | 开场动画每次F5播放，游戏内返回不播放 | Done |
+| STORY-00133 | 关卡加载极速化 — decode Promise缓存复用 | Done |
+
+
 | Story | Title | Status |
 |---|---|---|
 | STORY-00130 | 流星雨开场动画重设计 | Done |

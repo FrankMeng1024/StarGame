@@ -346,3 +346,9 @@ Three polish fixes: (1) Replace triangle shape in intro Phase 1 with a cute boun
 
 ## CR-084: 封面体验全面精修 — 流星雨开场 + 星座上移放大 + 信息栏优雅化 (Sprint 31 approved)
 Four changes: (1) Intro animation replaced with meteor shower (9 diagonal gold streaks with glowing tails) followed by constellation node-by-node reveal with sparkle bursts and animated line drawing; no more net bag or bouncing star. (2) Menu constellation moved higher (cy H*0.28) and larger (BOX H*0.80) with auto-scale clamp to prevent overflow. (3) Primary button opacity reduced to 0.62 (hover 0.92). (4) Info panel redesigned from glass-morphism card to elegant borderless text caption with subtle top divider line, center-aligned.
+
+## CR-085: 开场动画每次F5播放，游戏内返回主页不播放 (Sprint 32 approved)
+Remove the localStorage gate from playIntro() — intro plays on every fresh page load (F5/hard reload). In-app navigation back to menu (from game over, level complete, etc.) calls resumeMenuSky() directly and never calls playIntro(), so removing localStorage naturally achieves the desired behavior: fresh load = intro; in-app navigation = no intro.
+
+## CR-086: 关卡加载极速化 — decode Promise缓存复用 (Sprint 32 approved)
+Level load time was 3+ seconds because getSpriteReady() called img.decode() on every invocation, re-rasterizing complex SVGs (girl.svg = 440px wide, 4 animation frames). Fix: _prewarmAssets() IIFE now creates the decode Promise once at onload time and stores it in _decodeCache[src]. getSpriteReady() returns the cached Promise directly on all subsequent calls. Result: game screen appears in ~14ms from level card click (down from 3+ seconds). Verified with MutationObserver timing on screen-game.active class.
