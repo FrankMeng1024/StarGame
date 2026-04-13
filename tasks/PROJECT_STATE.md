@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
 **Status**: COMPLETE
-**Current Sprint**: 27 (Sprint Goal: 封面精修 — 随机fallback/全屏星座/去成就按钮)
+**Current Sprint**: 28 (Sprint Goal: 封面真正全背景 — 星座铺满全屏，文字按钮浮于其上，彻底消除上下分割感)
 **Last Updated**: 2026-04-13
 
 ## Sprint History
@@ -35,6 +35,7 @@
 | Sprint 25 | COMPLETE | 情绪节点打磨 — 失败/道具/故事/音乐/Tab暂停/storage降级 (CR-073-078) |
 | Sprint 26 | COMPLETE | 封面单星座聚焦 — 最易见星座大背景 + 观测提示面板 (CR-079) |
 | Sprint 27 | COMPLETE | 封面精修 — 随机fallback星座/全屏背景/去成就按钮 (CR-080) |
+| Sprint 28 | COMPLETE | 封面全背景重设计 — 星座上半屏+UI浮层，消除分割感 (CR-081) |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -54,8 +55,14 @@
 | Sprint 25 | 9.6/10 | ACCEPTED | All PRD + CR-070-078 features verified — PROJECT COMPLETE |
 | Sprint 26 | — | COMPLETE | CR-079 单星座封面 — committed, not VU-evaluated |
 | Sprint 27 | — | COMPLETE | CR-080 封面精修 — committed, not VU-evaluated |
+| Sprint 28 | — | COMPLETE | CR-081 封面全背景重设计 — committed, not VU-evaluated |
 
-## Sprint 27 Stories
+## Sprint 28 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00127 | 封面全背景重设计 — 移除底部分割条，UI浮层化 | Done |
+
+
 | Story | Title | Status |
 |---|---|---|
 | STORY-00126 | 封面三项精修 — 随机fallback/全屏星座/去成就按钮 | Done |

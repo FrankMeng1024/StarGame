@@ -95,26 +95,26 @@ body {
 
 /* ── Main Menu ─────────────────────────────────────────────── */
 #screen-menu {
+  /* Deep sky gradient fallback — visible before constellation canvas loads */
   background: linear-gradient(180deg, var(--sky-deep) 0%, var(--sky-mid) 60%, var(--sky-horizon) 100%);
-  justify-content: flex-end;
-  align-items: stretch;
+  justify-content: center;
+  align-items: center;
 }
 
+/* Menu inner: full overlay, content centered — NO strip, NO background */
 .menu-inner {
-  position: relative;
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
   align-items: center;
+  justify-content: center;
   gap: var(--spacing-md);
   text-align: center;
-  padding: 20px var(--spacing-xl) 28px;
-  width: 100%;
-  /* Frosted bottom strip — compact, leaves most of screen for constellation */
-  background: rgba(6, 4, 18, 0.72);
-  backdrop-filter: blur(20px);
-  -webkit-backdrop-filter: blur(20px);
-  border-top: 1px solid rgba(160, 140, 220, 0.18);
+  padding: var(--spacing-xl);
   z-index: 1;
+  /* Transparent — background art shows through completely */
+  background: none;
 }
 
 .btn-menu-mute {
@@ -148,14 +148,14 @@ body {
   -webkit-text-fill-color: transparent;
   background-clip: text;
   text-shadow: none;
-  filter: drop-shadow(0 0 24px rgba(255, 215, 0, 0.6));
+  filter: drop-shadow(0 0 32px rgba(255, 215, 0, 0.8)) drop-shadow(0 2px 12px rgba(0,0,0,0.9));
   animation: title-twinkle 3s ease-in-out infinite;
   letter-spacing: 0.1em;
 }
 
 @keyframes title-twinkle {
-  0%, 100% { filter: drop-shadow(0 0 24px rgba(255, 215, 0, 0.6)); }
-  50%       { filter: drop-shadow(0 0 40px rgba(255, 215, 0, 0.9)) drop-shadow(0 0 8px #fff); }
+  0%, 100% { filter: drop-shadow(0 0 32px rgba(255, 215, 0, 0.8)) drop-shadow(0 2px 12px rgba(0,0,0,0.9)); }
+  50%       { filter: drop-shadow(0 0 48px rgba(255, 215, 0, 1.0)) drop-shadow(0 0 8px #fff) drop-shadow(0 2px 12px rgba(0,0,0,0.9)); }
 }
 
 .game-subtitle {
@@ -163,6 +163,7 @@ body {
   color: var(--text2);
   letter-spacing: 0.2em;
   margin-top: calc(-1 * var(--spacing-md));
+  text-shadow: 0 1px 8px rgba(0,0,0,0.9), 0 0 20px rgba(0,0,0,0.6);
 }
 
 .menu-buttons {
@@ -221,10 +222,11 @@ body {
 }
 
 .btn-secondary {
-  background: transparent;
+  background: rgba(6, 4, 18, 0.55);
   color: var(--text);
   border: 1.5px solid var(--card-border);
-  backdrop-filter: blur(8px);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .btn-secondary:hover {
   transform: translateY(-2px) scale(1.02);
@@ -244,9 +246,11 @@ body {
 
 /* Shop button on main menu always has a visible background */
 .btn-shop-from-menu {
-  background: rgba(124, 92, 191, 0.18);
+  background: rgba(6, 4, 18, 0.50);
   border: 1px solid rgba(124, 92, 191, 0.35);
   color: var(--text);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
 }
 .btn-shop-from-menu:hover {
   background: rgba(124, 92, 191, 0.18);
@@ -260,16 +264,23 @@ body {
   transform: translateY(-1px);
 }
 
-/* ── CR-079/080: Menu sky info panel ─────────────────────────── */
+/* ── CR-079/080/081: Menu sky info panel — floating badge at bottom ── */
 .menu-sky-info {
-  width: 100%;
-  background: transparent;
-  border: none;
-  padding: 0;
-  border-top: 1px solid rgba(200, 185, 130, 0.18);
-  padding-top: 10px;
+  position: absolute;
+  bottom: var(--spacing-lg);
+  left: 0;
+  right: 0;
+  width: min(420px, 90vw);
+  margin: 0 auto;
+  background: rgba(6, 4, 18, 0.62);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(200, 185, 130, 0.22);
+  border-radius: var(--radius-lg);
+  padding: 12px 16px 10px;
   text-align: left;
   animation: sky-info-fadein 1.2s ease forwards;
+  z-index: 2;
 }
 @keyframes sky-info-fadein {
   from { opacity: 0; transform: translateY(6px); }

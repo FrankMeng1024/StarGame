@@ -60,7 +60,7 @@ export function initMenuSky(conDef) {
 
   // ── Start animation loop ──────────────────────────────────────
   requestAnimationFrame(t => {
-    _canvas.style.opacity = '0.88';
+    _canvas.style.opacity = '1.0';
     _loop(t);
   });
 }
@@ -73,13 +73,14 @@ function _buildLayout(conDef) {
   const W = _canvas.width;
   const H = _canvas.height;
 
-  // Center constellation in the middle of the screen —
-  // it IS the background art, so use the full canvas.
+  // Center constellation in upper portion — visible above the title
+  // Title+buttons occupy ~35-65% of screen height (center), so constellation
+  // sits in the upper sky area (top 55%) with its center at ~33% from top.
   const cx = W * 0.50;
-  const cy = H * 0.46;
+  const cy = H * 0.33;
 
-  // Scale to fill ~85% of the smaller screen dimension
-  const BOX = Math.min(W, H) * 0.82;
+  // Scale to fill ~70% of the smaller screen dimension — large but not oversize
+  const BOX = Math.min(W, H) * 0.72;
 
   const conStars = conDef.stars.map((s, si) => {
     const sx = cx + (s.x - 0.5) * BOX;
@@ -87,7 +88,7 @@ function _buildLayout(conDef) {
     return {
       cx: sx,
       cy: sy,
-      r: Math.max(3, Math.min(11, magToRadius(s.mag) * 1.3)),
+      r: Math.max(3.5, Math.min(13, magToRadius(s.mag) * 1.5)),
       color: typeToColor(s.type),
       phase: (si * 1.618) % TWO_PI,
       speed: 0.4 + (si % 5) * 0.15,
@@ -113,21 +114,21 @@ function _loop(now) {
 
   _ctx.clearRect(0, 0, W, H);
 
-  // Draw constellation lines — slightly more visible than old scattered version
+  // Draw constellation lines — more visible as full-screen hero background
   _ctx.save();
   for (const ln of _lines) {
     _ctx.beginPath();
     _ctx.moveTo(ln.x1, ln.y1);
     _ctx.lineTo(ln.x2, ln.y2);
-    _ctx.strokeStyle = 'rgba(200,185,130,0.35)';
-    _ctx.lineWidth = 1.2;
+    _ctx.strokeStyle = 'rgba(200,185,130,0.50)';
+    _ctx.lineWidth = 1.4;
     _ctx.stroke();
   }
   _ctx.restore();
 
   // Draw stars with twinkling + large glow halo
   for (const s of _stars) {
-    const alpha = 0.40 + 0.55 * Math.abs(Math.sin(t * s.speed + s.phase));
+    const alpha = 0.50 + 0.50 * Math.abs(Math.sin(t * s.speed + s.phase));
 
     // Outer soft glow
     const grd = _ctx.createRadialGradient(s.cx, s.cy, 0, s.cx, s.cy, s.r * 5);
