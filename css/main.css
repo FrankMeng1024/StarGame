@@ -2426,11 +2426,11 @@ body {
   #star-cursor, .cursor-trail-particle { display: none !important; }
 }
 
-/* ── Mobile landscape (max-height: 560px) ──────────────────── */
-/* Targets iPhone 14 Pro Max landscape (430px CSS) and similar  */
-/* short-viewport devices. Reduces vertical spacing on menu so  */
-/* everything fits. Game canvas and level grid are unaffected.  */
-@media (max-height: 560px) {
+/* ── Mobile landscape (max-height: 560px, touch device only) ── */
+/* Targets iPhone 14 Pro Max landscape (430px CSS) and similar   */
+/* short-viewport devices. pointer:coarse ensures this NEVER     */
+/* fires on desktop browsers with small windows.                 */
+@media (max-height: 560px) and (pointer: coarse) {
   /* Menu inner: tighten gaps */
   .menu-inner {
     gap: 6px;
