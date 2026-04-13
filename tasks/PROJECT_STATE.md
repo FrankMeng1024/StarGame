@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
 **Status**: COMPLETE
-**Current Sprint**: 23 (Sprint Goal: 2项用户反馈修复 — 网绳发射起点与摆动位置一致/关卡精灵图全时段即时渲染)
+**Current Sprint**: 25 (Sprint Goal: 情绪节点打磨 — 失败/道具/故事/音乐/Tab暂停/storage降级 6项)
 **Last Updated**: 2026-04-13
 
 ## Sprint History
@@ -31,6 +31,8 @@
 | Sprint 21 | COMPLETE | 3项用户反馈修复 — 网兜绳起点对齐手部/展厅图片预加载/关卡精灵图立即渲染 |
 | Sprint 22 | COMPLETE | 2项用户反馈修复 — 网绳路径闪烁修复/关卡加载延迟消除 |
 | Sprint 23 | COMPLETE | 2项用户反馈修复 — 网绳发射起点与摆动位置一致/关卡精灵图全时段即时渲染 |
+| Sprint 24 | COMPLETE | 活的星空 — 地理定位星空主页/全通成就页/开场动画 (CR-070/071/072) |
+| Sprint 25 | COMPLETE | 情绪节点打磨 — 失败/道具/故事/音乐/Tab暂停/storage降级 (CR-073-078) |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -47,6 +49,25 @@
 | Sprint 18 | 9.5/10 | ACCEPTED | All Sprint 18 user-reported fixes verified — PROJECT COMPLETE |
 | Sprint 19 | 9.5/10 | ACCEPTED | All Sprint 18+19 features verified — PROJECT COMPLETE |
 | Sprint 20 | 9.5/10 | ACCEPTED | All Sprint 20 user-reported fixes verified — PROJECT COMPLETE |
+| Sprint 25 | 9.6/10 | ACCEPTED | All PRD + CR-070-078 features verified — PROJECT COMPLETE |
+
+## Sprint 24 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00115 | 地理定位星空主页 — visibility.js + menu-sky.js | Done |
+| STORY-00116 | 全通成就页 — achievement.js + screen-achievement | Done |
+| STORY-00117 | 15秒开场动画 — intro.js first-run cinematic | Done |
+| STORY-00118 | Q4 Level 30边界 — 通关后导航至成就页 | Done |
+
+## Sprint 25 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00119 | 失败屏幕改善 — 个性化鼓励文字 + 增强星座剪影 | Done |
+| STORY-00120 | 道具选择情境推荐 — 难度驱动横幅 | Done |
+| STORY-00121 | 星座故事分段翻页 — 4页分页器 | Done |
+| STORY-00122 | 动态背景音乐 — 计时≤15s加速至1.35x | Done |
+| STORY-00123 | Tab切换自动暂停 + 网兜状态机100ms防抖 | Done |
+| STORY-00124 | localStorage静默降级 — _storageAvailable模块标志 | Done |
 
 ## Sprint 20 Stories
 | Story | Title | Status |
