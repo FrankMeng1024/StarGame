@@ -1,11 +1,11 @@
-// intro.js — Cinematic intro animation (CR-085)
+// intro.js — Cinematic intro animation (CR-085/CR-087)
 // Plays on every fresh page load (F5). Skipped when navigating back to menu
 // from within the game — that path calls resumeMenuSky() directly, not playIntro().
 // Duration: ~12s. Three phases:
 //   Phase 1 (0–3s):   Meteor shower — gold streaks diagonal across dark sky
 //   Phase 2 (3–8s):   Constellation nodes appear one by one + lines draw
 //   Phase 3 (8–12s):  Title "追星少女" fades in
-// Skip button always visible at top-right.
+// Click/tap anywhere on the canvas to skip.
 
 import { playRevealNote } from './audio.js';
 
@@ -30,7 +30,8 @@ function _runIntro(onDone) {
     inset: 0;
     z-index: 100;
     background: #020510;
-    pointer-events: none;
+    pointer-events: all;
+    cursor: pointer;
   `;
   canvas.width  = window.innerWidth;
   canvas.height = window.innerHeight;
@@ -38,38 +39,18 @@ function _runIntro(onDone) {
   const ctx = canvas.getContext('2d');
   const W = canvas.width, H = canvas.height;
 
-  // ── Skip button ─────────────────────────────────────────────
-  const skipBtn = document.createElement('button');
-  skipBtn.textContent = '跳过 ›';
-  skipBtn.style.cssText = `
-    position: fixed;
-    top: 18px;
-    right: 22px;
-    z-index: 101;
-    background: rgba(255,255,255,0.08);
-    border: 1px solid rgba(255,255,255,0.25);
-    color: rgba(255,255,255,0.7);
-    font-family: 'Noto Sans SC', sans-serif;
-    font-size: 13px;
-    padding: 5px 14px;
-    border-radius: 20px;
-    cursor: pointer;
-    pointer-events: all;
-  `;
-  document.body.appendChild(skipBtn);
-
   let _done = false;
   function finish() {
     if (_done) return;
     _done = true;
     cancelAnimationFrame(_rafId);
+    canvas.removeEventListener('click', finish);
     canvas.style.transition = 'opacity 0.5s ease';
     canvas.style.opacity = '0';
-    skipBtn.remove();
     setTimeout(() => { canvas.remove(); onDone(); }, 500);
   }
 
-  skipBtn.addEventListener('click', finish);
+  canvas.addEventListener('click', finish);
 
   // ── Background stars (scattered, fade in during phase 1) ───
   const BG_STARS = Array.from({ length: 90 }, (_, i) => ({
