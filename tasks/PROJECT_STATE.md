@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
 **Status**: COMPLETE
-**Current Sprint**: 30 (Sprint Goal: 开场动画精修 + 封面居中修复 + 按钮透明度调整)
+**Current Sprint**: 31 (Sprint Goal: 封面体验全面精修 — 流星雨开场动画 + 星座上移放大 + 按钮透明化 + 信息栏优雅化)
 **Last Updated**: 2026-04-13
 
 ## Sprint History
@@ -38,6 +38,7 @@
 | Sprint 28 | COMPLETE | 封面全背景重设计 — 星座上半屏+UI浮层，消除分割感 (CR-081) |
 | Sprint 29 | COMPLETE | 三栏布局探索 — 评估后保留Sprint 28居中方案 (CR-082) |
 | Sprint 30 | COMPLETE | 开场动画精修 + 封面居中修复 + 按钮透明度调整 (CR-083) |
+| Sprint 31 | COMPLETE | 封面体验全面精修 — 流星雨开场 + 星座上移放大 + 信息栏优雅化 (CR-084) |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -60,6 +61,13 @@
 | Sprint 28 | — | COMPLETE | CR-081 封面全背景重设计 — committed |
 | Sprint 29 | — | COMPLETE | CR-082 三栏布局探索 — explored, reverted to Sprint 28 centered layout |
 | Sprint 30 | — | COMPLETE | CR-083 开场动画精修 + 封面居中 + 按钮透明度 — committed |
+| Sprint 31 | — | COMPLETE | CR-084 流星雨开场 + 星座上移 + 信息栏优雅化 — committed |
+
+## Sprint 31 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00130 | 流星雨开场动画重设计 | Done |
+| STORY-00131 | 主菜单星座上移放大 + 按钮透明化 + 信息栏优雅化 | Done |
 
 ## Sprint 30 Stories
 | Story | Title | Status |

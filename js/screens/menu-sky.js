@@ -75,8 +75,8 @@ function _buildLayout(conDef) {
 
   // Initial placement — center of constellation data space at screen center
   const cx = W * 0.50;
-  const cy = H * 0.33;
-  const BOX = H * 0.72;
+  const cy = H * 0.28;   // moved up from 0.33
+  const BOX = H * 0.80;  // enlarged from 0.72
 
   // First pass: compute raw positions
   const conStars = conDef.stars.map((s, si) => ({
@@ -88,15 +88,33 @@ function _buildLayout(conDef) {
     speed: 0.4 + (si % 5) * 0.15,
   }));
 
-  // Auto-center: shift so bounding-box center aligns with (W*0.50, H*0.33)
+  // Auto-center: shift so bounding-box center aligns with (W*0.50, H*0.28)
   // This corrects for asymmetric star data (e.g. Taurus skewing right)
   const xs = conStars.map(s => s.cx);
   const ys = conStars.map(s => s.cy);
   const xMid = (Math.min(...xs) + Math.max(...xs)) / 2;
   const yMid = (Math.min(...ys) + Math.max(...ys)) / 2;
   const dx = W * 0.50 - xMid;
-  const dy = H * 0.33 - yMid;
+  const dy = H * 0.28 - yMid;
   for (const s of conStars) { s.cx += dx; s.cy += dy; }
+
+  // Clamp: if constellation overflows canvas edges, scale it down uniformly
+  const MARGIN = 60;
+  const xs2 = conStars.map(s => s.cx);
+  const ys2 = conStars.map(s => s.cy);
+  const conW = Math.max(...xs2) - Math.min(...xs2);
+  const conH = Math.max(...ys2) - Math.min(...ys2);
+  const maxW = W - MARGIN * 2;
+  const maxH = H * 0.58; // don't push stars into button area
+  const scale = Math.min(1, maxW / (conW || 1), maxH / (conH || 1));
+  if (scale < 1) {
+    const pivX = W * 0.50, pivY = H * 0.28;
+    for (const s of conStars) {
+      s.cx = pivX + (s.cx - pivX) * scale;
+      s.cy = pivY + (s.cy - pivY) * scale;
+      s.r  = Math.max(2.5, s.r * scale);
+    }
+  }
 
   (conDef.lines || []).forEach(([ai, bi]) => {
     const a = conStars[ai];

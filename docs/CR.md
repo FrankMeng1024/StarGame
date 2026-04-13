@@ -343,3 +343,6 @@ Replace the current multi-constellation scattered overlay (4-6 small constellati
 
 ## CR-083: 开场动画精修 + 封面居中 + 按钮透明度 (Sprint 30 approved)
 Three polish fixes: (1) Replace triangle shape in intro Phase 1 with a cute bouncing gold star; net in Phase 2 becomes a recognizable round bag shape. (2) Fix constellation right-bias on menu cover by applying bounding-box auto-centering after position computation. (3) Reduce button opacity so constellation background shows through (primary: 0.82, secondary bg: 0.30 alpha, shop bg: 0.25 alpha).
+
+## CR-084: 封面体验全面精修 — 流星雨开场 + 星座上移放大 + 信息栏优雅化 (Sprint 31 approved)
+Four changes: (1) Intro animation replaced with meteor shower (9 diagonal gold streaks with glowing tails) followed by constellation node-by-node reveal with sparkle bursts and animated line drawing; no more net bag or bouncing star. (2) Menu constellation moved higher (cy H*0.28) and larger (BOX H*0.80) with auto-scale clamp to prevent overflow. (3) Primary button opacity reduced to 0.62 (hover 0.92). (4) Info panel redesigned from glass-morphism card to elegant borderless text caption with subtle top divider line, center-aligned.
