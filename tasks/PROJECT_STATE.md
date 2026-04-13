@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
 **Status**: COMPLETE
-**Current Sprint**: 20 (Sprint Goal: 6项用户反馈修复 — 网兜手部对齐/摆角扩大/星星缩小/展厅布局重排/照片预加载/关卡资源预热)
+**Current Sprint**: 21 (Sprint Goal: 3项用户反馈修复 — 网兜绳起点对齐手部/展厅图片预加载/关卡精灵图立即渲染)
 **Last Updated**: 2026-04-13
 
 ## Sprint History
@@ -28,6 +28,7 @@
 | Sprint 18 | COMPLETE | 8项用户反馈修复 — 网兜手持/展厅顺序/照片修复/展厅导航/道具重置/音乐恢复/暂停图标/星星放大 |
 | Sprint 19 | COMPLETE | Sprint 19 — VU ACCEPTED 9.5/10 (Sprint 18 features verified) |
 | Sprint 20 | COMPLETE | 6项用户反馈修复 — 网兜手部对齐/摆角扩大/星星缩小/展厅布局重排/照片预加载/关卡资源预热 |
+| Sprint 21 | COMPLETE | 3项用户反馈修复 — 网兜绳起点对齐手部/展厅图片预加载/关卡精灵图立即渲染 |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -54,6 +55,13 @@
 | STORY-00105 | 展厅详情页布局重排 — 名字→大星图→天文摄影→介绍，删除小星图 | Done |
 | STORY-00106 | 天文摄影图片预加载 — 展厅打开无延迟 | Done |
 | STORY-00107 | 关卡入口全资源预热 — 包含垃圾精灵图 | Done |
+
+## Sprint 21 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00108 | 网兜绳起点对齐角色手部 — SVG精确坐标校准 | Done |
+| STORY-00109 | 展厅天文摄影图片预加载修复 — GC防护+CDN预连接 | Done |
+| STORY-00110 | 关卡精灵图立即渲染 — preload hint + img.decode() | Done |
 
 ## Sprint 18 Stories
 | Story | Title | Status |
