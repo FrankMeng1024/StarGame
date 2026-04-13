@@ -10,6 +10,7 @@ import { initShop } from './screens/shop.js';
 import { showItemSelect } from './screens/item-select.js';
 import { showAchievement } from './screens/achievement.js';
 import { playIntro } from './intro.js';
+import { CONSTELLATIONS } from './data/constellations.js';
 
 // ── Custom star cursor ─────────────────────────────────────────
 function initCursor() {
@@ -137,6 +138,16 @@ function _activateScreen(screen, screenId, params) {
 // ── Init ───────────────────────────────────────────────────────
 async function init() {
   state.load();
+
+  // 后门：?unlock=all 解锁全部关卡（开发用）
+  if (new URLSearchParams(location.search).get('unlock') === 'all') {
+    for (let i = 0; i < CONSTELLATIONS.length; i++) {
+      state.unlock(i);
+      state.setScore(i, { stars: 3, time: 90 });
+    }
+    state.addCoins(9999);
+  }
+
   initCursor();
   initTrail();
   initStarfield('star-canvas');
