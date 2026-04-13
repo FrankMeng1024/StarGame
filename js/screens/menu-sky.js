@@ -20,11 +20,9 @@ let _lines    = [];   // { x1, y1, x2, y2 }
 
 // ── Init ──────────────────────────────────────────────────────
 /**
- * @param {object} conDef        — full CONSTELLATIONS entry (with .stars, .lines)
- * @param {number} altitudeDeg   — current altitude above horizon in degrees
- * @param {boolean} isDefault    — true if geolocation was denied / fell back to NZ
+ * @param {object} conDef — full CONSTELLATIONS entry (with .stars, .lines)
  */
-export function initMenuSky(conDef, altitudeDeg, isDefault) {
+export function initMenuSky(conDef) {
   stopMenuSky(); // clean up any previous instance
 
   if (!conDef || !conDef.stars) return;
@@ -62,12 +60,12 @@ export function initMenuSky(conDef, altitudeDeg, isDefault) {
 
   // ── Start animation loop ──────────────────────────────────────
   requestAnimationFrame(t => {
-    _canvas.style.opacity = '1';
+    _canvas.style.opacity = '0.88';
     _loop(t);
   });
 }
 
-// ── Layout: one constellation, large, centered ────────────────
+// ── Layout: one constellation, full-screen centered ──────────
 function _buildLayout(conDef) {
   _stars = [];
   _lines = [];
@@ -75,14 +73,13 @@ function _buildLayout(conDef) {
   const W = _canvas.width;
   const H = _canvas.height;
 
-  // Center of the constellation: upper half of screen so it doesn't
-  // overlap the bottom info panel or the center menu buttons.
-  // Place centroid at ~28% from top.
+  // Center constellation in the middle of the screen —
+  // it IS the background art, so use the full canvas.
   const cx = W * 0.50;
-  const cy = H * 0.28;
+  const cy = H * 0.46;
 
-  // Scale to fill ~55% of screen height (the smaller dimension governs)
-  const BOX = Math.min(W, H) * 0.52;
+  // Scale to fill ~85% of the smaller screen dimension
+  const BOX = Math.min(W, H) * 0.82;
 
   const conStars = conDef.stars.map((s, si) => {
     const sx = cx + (s.x - 0.5) * BOX;
@@ -90,7 +87,7 @@ function _buildLayout(conDef) {
     return {
       cx: sx,
       cy: sy,
-      r: Math.max(2.5, Math.min(9, magToRadius(s.mag) * 1.1)),
+      r: Math.max(3, Math.min(11, magToRadius(s.mag) * 1.3)),
       color: typeToColor(s.type),
       phase: (si * 1.618) % TWO_PI,
       speed: 0.4 + (si % 5) * 0.15,

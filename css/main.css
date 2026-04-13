@@ -96,6 +96,8 @@ body {
 /* ── Main Menu ─────────────────────────────────────────────── */
 #screen-menu {
   background: linear-gradient(180deg, var(--sky-deep) 0%, var(--sky-mid) 60%, var(--sky-horizon) 100%);
+  justify-content: flex-end;
+  align-items: stretch;
 }
 
 .menu-inner {
@@ -103,15 +105,23 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: var(--spacing-xl);
+  gap: var(--spacing-md);
   text-align: center;
-  padding: var(--spacing-xl);
+  padding: 20px var(--spacing-xl) 28px;
+  width: 100%;
+  /* Frosted bottom strip — compact, leaves most of screen for constellation */
+  background: rgba(6, 4, 18, 0.72);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1px solid rgba(160, 140, 220, 0.18);
+  z-index: 1;
 }
 
 .btn-menu-mute {
-  position: absolute;
-  top: 0;
-  right: 0;
+  position: fixed;
+  top: var(--spacing-md);
+  right: var(--spacing-md);
+  z-index: 10;
   background: rgba(255,255,255,0.1);
   border: 1px solid rgba(255,255,255,0.18);
   border-radius: var(--radius-md);
@@ -152,7 +162,7 @@ body {
   font-size: var(--font-lg);
   color: var(--text2);
   letter-spacing: 0.2em;
-  margin-top: calc(-1 * var(--spacing-lg));
+  margin-top: calc(-1 * var(--spacing-md));
 }
 
 .menu-buttons {
@@ -250,24 +260,14 @@ body {
   transform: translateY(-1px);
 }
 
-.menu-deco {
-  font-size: var(--font-sm);
-  color: var(--text2);
-  letter-spacing: 0.15em;
-  opacity: 0.7;
-}
-
-/* ── CR-079: Menu sky info panel ─────────────────────────────── */
+/* ── CR-079/080: Menu sky info panel ─────────────────────────── */
 .menu-sky-info {
   width: 100%;
-  max-width: 420px;
-  background: rgba(10, 8, 28, 0.68);
-  border: 1px solid rgba(200, 185, 130, 0.28);
-  border-radius: 14px;
-  padding: 12px 18px;
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
-  box-shadow: 0 4px 24px rgba(0,0,0,0.45), inset 0 0 12px rgba(200,185,130,0.04);
+  background: transparent;
+  border: none;
+  padding: 0;
+  border-top: 1px solid rgba(200, 185, 130, 0.18);
+  padding-top: 10px;
   text-align: left;
   animation: sky-info-fadein 1.2s ease forwards;
 }
