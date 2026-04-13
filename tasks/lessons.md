@@ -187,3 +187,25 @@ Sprint 17: clean Sprint. VU initially NOT ACCEPTED (8.5/10) due to incomplete ev
 - Navigation from game.js reads state.currentLevel — not navigate() params. Must set window.__state.currentLevel before calling window.__navigate('game') for test injection.
 - Timer expiry during evidence collection: level timer was already running from prior QA sessions. Always reload the page (navigate to '/') before injecting new game sessions to get fresh timer state.
 - Lightweight retro rule applied: steps 1-3 skipped for process issues. VU NOT ACCEPTED counted but was evidence-only gap (not a product defect), resolved without new Sprint.
+
+## Sprint 18–23 — 2026-04-12 to 2026-04-13
+Clean Sprints (18–23), no retrospective actions. VU ACCEPTED each time (9.5/10).
+- 6 Sprints of user-feedback-driven polish: net mechanics, preloading, sprite rendering, rope path, level load speed.
+- Lightweight retro rule applied for all: steps 1-3 skipped.
+
+## Sprint 24 — 2026-04-13
+Sprint 24: clean Sprint. VU folded into Sprint 25 evaluation.
+- 4 stories: geo-location starfield (CR-070), achievement screen (CR-071), intro cinematic (CR-072), Level 30 boundary navigation (CR-073 via Q4).
+- Arch PASS, QA PASS, UX PASS. Navigation regression: all routes clean, 0 JS errors.
+- Lightweight retro rule applied: steps 1-3 skipped.
+
+## Sprint 25 — 2026-04-13
+Sprint 25: clean Sprint. VU ACCEPTED 9.6/10 — PROJECT COMPLETE (final).
+- 6 stories: fail encouragement (CR-073), item recommendation (CR-074), lore pagination (CR-075), music tempo (CR-076), tab auto-pause + net guard (CR-077), localStorage silent degradation (CR-078).
+- Arch PASS, QA PASS, UX PASS. Navigation regression: 6 screen transitions, 0 console errors.
+- VU score: 9.6/10 — ACCEPTED. All F-001 through F-008 and CR-001 through CR-078 verified.
+- Notable VU observations: fail/complete screen asymmetry called out as "smart design"; geo-location starfield as "standout feature exceeding original PRD scope"; achievement screen as "spectacular payoff".
+- [archived: VU evidence protocol] Tab-switch auto-pause (CR-077) can be tested without a real second tab by injecting `document.hidden = true` via JS + dispatching visibilitychange event. VU accepted this as equivalent evidence.
+- [archived: VU evidence protocol] Achievement screen (CR-071) requires full 30-level completion state — use localStorage injection with all 30 levelScores entries set to `{ stars: 3, time: 45 }` + page reload. Achievement button appears correctly after state injection.
+- All 78 CRs delivered and accepted. Project iteration cycle complete.
+- Lightweight retro rule applied: steps 1-3 skipped. (No VU NOT ACCEPTED in prior Sprint.)
