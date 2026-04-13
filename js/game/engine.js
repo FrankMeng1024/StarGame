@@ -375,7 +375,7 @@ function drawCloth(ctx, x, y, r, angle) {
 
 // ── GameEngine class ──────────────────────────────────────────
 export class GameEngine {
-  constructor(canvas, levelIdx, onComplete, onFail) {
+  constructor(canvas, levelIdx, onComplete, onFail, sprites = {}) {
     this.canvas    = canvas;
     this.ctx       = canvas.getContext('2d');
     this.levelIdx  = levelIdx;
@@ -422,7 +422,11 @@ export class GameEngine {
     this._handX = this.charX + 13;
     this._handY = this.charY - 17;
 
-    // ── Sprite assets — load SVG image files ──────────────────
+    // ── Sprite assets — use preloaded images when provided (CR-071) ──
+    // If `sprites` map contains a complete Image for a src, assign it directly
+    // so the engine renders from frame 1 with zero async wait.
+    // Fallback: create new Image() for any sprite not in the map.
+
     // Girl sprite sheet (4 frames: idle, blink, throw, catch)
     this._charImgReady = false;
     this._charFrameIdx = 0;
@@ -434,36 +438,64 @@ export class GameEngine {
     this._charCatchFrame = 3;
     this._charBlinkTimer = 0;
     this._charState = 'idle'; // 'idle' | 'throw' | 'catch'
-    const charImg = new Image();
-    charImg.onload = () => {
-      this._charImg = charImg;
-      this._charFrameW = charImg.naturalWidth / this._charFrameCount;
-      this._charFrameH = charImg.naturalHeight;
-      this._charImgReady = true;
-    };
-    charImg.src = 'assets/sprites/girl.svg';
+    {
+      const src = 'assets/sprites/girl.svg';
+      const pre = sprites[src];
+      if (pre && pre.complete) {
+        this._charImg = pre;
+        this._charFrameW = pre.naturalWidth / this._charFrameCount;
+        this._charFrameH = pre.naturalHeight;
+        this._charImgReady = true;
+      } else {
+        const charImg = new Image();
+        charImg.onload = () => {
+          this._charImg = charImg;
+          this._charFrameW = charImg.naturalWidth / this._charFrameCount;
+          this._charFrameH = charImg.naturalHeight;
+          this._charImgReady = true;
+        };
+        charImg.src = src;
+      }
+    }
 
     // Net sprite sheet (2 frames: empty, catch)
     this._netImgReady = false;
     this._netFrameW = 60;
     this._netFrameH = 60;
-    const netImg = new Image();
-    netImg.onload = () => {
-      this._netImg = netImg;
-      this._netFrameW = netImg.naturalWidth / 2;
-      this._netFrameH = netImg.naturalHeight;
-      this._netImgReady = true;
-    };
-    netImg.src = 'assets/sprites/net.svg';
+    {
+      const src = 'assets/sprites/net.svg';
+      const pre = sprites[src];
+      if (pre && pre.complete) {
+        this._netImg = pre;
+        this._netFrameW = pre.naturalWidth / 2;
+        this._netFrameH = pre.naturalHeight;
+        this._netImgReady = true;
+      } else {
+        const netImg = new Image();
+        netImg.onload = () => {
+          this._netImg = netImg;
+          this._netFrameW = netImg.naturalWidth / 2;
+          this._netFrameH = netImg.naturalHeight;
+          this._netImgReady = true;
+        };
+        netImg.src = src;
+      }
+    }
 
     // Debris sprites (keyed by type)
     this._debrisImgs = {};
-    const DEBRIS_SPRITE_TYPES = ['meteor', 'satellite', 'rocket', 'cloth'];
     this._debrisImgsReady = {};
-    for (const t of DEBRIS_SPRITE_TYPES) {
-      const img = new Image();
-      img.onload = () => { this._debrisImgs[t] = img; this._debrisImgsReady[t] = true; };
-      img.src = `assets/sprites/debris-${t}.svg`;
+    for (const t of ['meteor', 'satellite', 'rocket', 'cloth']) {
+      const src = `assets/sprites/debris-${t}.svg`;
+      const pre = sprites[src];
+      if (pre && pre.complete) {
+        this._debrisImgs[t] = pre;
+        this._debrisImgsReady[t] = true;
+      } else {
+        const img = new Image();
+        img.onload = () => { this._debrisImgs[t] = img; this._debrisImgsReady[t] = true; };
+        img.src = src;
+      }
     }
 
     // Constellation reveal state
@@ -1333,20 +1365,16 @@ export class GameEngine {
     //   Catch (frame 3):   right hand ellipse cx=82, cy=34  → canvas (cx+27, cy-64)
     const cx = this.charX;
     const cy = this.charY;
-    const netSt   = this.netState;
-    const isThrow = netSt === 'extend';
-    const isCatch = netSt === 'retract' && this.caughtObj !== null;
+    const netSt    = this.netState;
+    // Keep hand at throw position for the ENTIRE extend+retract cycle so the
+    // rope anchor never jumps mid-flight (CR-070: rope path flicker fix).
+    const isActive = netSt === 'extend' || netSt === 'retract';
     const t = Date.now() * 0.002;
-    if (isThrow) {
-      // Throw (frame 2): hand is fixed at sprite position — arm does NOT rotate.
-      // The pole angle (swingAngle) is independent of the hand anchor.
-      // SVG (82,20) → canvas (cx+27, cy-78)
+    if (isActive) {
+      // Throw (frame 2): hand fixed at SVG (82,20) → canvas (cx+27, cy-78).
+      // Stays here throughout extend AND retract — no path discontinuity.
       this._handX = cx + 27;
       this._handY = cy - 78;
-    } else if (isCatch) {
-      // Catch (frame 3): hand at (cx+27, cy-64)
-      this._handX = cx + 27;
-      this._handY = cy - 64;
     } else {
       // Idle (frames 0/1): hand at (cx+13, cy-17), gentle bob
       const idleLift = Math.sin(t * 0.7) * 3;

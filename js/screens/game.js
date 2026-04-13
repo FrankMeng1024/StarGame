@@ -24,18 +24,25 @@ export function startGame(navigate) {
 
   if (engine) { engine.stop(); engine = null; }
 
-  // CR-056/069: Wait for sprites to be ready using cached objects from levels.js.
-  // getSpriteReady() returns the same Image instance that was preloaded at startup,
-  // so if it's already loaded it resolves in the same microtask — zero visible delay.
-  Promise.all([
-    getSpriteReady('assets/sprites/girl.svg'),
-    getSpriteReady('assets/sprites/net.svg'),
-  ]).then(() => {
-    engine = new GameEngine(
-      canvas, idx,
-      (timeLeft) => _handleComplete(timeLeft, navigate),
-      ()         => _handleFail(idx, navigate)
-    );
+  // CR-071: Fetch all 6 sprites from the prewarmed cache in levels.js and pass
+  // them into GameEngine so it can assign them directly (no new Image() needed).
+  const SPRITE_SRCS = [
+    'assets/sprites/girl.svg',
+    'assets/sprites/net.svg',
+    'assets/sprites/debris-meteor.svg',
+    'assets/sprites/debris-satellite.svg',
+    'assets/sprites/debris-rocket.svg',
+    'assets/sprites/debris-cloth.svg',
+  ];
+  Promise.all(SPRITE_SRCS.map(src => getSpriteReady(src).then(img => [src, img])))
+    .then(entries => {
+      const sprites = Object.fromEntries(entries);
+      engine = new GameEngine(
+        canvas, idx,
+        (timeLeft) => _handleComplete(timeLeft, navigate),
+        ()         => _handleFail(idx, navigate),
+        sprites
+      );
 
     // Init HUD
     const status = engine.getStatus();

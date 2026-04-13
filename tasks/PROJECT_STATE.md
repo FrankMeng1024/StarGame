@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
 **Status**: COMPLETE
-**Current Sprint**: 21 (Sprint Goal: 3项用户反馈修复 — 网兜绳起点对齐手部/展厅图片预加载/关卡精灵图立即渲染)
+**Current Sprint**: 22 (Sprint Goal: 2项用户反馈修复 — 网绳路径闪烁修复/关卡加载延迟消除)
 **Last Updated**: 2026-04-13
 
 ## Sprint History
@@ -29,6 +29,7 @@
 | Sprint 19 | COMPLETE | Sprint 19 — VU ACCEPTED 9.5/10 (Sprint 18 features verified) |
 | Sprint 20 | COMPLETE | 6项用户反馈修复 — 网兜手部对齐/摆角扩大/星星缩小/展厅布局重排/照片预加载/关卡资源预热 |
 | Sprint 21 | COMPLETE | 3项用户反馈修复 — 网兜绳起点对齐手部/展厅图片预加载/关卡精灵图立即渲染 |
+| Sprint 22 | COMPLETE | 2项用户反馈修复 — 网绳路径闪烁修复/关卡加载延迟消除 |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -55,6 +56,12 @@
 | STORY-00105 | 展厅详情页布局重排 — 名字→大星图→天文摄影→介绍，删除小星图 | Done |
 | STORY-00106 | 天文摄影图片预加载 — 展厅打开无延迟 | Done |
 | STORY-00107 | 关卡入口全资源预热 — 包含垃圾精灵图 | Done |
+
+## Sprint 22 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00111 | 网绳路径闪烁修复 — 出去和回来路径一致 | Done |
+| STORY-00112 | 关卡加载延迟消除 — 传入预加载精灵图对象 | Done |
 
 ## Sprint 21 Stories
 | Story | Title | Status |
