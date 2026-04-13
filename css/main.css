@@ -2419,3 +2419,54 @@ body {
   color: rgba(255,220,100,0.85);
 }
 
+/* ── Touch device: restore default cursor ──────────────────── */
+@media (hover: none) and (pointer: coarse) {
+  body { cursor: auto; }
+  .btn, button { cursor: pointer; }
+  #star-cursor, .cursor-trail-particle { display: none !important; }
+}
+
+/* ── Mobile landscape (max-height: 560px) ──────────────────── */
+/* Targets iPhone 14 Pro Max landscape (430px CSS) and similar  */
+/* short-viewport devices. Reduces vertical spacing on menu so  */
+/* everything fits. Game canvas and level grid are unaffected.  */
+@media (max-height: 560px) {
+  /* Menu inner: tighten gaps */
+  .menu-inner {
+    gap: 6px;
+    padding: 8px 24px;
+  }
+
+  /* Title: smaller */
+  .game-title {
+    font-size: clamp(28px, 6vh, 40px);
+  }
+  .game-subtitle {
+    font-size: clamp(11px, 1.8vh, 14px);
+    margin-top: -4px;
+  }
+
+  /* Buttons: less padding, smaller font */
+  .btn {
+    padding: 8px 24px;
+    font-size: clamp(14px, 2vh, 16px);
+  }
+  .menu-buttons {
+    gap: 6px;
+    width: min(280px, 70vw);
+  }
+
+  /* Info panel: hide tip text and location, keep only name + altitude */
+  .sky-info-tip,
+  .sky-info-loc {
+    display: none;
+  }
+  .menu-sky-info {
+    bottom: 6px;
+    padding: 8px 4px 4px;
+  }
+  .sky-info-name {
+    font-size: 0.95rem;
+  }
+}
+
