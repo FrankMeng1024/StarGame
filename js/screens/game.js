@@ -2,7 +2,7 @@
 import { GameEngine } from '../game/engine.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
 import state from '../state.js';
-import { startMusic, stopMusic, playLevelComplete, playTimeExt, toggleMute, isMuted } from '../audio.js';
+import { startMusic, stopMusic, playLevelComplete, playTimeExt, toggleMute, isMuted, setMusicTempo } from '../audio.js';
 import { getSpriteReady, prewarmSprites } from './levels.js';
 
 let engine = null;
@@ -10,6 +10,7 @@ let _hintClickListener = null;
 let _hintTimer = null;
 let _hintGeneration = 0;
 let _escListener = null;
+let _visibilityListener = null;
 
 export function startGame(navigate) {
   const screen = document.getElementById('screen-game');
@@ -71,6 +72,19 @@ export function startGame(navigate) {
     engine.onTimeExt = () => { _showTimeExtFlash(); playTimeExt(); };
     engine.start();
     startMusic();
+
+    // Q2: Auto-pause when tab hidden
+    if (_visibilityListener) document.removeEventListener('visibilitychange', _visibilityListener);
+    _visibilityListener = () => {
+      if (!document.hidden || !engine || engine.finished || engine._paused) return;
+      // Trigger same pause logic as pause button
+      const overlay = document.getElementById('pause-overlay');
+      if (overlay) {
+        engine._paused = true;
+        overlay.classList.remove('hidden');
+      }
+    };
+    document.addEventListener('visibilitychange', _visibilityListener);
   });
 }
 
@@ -88,6 +102,11 @@ export function stopGame() {
   if (_escListener) {
     document.removeEventListener('keydown', _escListener);
     _escListener = null;
+  }
+  // Q2: Clean up visibility listener
+  if (_visibilityListener) {
+    document.removeEventListener('visibilitychange', _visibilityListener);
+    _visibilityListener = null;
   }
   // Hide pause overlay
   const overlay = document.getElementById('pause-overlay');

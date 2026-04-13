@@ -1,5 +1,6 @@
 // screens/item-select.js — Pre-level item selection overlay
 import state from '../state.js';
+import { CONSTELLATIONS } from '../data/constellations.js';
 
 // Item definitions for the selection screen
 const ACTIVE_ITEMS = [
@@ -42,13 +43,36 @@ export function showItemSelect(onConfirm, onBack) {
   // Count how many times an item ID appears in selected
   function countSelected(id) { return selected.filter(x => x === id).length; }
 
+  function _getRecommendBanner() {
+    const con = CONSTELLATIONS[state.currentLevel ?? 0];
+    const diff = con ? con.difficulty : 1;
+    let recommendId = null;
+    let text = '';
+    if (diff <= 2) {
+      text = '🌟 初级关卡，轻装上阵！';
+    } else if (diff === 3) {
+      recommendId = 'net_speed';
+      text = '⚡ 建议携带：网兜加速';
+    } else {
+      recommendId = 'time_ext';
+      text = '⏱️ 建议携带：时间延长';
+    }
+    // If recommended item not owned, show shop suggestion
+    if (recommendId && state.getItemQty(recommendId) === 0) {
+      text = '💡 去商店购买更多道具';
+    }
+    return text;
+  }
+
   function render() {
+    const bannerText = _getRecommendBanner();
     overlay.innerHTML = `
       <div class="item-select-modal">
         <div class="item-select-header">
           <button class="btn btn-ghost item-select-back-btn" aria-label="返回">← 返回</button>
           <h2 class="item-select-title">选择道具</h2>
         </div>
+        <div class="item-recommend-banner">${bannerText}</div>
         <p class="item-select-hint">最多选择 <strong>${MAX_SLOTS}</strong> 个主动道具（可选多个同类），按 1/2/3 键激活</p>
 
         ${ownedActive.length > 0 ? `

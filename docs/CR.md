@@ -304,3 +304,30 @@ Added persistent module-level _prewarmedImages array in levels.js to prevent GC 
 
 ## CR-069: 关卡精灵图立即渲染 (Sprint 21 approved)
 Replaced Promise.race([preload, 50ms timeout]) with Promise.all using img.decode() — this resolves instantly when sprites are already in browser cache (from HTML preload hints), eliminating blank-canvas flash on level entry. Added <link rel="preload"> for all 6 sprite SVGs in index.html.
+
+## CR-070: 地理定位星空主页 (Sprint 24 approved)
+Main menu background dynamically shows constellations visible from the user's current geographic location and local time. Uses Geolocation API (with fallback to New Zealand if denied). Renders 4-6 constellation outlines as animated, softly glowing star patterns on the existing starfield canvas. Stars twinkle with phase-offset sine animations. Shows a subtle label "当前星空" or season name.
+
+## CR-071: 全通成就页 (Sprint 24 approved)
+After completing all 30 levels, a "全天星图" achievement screen appears. Shows all 30 constellation outlines arranged on a hemisphere-like projection, each glowing gold when completed. A "100% Starcatcher" badge animates in. Reachable from main menu after full completion. Q4 boundary: when level 30 completes, navigate to this achievement screen instead of showing a dead "下一关" button.
+
+## CR-072: 15秒开场动画 (Sprint 24 approved)
+On first-ever visit (once, stored in localStorage), a 15-second intro cinematic plays before the main menu: a net sweeps across a starfield, catches a star, constellation lines light up one by one with musical notes. Skip button available. Uses existing Canvas/audio infrastructure.
+
+## CR-073: 失败屏幕改善 (Sprint 25 approved)
+Fail screen lower area shows: (1) a brief contextual encouragement line specific to the constellation (e.g. "猎户座跑得太快了！") + generic retry prompt, (2) the constellation's full line pattern rendered as a dim silver silhouette (already partially implemented via _drawFailConstellation — enhance it). Lore remains hidden (reward for winning only).
+
+## CR-074: 道具选择情境推荐 (Sprint 25 approved)
+In the item-select overlay, add a single-line recommendation banner above the item grid: maps level difficulty to a suggested item. Difficulty 4-5 → "建议携带：时间延长"; difficulty 3 → "建议携带：网兜加速"; difficulty 1-2 → "初级关卡，轻装上阵！". Static text, no dynamic logic beyond difficulty lookup.
+
+## CR-075: 星座故事分段翻页 (Sprint 25 approved)
+On the level complete screen, the lore text is displayed in paginated segments (2-3 sentences per page) instead of a scrollable block. Navigation: "下一段 ›" button advances pages; on last page button becomes "完成 ✓". Page indicator (1/3 etc.) shown. Improves reading engagement during the celebration state.
+
+## CR-076: 动态背景音乐 (Sprint 25 approved)
+When game timer drops to ≤15 seconds, the background music playback rate gradually increases from 1.0x to 1.35x using Web Audio API's playbackRate ramp. When timer is above 15s or game ends, rate returns to 1.0x. Creates urgency without changing the chord pattern.
+
+## CR-077: 标签页切换自动暂停 + 状态机边界修复 (Sprint 25 approved)
+Two fixes bundled: (1) Add visibilitychange event listener in game screen: when document becomes hidden, auto-pause the game (same as pressing pause button). (2) Fix net state machine rapid-click bug: add a minimum-extend-duration guard (100ms) so rapid Space/click cannot cause the net to enter an inconsistent state between extending and retracting.
+
+## CR-078: localStorage静默降级 (Sprint 25 approved)
+Verify storage.js try-catch covers all read/write paths. Any localStorage exception must be caught silently — game continues with in-memory state only, no error thrown to console or user. Add a module-level _storageAvailable flag that is set on first save attempt; if false, all subsequent save calls are no-ops.

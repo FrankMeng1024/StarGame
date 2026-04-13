@@ -1,7 +1,7 @@
 // game/engine.js — Core game loop, pendulum net, star/debris objects
 import state from '../state.js';
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
-import { playCatch, playDebrisCatch, startCountdownBeeps, stopCountdownBeeps, playRevealNote } from '../audio.js';
+import { playCatch, playDebrisCatch, startCountdownBeeps, stopCountdownBeeps, playRevealNote, setMusicTempo } from '../audio.js';
 import { SCENE_PALETTES, drawGroundSilhouette } from '../data/scenes.js';
 
 const TWO_PI = Math.PI * 2;
@@ -398,6 +398,9 @@ export class GameEngine {
     this.caughtStars = 0;
     this.totalStars  = this.level.stars.length;
     this.finished    = false;
+    this._beeping    = false;
+    this._tempoRaised = false;
+    this._extendStart = 0; // Q3: rapid-click guard timestamp
 
     // Pendulum
     this.swingAngle   = 0;       // current angle in radians (0 = up)
@@ -632,6 +635,10 @@ export class GameEngine {
     if (this._introPlaying) return;
     if (e.type === 'keydown' && e.code !== 'Space') return;
     if (this.netState === 'swing' && !this.finished) {
+      // Q3: 100ms guard — ignore rapid repeat clicks/keydowns
+      const now = performance.now();
+      if (now - this._extendStart < 100) return;
+      this._extendStart = now;
       this.netState   = 'extend';
       this.netPos     = 0;
       this.caughtObj  = null;
@@ -750,6 +757,7 @@ export class GameEngine {
     if (this.rafId) cancelAnimationFrame(this.rafId);
     if (this._revealRafId) cancelAnimationFrame(this._revealRafId);
     stopCountdownBeeps();
+    setMusicTempo(1.0); // U6: reset tempo on level end
   }
 
   _showSceneIntro(sceneIdx, onDone) {
@@ -828,6 +836,12 @@ export class GameEngine {
     } else if (this.timeLeft > 10 && this._beeping) {
       this._beeping = false;
       stopCountdownBeeps();
+    }
+
+    // U6: Dynamic music tempo — accelerate when ≤15s remaining
+    if (this.timeLeft <= 15 && !this._tempoRaised) {
+      this._tempoRaised = true;
+      setMusicTempo(1.35);
     }
 
     // Pendulum swing

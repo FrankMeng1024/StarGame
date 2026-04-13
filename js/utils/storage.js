@@ -1,7 +1,18 @@
 // storage.js — localStorage wrapper
 const SAVE_KEY = 'starcatcher_save';
 
+// Q5: Availability probe — run once at module load
+let _storageAvailable = true;
+try {
+  localStorage.setItem('_sc_test', '1');
+  localStorage.removeItem('_sc_test');
+} catch (e) {
+  _storageAvailable = false;
+  console.warn('[StarCatcher] localStorage unavailable, running in memory-only mode');
+}
+
 export function saveGame(state) {
+  if (!_storageAvailable) return;
   try {
     const data = {
       unlockedLevels: [...state.unlockedLevels],
@@ -17,6 +28,7 @@ export function saveGame(state) {
 }
 
 export function loadGame() {
+  if (!_storageAvailable) return null;
   try {
     const raw = localStorage.getItem(SAVE_KEY);
     if (!raw) return null;
@@ -35,5 +47,6 @@ export function loadGame() {
 }
 
 export function clearGame() {
+  if (!_storageAvailable) return;
   localStorage.removeItem(SAVE_KEY);
 }

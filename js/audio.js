@@ -150,6 +150,7 @@ let _musicRunning = false;
 let _musicChordIdx = 0;
 let _musicNextTime = 0;
 let _musicLoop     = null;
+let _currentChordDur = CHORD_DUR; // mutable per setMusicTempo
 
 function _musicTick() {
   if (!_musicRunning) return;
@@ -157,7 +158,7 @@ function _musicTick() {
   while (_musicNextTime < ctx.currentTime + 0.5) {
     _scheduleChord(_musicChordIdx, _musicNextTime);
     _musicChordIdx = (_musicChordIdx + 1) % CHORDS.length;
-    _musicNextTime += CHORD_DUR;
+    _musicNextTime += _currentChordDur;
   }
   _musicLoop = setTimeout(_musicTick, 200);
 }
@@ -165,6 +166,7 @@ function _musicTick() {
 export function startMusic() {
   if (_musicRunning) return;
   _musicRunning = true;
+  _currentChordDur = CHORD_DUR; // reset tempo on start
   const ctx = _getCtx();
   _musicChordIdx = 0;
   _musicNextTime = ctx.currentTime + 0.1;
@@ -173,5 +175,14 @@ export function startMusic() {
 
 export function stopMusic() {
   _musicRunning = false;
+  _currentChordDur = CHORD_DUR; // reset tempo on stop
   if (_musicLoop) { clearTimeout(_musicLoop); _musicLoop = null; }
+}
+
+/**
+ * Set music playback tempo factor. Takes effect at the next chord boundary.
+ * factor=1.0 = normal speed, factor=1.35 = 35% faster.
+ */
+export function setMusicTempo(factor) {
+  _currentChordDur = CHORD_DUR / Math.max(0.1, factor);
 }

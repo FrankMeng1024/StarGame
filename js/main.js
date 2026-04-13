@@ -1,13 +1,15 @@
 // main.js — app entry point, screen router, cursor
 import state from './state.js';
 import { initStarfield } from './starfield.js';
-import { initMenu } from './screens/menu.js';
+import { initMenu, resumeMenuSky } from './screens/menu.js';
 import { initLevels, refreshLevels } from './screens/levels.js';
 import { startGame, stopGame } from './screens/game.js';
 import { showComplete, showFail } from './screens/complete.js';
 import { initGallery, showGalleryDetail, refreshGallery } from './screens/gallery.js';
 import { initShop } from './screens/shop.js';
 import { showItemSelect } from './screens/item-select.js';
+import { showAchievement } from './screens/achievement.js';
+import { playIntro } from './intro.js';
 
 // ── Custom star cursor ─────────────────────────────────────────
 function initCursor() {
@@ -56,7 +58,7 @@ function setTrailEnabled(enabled) {
 }
 
 // ── Screen navigation ──────────────────────────────────────────
-const SCREENS = ['menu', 'levels', 'game', 'complete', 'gallery', 'gallery-detail', 'shop'];
+const SCREENS = ['menu', 'levels', 'game', 'complete', 'gallery', 'gallery-detail', 'shop', 'achievement'];
 
 function showScreen(id) {
   for (const sid of SCREENS) {
@@ -125,11 +127,15 @@ function _activateScreen(screen, screenId, params) {
     initShop(navigate, params);
   } else if (screen === 'levels') {
     refreshLevels();
+  } else if (screen === 'achievement') {
+    showAchievement(navigate);
+  } else if (screen === 'menu') {
+    resumeMenuSky();
   }
 }
 
 // ── Init ───────────────────────────────────────────────────────
-function init() {
+async function init() {
   state.load();
   initCursor();
   initTrail();
@@ -148,6 +154,8 @@ function init() {
   window.__navigate = navigate;
   window.__state = state;
 
+  // CR-072: Play intro animation on first visit, then show menu
+  await playIntro();
   showScreen('menu');
 }
 

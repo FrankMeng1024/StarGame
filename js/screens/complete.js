@@ -52,9 +52,9 @@ export function showComplete(navigate, params) {
 
   _showPhoto(level);
 
-  // Lore
+  // Lore — paginated display
   document.querySelector('.lore-title').textContent = `${level.nameZh} — ${level.nameEn}`;
-  document.querySelector('.lore-text').textContent  = level.lore;
+  _initLorePager(level.lore);
 
   // Buttons
   const btnNext   = document.querySelector('.btn-next-level');
@@ -68,10 +68,19 @@ export function showComplete(navigate, params) {
       if (nextIdx < CONSTELLATIONS.length) {
         state.currentLevel = nextIdx;
         navigate('game');
+      } else if (state.hasCompleted(idx)) {
+        // Q4: All 30 done — go to achievement screen
+        navigate('achievement');
       } else {
-        navigate('levels');
+        // Last level but not yet completed (edge case) — disable
+        btnNext.disabled = true;
+        btnNext.textContent = '已是最后一关';
       }
     };
+    // Q4: rename button if this is level 30 and all constellations completed
+    if (idx === CONSTELLATIONS.length - 1 && state.hasCompleted(idx)) {
+      btnNext.textContent = '查看全天星图 →';
+    }
   }
 
   if (btnShop) {
@@ -118,6 +127,8 @@ export function showFail(navigate, params) {
   const encourageEl = document.querySelector('.fail-encouragement');
   if (encourageEl) {
     encourageEl.style.display = '';
+    const textEl = encourageEl.querySelector('.fail-encouragement-text');
+    if (textEl) textEl.textContent = `${level.nameZh}跑得太快了，再来一次！✨`;
     _drawFailConstellation(level);
   }
 
@@ -133,6 +144,97 @@ export function showFail(navigate, params) {
   if (btnLevels) btnLevels.onclick = () => navigate('levels');
 
   _runConstellationAnim(level, idx);
+}
+
+// ── Lore paginated display ─────────────────────────────────────
+function _splitLore(lore) {
+  // Split on 。 followed by newline, or double newlines, or sentence end + space
+  let raw = lore.split(/。\n|。(?=\s{2,})|(?<=。)\s{2,}|\n{2,}/)
+    .map(s => s.trim())
+    .filter(s => s.length > 0);
+
+  // Ensure trailing 。 on each segment except possibly last
+  raw = raw.map(s => s.endsWith('。') ? s : s + '。');
+
+  // Merge short segments (<30 chars) into next
+  const segs = [];
+  for (let i = 0; i < raw.length; i++) {
+    if (segs.length > 0 && raw[i].length < 30) {
+      segs[segs.length - 1] += raw[i];
+    } else {
+      segs.push(raw[i]);
+    }
+  }
+
+  // Split long segments at 120 chars (at sentence boundary if possible)
+  const result = [];
+  for (const seg of segs) {
+    if (seg.length <= 120) {
+      result.push(seg);
+    } else {
+      const parts = seg.match(/.{1,120}。?/g) || [seg];
+      result.push(...parts.filter(p => p.trim().length > 0));
+    }
+  }
+
+  return result.slice(0, 4); // max 4 segments
+}
+
+function _initLorePager(loreText) {
+  const loreEl = document.querySelector('.lore-text');
+  if (!loreEl) return;
+
+  // Clear old pager controls
+  const old = document.querySelector('.lore-pager');
+  if (old) old.remove();
+
+  const segments = _splitLore(loreText);
+
+  // Single short segment — show directly without controls
+  if (segments.length <= 1 || loreText.length < 80) {
+    loreEl.textContent = loreText;
+    return;
+  }
+
+  let page = 0;
+
+  function renderPage() {
+    loreEl.style.opacity = '0';
+    loreEl.textContent = segments[page];
+    loreEl.style.transition = 'opacity 150ms ease';
+    requestAnimationFrame(() => { loreEl.style.opacity = '1'; });
+
+    const dotsEl = document.querySelector('.lore-dots');
+    if (dotsEl) {
+      dotsEl.innerHTML = segments.map((_, i) =>
+        `<span class="lore-dot${i === page ? ' active' : ''}"></span>`
+      ).join('');
+    }
+
+    const nextBtn = document.querySelector('.lore-next-btn');
+    if (nextBtn) {
+      nextBtn.textContent = page < segments.length - 1
+        ? `第${page + 1}/${segments.length}段 · 下一段 ›`
+        : '完成 ✓';
+    }
+  }
+
+  const pager = document.createElement('div');
+  pager.className = 'lore-pager';
+  pager.innerHTML = `
+    <div class="lore-dots"></div>
+    <button class="lore-next-btn btn btn-ghost" type="button"></button>
+  `;
+  loreEl.insertAdjacentElement('afterend', pager);
+
+  pager.querySelector('.lore-next-btn').addEventListener('click', () => {
+    if (page < segments.length - 1) {
+      page++;
+      renderPage();
+    }
+  });
+
+  renderPage();
 }
 
 function _showPhoto(level) {
@@ -159,9 +261,10 @@ function _drawFailConstellation(level) {
   const canvas = document.getElementById('fail-constellation-canvas');
   if (!canvas) return;
 
-  const W = 320, H = 220;
+  const W = 400, H = 220;
   canvas.width  = W;
   canvas.height = H;
+  canvas.style.maxWidth = 'min(400px, 90vw)';
   const ctx = canvas.getContext('2d');
 
   ctx.fillStyle = 'rgba(5, 8, 30, 0.85)';
@@ -176,9 +279,9 @@ function _drawFailConstellation(level) {
     y: PAD + s.y * AREA_H,
   }));
 
-  // Draw dim constellation lines
+  // Draw enhanced constellation lines
   if (level.lines) {
-    ctx.strokeStyle = 'rgba(160, 180, 255, 0.18)';
+    ctx.strokeStyle = 'rgba(180, 200, 255, 0.5)';
     ctx.lineWidth = 1.5;
     for (const [a, b] of level.lines) {
       const sa = stars[a], sb = stars[b];
@@ -190,12 +293,22 @@ function _drawFailConstellation(level) {
     }
   }
 
-  // Draw dim star dots
+  // Draw glowing star dots
   for (const s of stars) {
-    ctx.save();
-    ctx.fillStyle = 'rgba(200, 210, 255, 0.28)';
+    // Glow halo via radial gradient
+    const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, 7);
+    grd.addColorStop(0, 'rgba(180,200,255,0.4)');
+    grd.addColorStop(1, 'rgba(180,200,255,0)');
+    ctx.fillStyle = grd;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, 2.5, 0, Math.PI * 2);
+    ctx.arc(s.x, s.y, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Core dot
+    ctx.save();
+    ctx.fillStyle = 'rgba(200, 215, 255, 0.55)';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, 3, 0, Math.PI * 2);
     ctx.fill();
     ctx.restore();
   }
