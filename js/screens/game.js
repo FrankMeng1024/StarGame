@@ -23,19 +23,24 @@ export function startGame(navigate) {
 
   if (engine) { engine.stop(); engine = null; }
 
-  // CR-056: preload sprites before starting engine to avoid blank-canvas flash
-  const _preloadSprite = (src) => new Promise(resolve => {
-    const img = new Image();
-    img.onload = () => resolve(img);
-    img.onerror = () => resolve(null); // don't stall on error
-    img.src = src;
-  });
-  const _preloadTimeout = new Promise(resolve => setTimeout(resolve, 50)); // CR-059: reduced; sprites pre-warmed by levels screen
+  // CR-056: preload sprites before starting engine to avoid blank-canvas flash.
+  // CR-066: If sprites are already cached (pre-warmed by levels.js), start instantly.
+  // Use img.decode() so the browser also decodes the image into a bitmap before use.
+  const SPRITE_SRCS = ['assets/sprites/girl.svg', 'assets/sprites/net.svg'];
 
-  Promise.race([
-    Promise.all([_preloadSprite('assets/sprites/girl.svg'), _preloadSprite('assets/sprites/net.svg')]),
-    _preloadTimeout,
-  ]).then(() => {
+  const _loadSprite = (src) => {
+    const img = new Image();
+    img.src = src;
+    // If already complete (cached), decode immediately; otherwise wait for load+decode
+    return img.complete
+      ? img.decode().catch(() => null)
+      : new Promise(resolve => {
+          img.onload  = () => img.decode().then(() => resolve(img)).catch(() => resolve(img));
+          img.onerror = () => resolve(null);
+        });
+  };
+
+  Promise.all(SPRITE_SRCS.map(_loadSprite)).then(() => {
     engine = new GameEngine(
       canvas, idx,
       (timeLeft) => _handleComplete(timeLeft, navigate),

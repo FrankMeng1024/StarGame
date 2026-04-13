@@ -295,3 +295,12 @@ Rework the coin reward system: (1) Starting balance = 100 coins (one-time initia
 
 ## CR-056: 关卡资源预加载 (Sprint 17 approved)
 Entering a level shows a blank canvas initially — game content appears after a delay. Add asset preloading so all required sprites/images for the level are loaded before the game canvas renders, eliminating the blank-canvas flash on level entry.
+
+## CR-067: 网兜绳起点对齐角色手部 (Sprint 21 approved)
+_updateHandPos() rewritten to use exact SVG sprite hand coordinates (derived from girl.svg frame geometry) instead of procedural body estimates. All 3 states (idle/throw/catch) now anchor the rope base precisely to the character's right hand pixel position.
+
+## CR-068: 展厅天文摄影预加载修复 (Sprint 21 approved)
+Added persistent module-level _prewarmedImages array in levels.js to prevent GC of preloaded Image objects. Added <link rel="preconnect"> and dns-prefetch for cdn.esahubble.org so TLS handshake happens before user opens gallery.
+
+## CR-069: 关卡精灵图立即渲染 (Sprint 21 approved)
+Replaced Promise.race([preload, 50ms timeout]) with Promise.all using img.decode() — this resolves instantly when sprites are already in browser cache (from HTML preload hints), eliminating blank-canvas flash on level entry. Added <link rel="preload"> for all 6 sprite SVGs in index.html.

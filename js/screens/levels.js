@@ -5,7 +5,9 @@ import state from '../state.js';
 import { showItemSelect } from './item-select.js';
 import { CONSTELLATION_PHOTOS } from '../data/photos.js?v=29';
 
-// CR-065: Pre-warm all game assets and gallery photos on levels screen load
+// CR-065: Pre-warm all game assets and gallery photos at module load.
+// Images stored in module-level array to prevent GC before load completes.
+const _prewarmedImages = [];
 (function _prewarmAssets() {
   // Sprite assets (girl, net, all debris types)
   [
@@ -15,11 +17,11 @@ import { CONSTELLATION_PHOTOS } from '../data/photos.js?v=29';
     'assets/sprites/debris-satellite.svg',
     'assets/sprites/debris-rocket.svg',
     'assets/sprites/debris-cloth.svg',
-  ].forEach(src => { const img = new Image(); img.src = src; });
+  ].forEach(src => { const img = new Image(); img.src = src; _prewarmedImages.push(img); });
 
   // Gallery astrophotography images — preload all so gallery opens without delay
   Object.values(CONSTELLATION_PHOTOS).flat().forEach(p => {
-    const img = new Image(); img.src = p.url;
+    const img = new Image(); img.src = p.url; _prewarmedImages.push(img);
   });
 })();
 

@@ -417,9 +417,10 @@ export class GameEngine {
     this.charX = this.W * 0.5;
     this.charY = this.H * 0.85;
     this.poleLen = this.H * 0.06; // CR-062: shortened so net hangs close to hand
-    // Hand position (updated each frame by _drawCharacter, used by _poleTop/_netTip)
-    this._handX = this.charX + 22;
-    this._handY = this.charY - 56; // approximate idle shoulder+arm height
+    // Hand position (updated each frame by _updateHandPos, used by _poleTop/_netTip)
+    // Idle default: sprite SVG (68,81) → canvas (cx+13, cy-17)
+    this._handX = this.charX + 13;
+    this._handY = this.charY - 17;
 
     // ── Sprite assets — load SVG image files ──────────────────
     // Girl sprite sheet (4 frames: idle, blink, throw, catch)
@@ -1324,30 +1325,36 @@ export class GameEngine {
   }
 
   _updateHandPos() {
-    // Compute right hand position from current character state — used by _poleTop()
+    // Hand positions derived from exact SVG sprite coordinates.
+    // Sprite drawn at (cx - 55, cy - 98) with 110×110px per frame.
+    // SVG hand coords → canvas: canvasX = cx - 55 + svgX, canvasY = cy - 98 + svgY
+    //   Idle (frames 0/1): right hand ellipse cx=68, cy=81  → canvas (cx+13, cy-17)
+    //   Throw (frame 2):   right hand ellipse cx=82, cy=20  → canvas (cx+27, cy-78)
+    //   Catch (frame 3):   right hand ellipse cx=82, cy=34  → canvas (cx+27, cy-64)
     const cx = this.charX;
     const cy = this.charY;
-    const HEAD_CY   = cy - 95;
-    const HEAD_RY   = 20;
-    const NECK_Y    = HEAD_CY + HEAD_RY - 2;
-    const TORSO_T   = NECK_Y + 8;
-    const SHOULDER_Y_POLE = TORSO_T + 4;
     const netSt   = this.netState;
     const isThrow = netSt === 'extend';
     const isCatch = netSt === 'retract' && this.caughtObj !== null;
     const t = Date.now() * 0.002;
     if (isThrow) {
+      // Throw: hand moves with swing angle — pivot from throw-arm shoulder (cx+22, cy-70)
+      // At rest angle the hand is at sprite (82,20)→(cx+27,cy-78); arm length ~26px
+      const shoulderX = cx + 22;
+      const shoulderY = cy - 70;
       const armLen = 26;
       const rawA   = this.swingAngle - Math.PI * 0.5;
-      this._handX = cx + 14 + Math.cos(rawA) * armLen;
-      this._handY = SHOULDER_Y_POLE + 16 + Math.sin(rawA) * armLen;
+      this._handX = shoulderX + Math.cos(rawA) * armLen;
+      this._handY = shoulderY + Math.sin(rawA) * armLen;
     } else if (isCatch) {
-      this._handX = cx + 24;
-      this._handY = SHOULDER_Y_POLE + 6;
+      // Catch (frame 3): hand at (cx+27, cy-64)
+      this._handX = cx + 27;
+      this._handY = cy - 64;
     } else {
-      const idleLift = Math.sin(t * 0.7) * 4;
-      this._handX = cx + 24;
-      this._handY = SHOULDER_Y_POLE + 32 - idleLift; // CR-062: lower to match sprite hand position
+      // Idle (frames 0/1): hand at (cx+13, cy-17), gentle bob
+      const idleLift = Math.sin(t * 0.7) * 3;
+      this._handX = cx + 13;
+      this._handY = cy - 17 - idleLift;
     }
   }
 
