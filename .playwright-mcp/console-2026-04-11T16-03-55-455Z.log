@@ -1,0 +1,2 @@
+[   69264ms] [ERROR] Access to image at 'https://opengameart.org/sites/default/files/blink%20strip%205.png' from origin 'http://localhost:9090' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://localhost:9090/:0
+[   69264ms] [ERROR] Failed to load resource: net::ERR_FAILED @ https://opengameart.org/sites/default/files/blink%20strip%205.png:0

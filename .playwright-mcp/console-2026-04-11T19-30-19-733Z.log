@@ -1,0 +1,5 @@
+[  119107ms] TypeError: Cannot read properties of undefined (reading 'sky0')
+    at _applySceneTint (http://127.0.0.1:9090/js/screens/complete.js:320:62)
+    at showComplete (http://127.0.0.1:9090/js/screens/complete.js:13:3)
+    at _activateScreen (http://127.0.0.1:9090/js/main.js?v=21:117:5)
+    at http://127.0.0.1:9090/js/main.js?v=21:98:7

@@ -1,0 +1,3 @@
+[  316380ms] [ERROR] hintSeen set from: Error
+    at sessionStorage.setItem (eval at evaluate (:301:30), <anonymous>:6:43)
+    at _dismissHint (http://localhost:8080/js/screens/game.js:86:18) @ :5

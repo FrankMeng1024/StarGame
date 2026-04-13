@@ -1,0 +1,5 @@
+[    6041ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://images-assets.nasa.gov/image/hubble-orion-nebula/hubble-orion-nebula~small.jpg:0
+[    6261ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://images-assets.nasa.gov/csp-violation-report/:0
+[    6262ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://images-assets.nasa.gov/csp-violation-report/:0
+[    6273ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://images-assets.nasa.gov/csp-violation-report/:0
+[    6593ms] [ERROR] Failed to load resource: the server responded with a status of 403 () @ https://images-assets.nasa.gov/favicon.ico:0

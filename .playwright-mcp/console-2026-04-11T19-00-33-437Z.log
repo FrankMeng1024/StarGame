@@ -1,0 +1,7 @@
+[   21355ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_TIMED_OUT @ https://fonts.gstatic.com/s/notosanssc/v40/k3kXo84MPvpLmixcA63oeALhLOCT-xWNm8Hqd37g1OkDRZe7lR4sg1IzSy-MNbE9VH8V.109.woff2:0
+[   21437ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_TIMED_OUT @ https://fonts.gstatic.com/s/mashanzheng/v17/NaPecZTRCLxvwo41b4gvzkXaRMGEFoZJFdX0wQ5Xo5Hr21L9zCcRFhbSe5Nk0pIMuUkHEA.114.woff2:0
+[   21437ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_TIMED_OUT @ https://fonts.gstatic.com/s/notosanssc/v40/k3kXo84MPvpLmixcA63oeALRLoKI.woff2:0
+[   21437ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_TIMED_OUT @ https://fonts.gstatic.com/s/mashanzheng/v17/NaPecZTRCLxvwo41b4gvzkXaRMGEFoZJFdX0wQ5Xo5Hr21L9zCcRFhbSe5Nk0pIMuUkHEA.117.woff2:0
+[   21437ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_TIMED_OUT @ https://fonts.gstatic.com/s/notosanssc/v40/k3kXo84MPvpLmixcA63oeALhLOCT-xWNm8Hqd37g1OkDRZe7lR4sg1IzSy-MNbE9VH8V.119.woff2:0
+[   21437ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_TIMED_OUT @ https://fonts.gstatic.com/s/notosanssc/v40/k3kXo84MPvpLmixcA63oeALhLOCT-xWNm8Hqd37g1OkDRZe7lR4sg1IzSy-MNbE9VH8V.118.woff2:0
+[   76661ms] [WARNING] Canvas2D: Multiple readback operations using getImageData are faster with the willReadFrequently attribute set to true. See: https://html.spec.whatwg.org/multipage/canvas.html#concept-canvas-will-read-frequently @ :17
