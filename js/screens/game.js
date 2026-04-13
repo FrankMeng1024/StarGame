@@ -3,6 +3,7 @@ import { GameEngine } from '../game/engine.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
 import state from '../state.js';
 import { startMusic, stopMusic, playLevelComplete, playTimeExt, toggleMute, isMuted } from '../audio.js';
+import { getSpriteReady } from './levels.js';
 
 let engine = null;
 let _hintClickListener = null;
@@ -23,24 +24,13 @@ export function startGame(navigate) {
 
   if (engine) { engine.stop(); engine = null; }
 
-  // CR-056: preload sprites before starting engine to avoid blank-canvas flash.
-  // CR-066: If sprites are already cached (pre-warmed by levels.js), start instantly.
-  // Use img.decode() so the browser also decodes the image into a bitmap before use.
-  const SPRITE_SRCS = ['assets/sprites/girl.svg', 'assets/sprites/net.svg'];
-
-  const _loadSprite = (src) => {
-    const img = new Image();
-    img.src = src;
-    // If already complete (cached), decode immediately; otherwise wait for load+decode
-    return img.complete
-      ? img.decode().catch(() => null)
-      : new Promise(resolve => {
-          img.onload  = () => img.decode().then(() => resolve(img)).catch(() => resolve(img));
-          img.onerror = () => resolve(null);
-        });
-  };
-
-  Promise.all(SPRITE_SRCS.map(_loadSprite)).then(() => {
+  // CR-056/069: Wait for sprites to be ready using cached objects from levels.js.
+  // getSpriteReady() returns the same Image instance that was preloaded at startup,
+  // so if it's already loaded it resolves in the same microtask — zero visible delay.
+  Promise.all([
+    getSpriteReady('assets/sprites/girl.svg'),
+    getSpriteReady('assets/sprites/net.svg'),
+  ]).then(() => {
     engine = new GameEngine(
       canvas, idx,
       (timeLeft) => _handleComplete(timeLeft, navigate),

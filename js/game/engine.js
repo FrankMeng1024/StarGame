@@ -1338,14 +1338,11 @@ export class GameEngine {
     const isCatch = netSt === 'retract' && this.caughtObj !== null;
     const t = Date.now() * 0.002;
     if (isThrow) {
-      // Throw: hand moves with swing angle — pivot from throw-arm shoulder (cx+22, cy-70)
-      // At rest angle the hand is at sprite (82,20)→(cx+27,cy-78); arm length ~26px
-      const shoulderX = cx + 22;
-      const shoulderY = cy - 70;
-      const armLen = 26;
-      const rawA   = this.swingAngle - Math.PI * 0.5;
-      this._handX = shoulderX + Math.cos(rawA) * armLen;
-      this._handY = shoulderY + Math.sin(rawA) * armLen;
+      // Throw (frame 2): hand is fixed at sprite position — arm does NOT rotate.
+      // The pole angle (swingAngle) is independent of the hand anchor.
+      // SVG (82,20) → canvas (cx+27, cy-78)
+      this._handX = cx + 27;
+      this._handY = cy - 78;
     } else if (isCatch) {
       // Catch (frame 3): hand at (cx+27, cy-64)
       this._handX = cx + 27;

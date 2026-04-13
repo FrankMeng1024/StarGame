@@ -5,25 +5,53 @@ import state from '../state.js';
 import { showItemSelect } from './item-select.js';
 import { CONSTELLATION_PHOTOS } from '../data/photos.js?v=29';
 
-// CR-065: Pre-warm all game assets and gallery photos at module load.
-// Images stored in module-level array to prevent GC before load completes.
+// CR-065/069: Pre-warm all game assets at module load. Store refs to prevent GC.
+// Export sprite map so game.js can reuse the SAME objects (already decoded).
 const _prewarmedImages = [];
+const _spriteCache = {};
+
 (function _prewarmAssets() {
-  // Sprite assets (girl, net, all debris types)
-  [
+  const SPRITE_SRCS = [
     'assets/sprites/girl.svg',
     'assets/sprites/net.svg',
     'assets/sprites/debris-meteor.svg',
     'assets/sprites/debris-satellite.svg',
     'assets/sprites/debris-rocket.svg',
     'assets/sprites/debris-cloth.svg',
-  ].forEach(src => { const img = new Image(); img.src = src; _prewarmedImages.push(img); });
+  ];
+  SPRITE_SRCS.forEach(src => {
+    const img = new Image();
+    img.src = src;
+    _prewarmedImages.push(img);
+    _spriteCache[src] = img;
+  });
 
   // Gallery astrophotography images — preload all so gallery opens without delay
   Object.values(CONSTELLATION_PHOTOS).flat().forEach(p => {
     const img = new Image(); img.src = p.url; _prewarmedImages.push(img);
   });
 })();
+
+// Returns a Promise<HTMLImageElement> for a sprite src, reusing cached object if available.
+export function getSpriteReady(src) {
+  const cached = _spriteCache[src];
+  if (cached) {
+    return cached.complete
+      ? cached.decode().catch(() => cached).then(() => cached)
+      : new Promise(resolve => {
+          const done = () => resolve(cached);
+          cached.addEventListener('load', done, { once: true });
+          cached.addEventListener('error', done, { once: true });
+        });
+  }
+  // Fallback: load fresh
+  const img = new Image();
+  img.src = src;
+  return new Promise(resolve => {
+    img.onload = () => resolve(img);
+    img.onerror = () => resolve(img);
+  });
+}
 
 export function initLevels(navigate) {
   const screen = document.getElementById('screen-levels');
