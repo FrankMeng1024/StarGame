@@ -113,8 +113,13 @@ body {
   text-align: center;
   padding: var(--spacing-xl);
   z-index: 1;
-  /* Transparent — background art shows through completely */
   background: none;
+}
+
+/* Left/center zone classes — not used in centered layout, kept for future */
+.menu-left-zone { display: none; }
+.menu-center-zone {
+  display: contents; /* children flow directly into .menu-inner flex */
 }
 
 .btn-menu-mute {
@@ -264,7 +269,7 @@ body {
   transform: translateY(-1px);
 }
 
-/* ── CR-079/080/081: Menu sky info panel — floating badge at bottom ── */
+/* ── CR-079/080/081: Menu sky info panel — bottom-center floating badge ── */
 .menu-sky-info {
   position: absolute;
   bottom: var(--spacing-lg);

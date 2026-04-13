@@ -65,7 +65,7 @@ export function initMenuSky(conDef) {
   });
 }
 
-// ── Layout: one constellation, full-screen centered ──────────
+// ── Layout: constellation in upper portion of screen ─────────
 function _buildLayout(conDef) {
   _stars = [];
   _lines = [];
@@ -73,14 +73,13 @@ function _buildLayout(conDef) {
   const W = _canvas.width;
   const H = _canvas.height;
 
-  // Center constellation in upper portion — visible above the title
-  // Title+buttons occupy ~35-65% of screen height (center), so constellation
-  // sits in the upper sky area (top 55%) with its center at ~33% from top.
+  // Centered layout: constellation fills upper sky, title+buttons float below.
+  // cx at screen center, cy at upper-third so constellation is above the title.
   const cx = W * 0.50;
   const cy = H * 0.33;
 
-  // Scale to fill ~70% of the smaller screen dimension — large but not oversize
-  const BOX = Math.min(W, H) * 0.72;
+  // Scale to fill ~72% of screen height — large hero presence in upper half
+  const BOX = H * 0.72;
 
   const conStars = conDef.stars.map((s, si) => {
     const sx = cx + (s.x - 0.5) * BOX;

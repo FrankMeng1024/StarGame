@@ -32,22 +32,27 @@
 
   <!-- ① Main Menu ──────────────────────────────────────────── -->
   <section id="screen-menu" class="screen" role="main">
+    <button id="menu-mute-btn" class="btn-menu-mute" aria-label="静音">🔊</button>
     <div class="menu-inner">
-      <button id="menu-mute-btn" class="btn-menu-mute" aria-label="静音">🔊</button>
-      <h1 class="game-title">追星少女</h1>
-      <p class="game-subtitle">StarCatcher</p>
-      <div class="menu-buttons">
-        <button class="btn btn-primary btn-play" aria-label="开始游戏">
-          ✦ 挑战关卡
-        </button>
-        <button class="btn btn-secondary btn-gallery" aria-label="星座展厅">
-          ☽ 星座展厅
-        </button>
-        <button class="btn btn-ghost btn-shop-from-menu" aria-label="道具商店">
-          🛒 道具商店
-        </button>
+      <!-- Left column: constellation canvas occupies this zone (rendered behind) -->
+      <div class="menu-left-zone" aria-hidden="true"></div>
+      <!-- Center column: title + buttons -->
+      <div class="menu-center-zone">
+        <h1 class="game-title">追星少女</h1>
+        <p class="game-subtitle">StarCatcher</p>
+        <div class="menu-buttons">
+          <button class="btn btn-primary btn-play" aria-label="开始游戏">
+            ✦ 挑战关卡
+          </button>
+          <button class="btn btn-secondary btn-gallery" aria-label="星座展厅">
+            ☽ 星座展厅
+          </button>
+          <button class="btn btn-ghost btn-shop-from-menu" aria-label="道具商店">
+            🛒 道具商店
+          </button>
+        </div>
       </div>
-      <!-- CR-079/080: Single-constellation info panel — populated by menu.js -->
+      <!-- Right column: constellation info panel — populated by menu.js -->
       <div id="menu-sky-info" class="menu-sky-info" aria-live="polite" style="display:none"></div>
     </div>
   </section>
