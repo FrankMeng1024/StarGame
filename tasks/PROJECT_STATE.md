@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
 **Status**: COMPLETE
-**Current Sprint**: 25 (Sprint Goal: 情绪节点打磨 — 失败/道具/故事/音乐/Tab暂停/storage降级 6项)
+**Current Sprint**: 26 (Sprint Goal: 封面聚焦 — 最易见星座作为主背景 + 观测提示)
 **Last Updated**: 2026-04-13
 
 ## Sprint History
@@ -33,6 +33,7 @@
 | Sprint 23 | COMPLETE | 2项用户反馈修复 — 网绳发射起点与摆动位置一致/关卡精灵图全时段即时渲染 |
 | Sprint 24 | COMPLETE | 活的星空 — 地理定位星空主页/全通成就页/开场动画 (CR-070/071/072) |
 | Sprint 25 | COMPLETE | 情绪节点打磨 — 失败/道具/故事/音乐/Tab暂停/storage降级 (CR-073-078) |
+| Sprint 26 | COMPLETE | 封面单星座聚焦 — 最易见星座大背景 + 观测提示面板 (CR-079) |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -50,6 +51,12 @@
 | Sprint 19 | 9.5/10 | ACCEPTED | All Sprint 18+19 features verified — PROJECT COMPLETE |
 | Sprint 20 | 9.5/10 | ACCEPTED | All Sprint 20 user-reported fixes verified — PROJECT COMPLETE |
 | Sprint 25 | 9.6/10 | ACCEPTED | All PRD + CR-070-078 features verified — PROJECT COMPLETE |
+| Sprint 26 | — | COMPLETE | CR-079 单星座封面 — committed, not VU-evaluated |
+
+## Sprint 26 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00125 | 封面单星座聚焦背景 + 观测提示面板 | Done |
 
 ## Sprint 24 Stories
 | Story | Title | Status |
