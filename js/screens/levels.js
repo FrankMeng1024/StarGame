@@ -32,6 +32,21 @@ const _spriteCache = {};
   });
 })();
 
+// Returns a Promise that resolves when all 6 sprite SVGs are fully decoded.
+// CR-072: exported so game.js can call this after level complete to ensure
+// sprites are warm before the user can enter the next level.
+const _SPRITE_SRCS = [
+  'assets/sprites/girl.svg',
+  'assets/sprites/net.svg',
+  'assets/sprites/debris-meteor.svg',
+  'assets/sprites/debris-satellite.svg',
+  'assets/sprites/debris-rocket.svg',
+  'assets/sprites/debris-cloth.svg',
+];
+export function prewarmSprites() {
+  return Promise.all(_SPRITE_SRCS.map(src => getSpriteReady(src)));
+}
+
 // Returns a Promise<HTMLImageElement> for a sprite src, reusing cached object if available.
 export function getSpriteReady(src) {
   const cached = _spriteCache[src];
@@ -93,14 +108,22 @@ export function initLevels(navigate) {
       ${!unlocked ? '<span class="lock-icon">🔒</span>' : ''}
     `;
 
-    if (unlocked) {
+    grid.appendChild(card);
+  });
+
+  // CR-072: Wait for sprites to be fully decoded before enabling level card
+  // click handlers. This ensures level 1 is instant even on first page load
+  // (before _prewarmAssets() IIFE has finished loading the SVG files).
+  // prewarmSprites() resolves in the same microtask when sprites are already
+  // complete, so there is zero added delay for returning visits.
+  prewarmSprites().then(() => {
+    grid.querySelectorAll('.level-card.unlocked').forEach(card => {
+      const idx = parseInt(card.dataset.idx, 10);
       card.addEventListener('click', () => {
         state.currentLevel = idx;
         showItemSelect(() => navigate('game'), () => navigate('levels'));
       });
-    }
-
-    grid.appendChild(card);
+    });
   });
 }
 

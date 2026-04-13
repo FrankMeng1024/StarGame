@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
 **Status**: COMPLETE
-**Current Sprint**: 22 (Sprint Goal: 2项用户反馈修复 — 网绳路径闪烁修复/关卡加载延迟消除)
+**Current Sprint**: 23 (Sprint Goal: 2项用户反馈修复 — 网绳发射起点与摆动位置一致/关卡精灵图全时段即时渲染)
 **Last Updated**: 2026-04-13
 
 ## Sprint History
@@ -30,6 +30,7 @@
 | Sprint 20 | COMPLETE | 6项用户反馈修复 — 网兜手部对齐/摆角扩大/星星缩小/展厅布局重排/照片预加载/关卡资源预热 |
 | Sprint 21 | COMPLETE | 3项用户反馈修复 — 网兜绳起点对齐手部/展厅图片预加载/关卡精灵图立即渲染 |
 | Sprint 22 | COMPLETE | 2项用户反馈修复 — 网绳路径闪烁修复/关卡加载延迟消除 |
+| Sprint 23 | COMPLETE | 2项用户反馈修复 — 网绳发射起点与摆动位置一致/关卡精灵图全时段即时渲染 |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -56,6 +57,12 @@
 | STORY-00105 | 展厅详情页布局重排 — 名字→大星图→天文摄影→介绍，删除小星图 | Done |
 | STORY-00106 | 天文摄影图片预加载 — 展厅打开无延迟 | Done |
 | STORY-00107 | 关卡入口全资源预热 — 包含垃圾精灵图 | Done |
+
+## Sprint 23 Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00113 | 网绳发射起点修复 — 从摆动时的手部位置出发 | Done |
+| STORY-00114 | 精灵图全时段即时渲染 — 解锁关卡预热 + 通关时预热下一关 | Done |
 
 ## Sprint 22 Stories
 | Story | Title | Status |

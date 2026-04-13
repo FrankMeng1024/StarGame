@@ -1365,22 +1365,15 @@ export class GameEngine {
     //   Catch (frame 3):   right hand ellipse cx=82, cy=34  → canvas (cx+27, cy-64)
     const cx = this.charX;
     const cy = this.charY;
-    const netSt    = this.netState;
-    // Keep hand at throw position for the ENTIRE extend+retract cycle so the
-    // rope anchor never jumps mid-flight (CR-070: rope path flicker fix).
-    const isActive = netSt === 'extend' || netSt === 'retract';
+    // CR-072: Rope anchor always at idle hand position (cx+13, cy-17) for all
+    // net states — swing, extend, and retract. This ensures the rope visually
+    // departs from where it was swinging (no jump to head-top at launch).
+    // The throw-frame sprite animation still plays visually; only the rope
+    // anchor point is fixed at the idle hand SVG coordinate.
     const t = Date.now() * 0.002;
-    if (isActive) {
-      // Throw (frame 2): hand fixed at SVG (82,20) → canvas (cx+27, cy-78).
-      // Stays here throughout extend AND retract — no path discontinuity.
-      this._handX = cx + 27;
-      this._handY = cy - 78;
-    } else {
-      // Idle (frames 0/1): hand at (cx+13, cy-17), gentle bob
-      const idleLift = Math.sin(t * 0.7) * 3;
-      this._handX = cx + 13;
-      this._handY = cy - 17 - idleLift;
-    }
+    const idleLift = this.netState === 'swing' ? Math.sin(t * 0.7) * 3 : 0;
+    this._handX = cx + 13;
+    this._handY = cy - 17 - idleLift;
   }
 
   _drawCharacter() {

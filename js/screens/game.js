@@ -3,7 +3,7 @@ import { GameEngine } from '../game/engine.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
 import state from '../state.js';
 import { startMusic, stopMusic, playLevelComplete, playTimeExt, toggleMute, isMuted } from '../audio.js';
-import { getSpriteReady } from './levels.js';
+import { getSpriteReady, prewarmSprites } from './levels.js';
 
 let engine = null;
 let _hintClickListener = null;
@@ -370,6 +370,8 @@ function _handleComplete(timeLeft, navigate) {
   state.unlock(idx + 1);
 
   playLevelComplete();
+  // CR-072: Re-confirm sprites are decoded so any subsequent level entry is instant.
+  prewarmSprites();
   navigate('complete', { idx, timeLeft, coins, caught, total, isNewRecord });
 }
 
