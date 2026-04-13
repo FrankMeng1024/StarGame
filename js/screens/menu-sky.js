@@ -73,26 +73,30 @@ function _buildLayout(conDef) {
   const W = _canvas.width;
   const H = _canvas.height;
 
-  // Centered layout: constellation fills upper sky, title+buttons float below.
-  // cx at screen center, cy at upper-third so constellation is above the title.
+  // Initial placement — center of constellation data space at screen center
   const cx = W * 0.50;
   const cy = H * 0.33;
-
-  // Scale to fill ~72% of screen height — large hero presence in upper half
   const BOX = H * 0.72;
 
-  const conStars = conDef.stars.map((s, si) => {
-    const sx = cx + (s.x - 0.5) * BOX;
-    const sy = cy + (s.y - 0.5) * BOX;
-    return {
-      cx: sx,
-      cy: sy,
-      r: Math.max(3.5, Math.min(13, magToRadius(s.mag) * 1.5)),
-      color: typeToColor(s.type),
-      phase: (si * 1.618) % TWO_PI,
-      speed: 0.4 + (si % 5) * 0.15,
-    };
-  });
+  // First pass: compute raw positions
+  const conStars = conDef.stars.map((s, si) => ({
+    cx: cx + (s.x - 0.5) * BOX,
+    cy: cy + (s.y - 0.5) * BOX,
+    r: Math.max(3.5, Math.min(13, magToRadius(s.mag) * 1.5)),
+    color: typeToColor(s.type),
+    phase: (si * 1.618) % TWO_PI,
+    speed: 0.4 + (si % 5) * 0.15,
+  }));
+
+  // Auto-center: shift so bounding-box center aligns with (W*0.50, H*0.33)
+  // This corrects for asymmetric star data (e.g. Taurus skewing right)
+  const xs = conStars.map(s => s.cx);
+  const ys = conStars.map(s => s.cy);
+  const xMid = (Math.min(...xs) + Math.max(...xs)) / 2;
+  const yMid = (Math.min(...ys) + Math.max(...ys)) / 2;
+  const dx = W * 0.50 - xMid;
+  const dy = H * 0.33 - yMid;
+  for (const s of conStars) { s.cx += dx; s.cy += dy; }
 
   (conDef.lines || []).forEach(([ai, bi]) => {
     const a = conStars[ai];

@@ -130,6 +130,14 @@ function _runIntro(onDone) {
   // ── Title ────────────────────────────────────────────────────
   let titleAlpha = 0;
 
+  // ── Bouncing star character (appears in phase 1, ~0.5s in) ───
+  // A cute 5-pointed star that bounces up from bottom-center
+  const BOUNCE_STAR = {
+    x: W * 0.5,
+    baseY: H * 0.72,
+    alpha: 0,
+  };
+
   // ── Timeline state ───────────────────────────────────────────
   let startTime = null;
   let caught    = false;
@@ -156,6 +164,17 @@ function _runIntro(onDone) {
       ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
       ctx.fill();
       ctx.restore();
+    }
+
+    // ── Bouncing star character (phase 1: 0.5s–2s) ───────────────
+    if (elapsed >= 0.5 && elapsed < 6) {
+      BOUNCE_STAR.alpha = Math.min(1, (elapsed - 0.5) / 0.6);
+      // Gentle bounce: oscillates up/down
+      const bounce = Math.sin(elapsed * 4.5) * 14 + Math.sin(elapsed * 2.1) * 6;
+      const sy = BOUNCE_STAR.baseY + bounce;
+      // Fade out as net approaches (after t=4s)
+      const fadeOut = elapsed > 4 ? Math.max(0, 1 - (elapsed - 4) / 1.5) : 1;
+      _drawBouncingStar(ctx, BOUNCE_STAR.x, sy, 18, BOUNCE_STAR.alpha * fadeOut, elapsed);
     }
 
     // ── Phase 2: net sweep + catch (2–6s) ────────────────────────
@@ -290,38 +309,94 @@ function _runIntro(onDone) {
   _rafId = requestAnimationFrame(frame);
 }
 
-// ── Draw simplified net shape ─────────────────────────────────
-// Net: triangle outline + simple rope arc above
+// ── Draw cute bouncing 5-pointed star ────────────────────────
+function _drawBouncingStar(ctx, x, y, r, alpha, t) {
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Outer glow halo
+  const grd = ctx.createRadialGradient(x, y, 0, x, y, r * 2.5);
+  grd.addColorStop(0, 'rgba(255,230,80,0.55)');
+  grd.addColorStop(1, 'rgba(255,215,0,0)');
+  ctx.fillStyle = grd;
+  ctx.beginPath();
+  ctx.arc(x, y, r * 2.5, 0, Math.PI * 2);
+  ctx.fill();
+
+  // 5-pointed star shape
+  const spikes = 5;
+  const outerR = r;
+  const innerR = r * 0.42;
+  // Slight wobble rotation for personality
+  const rot = Math.sin(t * 1.8) * 0.12 - Math.PI / 2;
+
+  ctx.beginPath();
+  for (let i = 0; i < spikes * 2; i++) {
+    const angle = rot + (i * Math.PI) / spikes;
+    const radius = i % 2 === 0 ? outerR : innerR;
+    const px = x + Math.cos(angle) * radius;
+    const py = y + Math.sin(angle) * radius;
+    i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+  }
+  ctx.closePath();
+
+  ctx.fillStyle = '#ffd700';
+  ctx.shadowColor = '#ffd700';
+  ctx.shadowBlur = r * 1.8;
+  ctx.fill();
+
+  // Small sparkle dots around the star (3 tiny dots)
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = 'rgba(255,255,200,0.85)';
+  for (let i = 0; i < 3; i++) {
+    const a = rot + (i * Math.PI * 2) / 3 + t * 2;
+    const d = r * 1.7;
+    ctx.beginPath();
+    ctx.arc(x + Math.cos(a) * d, y + Math.sin(a) * d, 1.5, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  ctx.restore();
+}
+// Net: round pouch (arc) + mesh grid inside + rope handle
 function _drawNet(ctx, x, y, size) {
   const s = size;
   ctx.save();
-  ctx.strokeStyle = 'rgba(220, 200, 255, 0.75)';
-  ctx.lineWidth   = 1.5;
-  ctx.shadowColor = 'rgba(200,180,255,0.6)';
-  ctx.shadowBlur  = 6;
+  ctx.strokeStyle = 'rgba(220, 200, 255, 0.80)';
+  ctx.lineWidth   = 1.8;
+  ctx.shadowColor = 'rgba(200,180,255,0.7)';
+  ctx.shadowBlur  = 8;
 
-  // Triangle (net opening at top)
+  // Round bag opening (flat top arc)
   ctx.beginPath();
-  ctx.moveTo(x - s * 0.5, y);
-  ctx.lineTo(x + s * 0.5, y);
-  ctx.lineTo(x, y + s * 0.9);
-  ctx.closePath();
+  ctx.arc(x, y + s * 0.25, s * 0.45, Math.PI, 0);
   ctx.stroke();
 
-  // Cross-hatch inside (2 lines)
-  ctx.globalAlpha = 0.4;
+  // Bag bottom (full arc closing the pouch)
   ctx.beginPath();
-  ctx.moveTo(x - s * 0.25, y + s * 0.15);
-  ctx.lineTo(x + s * 0.15, y + s * 0.75);
-  ctx.moveTo(x + s * 0.25, y + s * 0.15);
-  ctx.lineTo(x - s * 0.1, y + s * 0.75);
+  ctx.arc(x, y + s * 0.25, s * 0.45, 0, Math.PI);
   ctx.stroke();
 
-  // Rope arc above (handle)
-  ctx.globalAlpha = 0.7;
+  // Mesh lines inside (horizontal + vertical) — subtle
+  ctx.globalAlpha = 0.35;
+  ctx.lineWidth = 1;
+  // Vertical center line
   ctx.beginPath();
-  ctx.moveTo(x + s * 0.5, y);
-  ctx.quadraticCurveTo(x + s * 0.7, y - s * 0.4, x + s * 0.55, y - s * 0.85);
+  ctx.moveTo(x, y - s * 0.2);
+  ctx.lineTo(x, y + s * 0.7);
+  ctx.stroke();
+  // Horizontal mid line
+  ctx.beginPath();
+  ctx.moveTo(x - s * 0.4, y + s * 0.25);
+  ctx.lineTo(x + s * 0.4, y + s * 0.25);
+  ctx.stroke();
+
+  // Rope handle (curves up-right)
+  ctx.globalAlpha = 0.75;
+  ctx.lineWidth = 1.8;
+  ctx.beginPath();
+  ctx.moveTo(x + s * 0.35, y - s * 0.15);
+  ctx.quadraticCurveTo(x + s * 0.65, y - s * 0.5, x + s * 0.55, y - s * 0.95);
   ctx.stroke();
 
   ctx.restore();
