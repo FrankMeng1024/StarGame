@@ -2,11 +2,12 @@
 import state from '../state.js';
 import { toggleMute, isMuted } from '../audio.js';
 import { requestLocation, getVisibleConstellations } from '../data/visibility.js';
+import { CONSTELLATIONS } from '../data/constellations.js';
 import { initMenuSky, stopMenuSky } from './menu-sky.js';
 
-// CR-070: Kick off geolocation + constellation rendering as soon as the menu
-// module is imported — this runs in the background so by the time the user
-// sees the menu the sky is already populated (or failing gracefully).
+// CR-079: Kick off geolocation + single-constellation rendering as soon as
+// the menu module is imported — by the time the user sees the menu the sky
+// is already populated (or failing gracefully).
 let _skyInitialized = false;
 
 async function _startMenuSky() {
@@ -14,11 +15,57 @@ async function _startMenuSky() {
   _skyInitialized = true;
   try {
     const { lat, lon, isDefault } = await requestLocation();
-    const visible = getVisibleConstellations(lat, lon, new Date());
-    initMenuSky(visible, lat, isDefault);
+    // Get all ranked constellations (no count/altitude limit — we need the full list
+    // to find the first one that has a game entry in our 30 constellations)
+    const ranked = getVisibleConstellations(lat, lon, new Date(), -90, 100);
+
+    // Find the highest-altitude constellation that exists in our game data
+    let conDef = null;
+    let bestAlt = 0;
+    for (const vc of ranked) {
+      const match = CONSTELLATIONS.find(c => c.nameEn === vc.nameEn);
+      if (match) {
+        conDef = match;
+        bestAlt = vc.altitude;
+        break;
+      }
+    }
+    if (!conDef) return; // no match found — skip silently
+
+    initMenuSky(conDef, bestAlt, isDefault);
+    _renderInfoPanel(conDef, bestAlt, isDefault, lat);
   } catch (_) {
     // Silently ignore — sky is purely cosmetic
   }
+}
+
+// ── Info panel ────────────────────────────────────────────────
+function _renderInfoPanel(conDef, altitude, isDefault, lat) {
+  let panel = document.getElementById('menu-sky-info');
+  if (!panel) return; // element must exist in HTML
+
+  const altStr = altitude > 0
+    ? `高度 ${altitude.toFixed(0)}°`
+    : `低于地平线`;
+
+  const locationLine = isDefault
+    ? '📍 默认：新西兰特卡波'
+    : `📍 当前位置 · ${lat >= 0 ? '北' : '南'}纬${Math.abs(lat).toFixed(1)}°`;
+
+  // Viewing tip: combine region, bestViewMonth, mainStars into 2 short sentences
+  const tip = `位于${conDef.region}，${conDef.bestViewMonth}最易观测。主要亮星：${conDef.mainStars}。`;
+
+  panel.innerHTML = `
+    <div class="sky-info-header">
+      <span class="sky-info-icon">${conDef.icon || '✦'}</span>
+      <span class="sky-info-name">${conDef.nameZh}</span>
+      <span class="sky-info-name-en">${conDef.nameEn}</span>
+      <span class="sky-info-alt">${altStr}</span>
+    </div>
+    <p class="sky-info-tip">${tip}</p>
+    <p class="sky-info-loc">${locationLine}</p>
+  `;
+  panel.style.display = '';
 }
 
 export function initMenu(navigate) {

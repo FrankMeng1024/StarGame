@@ -257,6 +257,63 @@ body {
   opacity: 0.7;
 }
 
+/* ── CR-079: Menu sky info panel ─────────────────────────────── */
+.menu-sky-info {
+  width: 100%;
+  max-width: 420px;
+  background: rgba(10, 8, 28, 0.68);
+  border: 1px solid rgba(200, 185, 130, 0.28);
+  border-radius: 14px;
+  padding: 12px 18px;
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  box-shadow: 0 4px 24px rgba(0,0,0,0.45), inset 0 0 12px rgba(200,185,130,0.04);
+  text-align: left;
+  animation: sky-info-fadein 1.2s ease forwards;
+}
+@keyframes sky-info-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.sky-info-header {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.sky-info-icon {
+  font-size: 1.1rem;
+}
+.sky-info-name {
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: rgba(255, 225, 150, 0.95);
+  letter-spacing: 0.05em;
+}
+.sky-info-name-en {
+  font-size: 0.82rem;
+  color: rgba(180, 200, 255, 0.7);
+  letter-spacing: 0.08em;
+}
+.sky-info-alt {
+  margin-left: auto;
+  font-size: 0.78rem;
+  color: rgba(160, 200, 255, 0.6);
+  white-space: nowrap;
+}
+.sky-info-tip {
+  font-size: 0.8rem;
+  color: rgba(200, 215, 255, 0.75);
+  line-height: 1.55;
+  margin: 0 0 4px 0;
+}
+.sky-info-loc {
+  font-size: 0.72rem;
+  color: rgba(160, 180, 220, 0.55);
+  margin: 0;
+}
+
 /* ── Level Select Screen ───────────────────────────────────── */
 #screen-levels {
   background: linear-gradient(180deg, var(--sky-deep) 0%, var(--sky-mid) 100%);

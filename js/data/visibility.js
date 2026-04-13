@@ -85,7 +85,7 @@ function _altitude(raHours, decDeg, latDeg, lstDeg) {
 
 /**
  * Returns an array of visible constellation objects (from CONSTELLATION_COORDS),
- * each augmented with { altitude, azimuth } in degrees.
+ * each augmented with { altitude } in degrees.
  * Sorted by altitude descending. Filtered to altitude > minAlt.
  *
  * @param {number} latDeg  - Observer latitude (degrees, south = negative)
@@ -123,6 +123,29 @@ export function getVisibleConstellations(
   }
 
   return visible;
+}
+
+/**
+ * Returns the single best-visible constellation object augmented with altitude.
+ * "Best" = highest altitude above the horizon right now.
+ * Always returns a result (falls back to highest even if below horizon).
+ *
+ * @param {number} latDeg
+ * @param {number} lonDeg
+ * @param {Date}   [date]
+ * @returns {{nameEn, ra, dec, altitude}}
+ */
+export function getBestConstellation(
+  latDeg = DEFAULT_LAT,
+  lonDeg = DEFAULT_LON,
+  date = new Date(),
+) {
+  const lst = _lst(date, lonDeg);
+  const ranked = CONSTELLATION_COORDS.map(c => ({
+    ...c,
+    altitude: _altitude(c.ra, c.dec, latDeg, lst),
+  })).sort((a, b) => b.altitude - a.altitude);
+  return ranked[0];
 }
 
 /**
