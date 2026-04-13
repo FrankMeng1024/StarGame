@@ -26,7 +26,7 @@ export function showAchievement(navigate) {
     const done = state.hasCompleted(idx);
     const card = document.createElement('div');
     card.className = 'ach-card' + (done ? ' ach-card--done' : '');
-    card.title = `${con.nameZh} · ${con.nameEn}`;
+    card.title = con.nameZh;
 
     const canvas = document.createElement('canvas');
     canvas.width  = 64;

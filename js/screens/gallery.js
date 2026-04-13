@@ -51,7 +51,6 @@ function _buildGrid() {
       card.innerHTML = `
         <div class="gc-icon">${con.icon}</div>
         <div class="gc-name-zh">${con.nameZh}</div>
-        <div class="gc-name-en">${con.nameEn}</div>
       `;
       card.addEventListener('click', () => _navigate && _navigate('gallery-detail', { idx }));
     } else if (unlocked) {
@@ -76,7 +75,7 @@ export function showGalleryDetail(navigate, params) {
   if (!con) return;
 
   document.querySelector('.detail-name-zh').textContent = con.nameZh;
-  document.querySelector('.detail-name-en').textContent = con.nameEn;
+  document.querySelector('.detail-name-en').textContent = '';
   document.querySelector('.detail-lore-text').textContent = con.lore;
 
   const regionEl = document.getElementById('detail-region');
@@ -268,7 +267,7 @@ function _renderStarChart(idx, con) {
     `</g>`,
     `<circle cx="${cx}" cy="${cy}" r="${cr}" fill="none" stroke="rgba(120,160,255,0.3)" stroke-width="1.5"/>`,
     ticks,
-    `<text x="${cx}" y="${SIZE - 14}" text-anchor="middle" fill="rgba(180,210,255,0.6)" font-size="11" font-family="sans-serif" letter-spacing="2">${con.nameEn.toUpperCase()}</text>`,
+    `<text x="${cx}" y="${SIZE - 14}" text-anchor="middle" fill="rgba(180,210,255,0.6)" font-size="11" font-family="sans-serif" letter-spacing="2">${con.nameZh}</text>`,
     `</svg>`,
   ].join('');
 
