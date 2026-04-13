@@ -1,5 +1,6 @@
-// intro.js — First-run cinematic intro animation (CR-084a)
-// Plays once on first visit (no 'starcatcher_intro_seen' in localStorage).
+// intro.js — Cinematic intro animation (CR-085)
+// Plays on every fresh page load (F5). Skipped when navigating back to menu
+// from within the game — that path calls resumeMenuSky() directly, not playIntro().
 // Duration: ~12s. Three phases:
 //   Phase 1 (0–3s):   Meteor shower — gold streaks diagonal across dark sky
 //   Phase 2 (3–8s):   Constellation nodes appear one by one + lines draw
@@ -8,23 +9,14 @@
 
 import { playRevealNote } from './audio.js';
 
-const INTRO_KEY = 'starcatcher_intro_seen';
-
 /**
- * Play the intro animation if first visit.
+ * Play the intro animation. Always plays — no localStorage gate.
  * Always resolves — never rejects.
  * @returns {Promise<void>}
  */
 export function playIntro() {
-  let seen = false;
-  try { seen = !!localStorage.getItem(INTRO_KEY); } catch (_) { /* silently ignore */ }
-  if (seen) return Promise.resolve();
-
   return new Promise(resolve => {
-    _runIntro(() => {
-      try { localStorage.setItem(INTRO_KEY, '1'); } catch (_) { /* silently ignore */ }
-      resolve();
-    });
+    _runIntro(resolve);
   });
 }
 
