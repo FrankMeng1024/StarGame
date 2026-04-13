@@ -101,7 +101,6 @@ export function initLevels(navigate) {
       ${unlocked ? '<span class="unlock-badge"></span>' : ''}
       <span class="card-icon">${c.icon}</span>
       <span class="card-name-zh">${c.nameZh}</span>
-      <span class="card-name-en">${c.nameEn}</span>
       <span class="card-stars">
         <span class="card-diff-label">难度</span>
         <span class="card-diff-bar-wrap"><span class="card-diff-bar" style="width:${diffPct}%;background:${diffColor}"></span></span>
@@ -152,7 +151,6 @@ export function refreshLevels() {
         <span class="unlock-badge"></span>
         <span class="card-icon">${c.icon}</span>
         <span class="card-name-zh">${c.nameZh}</span>
-        <span class="card-name-en">${c.nameEn}</span>
         <span class="card-stars">${diffBar}</span>
         ${scoreStars ? `<span class="card-score-stars">${scoreStars}</span>` : ''}
         ${bestTime}

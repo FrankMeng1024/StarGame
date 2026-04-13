@@ -53,7 +53,6 @@ function _renderInfoPanel(conDef, altitude, hasLocation, lat) {
     <div class="sky-info-header">
       <span class="sky-info-icon">${conDef.icon || '✦'}</span>
       <span class="sky-info-name">${conDef.nameZh}</span>
-      <span class="sky-info-name-en">${conDef.nameEn}</span>
       ${altStr ? `<span class="sky-info-alt">${altStr}</span>` : ''}
     </div>
     <p class="sky-info-tip">${tip}</p>

@@ -25,6 +25,16 @@ export function startGame(navigate) {
 
   if (engine) { engine.stop(); engine = null; }
 
+  // Show a subtle loading indicator on the canvas while sprites decode
+  // (visible only on first page load when SVGs haven't been cached yet)
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = '#0a0e27';
+  ctx.fillRect(0, 0, W, H);
+  ctx.fillStyle = 'rgba(255,215,0,0.5)';
+  ctx.font = `${Math.round(W * 0.022)}px 'Noto Sans SC', sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.fillText('★ 准备中…', W / 2, H / 2);
+
   // CR-071: Fetch all 6 sprites from the prewarmed cache in levels.js and pass
   // them into GameEngine so it can assign them directly (no new Image() needed).
   const SPRITE_SRCS = [

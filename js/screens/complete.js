@@ -53,7 +53,7 @@ export function showComplete(navigate, params) {
   _showPhoto(level);
 
   // Lore — paginated display
-  document.querySelector('.lore-title').textContent = `${level.nameZh} — ${level.nameEn}`;
+  document.querySelector('.lore-title').textContent = level.nameZh;
   _initLorePager(level.lore);
 
   // Buttons
@@ -146,95 +146,17 @@ export function showFail(navigate, params) {
   _runConstellationAnim(level, idx);
 }
 
-// ── Lore paginated display ─────────────────────────────────────
-function _splitLore(lore) {
-  // Split on 。 followed by newline, or double newlines, or sentence end + space
-  let raw = lore.split(/。\n|。(?=\s{2,})|(?<=。)\s{2,}|\n{2,}/)
-    .map(s => s.trim())
-    .filter(s => s.length > 0);
-
-  // Ensure trailing 。 on each segment except possibly last
-  raw = raw.map(s => s.endsWith('。') ? s : s + '。');
-
-  // Merge short segments (<30 chars) into next
-  const segs = [];
-  for (let i = 0; i < raw.length; i++) {
-    if (segs.length > 0 && raw[i].length < 30) {
-      segs[segs.length - 1] += raw[i];
-    } else {
-      segs.push(raw[i]);
-    }
-  }
-
-  // Split long segments at 120 chars (at sentence boundary if possible)
-  const result = [];
-  for (const seg of segs) {
-    if (seg.length <= 120) {
-      result.push(seg);
-    } else {
-      const parts = seg.match(/.{1,120}。?/g) || [seg];
-      result.push(...parts.filter(p => p.trim().length > 0));
-    }
-  }
-
-  return result.slice(0, 4); // max 4 segments
-}
-
+// ── Lore scrollable display ────────────────────────────────────
 function _initLorePager(loreText) {
   const loreEl = document.querySelector('.lore-text');
   if (!loreEl) return;
 
-  // Clear old pager controls
+  // Remove any old pager controls (from previous visits)
   const old = document.querySelector('.lore-pager');
   if (old) old.remove();
 
-  const segments = _splitLore(loreText);
-
-  // Single short segment — show directly without controls
-  if (segments.length <= 1 || loreText.length < 80) {
-    loreEl.textContent = loreText;
-    return;
-  }
-
-  let page = 0;
-
-  function renderPage() {
-    loreEl.style.opacity = '0';
-    loreEl.textContent = segments[page];
-    loreEl.style.transition = 'opacity 150ms ease';
-    requestAnimationFrame(() => { loreEl.style.opacity = '1'; });
-
-    const dotsEl = document.querySelector('.lore-dots');
-    if (dotsEl) {
-      dotsEl.innerHTML = segments.map((_, i) =>
-        `<span class="lore-dot${i === page ? ' active' : ''}"></span>`
-      ).join('');
-    }
-
-    const nextBtn = document.querySelector('.lore-next-btn');
-    if (nextBtn) {
-      nextBtn.textContent = page < segments.length - 1
-        ? `第${page + 1}/${segments.length}段 · 下一段 ›`
-        : '完成 ✓';
-    }
-  }
-
-  const pager = document.createElement('div');
-  pager.className = 'lore-pager';
-  pager.innerHTML = `
-    <div class="lore-dots"></div>
-    <button class="lore-next-btn btn btn-ghost" type="button"></button>
-  `;
-  loreEl.insertAdjacentElement('afterend', pager);
-
-  pager.querySelector('.lore-next-btn').addEventListener('click', () => {
-    if (page < segments.length - 1) {
-      page++;
-      renderPage();
-    }
-  });
-
-  renderPage();
+  // Show full text in scrollable container — no pagination needed
+  loreEl.textContent = loreText;
 }
 
 function _showPhoto(level) {

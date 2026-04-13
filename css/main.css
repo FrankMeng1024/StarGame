@@ -833,34 +833,8 @@ body {
 .lore-text {
   font-size: 15px;
   color: var(--text);
-  line-height: 1.8;
+  line-height: 1.9;
   text-align: left;
-  min-height: 120px;
-}
-
-.lore-pager {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 6px;
-  margin-top: 8px;
-}
-.lore-dots {
-  display: flex;
-  gap: 6px;
-}
-.lore-dot {
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: rgba(255,255,255,0.25);
-}
-.lore-dot.active {
-  background: var(--star-gold);
-}
-.lore-next-btn {
-  font-size: 12px;
-  padding: 4px 12px;
 }
 
 /* CTA buttons */
