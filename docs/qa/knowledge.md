@@ -1,4 +1,37 @@
-# QA Knowledge — 星捕少女 (StarCatcher)
+# QA Knowledge — 追星少女 (StarCatcher)
+
+---
+
+## 微信小游戏版（branch: mini）
+
+### 验证工具
+**--miniprogram 模式**：`node scripts/mp_qa_runner.js` 替代 Playwright。
+- `--smoke`：主流程 happy path
+- `--story STORY-NNNNN`：指定 Story 验证
+- 截图路径：`docs/qa/sprint{N}-mini-evidence/<story-id>-<step>.png`
+- 控制台错误通过 `page.getLogList()` 获取（非 browser_console_messages）
+
+### 平台特殊性
+- 无 DOM — Canvas 截图是唯一视觉证据
+- wx.login() 在模拟器返回测试 code，真机换真实 openid
+- 每次"页面"切换后调用 getLogList() 检查错误
+- 音频在模拟器需用户交互后才能播放（可忽略此限制的测试失败）
+
+### 主用户流程（小游戏版）
+1. 启动 → Canvas 主菜单（星空背景 + 标题 + 两按钮）
+2. Tap [挑战关卡] → 选关页（30 卡片，第 1 关解锁）
+3. Tap 关卡 1 → 游戏屏（网兜摆动，星星和垃圾可见）
+4. Tap → 网兜发射/收回/抓取
+5. 抓完全部星星 → 通关界面
+6. 通关界面 → 展厅/商店/下一关
+
+### 测试数据（小游戏版）
+- 默认存档：`{ unlockedLevels: [0], coins: 100, levelScores: {} }`
+- 已完成存档：`{ unlockedLevels: [0,1,2], levelScores: {0:{stars:3}} }`
+
+---
+
+## 原版 HTML5 版（branch: main）
 
 ## Product Understanding
 Single-player browser game. HTML5 Canvas for gameplay, HTML/CSS for UI screens.
