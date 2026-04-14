@@ -21,7 +21,7 @@ const fs = require('fs');
 // ─── Config ──────────────────────────────────────────────────────────────────
 
 const DEVTOOLS_CLI = process.env.WX_DEVTOOLS_CLI ||
-  'C:\\Program Files (x86)\\Tencent\\微信web开发者工具\\cli.bat';
+  'C:\\tools\\微信web开发者工具\\cli.bat';
 
 const MINIPROGRAM_PATH = path.resolve(__dirname, '../miniprogram');
 

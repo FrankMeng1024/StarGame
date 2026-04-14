@@ -10,7 +10,7 @@ acceptance_mode: auto
 miniprogram-automator
 
 ## §devtools-path
-C:\Program Files (x86)\Tencent\微信web开发者工具\cli.bat
+C:\tools\微信web开发者工具\cli.bat
 
 ## §stack
 
