@@ -1,22 +1,50 @@
 // app.js — 微信小游戏入口
 // 负责：wx.login 静默登录 → 获取 openid → 加载云端存档 → 启动主菜单
 
+import { initGlobals } from './js/engine/globals.js';
 import { AuthManager } from './js/platform/auth.js';
 import { StorageAdapter } from './js/platform/wx-adapter.js';
-import { showMenu } from './js/screens/menu.js';
+import state from './js/engine/state.js';
+import { showMenu, hideMenu } from './js/screens/menu.js';
+import { showLevels, hideLevels } from './js/screens/levels.js';
 
-// 全局 Canvas
+// 全局 Canvas — 立即初始化 globals（其他模块从 globals.js import，无循环依赖）
 const canvas = wx.createCanvas();
 const ctx = canvas.getContext('2d');
+initGlobals(canvas, ctx, canvas.width, canvas.height);
 
-// 屏幕尺寸（全局共享）
-export const SCREEN_W = canvas.width;
-export const SCREEN_H = canvas.height;
-export const CTX = ctx;
-export const CANVAS = canvas;
+// 全局状态（外部只读引用）
+let gameState = null;
 
-// 全局状态
-export let gameState = null;
+// ── 导航路由 ──────────────────────────────────────────────────
+function navigate(key) {
+  // 先全部清理
+  hideMenu();
+  hideLevels();
+
+  switch (key) {
+    case 'menu':
+      showMenu(navigate);
+      break;
+    case 'levels':
+      showLevels(navigate);
+      break;
+    case 'gallery':
+      console.log('[nav] gallery — TODO Sprint 2');
+      showMenu(navigate);
+      break;
+    case 'shop':
+      console.log('[nav] shop — TODO Sprint 2');
+      showMenu(navigate);
+      break;
+    case 'game':
+      console.log('[nav] game — TODO Sprint 2, level=' + state.currentLevel);
+      showMenu(navigate);
+      break;
+    default:
+      showMenu(navigate);
+  }
+}
 
 async function boot() {
   // 1. 静默登录 — 获取 openid + JWT token
@@ -27,10 +55,12 @@ async function boot() {
   }
 
   // 2. 加载存档（云端优先，本地降级）
-  gameState = await StorageAdapter.loadSave();
+  const saveData = await StorageAdapter.loadSave();
+  state.fromSaveData(saveData);
+  gameState = state;
 
   // 3. 启动主菜单
-  showMenu();
+  showMenu(navigate);
 }
 
 boot();

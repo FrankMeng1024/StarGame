@@ -121,9 +121,14 @@ async function main() {
   try {
     automator = require('miniprogram-automator');
   } catch (e) {
-    console.error('[error] miniprogram-automator not installed.');
-    console.error('  Run: npm install -g miniprogram-automator');
-    process.exit(1);
+    // Try global path fallback
+    try {
+      automator = require('C:/Users/I585134/AppData/Roaming/npm/node_modules/miniprogram-automator');
+    } catch (e2) {
+      console.error('[error] miniprogram-automator not installed.');
+      console.error('  Run: npm install -g miniprogram-automator');
+      process.exit(1);
+    }
   }
 
   // Check DevTools CLI exists

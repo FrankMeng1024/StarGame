@@ -146,5 +146,6 @@ export const AudioAdapter = {
     sfx.volume = 0.8;
     sfx.play();
     sfx.onEnded(() => sfx.destroy());
+    sfx.onError(() => sfx.destroy());
   },
 };
