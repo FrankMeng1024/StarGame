@@ -1,5 +1,5 @@
 // shop.js — Canvas 道具商店（微信小游戏版）
-// 展示6种道具，玩家可用金币购买；本Sprint仅储存，效果在Sprint 5-mini生效
+// 展示8种道具，玩家可用金币购买
 
 import { G } from '../engine/globals.js';
 import {
@@ -16,6 +16,8 @@ export const ITEMS = [
   { id: 'time_ext',     icon: '⏱', nameZh: '时间延长',   desc: '本关+15秒',          cost: 30 },
   { id: 'shrink',       icon: '🔬', nameZh: '缩小垃圾',   desc: '本关垃圾体积减半',   cost: 35 },
   { id: 'double_coins', icon: '🪙', nameZh: '双倍金币',   desc: '本关金币×2',         cost: 50 },
+  { id: 'star_magnet',  icon: '🧲', nameZh: '磁力星引',   desc: '星星主动靠近网兜',   cost: 80 },
+  { id: 'glove',        icon: '🧤', nameZh: '宇航员手套', desc: '抓到垃圾不扣时间',     cost: 70 },
 ];
 
 // ── Module state ──────────────────────────────────────────────

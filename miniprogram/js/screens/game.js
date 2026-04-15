@@ -57,8 +57,12 @@ let _dt         = 0;      // last frame dt (seconds) — used by draw helpers ne
 let _timerFlash = 0;     // seconds of red flash remaining on HUD
 
 // Result state
-let _phase      = 'play'; // 'play' | 'result'
+let _phase      = 'play'; // 'play' | 'celebrate' | 'linedraw' | 'result'
 let _result     = null;   // {victory, timeLeft, coins, stars, uncaught}
+
+// Victory animation state
+let _celebrateTimer = 0;  // seconds remaining in celebrate phase
+let _lineDrawProgress = 0; // float: how many lines have been drawn so far
 
 // Tutorial hint
 let _hintTimer  = 0;      // seconds remaining for hint display
@@ -79,6 +83,8 @@ let _debrisRadiusMult = 1;  // shrink item: ×0.5
 let _coinsMult     = 1;     // double_coins: ×2
 let _bombActive    = false; // bomb item: one-time debris clear
 let _btnBomb       = null;  // bomb HUD button
+let _magnetActive  = false; // star_magnet: stars drift toward net head
+let _gloveActive   = false; // glove: no speed penalty on debris catch
 
 // ── Public API ────────────────────────────────────────────────
 export function showGame(navigate) {
@@ -101,6 +107,8 @@ export function showGame(navigate) {
   _netState  = 'swing';
   _phase     = 'play';
   _result    = null;
+  _celebrateTimer = 0;
+  _lineDrawProgress = 0;
 
   // Timer
   const diffMap = [90, 80, 70, 60, 50];
@@ -111,6 +119,8 @@ export function showGame(navigate) {
   _netSpeedMult = _netRadiusMult = _coinsMult = 1;
   _debrisRadiusMult = 1;
   _bombActive = false;
+  _magnetActive = false;
+  _gloveActive = false;
   for (const id of (state.selectedItems || [])) {
     switch (id) {
       case 'speed':        _netSpeedMult    = 1.5;  break;
@@ -119,6 +129,8 @@ export function showGame(navigate) {
       case 'time_ext':     _timeLeft       += 15;   break;
       case 'shrink':       _debrisRadiusMult = 0.5; break;
       case 'double_coins': _coinsMult       = 2;    break;
+      case 'star_magnet':  _magnetActive    = true;  break;
+      case 'glove':        _gloveActive     = true;  break;
     }
   }
 
@@ -209,6 +221,10 @@ function _cleanup() {
   _netSpeedMult = _netRadiusMult = _coinsMult = 1;
   _debrisRadiusMult = 1;
   _bombActive = false;
+  _magnetActive = false;
+  _gloveActive = false;
+  _celebrateTimer = 0;
+  _lineDrawProgress = 0;
 }
 
 // ── Main loop ─────────────────────────────────────────────────
@@ -244,6 +260,7 @@ function _loop(now) {
     _updateTimer(dt);
     _updateNet(dt);
     _updateParticles(dt);
+    if (_magnetActive) _updateMagnet(dt);
 
     _drawConLines(ctx);
     _drawStars(ctx, t);
@@ -253,6 +270,24 @@ function _loop(now) {
     _drawNet(ctx);
     _drawHUD(ctx, W);
     if (_hintTimer > 0) _drawHint(ctx, W, H);
+  } else if (_phase === 'celebrate') {
+    _updateParticles(dt);
+    _celebrateTimer -= dt;
+    if (_celebrateTimer <= 0) {
+      _phase = 'linedraw';
+      _lineDrawProgress = 0;
+    }
+    _drawConLines(ctx);
+    _drawStars(ctx, t);
+    _drawParticles(ctx);
+    _drawGirl(ctx);
+  } else if (_phase === 'linedraw') {
+    _updateLineDrawProgress(dt);
+    _drawConLines(ctx);
+    _drawStars(ctx, t);
+    _drawAnimatedConLines(ctx);
+    _drawParticles(ctx);
+    _drawGirl(ctx);
   } else {
     // Still draw scene for visual context
     _drawConLines(ctx);
@@ -336,8 +371,10 @@ function _checkCollisions() {
     const dx = _netHeadX - d.x;
     const dy = _netHeadY - d.y;
     if (dx * dx + dy * dy <= (d.r + 18 * _netRadiusMult) * (d.r + 18 * _netRadiusMult)) {
-      _timeLeft  = Math.max(0, _timeLeft - 1.0);
-      _timerFlash = 0.5; // 0.5 seconds of red flash
+      if (!_gloveActive) {
+        _timeLeft  = Math.max(0, _timeLeft - 1.0);
+        _timerFlash = 0.5; // 0.5 seconds of red flash
+      }
       _netState   = 'retract';
       return;
     }
@@ -370,6 +407,26 @@ function _updateParticles(dt) {
   }
 }
 
+// star_magnet: pull uncaught stars toward net head
+function _updateMagnet(dt) {
+  const scale = dt * 60;
+  const MAGNET_RANGE = 80;
+  const PULL_SPEED   = 1.2;
+  for (const s of _stars) {
+    if (s.caught) continue;
+    const dx = _netHeadX - s.x;
+    const dy = _netHeadY - s.y;
+    const dist = Math.sqrt(dx * dx + dy * dy);
+    if (dist < MAGNET_RANGE && dist > 1) {
+      const move = PULL_SPEED * scale;
+      // Move toward net head, cap to not overshoot
+      const fraction = Math.min(move / dist, 1);
+      s.x += dx * fraction;
+      s.y += dy * fraction;
+    }
+  }
+}
+
 // ── Draw: constellation lines ─────────────────────────────────
 function _drawConLines(ctx) {
   if (!_conDef.lines) return;
@@ -379,6 +436,43 @@ function _drawConLines(ctx) {
   for (const [ai, bi] of _conDef.lines) {
     const a = _stars[ai], b = _stars[bi];
     if (!a || !b) continue;
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ── Victory: line draw animation progress ────────────────────
+function _updateLineDrawProgress(dt) {
+  if (!_conDef.lines || _conDef.lines.length === 0) {
+    _phase = 'result';
+    return;
+  }
+  const totalLines = _conDef.lines.length;
+  const totalDuration = Math.max(totalLines * 0.12, 0.5);
+  _lineDrawProgress += (dt / totalDuration) * totalLines;
+  if (_lineDrawProgress >= totalLines) {
+    _lineDrawProgress = totalLines;
+    _phase = 'result';
+  }
+}
+
+// ── Victory: animated constellation lines ────────────────────
+function _drawAnimatedConLines(ctx) {
+  if (!_conDef.lines) return;
+  const drawn = Math.floor(_lineDrawProgress);
+  ctx.save();
+  ctx.lineWidth   = 2;
+  for (let i = 0; i <= drawn && i < _conDef.lines.length; i++) {
+    const [ai, bi] = _conDef.lines[i];
+    const a = _stars[ai], b = _stars[bi];
+    if (!a || !b) continue;
+    const alpha = i < drawn ? 0.85 : 0.85 * (_lineDrawProgress - drawn);
+    ctx.strokeStyle = `rgba(255,215,0,${alpha.toFixed(2)})`;
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur  = 6;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
@@ -711,7 +805,6 @@ function _drawHUD(ctx, W) {
 function _triggerResult(victory) {
   if (_phase !== 'play') return;
   _netState = 'swing';
-  _phase    = 'result';
 
   const coins   = victory ? Math.floor(_timeLeft) * 10 * _coinsMult : 0;
   const stars3  = coins >= 300 ? 3 : coins >= 100 ? 2 : 1;
@@ -730,6 +823,27 @@ function _triggerResult(victory) {
     state.useItem(id);
   }
   state.selectedItems = [];
+
+  if (victory) {
+    // Spawn victory celebration particles (gold star rain)
+    const W = G.SCREEN_W;
+    const H = G.SCREEN_H;
+    for (let i = 0; i < 20; i++) {
+      _particles.push({
+        x: Math.random() * W,
+        y: Math.random() * H * 0.5,
+        vx: (Math.random() - 0.5) * 2,
+        vy: -1.5 - Math.random() * 2,
+        life: 60 + Math.random() * 30,
+        maxLife: 90,
+        color: i % 3 === 0 ? '#ffffff' : '#ffd700',
+      });
+    }
+    _phase = 'celebrate';
+    _celebrateTimer = 1.5;
+  } else {
+    _phase = 'result';
+  }
 }
 
 // ── Draw: result overlay ──────────────────────────────────────
@@ -745,7 +859,7 @@ function _drawResultOverlay(ctx, W, H) {
 
   // Card
   const cardW = Math.min(W - 40, 340);
-  const cardH = r.victory ? 430 : 280;
+  const cardH = r.victory ? 460 : 280;
   const cardX = (W - cardW) / 2;
   const cardY = (H - cardH) / 2;
 
@@ -810,17 +924,21 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.restore();
     cy += 28;
 
-    // Lore excerpt
-    const excerpt = _conDef.lore ? _conDef.lore.substring(0, 120) + '…' : '';
+    // Lore excerpt (up to 200 chars, clipped to allocated area to prevent button overlap)
+    const MAX_LORE = 200;
+    const excerpt = _conDef.lore ? _conDef.lore.substring(0, MAX_LORE) + (_conDef.lore.length > MAX_LORE ? '…' : '') : '';
     if (excerpt) {
       ctx.save();
+      ctx.beginPath();
+      ctx.rect(cardX + 8, cy - 8, cardW - 16, 96);
+      ctx.clip();
       ctx.font         = '12px sans-serif';
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle    = COLORS.text2;
       _drawWrappedText(ctx, excerpt, cx, cy, cardW - 32, 16);
       ctx.restore();
-      cy += 80;
+      cy += 96;
     }
 
     // Buttons (3 buttons: 下一关/全部通关, 重玩, 选关)
@@ -933,6 +1051,12 @@ function _onTouch(e) {
       _netState = 'extend';
       _netLen   = 0;
     }
+    return;
+  }
+
+  // Tap during celebrate/linedraw: skip to result
+  if (_phase === 'celebrate' || _phase === 'linedraw') {
+    _phase = 'result';
     return;
   }
 

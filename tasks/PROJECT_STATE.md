@@ -68,7 +68,7 @@
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: IN PROGRESS — Sprint 4-mini COMPLETE, Sprint 5-mini NOT STARTED
+**Status**: IN PROGRESS — Sprint 6-mini COMPLETE, Sprint 7-mini PLANNING
 
 | Sprint | Status | Goal |
 |---|---|---|
@@ -77,7 +77,21 @@
 | Sprint 2-mini | COMPLETE | 核心游戏完整可玩 — 点击发射网兜、抓星星、避垃圾、计时/金币结算、失败屏幕 (QA PASS, UX 1 Critical pending, Arch PASS) |
 | Sprint 3-mini | COMPLETE | 游戏体验闭环 — 通关屏幕、新手引导、帧率无关物理、关卡图标修复、垃圾危险视觉 (QA PASS, Arch PASS, UX no Blockers) |
 | Sprint 4-mini | COMPLETE | 内容完整度 — 星座展厅、道具商店、场景切换 (QA PASS, UX no Blockers, Arch PASS) |
-| Sprint 5-mini | NOT STARTED | — |
+| Sprint 5-mini | COMPLETE | 道具系统生效 + 帧率无关性 + 展厅prev/next导航 (QA PASS, UX no Blockers, Arch PASS) |
+| Sprint 6-mini | COMPLETE | PRD完整度 — 磁力星引/宇航员手套 + 胜利庆典动画 (QA PASS, UX no Blockers, Arch PASS) |
+
+### Sprint 6-mini Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00224 | 磁力星引 + 宇航员手套 | Done |
+| STORY-00225 | 胜利庆典动画 + 星座连线动画 | Done |
+
+### Sprint 5-mini Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00221 | 道具系统生效 — 6种道具效果 | Done |
+| STORY-00222 | 帧率无关性全补 — _timerFlash/particles/debris spin | Done |
+| STORY-00223 | 展厅 prev/next 星座导航 | Done |
 
 ### Sprint 4-mini Stories
 | Story | Title | Status |

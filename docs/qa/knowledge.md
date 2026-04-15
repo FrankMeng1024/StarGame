@@ -295,6 +295,14 @@ No backend, no network requests. All data in localStorage + local files.
 - Sprite prewarm: all 6 sprites prewarmed. Any new sprite types must be added to the prewarm list in levels.js.
 - Navigation regression: all major screens (menu/levels/game/gallery/shop/complete) produce 0 console errors.
 
+## Sprint 6-mini Updates (2026-04-15) — 微信小游戏版 branch: mini
+
+- **四段状态机**: game.js _phase 扩展为 'play' | 'celebrate' | 'linedraw' | 'result'。_triggerResult 新增 `if (_phase !== 'play') return` 重入保护。Celebrate 阶段仅在胜利时进入，失败直接跳 result。
+- **Magnet (star_magnet)**: _updateMagnet(dt) 以 scale=dt×60 归一化。PULL_SPEED=1.2, MAGNET_RANGE=80px。过冲保护：`fraction = Math.min(move/dist, 1)`，星星不会超过 netHead 位置。
+- **Glove (宇航员手套)**: _checkCollisions() 中 `if (!_gloveActive)` 仅屏蔽时间惩罚（-1.0s）和 _timerFlash。网兜仍然收回（_netState='retract'）。
+- **Lore 文本溢出防护**: Canvas clip rect `ctx.rect(cardX+8, cy-8, cardW-16, 96)` + `ctx.clip()` 限制文字渲染高度，防止溢出到按钮区。MAX_LORE=200 字符+省略号。
+- **Tap跳过**: celebrate/linedraw 阶段 _onTouch 直接将 _phase 设为 'result'，无需动画清理。
+
 ## Sprint 5-mini Updates (2026-04-15) — 微信小游戏版 branch: mini
 
 - **道具系统已生效**: 6种道具 (speed/enlarge/bomb/time_ext/shrink/double_coins) 全部在game.js中生效。module-level multipliers reset in both _cleanup() and showGame(), preventing stale state.
