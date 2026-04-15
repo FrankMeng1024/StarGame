@@ -68,7 +68,7 @@
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: IN PROGRESS — Sprint 3-mini COMPLETE, Sprint 4-mini NOT STARTED
+**Status**: IN PROGRESS — Sprint 4-mini COMPLETE, Sprint 5-mini NOT STARTED
 
 | Sprint | Status | Goal |
 |---|---|---|
@@ -76,6 +76,16 @@
 | Sprint 1-mini | COMPLETE | 小游戏骨架可运行 — Canvas主菜单+选关+wx-adapter+后端骨架 (QA PASS, UX fix applied, Arch PASS) |
 | Sprint 2-mini | COMPLETE | 核心游戏完整可玩 — 点击发射网兜、抓星星、避垃圾、计时/金币结算、失败屏幕 (QA PASS, UX 1 Critical pending, Arch PASS) |
 | Sprint 3-mini | COMPLETE | 游戏体验闭环 — 通关屏幕、新手引导、帧率无关物理、关卡图标修复、垃圾危险视觉 (QA PASS, Arch PASS, UX no Blockers) |
+| Sprint 4-mini | COMPLETE | 内容完整度 — 星座展厅、道具商店、场景切换 (QA PASS, UX no Blockers, Arch PASS) |
+| Sprint 5-mini | NOT STARTED | — |
+
+### Sprint 4-mini Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00217 | 星座展厅 — Canvas展厅屏 | Done |
+| STORY-00218 | 道具商店 — Canvas商店屏 | Done |
+| STORY-00219 | 场景背景切换 — 每5关一个背景 | Done |
+| STORY-00220 | 通关屏商店入口 + 展厅入口 | Done |
 
 ### Sprint 2-mini Stories
 | Story | Title | Status |

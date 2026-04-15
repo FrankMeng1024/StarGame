@@ -68,6 +68,8 @@ let _btnNext    = null;
 let _btnRetry   = null;
 let _btnReplay  = null;
 let _btnLevels  = null;
+let _btnShop    = null;
+let _btnGallery = null;
 
 // ── Public API ────────────────────────────────────────────────
 export function showGame(navigate) {
@@ -104,7 +106,7 @@ export function showGame(navigate) {
 
   initBgStars(W, H, 60);
   _particles = [];
-  _btnNext = _btnRetry = _btnReplay = _btnLevels = null;
+  _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = null;
 
   // Show hint only on first-ever game session
   try {
@@ -179,6 +181,7 @@ function _cleanup() {
   _particles = [];
   _phase   = 'play';
   _hintTimer = 0;
+  _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = null;
 }
 
 // ── Main loop ─────────────────────────────────────────────────
@@ -195,6 +198,18 @@ function _loop(now) {
   // ── Background ──────────────────────────────────────────────
   drawSkyBg(ctx, W, H, _scene.sky0, _scene.sky1, _scene.sky2);
   drawBgStars(ctx, t);
+  if (_scene.aurora) {
+    const auroraT = now * 0.0004;
+    for (let i = 0; i < 3; i++) {
+      const y = H * (0.15 + i * 0.07 + Math.sin(auroraT + i * 1.2) * 0.03);
+      const grd = ctx.createLinearGradient(0, y - 20, 0, y + 20);
+      grd.addColorStop(0, 'rgba(0,220,180,0)');
+      grd.addColorStop(0.5, 'rgba(0,220,180,0.12)');
+      grd.addColorStop(1, 'rgba(0,220,180,0)');
+      ctx.fillStyle = grd;
+      ctx.fillRect(0, y - 20, W, 40);
+    }
+  }
   drawGroundSilhouette(ctx, W, H, _sceneIdx);
 
   if (_phase === 'play') {
@@ -684,7 +699,7 @@ function _drawResultOverlay(ctx, W, H) {
 
   // Card
   const cardW = Math.min(W - 40, 340);
-  const cardH = r.victory ? 360 : 280;
+  const cardH = r.victory ? 430 : 280;
   const cardX = (W - cardW) / 2;
   const cardY = (H - cardH) / 2;
 
@@ -762,7 +777,7 @@ function _drawResultOverlay(ctx, W, H) {
     // Buttons (3 buttons: 下一关/全部通关, 重玩, 选关)
     const btnW3 = (cardW - 20) / 3;
     const btnH = 40;
-    const bY   = cardY + cardH - 52;
+    const bY   = cardY + cardH - 112;
     const isLastLevel = _levelIdx >= 29;
 
     if (isLastLevel) {
@@ -778,6 +793,18 @@ function _drawResultOverlay(ctx, W, H) {
       fontSize: 14, color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
     });
     _btnRetry  = null;
+
+    // Secondary row: 去商店 + 看展厅
+    const sec2W = (cardW - 24) / 2;
+    const secY  = bY + btnH + 10;
+    _btnShop = drawButton(ctx, cardX + 10, secY, sec2W, 32, '🛒 去商店', {
+      fontSize: 12, radius: 8,
+      color0: 'rgba(40,60,100,0.75)', color1: 'rgba(30,80,140,0.75)',
+    });
+    _btnGallery = drawButton(ctx, cardX + 10 + sec2W + 4, secY, sec2W, 32, '🔭 看展厅', {
+      fontSize: 12, radius: 8,
+      color0: 'rgba(40,60,100,0.75)', color1: 'rgba(30,80,140,0.75)',
+    });
 
   } else {
     // ── Failure card ────────────────────────────────────────
@@ -857,6 +884,14 @@ function _onTouch(e) {
     }
     if (_btnLevels && hitTest(_btnLevels, tx, ty)) {
       if (_navigate) _navigate('levels');
+      return;
+    }
+    if (_btnShop && hitTest(_btnShop, tx, ty)) {
+      if (_navigate) _navigate('shop');
+      return;
+    }
+    if (_btnGallery && hitTest(_btnGallery, tx, ty)) {
+      if (_navigate) _navigate('gallery');
       return;
     }
   }

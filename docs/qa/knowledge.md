@@ -33,7 +33,15 @@
 5. 抓完全部星星 → 通关界面
 6. 通关界面 → 展厅/商店/下一关
 
-### 已验证状态（Sprint 1-mini）
+### 已验证状态（Sprint 4-mini）
+- 展厅：gallery.js 3列×10行网格，30 constellations，未解锁显示🔒。detail view 有全部字段（nameZh/nameEn/icon/region/bestViewMonth/mainStars/lore）。返回→levels。
+- 商店：shop.js 6种道具（speed/enlarge/bomb/time_ext/shrink/double_coins），spendCoins+addItem，金币不足显示红色 toast（error:true→红色 rgba(200,60,60)），成功绿色 toast。返回→levels。
+- 场景背景：game.js `_sceneIdx = floor(_levelIdx/5)`；SCENE_PALETTES[4].aurora=true（关卡 20-24）。
+- 通关屏：5 buttons: 下一关/重玩/选关(40px) + 去商店/看展厅(32px secondary)。Victory cardH=430。
+- game.js `_cleanup()` 在 line 185 有正确 `}`，`_loop` 在模块顶层。
+- 购买按钮命中检测：hitTest({x, y: rect.y - _scrollY, w, h}, tx, ty) — rect.y 是 content 坐标。
+- 锁定展厅卡片 tap → wx.vibrateShort({type:'light'}) 触觉反馈。
+- Aurora: `auroraT = now * 0.0004`（now是RAF ms），周期约15.7秒，可见动画。
 - 主菜单：深蓝星空 + "追星少女" + "挑战关卡" + "星座展厅" 全部可见（smoke-01-menu.png）
 - 选关屏：30 关卡 5列×6行网格，第1关(白羊座)解锁，2-30关锁定（smoke-02-levels.png）
 - 后端：/health 3.8ms, /api/login invalid code → 400 wx error 40029
