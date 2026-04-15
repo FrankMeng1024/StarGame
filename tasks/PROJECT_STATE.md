@@ -2,7 +2,7 @@
 
 **Status**: COMPLETE
 **Current Sprint**: 32 (Sprint Goal: 关卡加载极速化 — 消除进关等待，任何关卡直接可玩)
-**Last Updated**: 2026-04-13
+**Last Updated**: 2026-04-15
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -68,13 +68,14 @@
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: IN PROGRESS — Sprint 2-mini COMPLETE, Sprint 3-mini NOT STARTED
+**Status**: IN PROGRESS — Sprint 3-mini COMPLETE, Sprint 4-mini NOT STARTED
 
 | Sprint | Status | Goal |
 |---|---|---|
 | Sprint 0-mini | COMPLETE | Foundation — miniprogram scaffold, TECH_SPEC §verification-tool=miniprogram-automator |
 | Sprint 1-mini | COMPLETE | 小游戏骨架可运行 — Canvas主菜单+选关+wx-adapter+后端骨架 (QA PASS, UX fix applied, Arch PASS) |
 | Sprint 2-mini | COMPLETE | 核心游戏完整可玩 — 点击发射网兜、抓星星、避垃圾、计时/金币结算、失败屏幕 (QA PASS, UX 1 Critical pending, Arch PASS) |
+| Sprint 3-mini | COMPLETE | 游戏体验闭环 — 通关屏幕、新手引导、帧率无关物理、关卡图标修复、垃圾危险视觉 (QA PASS, Arch PASS, UX no Blockers) |
 
 ### Sprint 2-mini Stories
 | Story | Title | Status |
@@ -86,15 +87,22 @@
 | STORY-00210 | 定时器与金币结算 | Done |
 | STORY-00211 | 通关/失败屏幕 | Done |
 
-### Sprint 3-mini Backlog (Top Priority Items)
-- [Critical UX] 首次游戏无引导 — 添加新手提示 ("点击屏幕发射网兜！") (from UX sprint2-mini-review)
-- [Medium UX] 标题不一致 "超凡天下" vs "星捕少女" (DevTools chrome issue)
-- [Medium UX] 关卡1解锁图标用交叉剑，应改为数字或方向标
-- [Medium UX] 失败屏幕重试/选关按钮视觉权重相同
-- [Medium UX] 垃圾缺乏危险视觉语言 (无红色/警告标识)
-- [Arch Medium] NET_SPEED 用帧计数而非时间，在不同帧率下速度不一致
+### Sprint 3-mini Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00212 | 通关屏幕 — 星座介绍卡 + 下一关/重玩/选关导航 | Done |
+| STORY-00213 | 新手引导提示 — "点击屏幕发射网兜！" 首次入场 hint | Done |
+| STORY-00214 | 帧率无关物理 — 摆动 + 网兜速度改为 dt×speed | Done |
+| STORY-00215 | 关卡图标修复 — 解锁关卡显示关卡编号，锁定显示🔒 | Done |
+| STORY-00216 | 垃圾危险视觉语言 — 红色光晕/警告色区分危险目标 | Done |
+
+### Sprint 4-mini Backlog (Top Priority Items)
+- [Arch Medium] 其余帧率相关：_timerFlash、_updateParticles、d.angle += d.spin 仍为帧计数
 - [Arch Medium] stars/debris arrays在每帧_update中直接mutate
 - [Arch Medium] Canvas 2D context渲染无离屏缓冲 (性能)
+- [Arch Medium] 新手提示使用wx.getStorageSync而非StorageAdapter（架构不一致）
+- 展厅功能 (M9 PRD Must-Have)
+- 商店功能 (M7 PRD Must-Have)
 
 ## Sprint 32 Stories
 | Story | Title | Status |

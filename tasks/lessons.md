@@ -1,5 +1,29 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 3-mini — 2026-04-15 (mini branch)
+
+Full retrospective required: QA found 3 bugs after code review (1 Critical, 2 Medium) requiring fixes.
+
+**What worked:**
+- Source code verification as QA substitute for Canvas mini games — when automation cannot complete gameplay (e.g., catching all 7 stars), reading the code path and verifying logic is an acceptable approach with confidence=MEDIUM
+- mss Python library (DXGI) for screenshots — only reliable method for GPU-composited WeChat DevTools window. PrintWindow/BitBlt both fail.
+- pythonw.exe + `-WindowStyle Hidden` in Start-Process — prevents focus theft during screenshot capture
+
+**What failed:**
+- Console navigation automation (wx.__navigate) — DevTools console defaults to `top` JS context. wx.* objects only exist in the game's execution context. Switching required clicking the context dropdown in the DevTools toolbar. Failed to automate this reliably.
+- Root cause: No pre-Sprint Spike for automating canvas game navigation via DevTools console. Assumed wx.* would be accessible in default context.
+- Impact: All navigation screenshots (menu/levels/game screens) captured via automated wx.__navigate showed fail screen instead — game stuck on fail overlay because 'top' context has no navigate function.
+
+**Sprint-specific bugs:**
+- BUG-00301 (Critical): Victory screen missing '重玩' button — AC5 explicit requirement not implemented. Fixed by adding _btnReplay.
+- BUG-00302 (Medium): Heading text '通关！' vs AC-specified '恭喜通关！'. Fixed.
+- BUG-00303 (Medium): Level 30 '下一关' button rendered but non-functional. Fixed with isLastLevel check.
+
+**Lessons to apply in Sprint 4-mini:**
+- [pending] DevTools console context switching: before any navigation automation, must click the context dropdown to switch from 'top' to game execution context. Approximate logical coords: (262, 545). Will need re-calibration each DevTools restart. Consider adding context switch step to QA script at start of every session.
+- [pending] Victory/complete screen automation: requires catching all 7 stars. Consider adding `wx.__debugWin = () => _triggerResult(true)` debug shortcut in Sprint 4-mini to enable victory screen testing without gameplay.
+- [pending] AC text must match implementation exactly: heading text '恭喜通关！' vs '通关！' is a minor but clear spec violation. Developers should read ACs character-by-character for displayed text.
+
 ## Sprint 0 — 2026-04-10
 - [archived: TECH_SPEC.md §spike-decision] 这是一个纯前端 Canvas 游戏，没有后端。Sprint 1 Spike 已跳过（Arch声明）。
 
