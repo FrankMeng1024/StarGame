@@ -1,6 +1,14 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 6-mini — 2026-04-15 (mini branch)
+
+Sprint 6-mini: clean Sprint, no retrospective actions.
+- Glove description inaccuracy ("不减速" → "不扣时间") self-corrected by developer before Arch review; confirmed by Arch. No process failure.
+- UX lore text overflow fixed during UX review; clip rect solution validated.
+- Magnet/catch state gap (Medium, acceptable by design) documented in Arch review, no Story required.
+
 ## Sprint 4-mini — 2026-04-15 (mini branch)
+
 
 Full retrospective required: UX found 1 Blocker bug, Arch found 4 Medium bugs during code review.
 
