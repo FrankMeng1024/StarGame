@@ -8,6 +8,7 @@ import {
 } from '../engine/canvas-utils.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
 import { SCENE_PALETTES } from '../data/scenes.js';
+import { ITEMS } from './shop.js';
 import state from '../engine/state.js';
 
 const TWO_PI = Math.PI * 2;
@@ -28,6 +29,13 @@ const COLS    = 5;
 const PAD_X   = 12;
 const PAD_TOP = 80;   // below back button
 const GAP     = 6;
+
+// ── Item selection overlay state ───────────────────────────────
+let _overlayActive   = false;
+let _overlayToggled  = new Set(); // item IDs selected for use
+let _overlayBtnRects = [];        // [{id, rect}] toggle buttons
+let _overlayConfirm  = null;
+let _overlaySkip     = null;
 
 // ── Public API ────────────────────────────────────────────────
 export function showLevels(navigate) {
@@ -63,6 +71,11 @@ function _cleanup() {
   _backRect  = null;
   _scrollY   = 0;
   _scrollTarget = 0;
+  _overlayActive = false;
+  _overlayToggled.clear();
+  _overlayBtnRects = [];
+  _overlayConfirm = null;
+  _overlaySkip = null;
 }
 
 function _computeLayout() {
@@ -132,6 +145,11 @@ function _loop(now) {
 
   ctx.restore();
 
+  // Draw item selection overlay if active
+  if (_overlayActive) {
+    _drawItemOverlay(ctx, W, H);
+  }
+
   _rafId = requestAnimationFrame(_loop);
 }
 
@@ -200,6 +218,119 @@ function _drawCard(ctx, cr, t) {
   }
 }
 
+// ── Item selection overlay ────────────────────────────────────
+function _drawItemOverlay(ctx, W, H) {
+  // Dim background
+  ctx.save();
+  ctx.fillStyle = 'rgba(0,0,0,0.70)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  const ownedItems = ITEMS.filter(it => state.getItemQty(it.id) > 0);
+  const cardW = Math.min(W - 40, 320);
+  const rowH  = 52;
+  const cardH = 80 + ownedItems.length * rowH + 60;
+  const cardX = (W - cardW) / 2;
+  const cardY = (H - cardH) / 2;
+
+  // Card background
+  ctx.save();
+  ctx.fillStyle = 'rgba(20,25,60,0.97)';
+  _roundRect(ctx, cardX, cardY, cardW, cardH, 14);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(255,215,0,0.35)';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  // Title
+  ctx.save();
+  ctx.font         = 'bold 16px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = COLORS.text;
+  ctx.fillText('选择使用道具', W / 2, cardY + 28);
+  ctx.restore();
+
+  // Sub-title
+  ctx.save();
+  ctx.font         = '11px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = COLORS.text2;
+  ctx.fillText('（本关结束后自动消耗）', W / 2, cardY + 50);
+  ctx.restore();
+
+  // Item rows
+  _overlayBtnRects = [];
+  const rowStartY = cardY + 66;
+  ownedItems.forEach((it, i) => {
+    const rowY   = rowStartY + i * rowH;
+    const toggled = _overlayToggled.has(it.id);
+    const qty = state.getItemQty(it.id);
+
+    // Row bg
+    ctx.save();
+    ctx.fillStyle = toggled ? 'rgba(60,180,100,0.18)' : 'rgba(255,255,255,0.04)';
+    _roundRect(ctx, cardX + 8, rowY, cardW - 16, rowH - 4, 8);
+    ctx.fill();
+    if (toggled) {
+      ctx.strokeStyle = 'rgba(60,220,100,0.5)';
+      ctx.lineWidth   = 1;
+      ctx.stroke();
+    }
+    ctx.restore();
+
+    // Icon + name + desc
+    ctx.save();
+    ctx.font         = '20px sans-serif';
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(it.icon, cardX + 16, rowY + rowH * 0.5 - 4);
+    ctx.restore();
+
+    ctx.save();
+    ctx.font         = 'bold 13px sans-serif';
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle    = COLORS.text;
+    ctx.fillText(it.nameZh + '  ×' + qty, cardX + 44, rowY + 7);
+    ctx.restore();
+
+    ctx.save();
+    ctx.font         = '11px sans-serif';
+    ctx.textAlign    = 'left';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle    = COLORS.text2;
+    ctx.fillText(it.desc, cardX + 44, rowY + 26);
+    ctx.restore();
+
+    // Toggle button
+    const btnW = 52, btnH = 28;
+    const btnX = cardX + cardW - 16 - btnW;
+    const btnY = rowY + (rowH - 4 - btnH) / 2;
+    const btn = drawButton(ctx, btnX, btnY, btnW, btnH, toggled ? '✓ 已选' : '使用', {
+      fontSize: 11,
+      radius: 8,
+      color0: toggled ? 'rgba(30,140,70,0.85)' : 'rgba(60,90,160,0.85)',
+      color1: toggled ? 'rgba(20,180,80,0.85)' : 'rgba(50,110,200,0.85)',
+    });
+    _overlayBtnRects.push({ id: it.id, rect: btn });
+  });
+
+  // Bottom buttons: 跳过 + 确定出发
+  const btnY2  = cardY + cardH - 48;
+  const btnW2  = (cardW - 32) / 2;
+  _overlaySkip    = drawButton(ctx, cardX + 8,               btnY2, btnW2, 36, '跳过', {
+    fontSize: 13, radius: 10,
+    color0: 'rgba(60,60,100,0.75)', color1: 'rgba(80,80,130,0.75)',
+  });
+  _overlayConfirm = drawButton(ctx, cardX + cardW - 8 - btnW2, btnY2, btnW2, 36, '确定出发 →', {
+    fontSize: 13, radius: 10,
+    color0: 'rgba(30,130,60,0.85)', color1: 'rgba(20,180,80,0.85)',
+  });
+}
+
 // ── Touch handling ────────────────────────────────────────────
 function _onTouchStart(e) {
   const touch = e.changedTouches[0];
@@ -209,6 +340,7 @@ function _onTouchStart(e) {
 }
 
 function _onTouchMove(e) {
+  if (_overlayActive) return; // block scroll when overlay shown
   const touch = e.changedTouches[0];
   if (!touch) return;
   const dy = touch.clientY - _lastTouchY;
@@ -229,6 +361,38 @@ function _onTouchEnd(e) {
   const tx = touch.clientX;
   const ty = touch.clientY;
 
+  // ── Overlay touch handling ───────────────────────────────────
+  if (_overlayActive) {
+    // Toggle item buttons
+    for (const { id, rect } of _overlayBtnRects) {
+      if (hitTest(rect, tx, ty)) {
+        if (_overlayToggled.has(id)) {
+          _overlayToggled.delete(id);
+        } else {
+          _overlayToggled.add(id);
+        }
+        return;
+      }
+    }
+    // Skip — go to game with no items
+    if (_overlaySkip && hitTest(_overlaySkip, tx, ty)) {
+      state.selectedItems = [];
+      _overlayActive = false;
+      if (_navigate) _navigate('game');
+      return;
+    }
+    // Confirm — go to game with selected items
+    if (_overlayConfirm && hitTest(_overlayConfirm, tx, ty)) {
+      state.selectedItems = [..._overlayToggled];
+      _overlayActive = false;
+      if (_navigate) _navigate('game');
+      return;
+    }
+    // Tap outside overlay dismisses it (cancel)
+    _overlayActive = false;
+    return;
+  }
+
   // Back button (fixed — no scroll offset)
   if (_backRect && hitTest(_backRect, tx, ty)) {
     console.log('navigate:menu');
@@ -243,6 +407,18 @@ function _onTouchEnd(e) {
       if (!state.isUnlocked(cr.idx)) return;
       state.currentLevel = cr.idx;
       console.log('navigate:game idx=' + cr.idx);
+
+      // Check if player has any items — show selection overlay
+      const hasItems = ITEMS.some(it => state.getItemQty(it.id) > 0);
+      if (hasItems) {
+        _overlayActive = true;
+        _overlayToggled.clear();
+        _overlayBtnRects = [];
+        return;
+      }
+
+      // No items — go straight to game
+      state.selectedItems = [];
       if (_navigate) _navigate('game');
       return;
     }

@@ -1,6 +1,25 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
-## Sprint 3-mini — 2026-04-15 (mini branch)
+## Sprint 4-mini — 2026-04-15 (mini branch)
+
+Full retrospective required: UX found 1 Blocker bug, Arch found 4 Medium bugs during code review.
+
+**What worked:**
+- Source code path verification remains reliable for Canvas mini game QA — all ACs traceable to specific code lines
+- Two-subagent model (Arch + QA + UX as separate agents) caught bugs the developer missed: missing `}` in _cleanup(), aurora double-scaling, scroll totalH circular dependency
+- Splitting gallery (2-state list/detail) and shop (stateful scroll + purchase) into separate new files follows established screen module pattern cleanly
+
+**What failed:**
+- _cleanup() missing closing brace — my own edit introduced this regression by forgetting `}` when adding the null-reset line inside _cleanup(). UX subagent caught it.
+- Aurora animation double-scaled time (t * 0.0004 where t is already in seconds). Should have used raw RAF timestamp (now * 0.0004). Result: 4.4h animation cycle instead of 15s.
+- shop.js initially used `state.addCoins(-cost)` instead of `state.spendCoins(cost)` — bypassed purpose-built API.
+
+**Lessons:**
+- [pending] When editing an existing function and adding a new last line, always verify the closing `}` is present after the edit. The pattern `edit_file(old_string=last_line, new_string=last_line + new_line)` without `}` loses the function close.
+- [pending] Aurora/animation timing: `t = now * 0.001` (seconds). For animation cycles, use `now * factor` not `t * factor`. 0.0004/ms = ~15s cycle; 0.0004/s = ~4.4h cycle.
+- [archived: Sprint 3-mini §pending] DevTools context switching — remains pending, no new info.
+
+
 
 Full retrospective required: QA found 3 bugs after code review (1 Critical, 2 Medium) requiring fixes.
 

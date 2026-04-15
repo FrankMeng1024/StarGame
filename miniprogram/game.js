@@ -26,7 +26,13 @@ initGlobals(canvas, ctx, screenW, screenH);
 let gameState = null;
 
 // ── 导航路由 ──────────────────────────────────────────────────
+let _lastNavTime = 0;
 function navigate(key) {
+  // Debounce: ignore navigate calls within 300ms of each other (prevents double-tap)
+  const now = Date.now();
+  if (now - _lastNavTime < 300) return;
+  _lastNavTime = now;
+
   // 先全部清理
   hideMenu();
   hideLevels();

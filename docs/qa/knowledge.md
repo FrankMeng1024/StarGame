@@ -294,3 +294,15 @@ No backend, no network requests. All data in localStorage + local files.
 - Gallery detail DOM order: hero→starchart→photo-carousel→meta→lore→back. Portrait canvas fully removed.
 - Sprite prewarm: all 6 sprites prewarmed. Any new sprite types must be added to the prewarm list in levels.js.
 - Navigation regression: all major screens (menu/levels/game/gallery/shop/complete) produce 0 console errors.
+
+## Sprint 5-mini Updates (2026-04-15) — 微信小游戏版 branch: mini
+
+- **道具系统已生效**: 6种道具 (speed/enlarge/bomb/time_ext/shrink/double_coins) 全部在game.js中生效。module-level multipliers reset in both _cleanup() and showGame(), preventing stale state.
+- **道具选择叠加层**: levels.js中叠加层在有库存时显示。scroll blocked during overlay。Confirm sets state.selectedItems=[...toggled]; Skip sets []; outside-tap dismisses silently (no navigate).
+- **bomb**: 爆炸粒子（每个垃圾位置8个橙/黄色粒子）+ debris清除。💣 炸按钮在HUD(W/2-30, 58, 60×28)，_bombActive时显示。
+- **double_coins**: 结算卡片 "🪙×2" 注释在 _coinsMult>1 时显示。
+- **道具消耗**: state.useItem(id) 在 _triggerResult() 中调用（胜负均消耗），之后 state.selectedItems = [] 立即清空，防止重试时免费重用。
+- **gallery prev/next**: hasPrev/hasNext 通过线性搜索已解锁星座实现。按钮仅在有解锁目标时渲染，boundary时隐藏。
+- **navigate防抖**: game.js (app entry) 中300ms防抖，防止双击重复导航。
+- **帧率无关性 (STORY-00222)**: _timerFlash用dt(秒), particles用scale=dt*60, debris spin用_dt*60 — 全部frame-rate independent。
+

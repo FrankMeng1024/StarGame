@@ -53,7 +53,8 @@ let _particles  = [];   // {x,y,vx,vy,life,maxLife,color}
 // Timer
 let _timeLeft   = 0;
 let _lastNow    = 0;
-let _timerFlash = 0;     // frames of red flash remaining on HUD
+let _dt         = 0;      // last frame dt (seconds) — used by draw helpers needing physics
+let _timerFlash = 0;     // seconds of red flash remaining on HUD
 
 // Result state
 let _phase      = 'play'; // 'play' | 'result'
@@ -70,6 +71,14 @@ let _btnReplay  = null;
 let _btnLevels  = null;
 let _btnShop    = null;
 let _btnGallery = null;
+
+// Item effects (active during current level)
+let _netSpeedMult  = 1;     // speed item: ×1.5
+let _netRadiusMult = 1;     // enlarge item: ×1.5
+let _debrisRadiusMult = 1;  // shrink item: ×0.5
+let _coinsMult     = 1;     // double_coins: ×2
+let _bombActive    = false; // bomb item: one-time debris clear
+let _btnBomb       = null;  // bomb HUD button
 
 // ── Public API ────────────────────────────────────────────────
 export function showGame(navigate) {
@@ -97,6 +106,21 @@ export function showGame(navigate) {
   const diffMap = [90, 80, 70, 60, 50];
   const diff    = (_conDef.difficulty || 1) - 1;
   _timeLeft     = diffMap[Math.max(0, Math.min(4, diff))];
+
+  // Apply selected item effects
+  _netSpeedMult = _netRadiusMult = _coinsMult = 1;
+  _debrisRadiusMult = 1;
+  _bombActive = false;
+  for (const id of (state.selectedItems || [])) {
+    switch (id) {
+      case 'speed':        _netSpeedMult    = 1.5;  break;
+      case 'enlarge':      _netRadiusMult   = 1.5;  break;
+      case 'bomb':         _bombActive      = true;  break;
+      case 'time_ext':     _timeLeft       += 15;   break;
+      case 'shrink':       _debrisRadiusMult = 0.5; break;
+      case 'double_coins': _coinsMult       = 2;    break;
+    }
+  }
 
   // Stars from constellation data
   _initStars(W, H);
@@ -159,7 +183,7 @@ function _initDebris(W, H) {
     _debris.push({
       x:    skyX0 + Math.random() * (skyX1 - skyX0),
       y:    skyY0 + Math.random() * (skyY1 - skyY0),
-      r:    14 + Math.random() * 4,
+      r:    (14 + Math.random() * 4) * _debrisRadiusMult,
       type: types[i % types.length],
       spin: 0.010 + Math.random() * 0.020,
       angle: Math.random() * TWO_PI,
@@ -181,7 +205,10 @@ function _cleanup() {
   _particles = [];
   _phase   = 'play';
   _hintTimer = 0;
-  _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = null;
+  _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
+  _netSpeedMult = _netRadiusMult = _coinsMult = 1;
+  _debrisRadiusMult = 1;
+  _bombActive = false;
 }
 
 // ── Main loop ─────────────────────────────────────────────────
@@ -189,6 +216,7 @@ function _loop(now) {
   if (_lastNow === 0) _lastNow = now;
   const dt = Math.min((now - _lastNow) / 1000, 0.05); // max 50ms cap
   _lastNow = now;
+  _dt = dt;
   const t  = now * 0.001;
 
   const ctx = G.CTX;
@@ -215,7 +243,7 @@ function _loop(now) {
   if (_phase === 'play') {
     _updateTimer(dt);
     _updateNet(dt);
-    _updateParticles();
+    _updateParticles(dt);
 
     _drawConLines(ctx);
     _drawStars(ctx, t);
@@ -241,7 +269,7 @@ function _loop(now) {
 function _updateTimer(dt) {
   if (_timeLeft <= 0) return;
   _timeLeft -= dt;
-  if (_timerFlash > 0) _timerFlash--;
+  if (_timerFlash > 0) _timerFlash = Math.max(0, _timerFlash - dt);
   if (_hintTimer > 0) _hintTimer -= dt;
 
   if (_timeLeft <= 0) {
@@ -259,7 +287,7 @@ function _updateNet(dt) {
     _netAngle = Math.sin(_swingT) * SWING_AMP;
     _netLen   = 0;
   } else if (_netState === 'extend') {
-    _netLen += NET_SPEED * scale;
+    _netLen += NET_SPEED * _netSpeedMult * scale;
     if (_netLen >= _netMaxLen) {
       _netLen   = _netMaxLen;
       _netState = 'retract';
@@ -290,7 +318,7 @@ function _checkCollisions() {
     if (s.caught) continue;
     const dx = _netHeadX - s.x;
     const dy = _netHeadY - s.y;
-    if (dx * dx + dy * dy <= (s.r + 20) * (s.r + 20)) {
+    if (dx * dx + dy * dy <= (s.r + 20 * _netRadiusMult) * (s.r + 20 * _netRadiusMult)) {
       s.caught = true;
       _caught++;
       _spawnParticles(s.x, s.y, s.color);
@@ -307,9 +335,9 @@ function _checkCollisions() {
   for (const d of _debris) {
     const dx = _netHeadX - d.x;
     const dy = _netHeadY - d.y;
-    if (dx * dx + dy * dy <= (d.r + 18) * (d.r + 18)) {
+    if (dx * dx + dy * dy <= (d.r + 18 * _netRadiusMult) * (d.r + 18 * _netRadiusMult)) {
       _timeLeft  = Math.max(0, _timeLeft - 1.0);
-      _timerFlash = 30;
+      _timerFlash = 0.5; // 0.5 seconds of red flash
       _netState   = 'retract';
       return;
     }
@@ -331,12 +359,13 @@ function _spawnParticles(x, y, color) {
   }
 }
 
-function _updateParticles() {
+function _updateParticles(dt) {
+  const scale = dt * 60;
   for (let i = _particles.length - 1; i >= 0; i--) {
     const p = _particles[i];
-    p.x += p.vx;
-    p.y += p.vy;
-    p.life--;
+    p.x    += p.vx * scale;
+    p.y    += p.vy * scale;
+    p.life -= scale;
     if (p.life <= 0) _particles.splice(i, 1);
   }
 }
@@ -391,7 +420,7 @@ function _drawStars(ctx, t) {
 // ── Draw: debris ──────────────────────────────────────────────
 function _drawDebris(ctx) {
   for (const d of _debris) {
-    d.angle += d.spin;
+    d.angle += d.spin * (_dt * 60);
     ctx.save();
     ctx.translate(d.x, d.y);
 
@@ -569,12 +598,13 @@ function _drawNet(ctx) {
   ctx.lineTo(_netHeadX, _netHeadY);
   ctx.stroke();
 
-  // Net head (small circle)
+  // Net head (enlarged when enlarge item active)
+  const netHeadR = 8 * _netRadiusMult;
   ctx.fillStyle   = 'rgba(255,220,100,0.85)';
   ctx.strokeStyle = '#ffcc33';
   ctx.lineWidth   = 1.5;
   ctx.beginPath();
-  ctx.arc(_netHeadX, _netHeadY, 8, 0, TWO_PI);
+  ctx.arc(_netHeadX, _netHeadY, netHeadR, 0, TWO_PI);
   ctx.fill();
   ctx.stroke();
 
@@ -665,6 +695,16 @@ function _drawHUD(ctx, W) {
   }
   ctx.fillText(timerStr, W - 12, 26);
   ctx.restore();
+
+  // Bomb button (only when bomb item active)
+  if (_bombActive) {
+    _btnBomb = drawButton(ctx, W / 2 - 30, 58, 60, 28, '💣 炸', {
+      fontSize: 12, radius: 8,
+      color0: 'rgba(180,60,20,0.85)', color1: 'rgba(220,80,30,0.85)',
+    });
+  } else {
+    _btnBomb = null;
+  }
 }
 
 // ── Result: trigger ───────────────────────────────────────────
@@ -673,7 +713,7 @@ function _triggerResult(victory) {
   _netState = 'swing';
   _phase    = 'result';
 
-  const coins   = victory ? Math.floor(_timeLeft) * 10 : 0;
+  const coins   = victory ? Math.floor(_timeLeft) * 10 * _coinsMult : 0;
   const stars3  = coins >= 300 ? 3 : coins >= 100 ? 2 : 1;
   const uncaught = _total - _caught;
 
@@ -684,6 +724,12 @@ function _triggerResult(victory) {
     state.setScore(_levelIdx, { stars: stars3, time: _timeLeft });
     if (_levelIdx < 29) state.unlock(_levelIdx + 1);
   }
+
+  // Consume selected items (win OR lose)
+  for (const id of (state.selectedItems || [])) {
+    state.useItem(id);
+  }
+  state.selectedItems = [];
 }
 
 // ── Draw: result overlay ──────────────────────────────────────
@@ -757,7 +803,10 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle    = '#aaffaa';
-    ctx.fillText('+' + r.coins + '金币   剩余' + Math.floor(r.timeLeft) + '秒', cx, cy);
+    const coinsText = _coinsMult > 1
+      ? '+' + r.coins + '金币  🪙×2  剩余' + Math.floor(r.timeLeft) + '秒'
+      : '+' + r.coins + '金币   剩余' + Math.floor(r.timeLeft) + '秒';
+    ctx.fillText(coinsText, cx, cy);
     ctx.restore();
     cy += 28;
 
@@ -858,6 +907,27 @@ function _onTouch(e) {
   const ty = touch.clientY;
 
   if (_phase === 'play') {
+    // Bomb button check (before net fire)
+    if (_btnBomb && hitTest(_btnBomb, tx, ty)) {
+      // Spawn explosion particles at each debris location
+      for (const d of _debris) {
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * TWO_PI;
+          const speed = 3 + Math.random() * 4;
+          _particles.push({
+            x: d.x, y: d.y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 30, maxLife: 30,
+            color: i % 2 === 0 ? '#ff6600' : '#ffcc00',
+          });
+        }
+      }
+      _debris = [];
+      _bombActive = false;
+      _btnBomb = null;
+      return;
+    }
     // Fire net on tap (ignore if already extending)
     if (_netState === 'swing') {
       _netState = 'extend';

@@ -230,13 +230,17 @@ function _drawDetail(ctx, W, H, t) {
     fontSize: 13, radius: 10,
     color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
   });
-  _detailPrevRect = _detailIdx > 0
+  // Show prev only if there's a previous unlocked constellation
+  const hasPrev = Array.from({ length: _detailIdx }, (_, i) => i).some(i => state.isUnlocked(i));
+  _detailPrevRect = hasPrev
     ? drawButton(ctx, W / 2 - 120, 14, 50, 34, '上一个', {
         fontSize: 11, radius: 8,
         color0: 'rgba(40,60,120,0.7)', color1: 'rgba(30,80,160,0.7)',
       })
     : null;
-  _detailNextRect = _detailIdx < CONSTELLATIONS.length - 1
+  // Show next only if there's a next unlocked constellation
+  const hasNext = Array.from({ length: CONSTELLATIONS.length - _detailIdx - 1 }, (_, i) => _detailIdx + 1 + i).some(i => state.isUnlocked(i));
+  _detailNextRect = hasNext
     ? drawButton(ctx, W / 2 + 70, 14, 50, 34, '下一个', {
         fontSize: 11, radius: 8,
         color0: 'rgba(40,60,120,0.7)', color1: 'rgba(30,80,160,0.7)',
@@ -438,16 +442,24 @@ function _onTouchEnd(e) {
       return;
     }
     if (_detailPrevRect && hitTest(_detailPrevRect, tx, ty)) {
-      if (_detailIdx > 0) {
-        _detailIdx--;
-        _detailScrollY = _detailScrollTarget = 0;
+      // Find previous unlocked constellation
+      for (let i = _detailIdx - 1; i >= 0; i--) {
+        if (state.isUnlocked(i)) {
+          _detailIdx = i;
+          _detailScrollY = _detailScrollTarget = 0;
+          break;
+        }
       }
       return;
     }
     if (_detailNextRect && hitTest(_detailNextRect, tx, ty)) {
-      if (_detailIdx < CONSTELLATIONS.length - 1) {
-        _detailIdx++;
-        _detailScrollY = _detailScrollTarget = 0;
+      // Find next unlocked constellation
+      for (let i = _detailIdx + 1; i < CONSTELLATIONS.length; i++) {
+        if (state.isUnlocked(i)) {
+          _detailIdx = i;
+          _detailScrollY = _detailScrollTarget = 0;
+          break;
+        }
       }
       return;
     }
