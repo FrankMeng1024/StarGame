@@ -166,17 +166,19 @@ function _loop(now) {
   drawBgStars(ctx, t);
   _drawConBg(t);
 
-  // Title
-  drawTitle(ctx, '追星少女', W / 2, H * 0.76, 38);
-  drawSubtitle(ctx, '探索88星座的奇妙旅程', W / 2, H * 0.76 + 38, 14);
+  // Title — 向上移以为三个按钮腾出空间
+  drawTitle(ctx, '追星少女', W / 2, H * 0.72, 38);
+  drawSubtitle(ctx, '探索88星座的奇妙旅程', W / 2, H * 0.72 + 38, 14);
 
   // Buttons — 三个主按钮，垂直排列在下方
+  // startY 计算：确保第3个按钮底部 + 8px 边距不超出屏幕
+  // 3按钮总高 = 3×48 + 2×14 = 172px；startY = H - 172 - 8 = H - 180
   _buttons = [];
   const BW = W * 0.60;
   const BH = 48;
   const BX = (W - BW) / 2;
   const GAP = 14;
-  const startY = H * 0.84;
+  const startY = H - 180;
 
   const defs = [
     { key: 'levels',  label: '挑战关卡', icon: '★' },

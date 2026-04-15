@@ -5,29 +5,47 @@
 ## 微信小游戏版（branch: mini）
 
 ### 验证工具
-**--miniprogram 模式**：`node scripts/mp_qa_runner.js` 替代 Playwright。
-- `--smoke`：主流程 happy path
-- `--story STORY-NNNNN`：指定 Story 验证
-- 截图路径：`docs/qa/sprint{N}-mini-evidence/<story-id>-<step>.png`
-- 控制台错误通过 `page.getLogList()` 获取（非 browser_console_messages）
+**--miniprogram 模式**：BitBlt 截图（Windows screen DC）替代 Playwright。
+- miniprogram-automator evaluate()/captureScreenshot() 对 小游戏 (pure Canvas) 全部 timeout — 仅 Tool.getInfo 可用
+- 截图方法：PowerShell BitBlt from screen DC（PrintWindow 对 GPU composited 内容无效）
+- 控制台交互：剪贴板注入 + keybd_event（keybd_event 直接输入字符会因键盘布局失败，必须用 Set-Clipboard + Ctrl+V）
+- wx.* 命名空间从 DevTools console 可访问（wx.setStorageSync 等）
+- wx.__navigate = navigate 挂在 wx 命名空间，可从 console 控制导航
+- 开发后门：wx.getStorageSync('__initScreen') 决定启动屏幕（'menu' or 'levels'）
+
+### 截图坐标（当前 DevTools 实例）
+- DevTools 窗口 hwnd=32640308，位置 x=2255, y=116，尺寸 1250×800
+- 模拟器面板：绝对坐标约 x=3115, y=186，尺寸 320×700（需随 DevTools 重启后重新获取）
+- 每次 DevTools 重启后 hwnd 变化，需重新查找
 
 ### 平台特殊性
 - 无 DOM — Canvas 截图是唯一视觉证据
-- wx.login() 在模拟器返回测试 code，真机换真实 openid
-- 每次"页面"切换后调用 getLogList() 检查错误
-- 音频在模拟器需用户交互后才能播放（可忽略此限制的测试失败）
+- wx.login() 在模拟器返回 request:fail（无真实 code），预期行为，非 bug
+- 每次重启后控制台显示：1 red error + 2 yellow warnings（均为 login failed + not in domain list，属预期，排除在 zero-error 检查外）
+- 音频在模拟器需用户交互后才能播放（测试失败可忽略）
+- ES module live binding 在微信 JS 引擎不完整：用 G 对象而非 export let
 
 ### 主用户流程（小游戏版）
 1. 启动 → Canvas 主菜单（星空背景 + 标题 + 两按钮）
-2. Tap [挑战关卡] → 选关页（30 卡片，第 1 关解锁）
+2. Tap [挑战关卡] → 选关页（30 卡片，5列×6行，第 1 关解锁）
 3. Tap 关卡 1 → 游戏屏（网兜摆动，星星和垃圾可见）
 4. Tap → 网兜发射/收回/抓取
 5. 抓完全部星星 → 通关界面
 6. 通关界面 → 展厅/商店/下一关
 
+### 已验证状态（Sprint 1-mini）
+- 主菜单：深蓝星空 + "追星少女" + "挑战关卡" + "星座展厅" 全部可见（smoke-01-menu.png）
+- 选关屏：30 关卡 5列×6行网格，第1关(白羊座)解锁，2-30关锁定（smoke-02-levels.png）
+- 后端：/health 3.8ms, /api/login invalid code → 400 wx error 40029
+- StorageAdapter: setLocal/getLocal 已通过控制台验证
+
 ### 测试数据（小游戏版）
 - 默认存档：`{ unlockedLevels: [0], coins: 100, levelScores: {} }`
 - 已完成存档：`{ unlockedLevels: [0,1,2], levelScores: {0:{stars:3}} }`
+
+### 已知问题（待修复）
+- 选关屏幕标题栏文字"迎天下下"疑为渲染问题（BUG-00101，Medium）
+- 导航往返回归测试未完成（BUG-00104）
 
 ---
 

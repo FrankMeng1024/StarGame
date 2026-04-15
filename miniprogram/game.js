@@ -65,8 +65,14 @@ async function boot() {
   state.fromSaveData(saveData);
   gameState = state;
 
-  // 3. 启动主菜单
-  showMenu(navigate);
+  // 3. 启动页面 — 开发后门：读取 __initScreen storage key 决定初始屏幕
+  // 生产使用时 key 不存在，走正常主菜单
+  let startScreen = 'menu';
+  try { startScreen = wx.getStorageSync('__initScreen') || 'menu'; } catch (e) {}
+  navigate(startScreen);
+
+  // 开发后门：挂到 wx 命名空间，DevTools console 可调用 wx.__navigate('levels')
+  wx.__navigate = navigate;
 }
 
 boot();

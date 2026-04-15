@@ -66,6 +66,15 @@
 
 | Sprint 32 | — | COMPLETE | CR-085/086 关卡加载极速化 + 开场动画F5播放 — committed |
 
+## 微信小游戏分支（mini branch）
+
+**Status**: IN PROGRESS — Sprint 1-mini COMPLETE, Sprint 2-mini NOT STARTED
+
+| Sprint | Status | Goal |
+|---|---|---|
+| Sprint 0-mini | COMPLETE | Foundation — miniprogram scaffold, TECH_SPEC §verification-tool=miniprogram-automator |
+| Sprint 1-mini | COMPLETE | 小游戏骨架可运行 — Canvas主菜单+选关+wx-adapter+后端骨架 (QA PASS, UX fix applied, Arch PASS) |
+
 ## Sprint 32 Stories
 | Story | Title | Status |
 |---|---|---|
