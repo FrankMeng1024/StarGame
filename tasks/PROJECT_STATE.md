@@ -68,12 +68,33 @@
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: IN PROGRESS — Sprint 1-mini COMPLETE, Sprint 2-mini NOT STARTED
+**Status**: IN PROGRESS — Sprint 2-mini COMPLETE, Sprint 3-mini NOT STARTED
 
 | Sprint | Status | Goal |
 |---|---|---|
 | Sprint 0-mini | COMPLETE | Foundation — miniprogram scaffold, TECH_SPEC §verification-tool=miniprogram-automator |
 | Sprint 1-mini | COMPLETE | 小游戏骨架可运行 — Canvas主菜单+选关+wx-adapter+后端骨架 (QA PASS, UX fix applied, Arch PASS) |
+| Sprint 2-mini | COMPLETE | 核心游戏完整可玩 — 点击发射网兜、抓星星、避垃圾、计时/金币结算、失败屏幕 (QA PASS, UX 1 Critical pending, Arch PASS) |
+
+### Sprint 2-mini Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00206 | 关卡选择屏幕 | Done |
+| STORY-00207 | 游戏主场景 | Done |
+| STORY-00208 | 网兜发射机制 | Done |
+| STORY-00209 | 星星碰撞与计数 | Done |
+| STORY-00210 | 定时器与金币结算 | Done |
+| STORY-00211 | 通关/失败屏幕 | Done |
+
+### Sprint 3-mini Backlog (Top Priority Items)
+- [Critical UX] 首次游戏无引导 — 添加新手提示 ("点击屏幕发射网兜！") (from UX sprint2-mini-review)
+- [Medium UX] 标题不一致 "超凡天下" vs "星捕少女" (DevTools chrome issue)
+- [Medium UX] 关卡1解锁图标用交叉剑，应改为数字或方向标
+- [Medium UX] 失败屏幕重试/选关按钮视觉权重相同
+- [Medium UX] 垃圾缺乏危险视觉语言 (无红色/警告标识)
+- [Arch Medium] NET_SPEED 用帧计数而非时间，在不同帧率下速度不一致
+- [Arch Medium] stars/debris arrays在每帧_update中直接mutate
+- [Arch Medium] Canvas 2D context渲染无离屏缓冲 (性能)
 
 ## Sprint 32 Stories
 | Story | Title | Status |

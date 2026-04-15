@@ -209,3 +209,13 @@ Sprint 25: clean Sprint. VU ACCEPTED 9.6/10 — PROJECT COMPLETE (final).
 - [archived: VU evidence protocol] Achievement screen (CR-071) requires full 30-level completion state — use localStorage injection with all 30 levelScores entries set to `{ stars: 3, time: 45 }` + page reload. Achievement button appears correctly after state injection.
 - All 78 CRs delivered and accepted. Project iteration cycle complete.
 - Lightweight retro rule applied: steps 1-3 skipped. (No VU NOT ACCEPTED in prior Sprint.)
+
+## Sprint 2-mini — 2026-04-15
+Sprint 2-mini: clean Sprint, lightweight retro.
+- 6 stories: level select, game scene, net launch, star collision+counting, timer+coin settlement, victory/fail screens — all Done.
+- Arch PASS (3 Medium notes for Sprint 3). QA PASS (2 Medium items: 1 false positive, 1 env limitation). UX no Blockers (1 Critical: no onboarding tutorial → Sprint 3 backlog).
+- Victory screen could not be verified via automation (requires precise 7-star catch timing). Noted as known untested path.
+- [pending] Canvas小游戏截图方案最终确认: mss库(DXGI) + 物理坐标。PrintWindow和BitBlt对GPU合成窗口(NW.js/Chrome)均无效。每次DevTools重启需重新查找hwnd。
+- [pending] miniprogram-automator App.*RPC对小游戏完全无效(timeout)。仅Tool.getInfo可用。小游戏没有Page/WXML层——所有自动化依赖物理点击+屏幕截图。
+- [pending] DPI坐标换算在小游戏项目中是关键陷阱：SetCursorPos/GetWindowRect用逻辑坐标，mss用物理坐标。150%缩放=物理/1.5=逻辑。不正确的坐标系会导致点击/截图偏移200+像素。
+- Lightweight retro rule applied: steps 1-3 skipped.

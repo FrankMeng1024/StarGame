@@ -7,6 +7,7 @@ import { StorageAdapter } from './js/platform/wx-adapter.js';
 import state from './js/engine/state.js';
 import { showMenu, hideMenu } from './js/screens/menu.js';
 import { showLevels, hideLevels } from './js/screens/levels.js';
+import { showGame, hideGame } from './js/screens/game.js';
 
 // 全局 Canvas — 立即初始化 globals（其他模块从 globals.js import，无循环依赖）
 const canvas = wx.createCanvas();
@@ -27,6 +28,7 @@ function navigate(key) {
   // 先全部清理
   hideMenu();
   hideLevels();
+  hideGame();
 
   switch (key) {
     case 'menu':
@@ -35,16 +37,15 @@ function navigate(key) {
     case 'levels':
       showLevels(navigate);
       break;
+    case 'game':
+      showGame(navigate);
+      break;
     case 'gallery':
-      console.log('[nav] gallery — TODO Sprint 2');
+      console.log('[nav] gallery — TODO Sprint 3');
       showMenu(navigate);
       break;
     case 'shop':
-      console.log('[nav] shop — TODO Sprint 2');
-      showMenu(navigate);
-      break;
-    case 'game':
-      console.log('[nav] game — TODO Sprint 2, level=' + state.currentLevel);
+      console.log('[nav] shop — TODO Sprint 3');
       showMenu(navigate);
       break;
     default:

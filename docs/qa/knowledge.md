@@ -254,6 +254,18 @@ No backend, no network requests. All data in localStorage + local files.
 - Sprint 19: Audio system active with zero audio-related console errors. Actual waveform content unverifiable via screenshots.
 - Sprint 19: Fail screen confirmed: "时间到了！" heading, X/7 已抓, 0秒剩余, 0金币, constellation silhouette, "🔄 重试" and "返回选关" buttons.
 
+## Sprint 2-mini Updates (2026-04-15) — 微信小游戏版 branch: mini
+
+- **截图工具最终确认**: mss Python库 (DXGI desktop duplication) 是唯一可靠截图方案。PrintWindow/BitBlt对GPU合成窗口无效。
+- **物理坐标（当前DevTools实例）**: 物理游戏画布 `{"top": 145, "left": 1350, "width": 395, "height": 935}`。DPI scaling = 150%，逻辑坐标 = 物理 / 1.5。
+- **当前hwnd**: 7015796（每次DevTools重启后变化，需用 `FindWindowEx` 重新查找）
+- **关键点击坐标**: 关卡1 → 逻辑(925,173)；失败屏幕"选关"按钮 → 逻辑(1088,475)
+- **miniprogram-automator WS (端口9423)**: `Tool.getInfo` 可用；所有 `App.*` 命令超时 — Canvas小游戏没有Page层RPC结构
+- **关卡标签**: CONSTELLATIONS[0] = 猎户座（Orion），7星，difficulty=1。关卡名截图中的小字容易误读，需交叉核对源码
+- **Sprint 2-mini 已验证流程**: 关卡选择(30关卡，第1关解锁) → 点击关卡1 → 游戏(HUD已抓0/7 + 倒计时) → 定时器归零 → 失败屏幕(时间到/已抓N/7/重试+选关) → 点击选关 → 返回关卡选择 ✓
+- **未能验证**: 通关屏幕(需精确时机抓7颗星，自动化无法实现)；点击锁定关卡的反馈；网兜视觉动画；星星碰撞视觉反馈
+- **回归测试**: 失败屏幕→选关→关卡选择导航确认可用。完整往返回归未测试。
+
 ## Sprint 20 Updates (2026-04-13)
 - Net-hand alignment: poleLen=H*0.06 keeps net close to hand. If character proportions change, net attachment offsets need recalibration.
 - Swing angle: ±80° (PI*80/180). Further increases may cause net to swing off-screen on narrow viewports.
