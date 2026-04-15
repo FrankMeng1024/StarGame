@@ -254,6 +254,19 @@ No backend, no network requests. All data in localStorage + local files.
 - Sprint 19: Audio system active with zero audio-related console errors. Actual waveform content unverifiable via screenshots.
 - Sprint 19: Fail screen confirmed: "时间到了！" heading, X/7 已抓, 0秒剩余, 0金币, constellation silhouette, "🔄 重试" and "返回选关" buttons.
 
+## Sprint 3-mini Updates (2026-04-15) — 微信小游戏版 branch: mini
+
+- **JS上下文问题**: DevTools console默认在`top` JS context中，wx.__navigate只在游戏执行context中有效。切换context需要点击控制台工具栏中的`top`下拉框，选择游戏的JS context。不切换则所有wx.*调用均报"TypeError: wx.__navigate is not defined"。
+- **wx.removeStorageSync('__hintSeen')必须在测试hint前执行**：__hintSeen一旦设置就持久化，重新进游戏不会再显示hint。
+- **通关屏幕验证**：自动化无法完成关卡（抓7颗星），通关屏幕只能通过源码验证。
+- **Sprint 3-mini 已实现**：
+  - 通关屏幕（_triggerResult(true) → victory card）：'恭喜通关！'标题、星评、金币、星座介绍节选、下一关/重玩/选关三按钮
+  - 关卡30特殊处理：下一关替换为'全部通关！'标签，_btnNext=null
+  - 新手提示：'点击屏幕发射网兜！' 首次入场3秒显示，wx存储持久化
+  - 帧率无关物理：scale=dt*60，_swingT和_netLen均用scale乘法
+  - 关卡图标修复：解锁显示数字，锁定显示🔒
+  - 垃圾危险视觉：rgba(255,40,40,0.28)红色光晕
+
 ## Sprint 2-mini Updates (2026-04-15) — 微信小游戏版 branch: mini
 
 - **截图工具最终确认**: mss Python库 (DXGI desktop duplication) 是唯一可靠截图方案。PrintWindow/BitBlt对GPU合成窗口无效。

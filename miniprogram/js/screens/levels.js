@@ -162,13 +162,20 @@ function _drawCard(ctx, cr, t) {
   ctx.fillText(String(idx + 1), x + 5, y + 4);
   ctx.restore();
 
-  // Constellation icon / lock
+  // Level number (large, center) for unlocked; lock icon for locked
   ctx.save();
-  ctx.font         = `${Math.round(w * 0.38)}px sans-serif`;
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.globalAlpha  = unlocked ? 0.9 : 0.35;
-  ctx.fillText(unlocked ? (c.icon || '★') : '🔒', x + w / 2, y + h * 0.42);
+  if (unlocked) {
+    ctx.font      = `bold ${Math.round(w * 0.36)}px sans-serif`;
+    ctx.fillStyle = COLORS.starGold;
+    ctx.globalAlpha = 0.95;
+    ctx.fillText(String(idx + 1), x + w / 2, y + h * 0.42);
+  } else {
+    ctx.font      = `${Math.round(w * 0.38)}px sans-serif`;
+    ctx.globalAlpha = 0.35;
+    ctx.fillText('🔒', x + w / 2, y + h * 0.42);
+  }
   ctx.restore();
 
   // Name
