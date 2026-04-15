@@ -2,7 +2,7 @@
 // 替代原版 DOM screen-menu + menu-sky.js
 // 所有 UI 通过 Canvas 2D 绘制，无 DOM 依赖
 
-import { CANVAS, CTX, SCREEN_W, SCREEN_H } from '../engine/globals.js';
+import { G } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
   drawButton, drawTitle, drawSubtitle, hitTest,
@@ -28,10 +28,10 @@ export function showMenu(navigate) {
   _navigate = navigate;
   _cleanup();
 
-  initBgStars(SCREEN_W, SCREEN_H, 80);
+  initBgStars(G.SCREEN_W, G.SCREEN_H, 80);
   _buildConLayout();
 
-  CANVAS.addEventListener('touchstart', _onTouch);
+  G.CANVAS.addEventListener('touchstart', _onTouch);
 
   _rafId = requestAnimationFrame(_loop);
 }
@@ -46,7 +46,7 @@ function _cleanup() {
     cancelAnimationFrame(_rafId);
     _rafId = null;
   }
-  CANVAS.removeEventListener('touchstart', _onTouch);
+  G.CANVAS.removeEventListener('touchstart', _onTouch);
   _buttons  = [];
   _conStars = [];
   _conLines = [];
@@ -62,8 +62,8 @@ function _buildConLayout() {
   const conDef = _pickCon();
   if (!conDef || !conDef.stars) return;
 
-  const W = SCREEN_W;
-  const H = SCREEN_H;
+  const W = G.SCREEN_W;
+  const H = G.SCREEN_H;
   const cx = W * 0.50;
   const cy = H * 0.32;
   const BOX = H * 0.72;
@@ -112,7 +112,7 @@ function _buildConLayout() {
 }
 
 function _drawConBg(t) {
-  const ctx = CTX;
+  const ctx = G.CTX;
 
   // Lines
   ctx.save();
@@ -156,9 +156,9 @@ function _drawConBg(t) {
 }
 
 function _loop(now) {
-  const ctx = CTX;
-  const W   = SCREEN_W;
-  const H   = SCREEN_H;
+  const ctx = G.CTX;
+  const W   = G.SCREEN_W;
+  const H   = G.SCREEN_H;
   const t   = now * 0.001;
 
   // Background

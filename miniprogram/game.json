@@ -2,6 +2,5 @@
   "deviceOrientation": "portrait",
   "networkTimeout": {
     "request": 10000
-  },
-  "workers": "workers"
+  }
 }

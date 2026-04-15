@@ -1,7 +1,7 @@
 // levels.js — Canvas 选关屏幕（微信小游戏版）
 // 替代原版 DOM screen-levels，纯 Canvas 2D 绘制
 
-import { CANVAS, CTX, SCREEN_W, SCREEN_H } from '../engine/globals.js';
+import { G } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
   drawButton, drawTitle, drawCard, hitTest,
@@ -23,25 +23,23 @@ let _lastTouchY   = 0;
 let _isDragging   = false;
 let _totalH       = 0;
 
-// ── Layout constants ──────────────────────────────────────────
-const COLS      = 5;
-const CARD_W    = Math.floor((SCREEN_W - 32) / COLS) - 4;
-const CARD_H    = CARD_W + 12;
-const PAD_X     = 12;
-const PAD_TOP   = 80;   // below back button
-const GAP       = 6;
+// Layout constants (computed at showLevels time, not module load)
+const COLS    = 5;
+const PAD_X   = 12;
+const PAD_TOP = 80;   // below back button
+const GAP     = 6;
 
 // ── Public API ────────────────────────────────────────────────
 export function showLevels(navigate) {
   _navigate = navigate;
   _cleanup();
 
-  initBgStars(SCREEN_W, SCREEN_H, 60);
+  initBgStars(G.SCREEN_W, G.SCREEN_H, 60);
   _computeLayout();
 
-  CANVAS.addEventListener('touchstart',  _onTouchStart);
-  CANVAS.addEventListener('touchmove',   _onTouchMove);
-  CANVAS.addEventListener('touchend',    _onTouchEnd);
+  G.CANVAS.addEventListener('touchstart',  _onTouchStart);
+  G.CANVAS.addEventListener('touchmove',   _onTouchMove);
+  G.CANVAS.addEventListener('touchend',    _onTouchEnd);
 
   _rafId = requestAnimationFrame(_loop);
 }
@@ -56,9 +54,11 @@ function _cleanup() {
     cancelAnimationFrame(_rafId);
     _rafId = null;
   }
-  CANVAS.removeEventListener('touchstart',  _onTouchStart);
-  CANVAS.removeEventListener('touchmove',   _onTouchMove);
-  CANVAS.removeEventListener('touchend',    _onTouchEnd);
+  if (G.CANVAS) {
+    G.CANVAS.removeEventListener('touchstart',  _onTouchStart);
+    G.CANVAS.removeEventListener('touchmove',   _onTouchMove);
+    G.CANVAS.removeEventListener('touchend',    _onTouchEnd);
+  }
   _cardRects = [];
   _backRect  = null;
   _scrollY   = 0;
@@ -67,6 +67,8 @@ function _cleanup() {
 
 function _computeLayout() {
   _cardRects = [];
+  const CARD_W = Math.floor((G.SCREEN_W - 32) / COLS) - 4;
+  const CARD_H = CARD_W + 12;
   const rows = Math.ceil(CONSTELLATIONS.length / COLS);
   _totalH = PAD_TOP + rows * (CARD_H + GAP) + 16;
 
@@ -87,9 +89,9 @@ function _getSceneBg() {
 }
 
 function _loop(now) {
-  const ctx = CTX;
-  const W   = SCREEN_W;
-  const H   = SCREEN_H;
+  const ctx = G.CTX;
+  const W   = G.SCREEN_W;
+  const H   = G.SCREEN_H;
   const t   = now * 0.001;
 
   // Smooth scroll
@@ -206,7 +208,7 @@ function _onTouchMove(e) {
   _lastTouchY = touch.clientY;
   if (Math.abs(dy) > 3) _isDragging = true;
 
-  const maxScroll = Math.max(0, _totalH - SCREEN_H);
+  const maxScroll = Math.max(0, _totalH - G.SCREEN_H);
   _scrollTarget = Math.max(0, Math.min(maxScroll, _scrollTarget - dy));
 }
 

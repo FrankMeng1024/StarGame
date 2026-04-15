@@ -11,7 +11,13 @@ import { showLevels, hideLevels } from './js/screens/levels.js';
 // 全局 Canvas — 立即初始化 globals（其他模块从 globals.js import，无循环依赖）
 const canvas = wx.createCanvas();
 const ctx = canvas.getContext('2d');
-initGlobals(canvas, ctx, canvas.width, canvas.height);
+// canvas.width/height 可能为 0，用 systemInfo 作为可靠来源
+const sysInfo = wx.getSystemInfoSync();
+const screenW = canvas.width  || sysInfo.windowWidth;
+const screenH = canvas.height || sysInfo.windowHeight;
+canvas.width  = screenW;
+canvas.height = screenH;
+initGlobals(canvas, ctx, screenW, screenH);
 
 // 全局状态（外部只读引用）
 let gameState = null;

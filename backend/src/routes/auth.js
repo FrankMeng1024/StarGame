@@ -41,7 +41,9 @@ router.post('/login', async (req, res) => {
     res.json({ token });
   } catch (e) {
     console.error('[auth] login error:', e.message);
-    res.status(500).json({ error: 'login failed' });
+    // wx error codes (40029 = invalid code, 40163 = code used) → 400 Bad Request
+    const isWxError = e.message && e.message.startsWith('wx error');
+    res.status(isWxError ? 400 : 500).json({ error: 'login failed', detail: e.message });
   }
 });
 
