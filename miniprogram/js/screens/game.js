@@ -70,6 +70,7 @@ let _btnPauseLevels = null;
 // Lore pagination (victory screen)
 let _lorePage   = 0;
 let _lorePages  = [];     // string[] — lore split into pages
+let _loreDismissed = false; // true after "完成 ✓" tap; prevents lazy rebuild
 let _btnLoreNext = null;
 
 // Victory animation state
@@ -157,6 +158,7 @@ export function showGame(navigate) {
   _paused = false;
   _lorePage = 0;
   _lorePages = [];
+  _loreDismissed = false;
   _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
   _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
 
@@ -241,6 +243,7 @@ function _cleanup() {
   _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
   _lorePage = 0;
   _lorePages = [];
+  _loreDismissed = false;
   _netSpeedMult = _netRadiusMult = _coinsMult = 1;
   _debrisRadiusMult = 1;
   _bombActive = false;
@@ -877,6 +880,7 @@ function _triggerResult(victory) {
   _result = { victory, timeLeft: _timeLeft, coins, stars: stars3, uncaught };
   _lorePage  = 0;
   _lorePages = []; // will be built on first result overlay render
+  _loreDismissed = false;
 
   if (victory) {
     state.addCoins(coins);
@@ -991,7 +995,7 @@ function _drawResultOverlay(ctx, W, H) {
     cy += 28;
 
     // Lore text — paginated (STORY-00238)
-    if (_conDef.lore) {
+    if (_conDef.lore && !_loreDismissed) {
       // Build pages on first render (when _lorePages is empty for this result)
       if (_lorePages.length === 0) {
         _lorePages = _splitLorePages(_conDef.lore, 80);
@@ -1266,10 +1270,15 @@ function _onTouch(e) {
 
   // Result screen buttons
   if (_phase === 'result') {
-    // Lore page navigation (STORY-00238)
+    // Lore page navigation (STORY-00238 / STORY-00239)
     if (_btnLoreNext && hitTest(_btnLoreNext, tx, ty)) {
       if (_lorePage < _lorePages.length - 1) {
         _lorePage++;
+      } else {
+        // Last page "完成 ✓" — dismiss lore to reveal action buttons
+        _loreDismissed = true;
+        _lorePages = [];
+        _lorePage = 0;
       }
       return;
     }

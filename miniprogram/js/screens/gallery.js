@@ -34,6 +34,12 @@ let _detailTotalH   = 0;
 let _detailDragging = false;
 let _detailLastTY   = 0;
 
+// Photo state (per-detail view)
+let _photoImg       = null;  // wx.createImage() instance
+let _photoLoaded    = false;
+let _photoError     = false;
+let _photoForIdx    = -1;    // which constellation this photo is for
+
 // Layout
 const COLS    = 3;
 const PAD_X   = 12;
@@ -70,6 +76,7 @@ function _cleanup() {
   _backRect  = null;
   _scrollY   = _scrollTarget = 0;
   _detailScrollY = _detailScrollTarget = 0;
+  _photoImg = null; _photoLoaded = false; _photoError = false; _photoForIdx = -1;
 }
 
 function _computeLayout() {
@@ -218,7 +225,7 @@ function _computeDetailHeight(ctx, W, c) {
   const fontSize = 13;
   ctx.font = `${fontSize}px sans-serif`;
   const loreLines = _wrapText(ctx, c.lore || '', contentW).length;
-  return 200 + loreLines * (fontSize + 4) + 80;
+  return 200 + 170 + loreLines * (fontSize + 4) + 80; // +170 for photo area
 }
 
 function _drawDetail(ctx, W, H, t) {
@@ -325,6 +332,39 @@ function _drawDetail(ctx, W, H, t) {
     }
     oy += 10;
 
+    // ── Photo ──
+    if (_photoForIdx !== _detailIdx) {
+      _loadPhoto(_detailIdx);
+    }
+    const PHOTO_H = 160;
+    const photoX = cardX + 8;
+    const photoW = cardW - 16;
+    ctx.save();
+    // Draw photo background
+    ctx.fillStyle = 'rgba(30,25,60,0.7)';
+    _roundRect(ctx, photoX, oy, photoW, PHOTO_H, 8);
+    ctx.fill();
+    // Clip to rounded rect for image/text
+    _roundRect(ctx, photoX, oy, photoW, PHOTO_H, 8);
+    ctx.clip();
+    if (_photoLoaded && _photoImg) {
+      ctx.drawImage(_photoImg, photoX, oy, photoW, PHOTO_H);
+    } else if (_photoError) {
+      ctx.font = '13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(160,150,200,0.7)';
+      ctx.fillText('暂无图片', photoX + photoW / 2, oy + PHOTO_H / 2);
+    } else {
+      ctx.font = '13px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(160,150,200,0.7)';
+      ctx.fillText('加载中...', photoX + photoW / 2, oy + PHOTO_H / 2);
+    }
+    ctx.restore();
+    oy += PHOTO_H + 10;
+
     // ── Divider ──
     ctx.save();
     ctx.strokeStyle = 'rgba(120,100,200,0.3)';
@@ -354,6 +394,23 @@ function _drawDetail(ctx, W, H, t) {
   _detailTotalH = oy;
 
   ctx.restore();
+}
+
+// ── Photo loader ──────────────────────────────────────────────
+function _loadPhoto(idx) {
+  const c = CONSTELLATIONS[idx];
+  if (!c.photo) { _photoError = true; return; }
+  _photoLoaded = false;
+  _photoError  = false;
+  _photoForIdx = idx;
+  try {
+    const img = wx.createImage();
+    img.onload  = () => { if (_photoForIdx === idx) { _photoImg = img; _photoLoaded = true; } };
+    img.onerror = () => { if (_photoForIdx === idx) { _photoError = true; } };
+    img.src = c.photo;
+  } catch (e) {
+    _photoError = true;
+  }
 }
 
 // ── Text wrap helper ──────────────────────────────────────────
@@ -431,6 +488,7 @@ function _onTouchEnd(e) {
         }
         _detailIdx = cr.idx;
         _detailScrollY = _detailScrollTarget = 0;
+        _photoImg = null; _photoLoaded = false; _photoError = false; _photoForIdx = -1;
         _view = 'detail';
         return;
       }
@@ -448,6 +506,7 @@ function _onTouchEnd(e) {
         if (state.isUnlocked(i)) {
           _detailIdx = i;
           _detailScrollY = _detailScrollTarget = 0;
+          _photoImg = null; _photoLoaded = false; _photoError = false; _photoForIdx = -1;
           break;
         }
       }
@@ -459,6 +518,7 @@ function _onTouchEnd(e) {
         if (state.isUnlocked(i)) {
           _detailIdx = i;
           _detailScrollY = _detailScrollTarget = 0;
+          _photoImg = null; _photoLoaded = false; _photoError = false; _photoForIdx = -1;
           break;
         }
       }

@@ -315,6 +315,24 @@
 - Sprint 19: Full navigation regression passed with 0 console errors across all tested paths (menu↔levels, levels↔item-select, gallery↔detail, game→fail→levels). SPA routing is stable.
 - Sprint 19: Fail screen is clean — shows star count (0/7), "时间到了！" message, two unambiguous action buttons (重试/返回选关).
 
+## Sprint 11-mini Updates (2026-04-16)
+
+### Sprint 11-mini — 2 Fixes Verified (Code-path, MEDIUM confidence)
+
+#### STORY-00239 — Victory lore "完成✓" dismiss fix
+- `_loreDismissed` flag added. When user taps "完成✓" on final lore page: `_loreDismissed=true`, lore block skips rendering. Action buttons (下一关/再挑战/返回展厅) now reachable. Known Medium friction (Sprint 10-mini): RESOLVED.
+- Two-phase result overlay UX: Phase 1 = paginated lore (下一页 →/完成✓), Phase 2 = action buttons. Transition is single tap on "完成✓".
+
+#### STORY-00240 — Gallery constellation photo
+- Gallery detail view now has 160px photo area between info pills and lore text.
+- Three states: "加载中..." (async load pending) / actual photo (wx.createImage success) / "暂无图片" (load error or no URL).
+- Async loading: stale-callback guard prevents race conditions on rapid prev/next navigation.
+- 20+ constellations covered with Wikimedia astronomical photos (nebulae, star clusters).
+- Remaining Low friction: "暂无图片" error vs intentional no-photo indistinguishable — Low only.
+
+### Navigation Regression (Sprint 11-mini)
+- Code-path analysis confirms all 4 photo state vars reset on detail entry/prev/next navigation. No stale photo from prior constellation. _loreDismissed reset in _triggerResult and _cleanup — no state leak across levels.
+
 ## Sprint 10-mini Updates (2026-04-16)
 
 ### Polish Sprint — 5 Features Verified

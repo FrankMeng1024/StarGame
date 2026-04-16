@@ -345,3 +345,16 @@ No backend, no network requests. All data in localStorage + local files.
   个性化文本：_conDef.nameZh + '还在等你！'
 - 胜利 lore 翻页：_splitLorePages(text, 80) 在。/，/！/？/空格处断行
   "完成 ✓" 按钮当前为 no-op（已记录为 Medium backlog STORY-00239）
+
+
+### 已验证状态（Sprint 11-mini）
+- **lore 完成按钮 (STORY-00239)**: `_loreDismissed` flag 防止懒加载重建。tap 最后页"完成 ✓" → `_loreDismissed=true` + `_lorePages=[]`。
+  下一帧 `if (_conDef.lore && !_loreDismissed)` 跳过整个 lore 块。
+  重试/选关/下一关 按钮始终在 `bY = cardY + cardH - 112`，不被 lore 门控。
+  `_loreDismissed` 在 `_triggerResult()` 和两个 cleanup 函数中重置为 false。
+- **展厅照片 (STORY-00240)**: 30 个星座均有 `photo` 字段（Wikimedia Commons HTTPS URL）。
+  gallery.js `_loadPhoto(idx)` 用 `wx.createImage()` 异步加载，guards: `if (_photoForIdx === idx)` 防 stale callback。
+  3 状态：加载中（"加载中..."）/ 成功（ctx.drawImage）/ 失败（"暂无图片"，no crash）。
+  photo state（4 vars）在 `_cleanup()` + 3个导航时间点全部重置。
+  `_drawDetail()` oy 流：info pills → +10 → photo(160+10) → divider → lore lines → +24 → `_detailTotalH`。
+  Wikimedia 429 从 CI/自动化 IP 出现，但非 code bug；WeChat DevTools 用自己的网络栈，可能成功加载。

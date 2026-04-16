@@ -12,6 +12,7 @@ export const CONSTELLATIONS = [
     region: '赤道附近（猎户座）',
     bestViewMonth: '1月（冬季最佳）',
     mainStars: '参宿四、参宿七、腰带三星',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg/480px-Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg',
     // Lines: pairs of star indices to connect
     lines: [[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[3,6]],
     stars: [
@@ -41,6 +42,7 @@ export const CONSTELLATIONS = [
     region: '北天极附近（大熊座）',
     bestViewMonth: '4月（春季最佳）',
     mainStars: '北斗七星（天枢、玉衡、开阳等）',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Ursa_Major_-_Meade_ETX.jpg/320px-Ursa_Major_-_Meade_ETX.jpg',
     lines: [[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]],
     stars: [
       { name: 'Dubhe',    mag: 1.8, x: 0.62, y: 0.20, type: 'K' },
@@ -62,6 +64,7 @@ export const CONSTELLATIONS = [
     region: '黄道南天（天蝎座）',
     bestViewMonth: '7月（夏季最佳）',
     mainStars: '心宿二（Antares）、蝎尾双星',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Scorpius_constellation_map.svg/320px-Scorpius_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[3,11]],
     stars: [
       { name: '心宿二',  mag: 0.9, x: 0.40, y: 0.32, type: 'M' },
@@ -88,6 +91,7 @@ export const CONSTELLATIONS = [
     region: '黄道北天（狮子座）',
     bestViewMonth: '4月（春季最佳）',
     mainStars: '轩辕十四（Regulus）、五帝座一',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Leo_constellation_map.svg/320px-Leo_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[4,8]],
     stars: [
       { name: '轩辕十四', mag: 1.4, x: 0.24, y: 0.38, type: 'B' },
@@ -111,6 +115,7 @@ export const CONSTELLATIONS = [
     region: '黄道北天（白羊座）',
     bestViewMonth: '12月（冬季最佳）',
     mainStars: '娄宿三（Hamal）、娄宿一',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Aries_constellation_map.svg/320px-Aries_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3]],
     stars: [
       { name: 'Hamal',   mag: 2.0, x: 0.30, y: 0.40, type: 'K' },
@@ -129,6 +134,7 @@ export const CONSTELLATIONS = [
     region: '黄道北天（金牛座）',
     bestViewMonth: '1月（冬季最佳）',
     mainStars: '毕宿五（Aldebaran）、昴星团七姐妹',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Pleiades_large.jpg/320px-Pleiades_large.jpg',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5]],
     stars: [
       { name: '毕宿五', mag: 0.9, x: 0.26, y: 0.44, type: 'K' },
@@ -149,6 +155,7 @@ export const CONSTELLATIONS = [
     region: '黄道北天（双子座）',
     bestViewMonth: '2月（冬季最佳）',
     mainStars: '北河三（Pollux）、北河二（Castor）',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Gemini_constellation_map.svg/320px-Gemini_constellation_map.svg.png',
     lines: [[0,2],[2,4],[4,6],[1,3],[3,5],[5,7],[0,1]],
     stars: [
       { name: '北河三', mag: 1.1, x: 0.28, y: 0.22, type: 'K' },
@@ -171,6 +178,7 @@ export const CONSTELLATIONS = [
     region: '黄道北天（巨蟹座）',
     bestViewMonth: '3月（春季最佳）',
     mainStars: 'Tarf（柳宿增三）、蜂巢星团',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Beehive_Cluster_-_M44.jpg/320px-Beehive_Cluster_-_M44.jpg',
     lines: [[0,2],[2,1],[2,3],[3,4]],
     stars: [
       { name: 'Acubens',  mag: 4.2, x: 0.32, y: 0.60, type: 'A' },
@@ -190,6 +198,7 @@ export const CONSTELLATIONS = [
     region: '黄道南天（处女座）',
     bestViewMonth: '5月（春末最佳）',
     mainStars: '角宿一（Spica）、Porrima双星',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Virgo_constellation_map.svg/320px-Virgo_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]],
     stars: [
       { name: '角宿一', mag: 1.0, x: 0.24, y: 0.60, type: 'B' },
@@ -214,6 +223,7 @@ export const CONSTELLATIONS = [
     region: '黄道南天（天秤座）',
     bestViewMonth: '6月（夏初最佳）',
     mainStars: '氐宿一（Zuben Elgenubi）、氐宿四',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Libra_constellation_map.svg/320px-Libra_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,0],[0,4]],
     stars: [
       { name: 'Zuben Elgenubi', mag: 2.8, x: 0.30, y: 0.60, type: 'A' },
@@ -233,6 +243,7 @@ export const CONSTELLATIONS = [
     region: '黄道南天（银河系中心方向）',
     bestViewMonth: '8月（夏季最佳）',
     mainStars: '斗宿南斗六星、礁湖星云M8',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Lagoon_Nebula_ESO.jpg/320px-Lagoon_Nebula_ESO.jpg',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[2,6],[6,7]],
     stars: [
       { name: 'Kaus A',  mag: 1.8, x: 0.28, y: 0.62, type: 'K' },
@@ -255,6 +266,7 @@ export const CONSTELLATIONS = [
     region: '黄道南天（摩羯座）',
     bestViewMonth: '9月（秋季最佳）',
     mainStars: '牛宿增六（Deneb Algedi）、牛宿二',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Capricornus_constellation_map.svg/320px-Capricornus_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0]],
     stars: [
       { name: 'Algedi',   mag: 3.6, x: 0.22, y: 0.30, type: 'G' },
@@ -275,6 +287,7 @@ export const CONSTELLATIONS = [
     region: '黄道南天（水瓶座）',
     bestViewMonth: '10月（秋季最佳）',
     mainStars: '虚宿一（Sadalsuud）、螺旋星云NGC 7293',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/NGC7293_%282004%29.jpg/320px-NGC7293_%282004%29.jpg',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]],
     stars: [
       { name: 'Sadalsuud', mag: 2.9, x: 0.28, y: 0.28, type: 'G' },
@@ -296,6 +309,7 @@ export const CONSTELLATIONS = [
     region: '黄道北天（双鱼座）',
     bestViewMonth: '11月（秋末最佳）',
     mainStars: '外屏七（Alrescha）、右更二',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Pisces_constellation_map.svg/320px-Pisces_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[5,7],[7,8],[8,9]],
     stars: [
       { name: 'Alrescha',  mag: 3.8, x: 0.50, y: 0.46, type: 'A' },
@@ -320,6 +334,7 @@ export const CONSTELLATIONS = [
     region: '北天极附近（仙后座）',
     bestViewMonth: '11月（秋季最佳，全年可见）',
     mainStars: '王良四（Schedar）、第谷超新星遗迹',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Cassiopeia_constellation_map.svg/320px-Cassiopeia_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4]],
     stars: [
       { name: 'Schedar', mag: 2.2, x: 0.22, y: 0.50, type: 'K' },
@@ -339,6 +354,7 @@ export const CONSTELLATIONS = [
     region: '北天（英仙座，银河穿越）',
     bestViewMonth: '12月（冬季最佳）',
     mainStars: '天船三（Mirfak）、大陵五（Algol）',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Perseus_constellation_map.svg/320px-Perseus_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[3,7],[7,8]],
     stars: [
       { name: 'Mirfak',   mag: 1.8, x: 0.34, y: 0.28, type: 'F' },
@@ -362,6 +378,7 @@ export const CONSTELLATIONS = [
     region: '赤道附近（天鹰座，银河穿越）',
     bestViewMonth: '8月（夏季最佳）',
     mainStars: '河鼓二/牛郎星（Altair）、夏季大三角',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Aquila_constellation_map.svg/320px-Aquila_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[1,5]],
     stars: [
       { name: '河鼓二', mag: 0.8, x: 0.50, y: 0.42, type: 'A' },
@@ -382,6 +399,7 @@ export const CONSTELLATIONS = [
     region: '北天（天鹅座，银河中心）',
     bestViewMonth: '9月（夏末最佳）',
     mainStars: '天津四（Deneb）、辇道增七（Albireo）',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Cygnus_constellation_map.svg/320px-Cygnus_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[1,6],[6,7],[7,8]],
     stars: [
       { name: '天津四', mag: 1.2, x: 0.28, y: 0.22, type: 'A' },
@@ -405,6 +423,7 @@ export const CONSTELLATIONS = [
     region: '北天（天琴座）',
     bestViewMonth: '8月（夏季最佳）',
     mainStars: '织女一（Vega）、环状星云M57',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Ring_Nebula.jpg/320px-Ring_Nebula.jpg',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,1]],
     stars: [
       { name: '织女一', mag: 0.0, x: 0.36, y: 0.22, type: 'A' },
@@ -424,6 +443,7 @@ export const CONSTELLATIONS = [
     region: '南天极附近（南十字座）',
     bestViewMonth: '5月（南半球秋季最佳）',
     mainStars: '十字架一（Acrux）、十字架二（Mimosa）',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Coalsack_Nebula.jpg/320px-Coalsack_Nebula.jpg',
     lines: [[0,1],[2,3]],
     stars: [
       { name: 'Acrux',  mag: 0.8, x: 0.48, y: 0.76, type: 'B' },
@@ -442,6 +462,7 @@ export const CONSTELLATIONS = [
     region: '北天极（小熊座）',
     bestViewMonth: '6月（全年可见，夏季子午线最高）',
     mainStars: '北极星/勾陈一（Polaris）、北极二（Kochab）',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Ursa_Minor_constellation_map.svg/320px-Ursa_Minor_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]],
     stars: [
       { name: '勾陈一', mag: 2.0, x: 0.34, y: 0.20, type: 'F' },
@@ -463,6 +484,7 @@ export const CONSTELLATIONS = [
     region: '北天（牧夫座）',
     bestViewMonth: '6月（春末夏初最佳）',
     mainStars: '大角（Arcturus）、招摇（Izar）',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Bootes_constellation_map.svg/320px-Bootes_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[2,6]],
     stars: [
       { name: '大角', mag: -0.1, x: 0.38, y: 0.58, type: 'K' },
@@ -484,6 +506,7 @@ export const CONSTELLATIONS = [
     region: '北天（御夫座，银河穿越）',
     bestViewMonth: '2月（冬季最佳）',
     mainStars: '五车二（Capella）、御夫座三星团M36/37/38',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Auriga_constellation_map.svg/320px-Auriga_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,0]],
     stars: [
       { name: '五车二', mag: 0.1, x: 0.46, y: 0.26, type: 'G' },
@@ -504,6 +527,7 @@ export const CONSTELLATIONS = [
     region: '北天（飞马座）',
     bestViewMonth: '10月（秋季最佳）',
     mainStars: '危宿一（Enif）、秋季大四边形四星',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Pegasus_constellation_map.svg/320px-Pegasus_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,0],[0,4],[4,5]],
     stars: [
       { name: 'Markab',  mag: 2.5, x: 0.24, y: 0.66, type: 'B' },
@@ -524,6 +548,7 @@ export const CONSTELLATIONS = [
     region: '赤道附近（海豚座）',
     bestViewMonth: '9月（夏末最佳）',
     mainStars: 'Sualocin、Rotanev（逆读人名趣闻）',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Delphinus_constellation_map.svg/320px-Delphinus_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,0],[0,2]],
     stars: [
       { name: 'Sualocin', mag: 3.8, x: 0.40, y: 0.26, type: 'B' },
@@ -543,6 +568,7 @@ export const CONSTELLATIONS = [
     region: '南天（南鱼座）',
     bestViewMonth: '10月（秋季最佳）',
     mainStars: '北落师门（Fomalhaut）、第一颗直接拍摄的系外行星',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Fomalhaut_with_Disk_Ring_and_extrasolar_planet_b.jpg/320px-Fomalhaut_with_Disk_Ring_and_extrasolar_planet_b.jpg',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,0]],
     stars: [
       { name: '北落师门', mag: 1.2, x: 0.44, y: 0.56, type: 'A' },
@@ -562,6 +588,7 @@ export const CONSTELLATIONS = [
     region: '北天极附近（天龙座，绕北极座）',
     bestViewMonth: '7月（全年可见，夏季最高）',
     mainStars: '天棓四（Eltanin）、古北极星右枢（Thuban）',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Draco_constellation_map.svg/320px-Draco_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,12],[12,13]],
     stars: [
       { name: '天棓四', mag: 2.2, x: 0.78, y: 0.22, type: 'K' },
@@ -590,6 +617,7 @@ export const CONSTELLATIONS = [
     region: '赤道附近（蛇夫座，黄道第十三星座）',
     bestViewMonth: '7月（夏季最佳）',
     mainStars: '候（Rasalhague）、开普勒超新星遗迹',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Ophiuchus_constellation_map.svg/320px-Ophiuchus_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[2,6]],
     stars: [
       { name: '候', mag: 2.1, x: 0.44, y: 0.24, type: 'K' },
@@ -611,6 +639,7 @@ export const CONSTELLATIONS = [
     region: '南天（半人马座）',
     bestViewMonth: '5月（南半球最佳）',
     mainStars: '南门二（Alpha Cen）、比邻星（最近恒星4.24光年）',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Centaurus_constellation_map.svg/320px-Centaurus_constellation_map.svg.png',
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10]],
     stars: [
       { name: '南门二', mag: -0.3, x: 0.26, y: 0.60, type: 'G' },
@@ -636,6 +665,7 @@ export const CONSTELLATIONS = [
     region: '北天（猎犬座）',
     bestViewMonth: '5月（春末最佳）',
     mainStars: '常陈一（Cor Caroli）、漩涡星系M51',
+    photo: 'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Messier51_sRGB.jpg/320px-Messier51_sRGB.jpg',
     lines: [[0,1],[1,2],[2,3]],
     stars: [
       { name: '常陈一', mag: 2.9, x: 0.38, y: 0.36, type: 'A' },
