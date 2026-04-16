@@ -33,6 +33,14 @@
 5. 抓完全部星星 → 通关界面
 6. 通关界面 → 展厅/商店/下一关
 
+### 已验证状态（Sprint 9-mini）
+- 背景音乐：AudioAdapter singleton（_bgm/_bgmSrc/_playing 模块级变量），wx.createInnerAudioContext，loop=true，volume=0.5
+- BGM 连续性：所有 hide*() 函数只调用 _cleanup()，不调用 stopBGM；playBGM 幂等守卫（_bgm && _playing && _bgmSrc === src）防止重启
+- 静音状态：wx.setStorageSync key 'starcatcher_muted'，在 playBGM 入口检查，每帧在 _loop 渲染图标
+- 静音按钮：36×36 矩形 hit area（视觉是圆形），位置 W-SAFE_RIGHT-46, SAFE_TOP+10
+- toggleMute(src) 接受 src 参数，unmute 时调用 playBGM(src) 重新播放
+- levels.js 标题 '选择关卡' 已用 save/restore + 显式 ctx.font 保护（BUG-00101 Sprint 8-mini 已修）
+
 ### 已验证状态（Sprint 8-mini）
 - 安全区适配：globals.js G.SAFE_TOP/BOTTOM/LEFT/RIGHT，从 wx.getSystemInfoSync().safeArea 读取
 - SAFE_BOTTOM = h - safeArea.bottom（wx 的 safeArea.bottom 是绝对 y 坐标，非 inset）

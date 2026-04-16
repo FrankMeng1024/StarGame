@@ -80,7 +80,16 @@
 | Sprint 5-mini | COMPLETE | 道具系统生效 + 帧率无关性 + 展厅prev/next导航 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 6-mini | COMPLETE | PRD完整度 — 磁力星引/宇航员手套 + 胜利庆典动画 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 8-mini | COMPLETE | 刘海屏安全区适配 — 竖屏保持，全屏幕UI避开刘海/Home条 (QA PASS, UX no Blockers, Arch PASS) |
+| Sprint 9-mini | COMPLETE | PRD F-001完成 — 背景音乐接入+静音按钮+BUG修复 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 7-mini | VU INVOCATION PENDING | All PRD Must-Haves done. VU walkthrough ready. Screen locked — awaiting unlock for live screenshots. |
+
+### Sprint 9-mini Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00230 | 背景音乐接入 — bgm.mp3 + AudioAdapter.playBGM | Done |
+| STORY-00231 | 主菜单静音按钮 — 右上角音符图标，持久化 | Done |
+| STORY-00232 | 选关屏标题文字修复 (BUG-00101) | Done |
+| STORY-00233 | 音乐跨页面连续播放 | Done |
 
 ### Sprint 6-mini Stories
 | Story | Title | Status |

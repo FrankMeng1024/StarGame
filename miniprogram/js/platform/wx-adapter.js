@@ -119,25 +119,53 @@ export function request(method, path, body, token) {
 
 // ─── Audio ───────────────────────────────────────────────────────────────────
 
-let _bgm = null;
+let _bgm     = null;
+let _bgmSrc  = null;
+let _playing = false;
 
 export const AudioAdapter = {
+  // Idempotent: if already playing the same src, do nothing
   playBGM(src) {
-    if (_bgm) {
-      _bgm.stop();
-      _bgm.destroy();
-    }
-    _bgm = wx.createInnerAudioContext();
-    _bgm.src = src;
+    try {
+      const muted = wx.getStorageSync(MUTED_KEY);
+      if (muted === true || muted === 'true' || muted === 1) return;
+    } catch (e) { /* storage unavailable — proceed */ }
+
+    if (_bgm && _playing && _bgmSrc === src) return; // already playing
+
+    if (_bgm) { try { _bgm.stop(); _bgm.destroy(); } catch (e) {} }
+    _bgm     = wx.createInnerAudioContext();
+    _bgmSrc  = src;
+    _bgm.src  = src;
     _bgm.loop = true;
     _bgm.volume = 0.5;
+    _bgm.onPlay(() => { _playing = true; });
+    _bgm.onStop(() => { _playing = false; });
+    _bgm.onError(() => { _playing = false; });
     _bgm.play();
   },
 
   stopBGM() {
-    if (_bgm) {
-      _bgm.stop();
+    if (_bgm) { try { _bgm.stop(); } catch (e) {} }
+    _playing = false;
+  },
+
+  isMuted() {
+    try { const m = wx.getStorageSync(MUTED_KEY); return m === true || m === 'true' || m === 1; }
+    catch (e) { return false; }
+  },
+
+  toggleMute(src) {
+    const nowMuted = AudioAdapter.isMuted();
+    try { wx.setStorageSync(MUTED_KEY, !nowMuted); } catch (e) {}
+    if (nowMuted) {
+      // Was muted → unmute: start playing
+      AudioAdapter.playBGM(src);
+    } else {
+      // Was playing → mute: stop
+      AudioAdapter.stopBGM();
     }
+    return !nowMuted; // returns new muted state
   },
 
   playSFX(src) {

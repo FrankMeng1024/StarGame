@@ -8,13 +8,17 @@ import {
   drawButton, drawTitle, drawSubtitle, hitTest,
 } from '../engine/canvas-utils.js';
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
+import { AudioAdapter } from '../platform/wx-adapter.js';
+
+const BGM_SRC = 'assets/audio/bgm.mp3';
 
 const TWO_PI = Math.PI * 2;
 
 // ── Module state ──────────────────────────────────────────────
-let _navigate = null;
-let _rafId    = null;
-let _buttons  = [];   // [{x,y,w,h, key}]
+let _navigate   = null;
+let _rafId      = null;
+let _buttons    = [];   // [{x,y,w,h, key}]
+let _muteBtn    = null; // {x,y,w,h}
 
 // Constellation hero state
 let _conStars = [];
@@ -32,6 +36,9 @@ export function showMenu(navigate) {
   _buildConLayout();
 
   G.CANVAS.addEventListener('touchstart', _onTouch);
+
+  // Start BGM (idempotent — safe to call every time; checks mute state internally)
+  AudioAdapter.playBGM(BGM_SRC);
 
   _rafId = requestAnimationFrame(_loop);
 }
@@ -195,6 +202,25 @@ function _loop(now) {
     _buttons.push({ ...rect, key: d.key });
   });
 
+  // Mute button — top-right corner, within safe area
+  const muteBtnSize = 36;
+  const muteBtnX    = W - G.SAFE_RIGHT - muteBtnSize - 10;
+  const muteBtnY    = G.SAFE_TOP + 10;
+  const muteIcon    = AudioAdapter.isMuted() ? '🔇' : '🔊';
+  ctx.save();
+  ctx.font         = '18px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.globalAlpha  = 0.80;
+  ctx.fillStyle    = 'rgba(20,25,60,0.55)';
+  ctx.beginPath();
+  ctx.arc(muteBtnX + muteBtnSize / 2, muteBtnY + muteBtnSize / 2, muteBtnSize / 2, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.globalAlpha  = 1;
+  ctx.fillText(muteIcon, muteBtnX + muteBtnSize / 2, muteBtnY + muteBtnSize / 2);
+  ctx.restore();
+  _muteBtn = { x: muteBtnX, y: muteBtnY, w: muteBtnSize, h: muteBtnSize };
+
   _rafId = requestAnimationFrame(_loop);
 }
 
@@ -203,6 +229,12 @@ function _onTouch(e) {
   if (!touch) return;
   const tx = touch.clientX;
   const ty = touch.clientY;
+
+  // Mute button tap
+  if (_muteBtn && hitTest(_muteBtn, tx, ty)) {
+    AudioAdapter.toggleMute(BGM_SRC);
+    return;
+  }
 
   for (const btn of _buttons) {
     if (hitTest(btn, tx, ty)) {
