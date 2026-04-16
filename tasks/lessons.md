@@ -1,5 +1,14 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 12-mini — 2026-04-16 (mini branch)
+
+Sprint 12-mini: clean Sprint, no retrospective actions.
+- VU ACCEPTED 9.5/10. Single Sprint 11-mini blocker (F-007 single photo) resolved by carousel implementation.
+- 30 constellations × 3 photos = 90 URLs migrated via individual Edit calls in constellations.js — tedious but verified zero legacy `photo:` fields remain.
+- Stale-callback guard pattern `if (_carouselForIdx === constellationIdx)` confirmed effective for wx.createImage() async callbacks; established pattern for all future async image loads in mini game screens.
+- VU accepted 3 photos per constellation despite PRD promising 5-10 — classified as content quantity gap, not feature gap. Carousel architecture is complete.
+- Code-path verification (MEDIUM confidence) remains the standard for WeChat mini game — no live automation possible.
+
 ## Sprint 10-mini — 2026-04-16 (mini branch)
 
 Sprint 10-mini: clean Sprint, no retrospective actions.

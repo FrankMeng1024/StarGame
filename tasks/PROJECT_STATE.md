@@ -66,10 +66,12 @@
 
 | Sprint 32 | — | COMPLETE | CR-085/086 关卡加载极速化 + 开场动画F5播放 — committed |
 | Sprint 7-mini | 9.5/10 | ACCEPTED | 微信小游戏 mini branch — All PRD Must-Have features verified — PROJECT COMPLETE |
+| Sprint 11-mini | 9.0/10 | NOT ACCEPTED | F-007 gallery carousel missing — only 1 static photo per constellation |
+| Sprint 12-mini | 9.5/10 | ACCEPTED | 展厅多图轮播 — carousel implemented, 3 photos per constellation — PROJECT COMPLETE |
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-16). All PRD Must-Haves delivered across Sprints 1-9 mini. Sprint 10-mini polish complete (2026-04-16).
+**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-16). All PRD Must-Haves delivered across Sprints 1-12 mini. Sprint 12-mini gallery carousel closes final gap.
 
 ### Sprint 10-mini Stories
 | Story | Title | Status |
@@ -93,6 +95,8 @@
 | Sprint 9-mini | COMPLETE | PRD F-001完成 — 背景音乐接入+静音按钮+BUG修复 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 7-mini | COMPLETE | VU ACCEPTED 9.5/10 — All PRD Must-Haves verified. |
 | Sprint 10-mini | COMPLETE | 游戏体验精修 — 网兜常显/暖色星星/暂停/失败剪影/胜利翻页 (QA PASS, UX no Blockers, Arch PASS) |
+| Sprint 11-mini | COMPLETE | VU 9.0/10 NOT ACCEPTED — F-007 carousel gap identified |
+| Sprint 12-mini | COMPLETE | 展厅多图轮播 — 3张图片+左右翻页 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
 
 ### Sprint 9-mini Stories
 | Story | Title | Status |
