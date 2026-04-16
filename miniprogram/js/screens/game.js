@@ -927,9 +927,9 @@ function _drawResultOverlay(ctx, W, H) {
   ctx.fillRect(0, 0, W, H);
   ctx.restore();
 
-  // Card
+  // Card — clamp to screen height with 20px margin so it fits landscape (H≈390)
   const cardW = Math.min(W - 40, 340);
-  const cardH = r.victory ? 460 : 340;
+  const cardH = Math.min(r.victory ? 460 : 340, H - 20);
   const cardX = (W - cardW) / 2;
   const cardY = (H - cardH) / 2;
 
