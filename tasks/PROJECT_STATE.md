@@ -4,6 +4,8 @@
 **Current Sprint**: 32 (Sprint Goal: 关卡加载极速化 — 消除进关等待，任何关卡直接可玩)
 **Last Updated**: 2026-04-16
 
+> **Mini branch current**: Sprint 14-mini COMPLETE — 黑屏修复+横屏适配 (QA PASS, Arch PASS, UX no Blockers)
+
 ## Sprint History
 | Sprint | Status | Goal |
 |---|---|---|
@@ -72,7 +74,7 @@
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-16). All PRD Must-Haves delivered across Sprints 1-13 mini. Sprint 13-mini closes final F-007 photo count gap (5 photos per constellation).
+**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-16). All PRD Must-Haves delivered across Sprints 1-13 mini. Sprint 13-mini closes final F-007 photo count gap (5 photos per constellation). Sprint 14-mini fixes black screen on device + landscape orientation.
 
 ### Sprint 10-mini Stories
 | Story | Title | Status |
@@ -99,6 +101,13 @@
 | Sprint 11-mini | COMPLETE | VU 9.0/10 NOT ACCEPTED — F-007 carousel gap identified |
 | Sprint 12-mini | COMPLETE | 展厅多图轮播 — 3张图片+左右翻页 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
 | Sprint 13-mini | COMPLETE | 展厅每星座5张图片 + lore完成按钮确认 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
+| Sprint 14-mini | COMPLETE | 黑屏修复+横屏适配 — 扫码即开，横屏可玩 (QA PASS, Arch PASS, UX no Blockers) |
+
+### Sprint 14-mini Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00243 | 黑屏修复 — boot()即时启动，auth后台异步 | Done |
+| STORY-00244 | 横屏适配 — game.json landscape + menu双栏布局 | Done |
 
 ### Sprint 13-mini Stories
 | Story | Title | Status |
