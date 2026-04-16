@@ -166,7 +166,7 @@ export function hideGame() {
 function _initStars(W, H) {
   _stars = [];
   const skyX0 = 16, skyX1 = W - 16;
-  const skyY0 = 60, skyY1 = H * 0.62;
+  const skyY0 = G.SAFE_TOP + 60, skyY1 = H * 0.62;
 
   _conDef.stars.forEach((s, i) => {
     _stars.push({
@@ -189,7 +189,7 @@ function _initDebris(W, H) {
   const count = Math.min(5, 2 + Math.floor((_conDef.difficulty || 1) * 0.8));
 
   const skyX0 = 20, skyX1 = W - 20;
-  const skyY0 = 70, skyY1 = H * 0.58;
+  const skyY0 = G.SAFE_TOP + 70, skyY1 = H * 0.58;
 
   for (let i = 0; i < count; i++) {
     _debris.push({
@@ -748,19 +748,20 @@ function _drawHint(ctx, W, H) {
 
 // ── Draw: HUD ─────────────────────────────────────────────────
 function _drawHUD(ctx, W) {
-  // HUD bar background
+  const ST = G.SAFE_TOP;   // notch height (0 on non-notch phones)
+  // HUD bar background — extends from y=0 down through the notch + 52px of UI
   ctx.save();
   ctx.fillStyle = 'rgba(10,14,40,0.72)';
-  ctx.fillRect(0, 0, W, 52);
+  ctx.fillRect(0, 0, W, ST + 52);
   ctx.restore();
 
-  // Level name (center)
+  // Level name (center) — drawn below the notch
   ctx.save();
   ctx.font         = 'bold 15px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = COLORS.text;
-  ctx.fillText((_conDef.icon || '★') + ' ' + _conDef.nameZh, W / 2, 26);
+  ctx.fillText((_conDef.icon || '★') + ' ' + _conDef.nameZh, W / 2, ST + 26);
   ctx.restore();
 
   // Caught count (left)
@@ -769,7 +770,7 @@ function _drawHUD(ctx, W) {
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = COLORS.starGold;
-  ctx.fillText('已抓: ' + _caught + ' / ' + _total, 12, 26);
+  ctx.fillText('已抓: ' + _caught + ' / ' + _total, 12, ST + 26);
   ctx.restore();
 
   // Timer (right)
@@ -787,12 +788,12 @@ function _drawHUD(ctx, W) {
     ctx.shadowColor = '#ff2222';
     ctx.shadowBlur  = 8;
   }
-  ctx.fillText(timerStr, W - 12, 26);
+  ctx.fillText(timerStr, W - 12, ST + 26);
   ctx.restore();
 
   // Bomb button (only when bomb item active)
   if (_bombActive) {
-    _btnBomb = drawButton(ctx, W / 2 - 30, 58, 60, 28, '💣 炸', {
+    _btnBomb = drawButton(ctx, W / 2 - 30, ST + 58, 60, 28, '💣 炸', {
       fontSize: 12, radius: 8,
       color0: 'rgba(180,60,20,0.85)', color1: 'rgba(220,80,30,0.85)',
     });

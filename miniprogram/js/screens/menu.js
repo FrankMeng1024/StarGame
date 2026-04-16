@@ -171,14 +171,14 @@ function _loop(now) {
   drawSubtitle(ctx, '探索88星座的奇妙旅程', W / 2, H * 0.72 + 38, 14);
 
   // Buttons — 三个主按钮，垂直排列在下方
-  // startY 计算：确保第3个按钮底部 + 8px 边距不超出屏幕
-  // 3按钮总高 = 3×48 + 2×14 = 172px；startY = H - 172 - 8 = H - 180
+  // startY 计算：确保第3个按钮底部 + 8px 边距不超出安全区底部
+  // 3按钮总高 = 3×48 + 2×14 = 172px；startY = H - SAFE_BOTTOM - 172 - 8
   _buttons = [];
   const BW = W * 0.60;
   const BH = 48;
   const BX = (W - BW) / 2;
   const GAP = 14;
-  const startY = H - 180;
+  const startY = H - G.SAFE_BOTTOM - 180;
 
   const defs = [
     { key: 'levels',  label: '挑战关卡', icon: '★' },

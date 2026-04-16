@@ -2,7 +2,7 @@
 
 **Status**: COMPLETE
 **Current Sprint**: 32 (Sprint Goal: 关卡加载极速化 — 消除进关等待，任何关卡直接可玩)
-**Last Updated**: 2026-04-15
+**Last Updated**: 2026-04-16
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -79,6 +79,7 @@
 | Sprint 4-mini | COMPLETE | 内容完整度 — 星座展厅、道具商店、场景切换 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 5-mini | COMPLETE | 道具系统生效 + 帧率无关性 + 展厅prev/next导航 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 6-mini | COMPLETE | PRD完整度 — 磁力星引/宇航员手套 + 胜利庆典动画 (QA PASS, UX no Blockers, Arch PASS) |
+| Sprint 8-mini | COMPLETE | 刘海屏安全区适配 — 竖屏保持，全屏幕UI避开刘海/Home条 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 7-mini | VU INVOCATION PENDING | All PRD Must-Haves done. VU walkthrough ready. Screen locked — awaiting unlock for live screenshots. |
 
 ### Sprint 6-mini Stories

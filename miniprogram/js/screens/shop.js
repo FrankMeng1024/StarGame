@@ -36,7 +36,6 @@ let _feedback    = null; // { msg, until } — brief purchase feedback
 const CARD_H    = 90;
 const CARD_GAP  = 8;
 const PAD_X     = 14;
-const PAD_TOP   = 70;
 
 // ── Public API ────────────────────────────────────────────────
 export function showShop(navigate) {
@@ -71,7 +70,8 @@ function _cleanup() {
 }
 
 function _computeLayout() {
-  _totalH = PAD_TOP + ITEMS.length * (CARD_H + CARD_GAP) + 24;
+  const padTop = G.SAFE_TOP + 70;  // below back button + notch
+  _totalH = padTop + ITEMS.length * (CARD_H + CARD_GAP) + 24 + G.SAFE_BOTTOM;
 }
 
 // ── RAF loop ──────────────────────────────────────────────────
@@ -87,7 +87,7 @@ function _loop(now) {
   _scrollY += (_scrollTarget - _scrollY) * 0.18;
 
   // ── Fixed header ──
-  _backRect = drawButton(ctx, 12, 14, 72, 34, '← 返回', {
+  _backRect = drawButton(ctx, 12, G.SAFE_TOP + 14, 72, 34, '← 返回', {
     fontSize: 13, radius: 10,
     color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
   });
@@ -97,7 +97,7 @@ function _loop(now) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = COLORS.text;
-  ctx.fillText('道具商店', W / 2, 31);
+  ctx.fillText('道具商店', W / 2, G.SAFE_TOP + 31);
   ctx.restore();
 
   // Coin balance
@@ -106,20 +106,21 @@ function _loop(now) {
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = COLORS.starGold;
-  ctx.fillText('🪙 ' + state.coins, W - 12, 31);
+  ctx.fillText('🪙 ' + state.coins, W - 12, G.SAFE_TOP + 31);
   ctx.restore();
 
   // ── Scrollable item list ──
   _buyRects = [];
 
+  const padTop = G.SAFE_TOP + 70;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, PAD_TOP - 4, W, H - PAD_TOP + 4);
+  ctx.rect(0, padTop - 4, W, H - padTop + 4);
   ctx.clip();
   ctx.translate(0, -_scrollY);
 
   ITEMS.forEach((item, i) => {
-    const cardY = PAD_TOP + i * (CARD_H + CARD_GAP);
+    const cardY = padTop + i * (CARD_H + CARD_GAP);
     _drawItemCard(ctx, W, item, i, cardY, now);
   });
 

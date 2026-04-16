@@ -33,7 +33,17 @@
 5. 抓完全部星星 → 通关界面
 6. 通关界面 → 展厅/商店/下一关
 
-### 已验证状态（Sprint 4-mini）
+### 已验证状态（Sprint 8-mini）
+- 安全区适配：globals.js G.SAFE_TOP/BOTTOM/LEFT/RIGHT，从 wx.getSystemInfoSync().safeArea 读取
+- SAFE_BOTTOM = h - safeArea.bottom（wx 的 safeArea.bottom 是绝对 y 坐标，非 inset）
+- 所有屏幕 back button 统一在 G.SAFE_TOP + 14，标题在 G.SAFE_TOP + 31/32
+- HUD bar 高度 = G.SAFE_TOP + 52，文字在 G.SAFE_TOP + 26
+- stars skyY0 = G.SAFE_TOP + 60, debris skyY0 = G.SAFE_TOP + 70
+- menu buttons startY = H - G.SAFE_BOTTOM - 180
+- 滚动 _totalH 包含 G.SAFE_BOTTOM 底部预留
+- 非刘海设备 G.SAFE_TOP = 0，行为与之前完全一致
+
+
 - 展厅：gallery.js 3列×10行网格，30 constellations，未解锁显示🔒。detail view 有全部字段（nameZh/nameEn/icon/region/bestViewMonth/mainStars/lore）。返回→levels。
 - 商店：shop.js 6种道具（speed/enlarge/bomb/time_ext/shrink/double_coins），spendCoins+addItem，金币不足显示红色 toast（error:true→红色 rgba(200,60,60)），成功绿色 toast。返回→levels。
 - 场景背景：game.js `_sceneIdx = floor(_levelIdx/5)`；SCENE_PALETTES[4].aurora=true（关卡 20-24）。

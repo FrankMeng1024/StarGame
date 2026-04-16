@@ -20,7 +20,9 @@ const screenW = canvas.width  || sysInfo.windowWidth;
 const screenH = canvas.height || sysInfo.windowHeight;
 canvas.width  = screenW;
 canvas.height = screenH;
-initGlobals(canvas, ctx, screenW, screenH);
+// safeArea: {top, left, bottom, right, width, height} in px — notch + home indicator
+// Falls back gracefully on older wx SDK versions where safeArea may be undefined.
+initGlobals(canvas, ctx, screenW, screenH, sysInfo.safeArea);
 
 // 全局状态（外部只读引用）
 let gameState = null;

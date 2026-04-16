@@ -27,7 +27,6 @@ let _totalH       = 0;
 // Layout constants (computed at showLevels time, not module load)
 const COLS    = 5;
 const PAD_X   = 12;
-const PAD_TOP = 80;   // below back button
 const GAP     = 6;
 
 // ── Item selection overlay state ───────────────────────────────
@@ -79,11 +78,12 @@ function _cleanup() {
 }
 
 function _computeLayout() {
+  const PAD_TOP = G.SAFE_TOP + 80;  // below back button + notch
   _cardRects = [];
   const CARD_W = Math.floor((G.SCREEN_W - 32) / COLS) - 4;
   const CARD_H = CARD_W + 12;
   const rows = Math.ceil(CONSTELLATIONS.length / COLS);
-  _totalH = PAD_TOP + rows * (CARD_H + GAP) + 16;
+  _totalH = PAD_TOP + rows * (CARD_H + GAP) + 16 + G.SAFE_BOTTOM;
 
   CONSTELLATIONS.forEach((c, idx) => {
     const col = idx % COLS;
@@ -116,7 +116,7 @@ function _loop(now) {
   drawBgStars(ctx, t);
 
   // ── Back button (fixed, above scroll area) ────────────────
-  _backRect = drawButton(ctx, 12, 14, 80, 36, '← 返回', {
+  _backRect = drawButton(ctx, 12, G.SAFE_TOP + 14, 80, 36, '← 返回', {
     fontSize: 13,
     radius:   10,
     color0:   'rgba(80,60,140,0.85)',
@@ -129,13 +129,14 @@ function _loop(now) {
   ctx.textAlign   = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle   = COLORS.text;
-  ctx.fillText('选择关卡', W / 2, 32);
+  ctx.fillText('选择关卡', W / 2, G.SAFE_TOP + 32);
   ctx.restore();
 
   // ── Scrollable card area ──────────────────────────────────
+  const padTop = G.SAFE_TOP + 80;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, PAD_TOP - 8, W, H - PAD_TOP + 8);
+  ctx.rect(0, padTop - 8, W, H - padTop + 8);
   ctx.clip();
   ctx.translate(0, -_scrollY);
 

@@ -6,15 +6,30 @@
 // export let live binding 支持不完整——import 端可能拿到初始值 0。
 
 export const G = {
-  CANVAS:   null,
-  CTX:      null,
-  SCREEN_W: 0,
-  SCREEN_H: 0,
+  CANVAS:      null,
+  CTX:         null,
+  SCREEN_W:    0,
+  SCREEN_H:    0,
+  SAFE_TOP:    0,   // px from top edge to safe area (notch height)
+  SAFE_BOTTOM: 0,   // px from bottom edge to safe area (home indicator height)
+  SAFE_LEFT:   0,   // px from left edge (usually 0 in portrait)
+  SAFE_RIGHT:  0,   // px from right edge (usually 0 in portrait)
 };
 
-export function initGlobals(canvas, ctx, w, h) {
+/**
+ * @param {object} [safeArea] — wx.getSystemInfoSync().safeArea
+ *   { top, left, bottom, right, width, height } all in px
+ *   Falls back gracefully if undefined (older wx SDK).
+ */
+export function initGlobals(canvas, ctx, w, h, safeArea) {
   G.CANVAS   = canvas;
   G.CTX      = ctx;
   G.SCREEN_W = w;
   G.SCREEN_H = h;
+  if (safeArea) {
+    G.SAFE_TOP    = safeArea.top    || 0;
+    G.SAFE_BOTTOM = h - (safeArea.bottom || h);
+    G.SAFE_LEFT   = safeArea.left   || 0;
+    G.SAFE_RIGHT  = w - (safeArea.right  || w);
+  }
 }

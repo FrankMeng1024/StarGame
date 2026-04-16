@@ -37,7 +37,6 @@ let _detailLastTY   = 0;
 // Layout
 const COLS    = 3;
 const PAD_X   = 12;
-const PAD_TOP = 76;
 const GAP     = 8;
 
 // ── Public API ────────────────────────────────────────────────
@@ -74,11 +73,12 @@ function _cleanup() {
 }
 
 function _computeLayout() {
+  const PAD_TOP = G.SAFE_TOP + 76;  // below back button + notch
   _cardRects = [];
   const CARD_W = Math.floor((G.SCREEN_W - PAD_X * 2 - GAP * (COLS - 1)) / COLS);
   const CARD_H = CARD_W + 24;
   const rows   = Math.ceil(CONSTELLATIONS.length / COLS);
-  _totalH      = PAD_TOP + rows * (CARD_H + GAP) + 24;
+  _totalH      = PAD_TOP + rows * (CARD_H + GAP) + 24 + G.SAFE_BOTTOM;
 
   CONSTELLATIONS.forEach((c, idx) => {
     const col = idx % COLS;
@@ -114,7 +114,7 @@ function _drawList(ctx, W, H, t) {
   _scrollY += (_scrollTarget - _scrollY) * 0.18;
 
   // Back button (fixed)
-  _backRect = drawButton(ctx, 12, 14, 72, 34, '← 返回', {
+  _backRect = drawButton(ctx, 12, G.SAFE_TOP + 14, 72, 34, '← 返回', {
     fontSize: 13, radius: 10,
     color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
   });
@@ -125,7 +125,7 @@ function _drawList(ctx, W, H, t) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = COLORS.text;
-  ctx.fillText('星座展厅', W / 2, 31);
+  ctx.fillText('星座展厅', W / 2, G.SAFE_TOP + 31);
   ctx.restore();
 
   // Coin display
@@ -134,13 +134,14 @@ function _drawList(ctx, W, H, t) {
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = COLORS.starGold;
-  ctx.fillText('🪙 ' + state.coins, W - 12, 31);
+  ctx.fillText('🪙 ' + state.coins, W - 12, G.SAFE_TOP + 31);
   ctx.restore();
 
   // Scrollable grid
+  const padTop = G.SAFE_TOP + 76;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, PAD_TOP - 4, W, H - PAD_TOP + 4);
+  ctx.rect(0, padTop - 4, W, H - padTop + 4);
   ctx.clip();
   ctx.translate(0, -_scrollY);
 
@@ -226,14 +227,14 @@ function _drawDetail(ctx, W, H, t) {
   const c = CONSTELLATIONS[_detailIdx];
 
   // Fixed top bar
-  _detailBackRect = drawButton(ctx, 12, 14, 72, 34, '← 返回', {
+  _detailBackRect = drawButton(ctx, 12, G.SAFE_TOP + 14, 72, 34, '← 返回', {
     fontSize: 13, radius: 10,
     color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
   });
   // Show prev only if there's a previous unlocked constellation
   const hasPrev = Array.from({ length: _detailIdx }, (_, i) => i).some(i => state.isUnlocked(i));
   _detailPrevRect = hasPrev
-    ? drawButton(ctx, W / 2 - 120, 14, 50, 34, '上一个', {
+    ? drawButton(ctx, W / 2 - 120, G.SAFE_TOP + 14, 50, 34, '上一个', {
         fontSize: 11, radius: 8,
         color0: 'rgba(40,60,120,0.7)', color1: 'rgba(30,80,160,0.7)',
       })
@@ -241,7 +242,7 @@ function _drawDetail(ctx, W, H, t) {
   // Show next only if there's a next unlocked constellation
   const hasNext = Array.from({ length: CONSTELLATIONS.length - _detailIdx - 1 }, (_, i) => _detailIdx + 1 + i).some(i => state.isUnlocked(i));
   _detailNextRect = hasNext
-    ? drawButton(ctx, W / 2 + 70, 14, 50, 34, '下一个', {
+    ? drawButton(ctx, W / 2 + 70, G.SAFE_TOP + 14, 50, 34, '下一个', {
         fontSize: 11, radius: 8,
         color0: 'rgba(40,60,120,0.7)', color1: 'rgba(30,80,160,0.7)',
       })
@@ -253,11 +254,11 @@ function _drawDetail(ctx, W, H, t) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(180,170,220,0.9)';
-  ctx.fillText((_detailIdx + 1) + ' / ' + CONSTELLATIONS.length, W / 2, 31);
+  ctx.fillText((_detailIdx + 1) + ' / ' + CONSTELLATIONS.length, W / 2, G.SAFE_TOP + 31);
   ctx.restore();
 
   // Scrollable content area
-  const CLIP_TOP = 58;
+  const CLIP_TOP = G.SAFE_TOP + 58;
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, CLIP_TOP, W, H - CLIP_TOP);
@@ -403,7 +404,7 @@ function _onTouchMove(e) {
     const dy = touch.clientY - _detailLastTY;
     _detailLastTY = touch.clientY;
     if (Math.abs(dy) > 3) _detailDragging = true;
-    const maxScroll = Math.max(0, _detailTotalH - G.SCREEN_H + 58);
+    const maxScroll = Math.max(0, _detailTotalH - G.SCREEN_H + G.SAFE_TOP + 58 + G.SAFE_BOTTOM);
     _detailScrollTarget = Math.max(0, Math.min(maxScroll, _detailScrollTarget - dy));
   }
 }
