@@ -2,6 +2,18 @@
 
 ---
 
+## Sprint 12-mini Updates (2026-04-16)
+
+### Gallery Photo Carousel (STORY-00241)
+- Gallery detail now uses carousel: `_carouselPos`/`_carouselForIdx`/`_carouselImgs[]` replace old single-photo state
+- `constellations.js`: `photos:[]` array (3 Wikimedia CDN URLs per constellation), legacy `photo:` field eliminated. 30 constellations × 3 photos = 90 total images.
+- `wx.createImage()` stale guard: `_carouselForIdx === constellationIdx` check prevents cross-constellation image bleed
+- ‹/› carousel buttons: 32×44px, overlaid on photo area, opacity 0.85 (active) / 0.25 (boundary)
+- Touch offset: `scrolledTY = ty + _detailScrollY - (G.SAFE_TOP + 58)` for carousel hit-test
+- Carousel resets to pos 0 on constellation navigation (list→detail, prev, next)
+
+---
+
 ## 微信小游戏版（branch: mini）
 
 ### 验证工具

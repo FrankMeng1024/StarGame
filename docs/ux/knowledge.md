@@ -1,5 +1,17 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 12-mini Updates (2026-04-16)
+
+### Gallery Photo Carousel
+- StarGame gallery detail now uses a pure Canvas carousel with 3 photos per constellation (30 constellations, 90 total from Wikimedia Commons)
+- Carousel navigation is button-only (no swipe gesture) with ‹/› arrows at 32×44px — functional but below recommended touch target size
+- Boundary handling: opacity 0.25 (faded) at boundaries, silent no-op on tap — no haptic or visual feedback at boundaries
+- Carousel state resets to 1/3 on constellation change — consistent, no state carry-over
+- Photo area: 160px tall with async loading ("加载中...") and error state ("暂无图片")
+- Touch offset calculation accounts for scroll position via `_detailScrollY`
+
+---
+
 ## Product Understanding
 《星捕少女》是一款面向全年龄的休闲教育游戏。玩家扮演一个小女孩，在新西兰夜空背景下，用摆动的网兜抓取天上的星座星星，同时学习星座知识。
 

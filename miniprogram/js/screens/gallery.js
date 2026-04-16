@@ -34,11 +34,12 @@ let _detailTotalH   = 0;
 let _detailDragging = false;
 let _detailLastTY   = 0;
 
-// Photo state (per-detail view)
-let _photoImg       = null;  // wx.createImage() instance
-let _photoLoaded    = false;
-let _photoError     = false;
-let _photoForIdx    = -1;    // which constellation this photo is for
+// Photo carousel state (per-detail view)
+let _carouselPos    = 0;     // current carousel index 0..N-1
+let _carouselForIdx = -1;    // which constellation this carousel is for
+let _carouselImgs   = [];    // array of { img, loaded, error } per photo slot
+let _carouselPrevRect = null;
+let _carouselNextRect = null;
 
 // Layout
 const COLS    = 3;
@@ -76,7 +77,8 @@ function _cleanup() {
   _backRect  = null;
   _scrollY   = _scrollTarget = 0;
   _detailScrollY = _detailScrollTarget = 0;
-  _photoImg = null; _photoLoaded = false; _photoError = false; _photoForIdx = -1;
+  _carouselPos = 0; _carouselForIdx = -1; _carouselImgs = [];
+  _carouselPrevRect = null; _carouselNextRect = null;
 }
 
 function _computeLayout() {
@@ -225,7 +227,7 @@ function _computeDetailHeight(ctx, W, c) {
   const fontSize = 13;
   ctx.font = `${fontSize}px sans-serif`;
   const loreLines = _wrapText(ctx, c.lore || '', contentW).length;
-  return 200 + 170 + loreLines * (fontSize + 4) + 80; // +170 for photo area
+  return 200 + 180 + loreLines * (fontSize + 4) + 80; // +180 for photo area + carousel controls
 }
 
 function _drawDetail(ctx, W, H, t) {
@@ -332,24 +334,29 @@ function _drawDetail(ctx, W, H, t) {
     }
     oy += 10;
 
-    // ── Photo ──
-    if (_photoForIdx !== _detailIdx) {
-      _loadPhoto(_detailIdx);
+    // ── Photo carousel ──
+    const photos = c.photos || (c.photo ? [c.photo] : []);
+    if (_carouselForIdx !== _detailIdx) {
+      _carouselForIdx = _detailIdx;
+      _carouselImgs = [];
+      photos.forEach((url, i) => _loadPhotoAtPos(url, i, _detailIdx));
     }
     const PHOTO_H = 160;
     const photoX = cardX + 8;
     const photoW = cardW - 16;
+    const slot = _carouselImgs[_carouselPos] || { img: null, loaded: false, error: false };
+
     ctx.save();
-    // Draw photo background
+    // Photo background
     ctx.fillStyle = 'rgba(30,25,60,0.7)';
     _roundRect(ctx, photoX, oy, photoW, PHOTO_H, 8);
     ctx.fill();
-    // Clip to rounded rect for image/text
+    // Clip for image/text
     _roundRect(ctx, photoX, oy, photoW, PHOTO_H, 8);
     ctx.clip();
-    if (_photoLoaded && _photoImg) {
-      ctx.drawImage(_photoImg, photoX, oy, photoW, PHOTO_H);
-    } else if (_photoError) {
+    if (slot.loaded && slot.img) {
+      ctx.drawImage(slot.img, photoX, oy, photoW, PHOTO_H);
+    } else if (slot.error) {
       ctx.font = '13px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
@@ -363,6 +370,52 @@ function _drawDetail(ctx, W, H, t) {
       ctx.fillText('加载中...', photoX + photoW / 2, oy + PHOTO_H / 2);
     }
     ctx.restore();
+
+    // Carousel navigation buttons (‹ and ›) overlaid on photo
+    if (photos.length > 1) {
+      const BTN_W = 32;
+      const BTN_H = 44;
+      const BTN_Y = oy + (PHOTO_H - BTN_H) / 2;
+      // Prev button ‹
+      ctx.save();
+      ctx.globalAlpha = _carouselPos > 0 ? 0.85 : 0.25;
+      ctx.fillStyle = 'rgba(20,15,50,0.75)';
+      _roundRect(ctx, photoX + 4, BTN_Y, BTN_W, BTN_H, 6);
+      ctx.fill();
+      ctx.font = 'bold 22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#d0c8ff';
+      ctx.fillText('‹', photoX + 4 + BTN_W / 2, BTN_Y + BTN_H / 2);
+      ctx.restore();
+      _carouselPrevRect = { x: photoX + 4, y: BTN_Y, w: BTN_W, h: BTN_H };
+
+      // Next button ›
+      ctx.save();
+      ctx.globalAlpha = _carouselPos < photos.length - 1 ? 0.85 : 0.25;
+      ctx.fillStyle = 'rgba(20,15,50,0.75)';
+      _roundRect(ctx, photoX + photoW - BTN_W - 4, BTN_Y, BTN_W, BTN_H, 6);
+      ctx.fill();
+      ctx.font = 'bold 22px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#d0c8ff';
+      ctx.fillText('›', photoX + photoW - BTN_W - 4 + BTN_W / 2, BTN_Y + BTN_H / 2);
+      ctx.restore();
+      _carouselNextRect = { x: photoX + photoW - BTN_W - 4, y: BTN_Y, w: BTN_W, h: BTN_H };
+
+      // Index indicator (N/total)
+      ctx.save();
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(220,215,255,0.9)';
+      ctx.fillText((_carouselPos + 1) + '/' + photos.length, photoX + photoW / 2, oy + PHOTO_H - 10);
+      ctx.restore();
+    } else {
+      _carouselPrevRect = null;
+      _carouselNextRect = null;
+    }
     oy += PHOTO_H + 10;
 
     // ── Divider ──
@@ -397,19 +450,27 @@ function _drawDetail(ctx, W, H, t) {
 }
 
 // ── Photo loader ──────────────────────────────────────────────
-function _loadPhoto(idx) {
-  const c = CONSTELLATIONS[idx];
-  if (!c.photo) { _photoError = true; return; }
-  _photoLoaded = false;
-  _photoError  = false;
-  _photoForIdx = idx;
+function _loadPhotoAtPos(url, pos, constellationIdx) {
+  if (!url) {
+    _carouselImgs[pos] = { img: null, loaded: false, error: true };
+    return;
+  }
+  _carouselImgs[pos] = { img: null, loaded: false, error: false };
   try {
     const img = wx.createImage();
-    img.onload  = () => { if (_photoForIdx === idx) { _photoImg = img; _photoLoaded = true; } };
-    img.onerror = () => { if (_photoForIdx === idx) { _photoError = true; } };
-    img.src = c.photo;
+    img.onload  = () => {
+      if (_carouselForIdx === constellationIdx) {
+        _carouselImgs[pos] = { img, loaded: true, error: false };
+      }
+    };
+    img.onerror = () => {
+      if (_carouselForIdx === constellationIdx) {
+        _carouselImgs[pos] = { img: null, loaded: false, error: true };
+      }
+    };
+    img.src = url;
   } catch (e) {
-    _photoError = true;
+    _carouselImgs[pos] = { img: null, loaded: false, error: true };
   }
 }
 
@@ -488,7 +549,7 @@ function _onTouchEnd(e) {
         }
         _detailIdx = cr.idx;
         _detailScrollY = _detailScrollTarget = 0;
-        _photoImg = null; _photoLoaded = false; _photoError = false; _photoForIdx = -1;
+        _carouselPos = 0; _carouselForIdx = -1; _carouselImgs = [];
         _view = 'detail';
         return;
       }
@@ -506,7 +567,7 @@ function _onTouchEnd(e) {
         if (state.isUnlocked(i)) {
           _detailIdx = i;
           _detailScrollY = _detailScrollTarget = 0;
-          _photoImg = null; _photoLoaded = false; _photoError = false; _photoForIdx = -1;
+          _carouselPos = 0; _carouselForIdx = -1; _carouselImgs = [];
           break;
         }
       }
@@ -518,10 +579,24 @@ function _onTouchEnd(e) {
         if (state.isUnlocked(i)) {
           _detailIdx = i;
           _detailScrollY = _detailScrollTarget = 0;
-          _photoImg = null; _photoLoaded = false; _photoError = false; _photoForIdx = -1;
+          _carouselPos = 0; _carouselForIdx = -1; _carouselImgs = [];
           break;
         }
       }
+      return;
+    }
+    // Carousel navigation (adjust for scroll offset)
+    const scrolledTY = ty + _detailScrollY - (G.SAFE_TOP + 58);
+    if (_carouselPrevRect && hitTest({ x: _carouselPrevRect.x, y: _carouselPrevRect.y, w: _carouselPrevRect.w, h: _carouselPrevRect.h }, tx, scrolledTY)) {
+      const c = CONSTELLATIONS[_detailIdx];
+      const photos = c.photos || (c.photo ? [c.photo] : []);
+      if (_carouselPos > 0) { _carouselPos--; }
+      return;
+    }
+    if (_carouselNextRect && hitTest({ x: _carouselNextRect.x, y: _carouselNextRect.y, w: _carouselNextRect.w, h: _carouselNextRect.h }, tx, scrolledTY)) {
+      const c = CONSTELLATIONS[_detailIdx];
+      const photos = c.photos || (c.photo ? [c.photo] : []);
+      if (_carouselPos < photos.length - 1) { _carouselPos++; }
       return;
     }
   }
