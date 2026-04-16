@@ -1,5 +1,16 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 15-mini — 2026-04-17 (mini branch)
+
+Sprint 15-mini: clean Sprint, no retrospective actions.
+- QA PASS (5 stories HIGH confidence), Arch PASS (after 3 critical fixes), UX no Blockers.
+- WeChat mini game has no Web Audio API oscillators. SFX must be pre-generated as PCM WAV files (Node.js Buffer) and bundled in assets/audio/. wx.createInnerAudioContext() only supports file paths, not data URIs.
+- wx.onHide() stacks listeners — every showGame() call adds a new callback. Required pattern: store callback in module var, wx.offHide() before wx.onHide() on every re-entry.
+- drawBgStars(ctx, t): t is time in seconds, NOT screen dimensions. Arch caught this — passing screen width (~844) caused extreme animation speed. Pattern: always check canvas-utils.js function signatures before calling.
+- AudioAdapter.playSFX() mute guard must be the first line of the function — not after context creation.
+- Inline _roundRect() in achievement.js acceptable to avoid circular dependency (canvas-utils ← achievement ← game ← canvas-utils). Behavioral equivalence verified by Arch.
+- Canvas screenshot via PrintWindow returns black on WeChat DevTools — no visual verification possible. Code-path verification (node --check + subagent Arch review) remains the standard.
+
 ## Sprint 13-mini — 2026-04-16 (mini branch)
 
 Sprint 13-mini: clean Sprint, no retrospective actions.

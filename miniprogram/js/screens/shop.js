@@ -10,11 +10,11 @@ import state from '../engine/state.js';
 
 // ── Item definitions ──────────────────────────────────────────
 export const ITEMS = [
-  { id: 'speed',        icon: '⚡', nameZh: '网兜加速',   desc: '本关网兜速度+50%',   cost: 20 },
-  { id: 'enlarge',      icon: '🔵', nameZh: '网兜扩大',   desc: '本关网兜半径×1.5',   cost: 25 },
-  { id: 'bomb',         icon: '💣', nameZh: '宇宙炸弹',   desc: '清除所有垃圾一次',   cost: 40 },
+  { id: 'net_speed',     icon: '⚡', nameZh: '网兜加速',   desc: '本关网兜速度+50%',   cost: 20 },
+  { id: 'net_enlarge',  icon: '🔵', nameZh: '网兜扩大',   desc: '本关网兜半径×1.5',   cost: 25 },
+  { id: 'space_bomb',   icon: '💣', nameZh: '宇宙炸弹',   desc: '清除所有垃圾一次',   cost: 40 },
   { id: 'time_ext',     icon: '⏱', nameZh: '时间延长',   desc: '本关+15秒',          cost: 30 },
-  { id: 'shrink',       icon: '🔬', nameZh: '缩小垃圾',   desc: '本关垃圾体积减半',   cost: 35 },
+  { id: 'shrink_debris',icon: '🔬', nameZh: '缩小垃圾',   desc: '本关垃圾体积减半',   cost: 35 },
   { id: 'double_coins', icon: '🪙', nameZh: '双倍金币',   desc: '本关金币×2',         cost: 50 },
   { id: 'star_magnet',  icon: '🧲', nameZh: '磁力星引',   desc: '星星主动靠近网兜',   cost: 80 },
   { id: 'glove',        icon: '🧤', nameZh: '宇航员手套', desc: '抓到垃圾不扣时间',     cost: 70 },

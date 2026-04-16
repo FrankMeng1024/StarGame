@@ -29,7 +29,13 @@ const state = {
     this.unlockedLevels = new Set(data.unlockedLevels || [0]);
     this.levelScores    = new Map(Object.entries(data.levelScores || {}));
     this.coins          = data.coins ?? 100;
-    this.inventory      = new Map(Object.entries(data.inventory || {}));
+    // Migrate legacy item IDs to aligned names
+    const legacyMap = { speed: 'net_speed', enlarge: 'net_enlarge', bomb: 'space_bomb', shrink: 'shrink_debris' };
+    const inv = {};
+    for (const [k, v] of Object.entries(data.inventory || {})) {
+      inv[legacyMap[k] || k] = v;
+    }
+    this.inventory      = new Map(Object.entries(inv));
     this.seenScenes     = new Set(data.seenScenes || []);
     this.nickname       = data.nickname || '';
     this.avatarUrl      = data.avatarUrl || '';

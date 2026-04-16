@@ -109,9 +109,27 @@ let _netRadiusMult = 1;     // enlarge item: ×1.5
 let _debrisRadiusMult = 1;  // shrink item: ×0.5
 let _coinsMult     = 1;     // double_coins: ×2
 let _bombActive    = false; // bomb item: one-time debris clear
-let _btnBomb       = null;  // bomb HUD button
+let _btnBomb       = null;  // bomb HUD button (legacy — kept for compatibility)
 let _magnetActive  = false; // star_magnet: stars drift toward net head
 let _gloveActive   = false; // glove: no speed penalty on debris catch
+
+// Item slot HUD system (STORY-00252)
+// Each slot: { id, icon, duration, endTime, used }
+// duration=0 means instant; duration>0 means timed (seconds)
+let _slots      = [];  // up to 3 active item slots
+let _slotBoxes  = [];  // [{x,y,w,h,slotIdx}] — tap zones, updated each draw frame
+let _passiveCoins = false; // double_coins passive item
+
+const ITEM_CONFIG = {
+  net_speed:    { icon: '⚡', duration: 15 },
+  net_enlarge:  { icon: '🔵', duration: 15 },
+  space_bomb:   { icon: '💣', duration: 0  },
+  time_ext:     { icon: '⏱', duration: 0  },
+  shrink_debris:{ icon: '🔬', duration: 30 },
+  star_magnet:  { icon: '🧲', duration: 15 },
+  glove:        { icon: '🧤', duration: 30 },
+  double_coins: { icon: '🪙', duration: 0  },  // passive only
+};
 
 // ── Public API ────────────────────────────────────────────────
 export function showGame(navigate) {
@@ -142,22 +160,29 @@ export function showGame(navigate) {
   const diff    = (_conDef.difficulty || 1) - 1;
   _timeLeft     = diffMap[Math.max(0, Math.min(4, diff))];
 
-  // Apply selected item effects
+  // Set up item slots (STORY-00252) — effects activate on tap, not at level start
   _netSpeedMult = _netRadiusMult = _coinsMult = 1;
   _debrisRadiusMult = 1;
   _bombActive = false;
   _magnetActive = false;
   _gloveActive = false;
+  _passiveCoins = false;
+  _slots = [];
+  _slotBoxes = [];
+
   for (const id of (state.selectedItems || [])) {
-    switch (id) {
-      case 'speed':        _netSpeedMult    = 1.5;  break;
-      case 'enlarge':      _netRadiusMult   = 1.5;  break;
-      case 'bomb':         _bombActive      = true;  break;
-      case 'time_ext':     _timeLeft       += 15; AudioAdapter.playSFX(SFX_TIMEEXT); break;
-      case 'shrink':       _debrisRadiusMult = 0.5; break;
-      case 'double_coins': _coinsMult       = 2;    break;
-      case 'star_magnet':  _magnetActive    = true;  break;
-      case 'glove':        _gloveActive     = true;  break;
+    if (id === 'double_coins') {
+      // Passive: auto-apply at start
+      _coinsMult = 2;
+      _passiveCoins = true;
+      continue;
+    }
+    if (id === 'time_ext') {
+      // Keep time_ext in slots for tactical tap — don't apply at start
+    }
+    const cfg = ITEM_CONFIG[id];
+    if (cfg && _slots.length < 3) {
+      _slots.push({ id, icon: cfg.icon, duration: cfg.duration, endTime: 0, used: false });
     }
   }
 
@@ -294,6 +319,9 @@ function _cleanup() {
   _bombActive = false;
   _magnetActive = false;
   _gloveActive = false;
+  _slots = [];
+  _slotBoxes = [];
+  _passiveCoins = false;
   _celebrateTimer = 0;
   _lineDrawProgress = 0;
 }
@@ -332,6 +360,7 @@ function _loop(now) {
       _updateTimer(dt);
       _updateNet(dt);
       _updateParticles(dt);
+      _updateSlots(now);
       if (_magnetActive) _updateMagnet(dt);
     }
 
@@ -384,6 +413,67 @@ function _updateTimer(dt) {
   if (_timeLeft <= 0) {
     _timeLeft = 0;
     _triggerResult(false);
+  }
+}
+
+// ── Slot timer update ─────────────────────────────────────────
+function _updateSlots(nowMs) {
+  const wallMs = Date.now(); // use wall clock — endTime is set via Date.now() in _activateSlot
+  for (const slot of _slots) {
+    if (!slot.used || slot.duration === 0) continue;
+    // Expire timed items
+    if (wallMs >= slot.endTime) {
+      // Deactivate effect
+      switch (slot.id) {
+        case 'net_speed':     _netSpeedMult    = 1;    break;
+        case 'net_enlarge':   _netRadiusMult   = 1;    break;
+        case 'shrink_debris': _debrisRadiusMult = 1;   break;
+        case 'star_magnet':   _magnetActive    = false; break;
+        case 'glove':         _gloveActive     = false; break;
+      }
+      slot.duration = -1; // mark fully expired (duration = -1 sentinel)
+    }
+  }
+}
+
+// ── Slot activation ───────────────────────────────────────────
+function _activateSlot(slotIdx, nowMs) {
+  const slot = _slots[slotIdx];
+  if (!slot || slot.used) return;
+  if (!state.useItem(slot.id)) return; // not owned
+
+  slot.used = true;
+  if (slot.duration > 0) {
+    slot.endTime = nowMs + slot.duration * 1000;
+  }
+
+  switch (slot.id) {
+    case 'net_speed':     _netSpeedMult    = 1.5;  break;
+    case 'net_enlarge':   _netRadiusMult   = 1.5;  break;
+    case 'space_bomb':
+      // Explode all debris
+      for (const d of _debris) {
+        for (let i = 0; i < 8; i++) {
+          const angle = (i / 8) * TWO_PI;
+          const speed = 3 + Math.random() * 4;
+          _particles.push({
+            x: d.x, y: d.y,
+            vx: Math.cos(angle) * speed,
+            vy: Math.sin(angle) * speed,
+            life: 30, maxLife: 30,
+            color: i % 2 === 0 ? '#ff6600' : '#ffcc00',
+          });
+        }
+      }
+      _debris = [];
+      break;
+    case 'time_ext':
+      _timeLeft += 15;
+      AudioAdapter.playSFX(SFX_TIMEEXT);
+      break;
+    case 'shrink_debris': _debrisRadiusMult = 0.5; break;
+    case 'star_magnet':   _magnetActive    = true;  break;
+    case 'glove':         _gloveActive     = true;  break;
   }
 }
 
@@ -888,14 +978,93 @@ function _drawHUD(ctx, W) {
   ctx.fillText(timerStr, W - 12, ST + 26);
   ctx.restore();
 
-  // Bomb button (only when bomb item active)
-  if (_bombActive) {
-    _btnBomb = drawButton(ctx, W / 2 - 30, ST + 58, 60, 28, '💣 炸', {
-      fontSize: 12, radius: 8,
-      color0: 'rgba(180,60,20,0.85)', color1: 'rgba(220,80,30,0.85)',
-    });
-  } else {
-    _btnBomb = null;
+  // Bomb button (legacy — kept for backward compat; slot system handles space_bomb now)
+  _btnBomb = null;
+
+  // ── Item slot HUD (STORY-00252) ────────────────────────────
+  _slotBoxes = [];
+  if (_slots.length > 0) {
+    const SLOT_W = 48;
+    const SLOT_H = 52;
+    const SLOT_GAP = 6;
+    const H = G.SCREEN_H;
+    const totalW = _slots.length * SLOT_W + (_slots.length - 1) * SLOT_GAP;
+    const startX = W - G.SAFE_RIGHT - totalW - 8;
+    const startY = H - G.SAFE_BOTTOM - SLOT_H - 8;
+
+    for (let i = 0; i < _slots.length; i++) {
+      const slot = _slots[i];
+      const sx = startX + i * (SLOT_W + SLOT_GAP);
+      const sy = startY;
+
+      // Determine slot state
+      const isExpired = slot.used && (slot.duration <= 0 || slot.duration === -1);
+      const isActive  = slot.used && slot.duration > 0 && slot.duration !== -1;
+      const isReady   = !slot.used;
+
+      // Background box
+      ctx.save();
+      ctx.globalAlpha = isExpired ? 0.35 : 0.85;
+      ctx.fillStyle = isReady ? 'rgba(20,25,70,0.85)' : 'rgba(10,12,35,0.85)';
+      ctx.strokeStyle = isActive ? '#ffd700' : (isReady ? 'rgba(150,160,220,0.7)' : 'rgba(80,85,120,0.4)');
+      ctx.lineWidth = isActive ? 1.5 : 1;
+      const r2 = 6;
+      ctx.beginPath();
+      ctx.moveTo(sx + r2, sy);
+      ctx.lineTo(sx + SLOT_W - r2, sy);
+      ctx.quadraticCurveTo(sx + SLOT_W, sy, sx + SLOT_W, sy + r2);
+      ctx.lineTo(sx + SLOT_W, sy + SLOT_H - r2);
+      ctx.quadraticCurveTo(sx + SLOT_W, sy + SLOT_H, sx + SLOT_W - r2, sy + SLOT_H);
+      ctx.lineTo(sx + r2, sy + SLOT_H);
+      ctx.quadraticCurveTo(sx, sy + SLOT_H, sx, sy + SLOT_H - r2);
+      ctx.lineTo(sx, sy + r2);
+      ctx.quadraticCurveTo(sx, sy, sx + r2, sy);
+      ctx.closePath();
+      ctx.fill();
+      ctx.stroke();
+
+      // Icon
+      ctx.globalAlpha = isExpired ? 0.3 : 1;
+      ctx.font = '20px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(slot.icon, sx + SLOT_W / 2, sy + SLOT_H * 0.38);
+
+      // Slot number
+      ctx.font = 'bold 10px sans-serif';
+      ctx.fillStyle = isReady ? '#aac0ff' : 'rgba(140,150,200,0.6)';
+      ctx.fillText(String(i + 1), sx + SLOT_W / 2, sy + SLOT_H * 0.75);
+
+      // Countdown bar for timed items
+      if (isActive && slot.endTime > 0) {
+        const now2 = Date.now();
+        const remaining = Math.max(0, slot.endTime - now2);
+        const pct = remaining / (slot.duration * 1000);
+        const barW = (SLOT_W - 8) * pct;
+        ctx.globalAlpha = 0.9;
+        ctx.fillStyle = pct > 0.33 ? '#ffd700' : '#ff6644';
+        ctx.fillRect(sx + 4, sy + SLOT_H - 7, barW, 4);
+      }
+
+      ctx.restore();
+
+      // Store tap zone (only for unused slots)
+      if (!slot.used) {
+        _slotBoxes.push({ x: sx, y: sy, w: SLOT_W, h: SLOT_H, slotIdx: i });
+      }
+    }
+
+    // Passive coins indicator
+    if (_passiveCoins) {
+      ctx.save();
+      ctx.font = '11px sans-serif';
+      ctx.textAlign = 'right';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(255,215,0,0.8)';
+      ctx.fillText('🪙×2', startX - 4, startY + SLOT_H / 2);
+      ctx.restore();
+    }
   }
 
   // Pause button (top-right corner, STORY-00236)
@@ -935,10 +1104,7 @@ function _triggerResult(victory) {
     if (_levelIdx < 29) state.unlock(_levelIdx + 1);
   }
 
-  // Consume selected items (win OR lose)
-  for (const id of (state.selectedItems || [])) {
-    state.useItem(id);
-  }
+  // Items already consumed on activation via _activateSlot — just clear the list
   state.selectedItems = [];
 
   if (victory) {
@@ -1304,27 +1470,14 @@ function _onTouch(e) {
       return; // swallow all other taps while paused
     }
 
-    // Bomb button check (before net fire)
-    if (_btnBomb && hitTest(_btnBomb, tx, ty)) {
-      // Spawn explosion particles at each debris location
-      for (const d of _debris) {
-        for (let i = 0; i < 8; i++) {
-          const angle = (i / 8) * TWO_PI;
-          const speed = 3 + Math.random() * 4;
-          _particles.push({
-            x: d.x, y: d.y,
-            vx: Math.cos(angle) * speed,
-            vy: Math.sin(angle) * speed,
-            life: 30, maxLife: 30,
-            color: i % 2 === 0 ? '#ff6600' : '#ffcc00',
-          });
-        }
+    // Item slot tap check (STORY-00252) — before net fire
+    for (const box of _slotBoxes) {
+      if (hitTest(box, tx, ty)) {
+        _activateSlot(box.slotIdx, Date.now());
+        return;
       }
-      _debris = [];
-      _bombActive = false;
-      _btnBomb = null;
-      return;
     }
+
     // Fire net on tap (ignore if already extending)
     if (_netState === 'swing') {
       _netState = 'extend';

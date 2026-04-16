@@ -6,8 +6,10 @@ import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
   drawButton, hitTest,
 } from '../engine/canvas-utils.js';
-import { CONSTELLATIONS } from '../data/constellations.js';
+import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
 import state from '../engine/state.js';
+
+const TWO_PI = Math.PI * 2;
 
 // ── Module state ──────────────────────────────────────────────
 let _navigate    = null;
@@ -333,6 +335,75 @@ function _drawDetail(ctx, W, H, t) {
       ctx.restore();
     }
     oy += 10;
+
+    // ── Star chart (STORY-00251) ─────────────────────────────
+    if (c.stars && c.stars.length > 0) {
+      const CHART_SIZE = Math.min(cardW - 24, 200);
+      const chartX = cardX + (cardW - CHART_SIZE) / 2;
+      const chartY = oy;
+      const PAD = 18;
+      const AREA = CHART_SIZE - PAD * 2;
+
+      // Background circle
+      ctx.save();
+      ctx.fillStyle = 'rgba(10,10,30,0.75)';
+      ctx.strokeStyle = 'rgba(100,90,180,0.4)';
+      ctx.lineWidth = 1;
+      ctx.beginPath();
+      ctx.arc(chartX + CHART_SIZE / 2, chartY + CHART_SIZE / 2, CHART_SIZE / 2, 0, TWO_PI);
+      ctx.fill();
+      ctx.stroke();
+      ctx.restore();
+
+      // Clip to circle
+      ctx.save();
+      ctx.beginPath();
+      ctx.arc(chartX + CHART_SIZE / 2, chartY + CHART_SIZE / 2, CHART_SIZE / 2 - 2, 0, TWO_PI);
+      ctx.clip();
+
+      // Map star positions
+      const mappedStars = c.stars.map(s => ({
+        x: chartX + PAD + s.x * AREA,
+        y: chartY + PAD + s.y * AREA,
+        r: Math.min(magToRadius(s.mag), 6),
+        color: typeToColor(s.type),
+      }));
+
+      // Draw constellation lines
+      ctx.strokeStyle = 'rgba(255,215,0,0.55)';
+      ctx.lineWidth = 1.2;
+      ctx.shadowColor = 'rgba(255,215,0,0.3)';
+      ctx.shadowBlur = 3;
+      for (const [a, b] of (c.lines || [])) {
+        if (!mappedStars[a] || !mappedStars[b]) continue;
+        ctx.beginPath();
+        ctx.moveTo(mappedStars[a].x, mappedStars[a].y);
+        ctx.lineTo(mappedStars[b].x, mappedStars[b].y);
+        ctx.stroke();
+      }
+      ctx.shadowBlur = 0;
+
+      // Draw stars with glow
+      for (const s of mappedStars) {
+        const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3);
+        grd.addColorStop(0, s.color);
+        grd.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.save();
+        ctx.globalAlpha = 0.45;
+        ctx.fillStyle = grd;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * 3, 0, TWO_PI);
+        ctx.fill();
+        ctx.restore();
+        ctx.fillStyle = s.color;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
+        ctx.fill();
+      }
+      ctx.restore();
+
+      oy += CHART_SIZE + 12;
+    }
 
     // ── Photo carousel ──
     const photos = c.photos || (c.photo ? [c.photo] : []);

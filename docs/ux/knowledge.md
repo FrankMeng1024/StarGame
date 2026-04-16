@@ -1,5 +1,22 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 16-mini Updates (2026-04-17)
+
+### Intro Animation
+- 3-phase sequence: meteor shower → constellation reveal (with name label) → "追星少女" title + "轻触屏幕开始". Clear call-to-action. Atmospheric, thematically unified.
+- Phase transitions are logical and build anticipation. Tap-to-skip enabled.
+
+### Gallery Star Chart
+- Star chart in detail view: circular frame, stars sized by magnitude (large yellow = bright, small blue-white = faint), golden connecting lines with glow. No star name labels on chart — educational depth gap.
+- Chart renders consistently and fits within circular boundary.
+
+### HUD Item Slots (Medium UX gap)
+- 3 numbered slots (1/2/3) bottom-right, each showing an icon. No labels/tooltips — first-time player cannot know what items do or that tapping activates them.
+- Future consideration: brief first-use hint or icon tooltip on first gameplay session.
+
+### Visual Cohesion
+- Consistent palette across all screens: deep navy/black backgrounds, gold constellation lines, purple accent text, white UI text. Game reads as polished and thematically unified.
+
 ## Sprint 12-mini Updates (2026-04-16)
 
 ### Gallery Photo Carousel

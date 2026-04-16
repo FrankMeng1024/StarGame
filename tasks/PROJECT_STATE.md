@@ -4,7 +4,7 @@
 **Current Sprint**: 32 (Sprint Goal: 关卡加载极速化 — 消除进关等待，任何关卡直接可玩)
 **Last Updated**: 2026-04-16
 
-> **Mini branch current**: Sprint 14-mini COMPLETE — 黑屏修复+横屏适配 (QA PASS, Arch PASS, UX no Blockers)
+> **Mini branch current**: Sprint 15-mini COMPLETE — SFX+通关照片+成就页+难度条+自动暂停 (QA PASS, Arch PASS, UX no Blockers)
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -102,6 +102,7 @@
 | Sprint 12-mini | COMPLETE | 展厅多图轮播 — 3张图片+左右翻页 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
 | Sprint 13-mini | COMPLETE | 展厅每星座5张图片 + lore完成按钮确认 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
 | Sprint 14-mini | COMPLETE | 黑屏修复+横屏适配 — 扫码即开，横屏可玩 (QA PASS, Arch PASS, UX no Blockers) |
+| Sprint 15-mini | COMPLETE | 游戏体验关键补全 — SFX+通关照片+成就页+难度条+自动暂停 (QA PASS, Arch PASS, UX no Blockers) |
 
 ### Sprint 14-mini Stories
 | Story | Title | Status |

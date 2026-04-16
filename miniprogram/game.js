@@ -11,6 +11,7 @@ import { showGame, hideGame } from './js/screens/game.js';
 import { showGallery, hideGallery } from './js/screens/gallery.js';
 import { showShop, hideShop } from './js/screens/shop.js';
 import { showAchievement, hideAchievement } from './js/screens/achievement.js';
+import { showIntro, hideIntro } from './js/screens/intro.js';
 
 // 全局 Canvas — 立即初始化 globals（其他模块从 globals.js import，无循环依赖）
 const canvas = wx.createCanvas();
@@ -43,8 +44,12 @@ function navigate(key) {
   hideGallery();
   hideShop();
   hideAchievement();
+  hideIntro();
 
   switch (key) {
+    case 'intro':
+      showIntro(navigate);
+      break;
     case 'menu':
       showMenu(navigate);
       break;
@@ -75,9 +80,9 @@ async function boot() {
   state.fromSaveData(localSave);
   gameState = state;
 
-  // 立刻显示主菜单（不等网络）
-  let startScreen = 'menu';
-  try { startScreen = wx.getStorageSync('__initScreen') || 'menu'; } catch (e) {}
+  // 立刻显示开场动画（不等网络）— 动画结束自动导航到 menu
+  let startScreen = 'intro';
+  try { startScreen = wx.getStorageSync('__initScreen') || 'intro'; } catch (e) {}
   navigate(startScreen);
 
   // 开发后门：挂到 wx 命名空间，DevTools console 可调用 wx.__navigate('levels')

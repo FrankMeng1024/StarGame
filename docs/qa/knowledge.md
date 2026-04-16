@@ -2,6 +2,27 @@
 
 ---
 
+## Sprint 16-mini Updates (2026-04-17)
+
+### Intro Animation (STORY-00250)
+- 3-phase canvas animation: Phase 1 meteors (0-3s), Phase 2 constellation reveal (3-8s), Phase 3 title fade-in (8-12s). Tap-to-skip supported.
+- QA freeze hook added to intro.js: `wx.__introFreezeAt = N` freezes animation at Ns for screenshot capture.
+
+### Gallery Star Chart (STORY-00251)
+- Gallery detail view now renders constellation star chart in circular frame above photo carousel.
+- Stars use magToRadius() for sizing and typeToColor() for coloring. Lines are golden with glow.
+
+### HUD Item Slots (STORY-00252)
+- Up to 3 item slots drawn bottom-right HUD. Items activate on tap (not at level start).
+- RAF timestamp vs Date.now() mismatch was a timing bug — fixed. Always use `Date.now()` for wall-clock comparisons.
+- For tap-activated HUD features: future QA should capture sequential screenshots — before tap, during countdown, after expiration.
+
+### Item ID Alignment (STORY-00253)
+- IDs renamed: speed→net_speed, enlarge→net_enlarge, bomb→space_bomb, shrink→shrink_debris.
+- Save migration in loadSave() handles old→new ID mapping.
+
+---
+
 ## Sprint 13-mini Updates (2026-04-16)
 
 ### Photo Count Expansion (STORY-00242)
