@@ -65,10 +65,11 @@
 | Sprint 31 | — | COMPLETE | CR-084 流星雨开场 + 星座上移 + 信息栏优雅化 — committed |
 
 | Sprint 32 | — | COMPLETE | CR-085/086 关卡加载极速化 + 开场动画F5播放 — committed |
+| Sprint 7-mini | 9.5/10 | ACCEPTED | 微信小游戏 mini branch — All PRD Must-Have features verified — PROJECT COMPLETE |
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: VU INVOCATION READY — All PRD Must-Haves done (Sprints 1-9), awaiting screen unlock for live screenshots
+**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-16). All PRD Must-Haves delivered across Sprints 1-9 mini.
 
 | Sprint | Status | Goal |
 |---|---|---|
@@ -81,7 +82,7 @@
 | Sprint 6-mini | COMPLETE | PRD完整度 — 磁力星引/宇航员手套 + 胜利庆典动画 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 8-mini | COMPLETE | 刘海屏安全区适配 — 竖屏保持，全屏幕UI避开刘海/Home条 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 9-mini | COMPLETE | PRD F-001完成 — 背景音乐接入+静音按钮+BUG修复 (QA PASS, UX no Blockers, Arch PASS) |
-| Sprint 7-mini | VU INVOCATION READY | All PRD Must-Haves done (Sprints 1-9 mini COMPLETE). VU walkthrough ready. Screen locked — awaiting unlock for live screenshots. |
+| Sprint 7-mini | COMPLETE | VU ACCEPTED 9.5/10 — All PRD Must-Haves verified. |
 
 ### Sprint 9-mini Stories
 | Story | Title | Status |
