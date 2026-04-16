@@ -1,6 +1,17 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
-## Sprint 15-mini — 2026-04-17 (mini branch)
+## Sprint 17-mini — 2026-04-17 (mini branch, VU acceptance)
+
+Sprint 17-mini: VU invocation + acceptance. VU ACCEPTED 9.5/10 on second evaluation round.
+
+- First VU evaluation (6.5/10 NOT ACCEPTED) was due to insufficient evidence (7 screenshots, missing F-006/F-007/F-005 screens). Root cause: Sprint 16-mini QA captured only the 4 new-story features; did not capture the full product flow for VU evaluation.
+- Pattern for future VU invocations: capture complete product flipbook (12+ screenshots) covering ALL 8 PRD features before launching VU, not just the features from the current sprint.
+- game.js QA FORCE pattern: temporary `navigate('screen')` + `qaForceVictory()` exports enable reliable screenshot capture of any game state. Always revert ALL QA FORCE code before commit.
+- Gallery detail scroll: touch drag simulation via SetCursorPos + mouse_event works for Canvas touch scroll. Coordinates: canvas top-left at screen (55, 128), canvas size 800×430.
+- VU photo carousel "暂无图片": CDN astrophotography images don't load immediately in simulator. VU correctly identified this as a timing artifact when "1/5" counter was visible. Pattern: always show photo counter as supplementary evidence when CDN images may not have loaded.
+- Mini branch PROJECT COMPLETE (final): all PRD Must-Haves + quality CRs (intro animation, star chart, HUD slots, landscape, SFX, achievement, difficulty bars) verified by VU 9.5/10.
+
+
 
 Sprint 15-mini: clean Sprint, no retrospective actions.
 - QA PASS (5 stories HIGH confidence), Arch PASS (after 3 critical fixes), UX no Blockers.
@@ -307,4 +318,12 @@ Sprint 2-mini: clean Sprint, lightweight retro.
 - [pending] Canvas小游戏截图方案最终确认: mss库(DXGI) + 物理坐标。PrintWindow和BitBlt对GPU合成窗口(NW.js/Chrome)均无效。每次DevTools重启需重新查找hwnd。
 - [pending] miniprogram-automator App.*RPC对小游戏完全无效(timeout)。仅Tool.getInfo可用。小游戏没有Page/WXML层——所有自动化依赖物理点击+屏幕截图。
 - [pending] DPI坐标换算在小游戏项目中是关键陷阱：SetCursorPos/GetWindowRect用逻辑坐标，mss用物理坐标。150%缩放=物理/1.5=逻辑。不正确的坐标系会导致点击/截图偏移200+像素。
+- Lightweight retro rule applied: steps 1-3 skipped.
+
+## Sprint 16-mini — 2026-04-17
+Sprint 16-mini: clean Sprint, lightweight retro.
+- 4 stories: intro animation (STORY-00250), gallery star chart (STORY-00251), HUD item slots (STORY-00252), item ID alignment (STORY-00253).
+- Arch PASS (2 bug fixes: RAF timestamp mismatch, double useItem() call). QA PASS (HIGH confidence for 00250/00251, MEDIUM for 00252/00253). UX: no Blockers (1 Medium: HUD slots lack first-use guidance).
+- New screenshot technique: QA freeze hook via wx.__introFreezeAt + gallery qaShowGalleryDetail() + window-shift (-700px) for full canvas visibility.
+- [pending] HUD item slots (STORY-00252) need sequential screenshots for future QA: before tap, during countdown, after expiration. Static screenshots only confirm layout, not runtime behavior.
 - Lightweight retro rule applied: steps 1-3 skipped.

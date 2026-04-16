@@ -2,9 +2,9 @@
 
 **Status**: COMPLETE
 **Current Sprint**: 32 (Sprint Goal: 关卡加载极速化 — 消除进关等待，任何关卡直接可玩)
-**Last Updated**: 2026-04-16
+**Last Updated**: 2026-04-17
 
-> **Mini branch current**: Sprint 15-mini COMPLETE — SFX+通关照片+成就页+难度条+自动暂停 (QA PASS, Arch PASS, UX no Blockers)
+> **Mini branch current**: Sprint 17-mini VU ACCEPTED 9.5/10 — 全功能验收通过，微信小游戏分支 PROJECT COMPLETE
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -71,10 +71,11 @@
 | Sprint 11-mini | 9.0/10 | NOT ACCEPTED | F-007 gallery carousel missing — only 1 static photo per constellation |
 | Sprint 12-mini | 9.5/10 | ACCEPTED | 展厅多图轮播 — carousel implemented, 3 photos per constellation — PROJECT COMPLETE |
 | Sprint 13-mini | 9.5/10 | ACCEPTED | 展厅5张图片达PRD最低要求 + lore完成按钮确认 — PROJECT COMPLETE |
+| Sprint 17-mini | 9.5/10 | ACCEPTED | 全功能验收 — F-001~F-008全部通过 + 开场动画/星图/HUD槽/横屏/SFX等CRs — PROJECT COMPLETE (final) |
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-16). All PRD Must-Haves delivered across Sprints 1-13 mini. Sprint 13-mini closes final F-007 photo count gap (5 photos per constellation). Sprint 14-mini fixes black screen on device + landscape orientation.
+**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-17). All PRD Must-Haves (F-001~F-008) delivered and verified across Sprints 1-16 mini. Sprint 17-mini VU acceptance confirms full product quality with intro animation, gallery star charts, in-game item HUD, landscape orientation, SFX, achievement screen, and difficulty bars all verified. PROJECT COMPLETE (final).
 
 ### Sprint 10-mini Stories
 | Story | Title | Status |
@@ -103,6 +104,8 @@
 | Sprint 13-mini | COMPLETE | 展厅每星座5张图片 + lore完成按钮确认 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
 | Sprint 14-mini | COMPLETE | 黑屏修复+横屏适配 — 扫码即开，横屏可玩 (QA PASS, Arch PASS, UX no Blockers) |
 | Sprint 15-mini | COMPLETE | 游戏体验关键补全 — SFX+通关照片+成就页+难度条+自动暂停 (QA PASS, Arch PASS, UX no Blockers) |
+| Sprint 16-mini | COMPLETE | 小游戏质量对齐Web版 — 开场动画+展厅星图+HUD槽+道具ID对齐 (QA PASS, Arch PASS, UX no Blockers) |
+| Sprint 17-mini | COMPLETE | VU ACCEPTED 9.5/10 — All PRD F-001~F-008 + CRs verified — PROJECT COMPLETE |
 
 ### Sprint 14-mini Stories
 | Story | Title | Status |
