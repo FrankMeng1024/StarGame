@@ -208,6 +208,15 @@ function _loop(now) {
       });
       _buttons.push({ ...rect, key: d.key });
     });
+
+    // Achievement button — small, below main buttons
+    const achH = Math.max(24, Math.min(28, BH * 0.65));
+    const achY = startY + 3 * (BH + GAP) + 4;
+    const achRect = drawButton(ctx, rightX, achY, BW, achH, '🏆 星座图鉴', {
+      fontSize: 11, radius: 8, alpha: 0.60,
+      color0: 'rgba(40,35,10,0.70)', color1: 'rgba(70,55,10,0.70)',
+    });
+    _buttons.push({ ...achRect, key: 'achievement' });
   } else {
     // ── Portrait layout (original) ───────────────────────────
     drawTitle(ctx, '追星少女', W / 2, H * 0.72, 38);
@@ -231,6 +240,14 @@ function _loop(now) {
       });
       _buttons.push({ ...rect, key: d.key });
     });
+
+    // Achievement button — small, below main buttons (portrait)
+    const achY = startY + 3 * (BH + GAP) + 4;
+    const achRect = drawButton(ctx, BX, achY, BW, 32, '🏆 星座图鉴', {
+      fontSize: 12, radius: 8, alpha: 0.60,
+      color0: 'rgba(40,35,10,0.70)', color1: 'rgba(70,55,10,0.70)',
+    });
+    _buttons.push({ ...achRect, key: 'achievement' });
   }
 
   // Mute button — top-right corner, within safe area

@@ -9,6 +9,13 @@ import {
 import { CONSTELLATIONS, magToRadius } from '../data/constellations.js';
 import { SCENE_PALETTES, drawGroundSilhouette } from '../data/scenes.js';
 import state from '../engine/state.js';
+import { AudioAdapter } from '../platform/wx-adapter.js';
+
+// SFX paths (relative to miniprogram root)
+const SFX_CATCH   = 'assets/audio/sfx-catch.wav';
+const SFX_DEBRIS  = 'assets/audio/sfx-debris.wav';
+const SFX_VICTORY = 'assets/audio/sfx-victory.wav';
+const SFX_TIMEEXT = 'assets/audio/sfx-timeext.wav';
 
 const TWO_PI = Math.PI * 2;
 
@@ -63,6 +70,8 @@ let _result     = null;   // {victory, timeLeft, coins, stars, uncaught}
 // Pause state
 let _paused     = false;
 let _btnPause   = null;
+// wx.onHide listener ref — stored to allow wx.offHide() cleanup
+let _onHideCb   = null;
 let _btnResume  = null;
 let _btnPauseRetry  = null;
 let _btnPauseLevels = null;
@@ -72,6 +81,11 @@ let _lorePage   = 0;
 let _lorePages  = [];     // string[] — lore split into pages
 let _loreDismissed = false; // true after "完成 ✓" tap; prevents lazy rebuild
 let _btnLoreNext = null;
+
+// Victory photo (STORY-00246)
+let _victoryPhoto     = null;   // wx.createImage() object
+let _victoryPhotoLoaded = false;
+let _victoryPhotoFor  = -1;    // levelIdx the photo is for
 
 // Victory animation state
 let _celebrateTimer = 0;  // seconds remaining in celebrate phase
@@ -139,7 +153,7 @@ export function showGame(navigate) {
       case 'speed':        _netSpeedMult    = 1.5;  break;
       case 'enlarge':      _netRadiusMult   = 1.5;  break;
       case 'bomb':         _bombActive      = true;  break;
-      case 'time_ext':     _timeLeft       += 15;   break;
+      case 'time_ext':     _timeLeft       += 15; AudioAdapter.playSFX(SFX_TIMEEXT); break;
       case 'shrink':       _debrisRadiusMult = 0.5; break;
       case 'double_coins': _coinsMult       = 2;    break;
       case 'star_magnet':  _magnetActive    = true;  break;
@@ -162,6 +176,22 @@ export function showGame(navigate) {
   _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
   _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
 
+  // Preload victory photo (STORY-00246)
+  if (_victoryPhotoFor !== _levelIdx) {
+    _victoryPhoto = null;
+    _victoryPhotoLoaded = false;
+    _victoryPhotoFor = _levelIdx;
+    const photos = _conDef.photos;
+    if (photos && photos.length > 0) {
+      try {
+        const img = wx.createImage();
+        img.onload  = () => { if (_victoryPhotoFor === _levelIdx) { _victoryPhoto = img; _victoryPhotoLoaded = true; } };
+        img.onerror = () => {};
+        img.src = photos[0];
+      } catch (e) {}
+    }
+  }
+
   // Show hint only on first-ever game session
   try {
     const seen = wx.getStorageSync('__hintSeen');
@@ -174,6 +204,16 @@ export function showGame(navigate) {
   G.CANVAS.addEventListener('touchstart', _onTouch);
   _lastNow = 0;
   _rafId = requestAnimationFrame(_loop);
+
+  // Auto-pause when app goes to background (STORY-00247)
+  // Store ref so we can wx.offHide in _cleanup (prevents stacking on retry/replay)
+  if (_onHideCb) { try { wx.offHide(_onHideCb); } catch (e) {} }
+  _onHideCb = () => {
+    if (_phase === 'play' && !_paused) {
+      _paused = true;
+    }
+  };
+  wx.onHide(_onHideCb);
 }
 
 export function hideGame() {
@@ -232,6 +272,11 @@ function _cleanup() {
   }
   if (G.CANVAS) {
     G.CANVAS.removeEventListener('touchstart', _onTouch);
+  }
+  // Remove wx.onHide listener to prevent stacking (STORY-00247 fix)
+  if (_onHideCb) {
+    try { wx.offHide(_onHideCb); } catch (e) {}
+    _onHideCb = null;
   }
   _stars   = [];
   _debris  = [];
@@ -387,6 +432,7 @@ function _checkCollisions() {
       _caught++;
       _spawnParticles(s.x, s.y, s.color);
       _netState = 'retract';
+      AudioAdapter.playSFX(SFX_CATCH);
 
       if (_caught >= _total) {
         _triggerResult(true);
@@ -404,6 +450,7 @@ function _checkCollisions() {
         _timeLeft  = Math.max(0, _timeLeft - 1.0);
         _timerFlash = 0.5; // 0.5 seconds of red flash
       }
+      AudioAdapter.playSFX(SFX_DEBRIS);
       _netState   = 'retract';
       return;
     }
@@ -895,6 +942,7 @@ function _triggerResult(victory) {
   state.selectedItems = [];
 
   if (victory) {
+    AudioAdapter.playSFX(SFX_VICTORY);
     // Spawn victory celebration particles (gold star rain)
     const W = G.SCREEN_W;
     const H = G.SCREEN_H;
@@ -994,6 +1042,28 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.restore();
     cy += 28;
 
+    // Constellation photo (STORY-00246)
+    const photoH = 70;
+    const photoW = cardW - 16;
+    const photoX = cardX + 8;
+    ctx.save();
+    ctx.beginPath();
+    _roundRect(ctx, photoX, cy, photoW, photoH, 6);
+    ctx.clip();
+    if (_victoryPhotoLoaded && _victoryPhoto) {
+      ctx.drawImage(_victoryPhoto, photoX, cy, photoW, photoH);
+    } else {
+      ctx.fillStyle = 'rgba(30,40,80,0.6)';
+      ctx.fillRect(photoX, cy, photoW, photoH);
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = COLORS.text2;
+      ctx.fillText('★ ' + (_conDef.nameZh || ''), cx, cy + photoH / 2);
+    }
+    ctx.restore();
+    cy += photoH + 8;
+
     // Lore text — paginated (STORY-00238)
     if (_conDef.lore && !_loreDismissed) {
       // Build pages on first render (when _lorePages is empty for this result)
@@ -1046,8 +1116,9 @@ function _drawResultOverlay(ctx, W, H) {
     const isLastLevel = _levelIdx >= 29;
 
     if (isLastLevel) {
-      _btnNext = null;
-      drawButton(ctx, cardX + 10, bY, btnW3, btnH, '全部通关！', { fontSize: 12 });
+      _btnNext = drawButton(ctx, cardX + 10, bY, btnW3, btnH, '🏆 图鉴', {
+        fontSize: 12, color0: 'rgba(60,50,10,0.85)', color1: 'rgba(100,80,10,0.85)',
+      });
     } else {
       _btnNext = drawButton(ctx, cardX + 10, bY, btnW3, btnH, '下一关', { fontSize: 14 });
     }
@@ -1283,9 +1354,14 @@ function _onTouch(e) {
       return;
     }
     if (_btnNext && hitTest(_btnNext, tx, ty)) {
-      const nextIdx = (_levelIdx + 1) % 30;
-      state.currentLevel = nextIdx;
-      if (_navigate) _navigate('game');
+      if (_levelIdx >= 29) {
+        // Last level completed → go to achievement screen
+        if (_navigate) _navigate('achievement');
+      } else {
+        const nextIdx = _levelIdx + 1;
+        state.currentLevel = nextIdx;
+        if (_navigate) _navigate('game');
+      }
       return;
     }
     if (_btnRetry && hitTest(_btnRetry, tx, ty)) {

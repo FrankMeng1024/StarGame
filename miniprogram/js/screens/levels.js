@@ -206,6 +206,25 @@ function _drawCard(ctx, cr, t) {
   ctx.fillText(c.nameZh || c.name, x + w / 2, y + h * 0.72);
   ctx.restore();
 
+  // Difficulty dots (STORY-00248): 1-5 filled dots
+  const diff   = Math.max(1, Math.min(5, c.difficulty || 1));
+  const dotR   = Math.max(2, Math.min(3, w * 0.025));
+  const dotGap = dotR * 2.8;
+  const dotY   = y + h * 0.81;
+  const dotStartX = x + w / 2 - (4 * dotGap) / 2;
+  for (let di = 0; di < 5; di++) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(dotStartX + di * dotGap, dotY, dotR, 0, Math.PI * 2);
+    if (di < diff) {
+      ctx.fillStyle = unlocked ? '#ffd700' : 'rgba(200,170,0,0.45)';
+    } else {
+      ctx.fillStyle = unlocked ? 'rgba(180,180,220,0.25)' : 'rgba(100,100,140,0.2)';
+    }
+    ctx.fill();
+    ctx.restore();
+  }
+
   // Stars (score)
   if (unlocked && score && score.stars > 0) {
     ctx.save();
@@ -214,7 +233,7 @@ function _drawCard(ctx, cr, t) {
     ctx.textBaseline = 'middle';
     ctx.fillStyle   = COLORS.starGold;
     const stars = '★'.repeat(score.stars) + '☆'.repeat(3 - score.stars);
-    ctx.fillText(stars, x + w / 2, y + h * 0.88);
+    ctx.fillText(stars, x + w / 2, y + h * 0.92);
     ctx.restore();
   }
 }

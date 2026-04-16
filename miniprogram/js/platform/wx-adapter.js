@@ -174,6 +174,7 @@ export const AudioAdapter = {
   },
 
   playSFX(src) {
+    if (AudioAdapter.isMuted()) return; // respect mute toggle
     const sfx = wx.createInnerAudioContext();
     sfx.src = src;
     sfx.volume = 0.8;

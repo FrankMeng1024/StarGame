@@ -10,6 +10,7 @@ import { showLevels, hideLevels } from './js/screens/levels.js';
 import { showGame, hideGame } from './js/screens/game.js';
 import { showGallery, hideGallery } from './js/screens/gallery.js';
 import { showShop, hideShop } from './js/screens/shop.js';
+import { showAchievement, hideAchievement } from './js/screens/achievement.js';
 
 // 全局 Canvas — 立即初始化 globals（其他模块从 globals.js import，无循环依赖）
 const canvas = wx.createCanvas();
@@ -41,6 +42,7 @@ function navigate(key) {
   hideGame();
   hideGallery();
   hideShop();
+  hideAchievement();
 
   switch (key) {
     case 'menu':
@@ -57,6 +59,9 @@ function navigate(key) {
       break;
     case 'shop':
       showShop(navigate);
+      break;
+    case 'achievement':
+      showAchievement(navigate);
       break;
     default:
       showMenu(navigate);
