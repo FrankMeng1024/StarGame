@@ -2,6 +2,19 @@
 
 ---
 
+## Sprint 13-mini Updates (2026-04-16)
+
+### Photo Count Expansion (STORY-00242)
+- All 30 constellations now have 5 photos each (expanded from 3). Total gallery images: 150.
+- All URLs use Wikimedia Commons CDN thumb format at 320px width.
+- Carousel logic unchanged — counter shows N/5.
+
+### Lore Dismissal Confirmed (STORY-00239)
+- game.js:1278-1280: `_loreDismissed = true` dismisses lore overlay, reveals victory action buttons.
+- No code change required — feature was already implemented in Sprint 11-mini.
+
+---
+
 ## Sprint 12-mini Updates (2026-04-16)
 
 ### Gallery Photo Carousel (STORY-00241)
