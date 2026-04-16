@@ -314,3 +314,35 @@
 - Sprint 19: Ursa Major M81/M82 astrophotos load correctly (ESA Hubble CDN). All photos verified HTTP 200.
 - Sprint 19: Full navigation regression passed with 0 console errors across all tested paths (menu↔levels, levels↔item-select, gallery↔detail, game→fail→levels). SPA routing is stable.
 - Sprint 19: Fail screen is clean — shows star count (0/7), "时间到了！" message, two unambiguous action buttons (重试/返回选关).
+
+## Sprint 10-mini Updates (2026-04-16)
+
+### Polish Sprint — 5 Features Verified
+
+#### Net Always Visible (STORY-00234)
+- Idle stub 22px at 50% opacity signals "ready to fire". Opacity difference distinguishes idle from active.
+- No frames where net is invisible between shots. Visual continuity maintained.
+
+#### Stars Warm Gold (STORY-00235)
+- typeToColor removed. Unified warm palette: #fff8e0, #ffd700, #fffbe8, #ffec6e (round-robin).
+- Caught stars: #aaaacc at 20% alpha — clearly "done", distinct from active targets.
+
+#### Pause Button (STORY-00236)
+- ⏸ button top-right HUD, always visible during play phase. Tap freezes all updates.
+- Overlay: 3 options (继续▶, 重试🔄, 选关). No resume countdown — instant resume.
+- _cleanup() resets _paused=false on all navigation — no stuck state.
+
+#### Fail Screen Silhouette (STORY-00237)
+- 340px card. Constellation silhouette (110×80, rgba 180,180,220,0.28) appears if _conDef has lines.
+- Dynamic encouragement: "[nameZh]还在等你！". Warm, personalized tone.
+- Retry is primary action, 选关 secondary — correct priority hierarchy.
+
+#### Victory Lore Pagination (STORY-00238)
+- Pages ~80 chars, split at sentence/word boundaries. Page indicator N/M.
+- "下一段 ›" advances pages; last page shows "完成 ✓".
+- **Known Medium friction**: "完成 ✓" tap is no-op — player must use other result buttons. STORY-00239 queued.
+- Re-winning level shows lore again from page 1 (pages reset in _triggerResult).
+
+### Navigation Regression (Sprint 10-mini)
+- _cleanup() on every navigate prevents state leaks (pause, lore pages).
+- showGame() full reset on every level entry. Cross-level state isolation confirmed via code analysis.

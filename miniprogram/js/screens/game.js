@@ -6,7 +6,7 @@ import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
   drawButton, drawTitle, drawCard, hitTest,
 } from '../engine/canvas-utils.js';
-import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
+import { CONSTELLATIONS, magToRadius } from '../data/constellations.js';
 import { SCENE_PALETTES, drawGroundSilhouette } from '../data/scenes.js';
 import state from '../engine/state.js';
 
@@ -59,6 +59,18 @@ let _timerFlash = 0;     // seconds of red flash remaining on HUD
 // Result state
 let _phase      = 'play'; // 'play' | 'celebrate' | 'linedraw' | 'result'
 let _result     = null;   // {victory, timeLeft, coins, stars, uncaught}
+
+// Pause state
+let _paused     = false;
+let _btnPause   = null;
+let _btnResume  = null;
+let _btnPauseRetry  = null;
+let _btnPauseLevels = null;
+
+// Lore pagination (victory screen)
+let _lorePage   = 0;
+let _lorePages  = [];     // string[] — lore split into pages
+let _btnLoreNext = null;
 
 // Victory animation state
 let _celebrateTimer = 0;  // seconds remaining in celebrate phase
@@ -142,7 +154,11 @@ export function showGame(navigate) {
 
   initBgStars(W, H, 60);
   _particles = [];
-  _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = null;
+  _paused = false;
+  _lorePage = 0;
+  _lorePages = [];
+  _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
+  _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
 
   // Show hint only on first-ever game session
   try {
@@ -169,11 +185,14 @@ function _initStars(W, H) {
   const skyY0 = G.SAFE_TOP + 60, skyY1 = H * 0.62;
 
   _conDef.stars.forEach((s, i) => {
+    // All stars warm white/gold (STORY-00235 — removes confusing multi-color system)
+    const warmPalette = ['#fff8e0', '#ffd700', '#fffbe8', '#ffec6e'];
+    const starColor = warmPalette[i % warmPalette.length];
     _stars.push({
       x:     skyX0 + s.x * (skyX1 - skyX0),
       y:     skyY0 + s.y * (skyY1 - skyY0),
-      r:     Math.max(3, Math.min(14, magToRadius(s.mag) * 1.4)),
-      color: typeToColor(s.type),
+      r:     Math.max(3, Math.min(10, magToRadius(s.mag) * 1.4)),
+      color: starColor,
       phase: (i * 1.618) % TWO_PI,
       speed: 0.4 + (i % 5) * 0.15,
       caught: false,
@@ -216,8 +235,12 @@ function _cleanup() {
   _debris  = [];
   _particles = [];
   _phase   = 'play';
+  _paused  = false;
   _hintTimer = 0;
   _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
+  _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
+  _lorePage = 0;
+  _lorePages = [];
   _netSpeedMult = _netRadiusMult = _coinsMult = 1;
   _debrisRadiusMult = 1;
   _bombActive = false;
@@ -257,10 +280,12 @@ function _loop(now) {
   drawGroundSilhouette(ctx, W, H, _sceneIdx);
 
   if (_phase === 'play') {
-    _updateTimer(dt);
-    _updateNet(dt);
-    _updateParticles(dt);
-    if (_magnetActive) _updateMagnet(dt);
+    if (!_paused) {
+      _updateTimer(dt);
+      _updateNet(dt);
+      _updateParticles(dt);
+      if (_magnetActive) _updateMagnet(dt);
+    }
 
     _drawConLines(ctx);
     _drawStars(ctx, t);
@@ -269,7 +294,8 @@ function _loop(now) {
     _drawGirl(ctx);
     _drawNet(ctx);
     _drawHUD(ctx, W);
-    if (_hintTimer > 0) _drawHint(ctx, W, H);
+    if (_hintTimer > 0 && !_paused) _drawHint(ctx, W, H);
+    if (_paused) _drawPauseOverlay(ctx, W, H);
   } else if (_phase === 'celebrate') {
     _updateParticles(dt);
     _celebrateTimer -= dt;
@@ -484,7 +510,17 @@ function _drawAnimatedConLines(ctx) {
 // ── Draw: stars ───────────────────────────────────────────────
 function _drawStars(ctx, t) {
   for (const s of _stars) {
-    if (s.caught) continue;
+    if (s.caught) {
+      // Caught stars: dim, small, grey (STORY-00235)
+      ctx.save();
+      ctx.globalAlpha = 0.20;
+      ctx.fillStyle   = '#aaaacc';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r * 0.4, 0, TWO_PI);
+      ctx.fill();
+      ctx.restore();
+      continue;
+    }
     const alpha = 0.50 + 0.50 * Math.abs(Math.sin(t * s.speed + s.phase));
 
     // Glow halo
@@ -681,28 +717,39 @@ function _drawGirl(ctx) {
 
 // ── Draw: net ─────────────────────────────────────────────────
 function _drawNet(ctx) {
-  if (_netLen <= 0) return;
+  // STORY-00234: net always visible — show stub when swinging
+  const showLen = _netLen > 0 ? _netLen : 22; // stub length during swing
+  const angle   = _netLen > 0 ? _netAngle : _netAngle; // always use current angle
 
-  // Net line (pole)
+  // Compute net head position from pole
+  const headX = _poleX + 8 + Math.sin(angle) * showLen;
+  const headY = _poleY - 2  - Math.cos(angle) * showLen;
+
+  // Net line (rope from girl's hand to net head)
   ctx.save();
-  ctx.strokeStyle = '#cc9966';
+  ctx.strokeStyle = _netLen > 0 ? '#cc9966' : 'rgba(200,150,100,0.50)';
   ctx.lineWidth   = 2;
   ctx.beginPath();
-  ctx.moveTo(_poleX + 8, _poleY - 2);  // girl's hand position
-  ctx.lineTo(_netHeadX, _netHeadY);
+  ctx.moveTo(_poleX + 8, _poleY - 2);
+  ctx.lineTo(headX, headY);
   ctx.stroke();
 
-  // Net head (enlarged when enlarge item active)
-  const netHeadR = 8 * _netRadiusMult;
-  ctx.fillStyle   = 'rgba(255,220,100,0.85)';
-  ctx.strokeStyle = '#ffcc33';
+  // Net head hoop
+  const netHeadR = (_netLen > 0 ? 8 : 6) * _netRadiusMult;
+  ctx.fillStyle   = _netLen > 0 ? 'rgba(255,220,100,0.85)' : 'rgba(255,220,100,0.40)';
+  ctx.strokeStyle = _netLen > 0 ? '#ffcc33' : 'rgba(255,200,50,0.50)';
   ctx.lineWidth   = 1.5;
   ctx.beginPath();
-  ctx.arc(_netHeadX, _netHeadY, netHeadR, 0, TWO_PI);
+  ctx.arc(headX, headY, netHeadR, 0, TWO_PI);
   ctx.fill();
   ctx.stroke();
 
   ctx.restore();
+
+  // Keep _netHeadX/Y in sync for collision detection (only meaningful when extended)
+  if (_netLen > 0) {
+    // _netHeadX and _netHeadY are set in _updateNet; no override needed here
+  }
 }
 
 // ── Tutorial hint ─────────────────────────────────────────────
@@ -800,6 +847,22 @@ function _drawHUD(ctx, W) {
   } else {
     _btnBomb = null;
   }
+
+  // Pause button (top-right corner, STORY-00236)
+  const pauseX = W - G.SAFE_RIGHT - 44;
+  const pauseY = ST + 6;
+  _btnPause = { x: pauseX, y: pauseY, w: 36, h: 36 };
+  ctx.save();
+  ctx.fillStyle = 'rgba(20,25,60,0.70)';
+  ctx.beginPath();
+  ctx.arc(pauseX + 18, pauseY + 18, 18, 0, TWO_PI);
+  ctx.fill();
+  ctx.font         = '18px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = '#e8e8f0';
+  ctx.fillText(_paused ? '▶' : '⏸', pauseX + 18, pauseY + 18);
+  ctx.restore();
 }
 
 // ── Result: trigger ───────────────────────────────────────────
@@ -812,6 +875,8 @@ function _triggerResult(victory) {
   const uncaught = _total - _caught;
 
   _result = { victory, timeLeft: _timeLeft, coins, stars: stars3, uncaught };
+  _lorePage  = 0;
+  _lorePages = []; // will be built on first result overlay render
 
   if (victory) {
     state.addCoins(coins);
@@ -860,7 +925,7 @@ function _drawResultOverlay(ctx, W, H) {
 
   // Card
   const cardW = Math.min(W - 40, 340);
-  const cardH = r.victory ? 460 : 280;
+  const cardH = r.victory ? 460 : 340;
   const cardX = (W - cardW) / 2;
   const cardY = (H - cardH) / 2;
 
@@ -925,21 +990,49 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.restore();
     cy += 28;
 
-    // Lore excerpt (up to 200 chars, clipped to allocated area to prevent button overlap)
-    const MAX_LORE = 200;
-    const excerpt = _conDef.lore ? _conDef.lore.substring(0, MAX_LORE) + (_conDef.lore.length > MAX_LORE ? '…' : '') : '';
-    if (excerpt) {
+    // Lore text — paginated (STORY-00238)
+    if (_conDef.lore) {
+      // Build pages on first render (when _lorePages is empty for this result)
+      if (_lorePages.length === 0) {
+        _lorePages = _splitLorePages(_conDef.lore, 80);
+        _lorePage = 0;
+      }
+      const page = _lorePages[_lorePage] || '';
+      const totalPages = _lorePages.length;
+
       ctx.save();
       ctx.beginPath();
-      ctx.rect(cardX + 8, cy - 8, cardW - 16, 96);
+      ctx.rect(cardX + 8, cy - 6, cardW - 16, 80);
       ctx.clip();
       ctx.font         = '12px sans-serif';
       ctx.textAlign    = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle    = COLORS.text2;
-      _drawWrappedText(ctx, excerpt, cx, cy, cardW - 32, 16);
+      _drawWrappedText(ctx, page, cx, cy, cardW - 32, 16);
       ctx.restore();
-      cy += 96;
+      cy += 80;
+
+      // Page nav button + indicator
+      if (totalPages > 1) {
+        const isLast = _lorePage >= totalPages - 1;
+        const pgLabel = isLast ? '完成 ✓' : '下一段 ›';
+        _btnLoreNext = drawButton(ctx, cardX + cardW - 90, cy - 2, 80, 26, pgLabel, {
+          fontSize: 11, radius: 8,
+          color0: 'rgba(80,60,140,0.75)', color1: 'rgba(60,90,180,0.75)',
+          alpha: isLast ? 0.6 : 1.0,
+        });
+        ctx.save();
+        ctx.font      = '10px sans-serif';
+        ctx.fillStyle = COLORS.text2;
+        ctx.textAlign = 'left';
+        ctx.textBaseline = 'middle';
+        ctx.fillText((_lorePage + 1) + '/' + totalPages, cardX + 14, cy + 10);
+        ctx.restore();
+        cy += 34;
+      } else {
+        _btnLoreNext = null;
+        cy += 4;
+      }
     }
 
     // Buttons (3 buttons: 下一关/全部通关, 重玩, 选关)
@@ -994,17 +1087,56 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.fillStyle    = COLORS.text;
     ctx.fillText('还差 ' + r.uncaught + ' 颗星', cx, cy);
     ctx.restore();
-    cy += 32;
+    cy += 28;
 
-    // Encouragement
+    // Personalized encouragement (STORY-00237)
     ctx.save();
     ctx.font         = '13px sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle    = COLORS.text2;
-    ctx.fillText('再试一次，星空等着你！', cx, cy);
+    ctx.fillText((_conDef.nameZh || '星星') + '还在等你！', cx, cy);
     ctx.restore();
-    cy += 50;
+    cy += 20;
+
+    // Constellation silhouette (STORY-00237)
+    if (_conDef.stars && _conDef.lines) {
+      const silW = 110, silH = 80;
+      const silX0 = cx - silW / 2;
+      const silY0 = cy + 4;
+      // compute bounding box of star positions (normalized 0-1)
+      let minX = 1, maxX = 0, minY = 1, maxY = 0;
+      for (const s of _conDef.stars) {
+        if (s.x < minX) minX = s.x; if (s.x > maxX) maxX = s.x;
+        if (s.y < minY) minY = s.y; if (s.y > maxY) maxY = s.y;
+      }
+      const rangeX = Math.max(maxX - minX, 0.1);
+      const rangeY = Math.max(maxY - minY, 0.1);
+      const toSilX = (nx) => silX0 + ((nx - minX) / rangeX) * silW;
+      const toSilY = (ny) => silY0 + ((ny - minY) / rangeY) * silH;
+
+      ctx.save();
+      ctx.strokeStyle = 'rgba(180,180,220,0.28)';
+      ctx.lineWidth   = 1;
+      for (const [ai, bi] of _conDef.lines) {
+        const a = _conDef.stars[ai], b = _conDef.stars[bi];
+        if (!a || !b) continue;
+        ctx.beginPath();
+        ctx.moveTo(toSilX(a.x), toSilY(a.y));
+        ctx.lineTo(toSilX(b.x), toSilY(b.y));
+        ctx.stroke();
+      }
+      for (const s of _conDef.stars) {
+        ctx.beginPath();
+        ctx.arc(toSilX(s.x), toSilY(s.y), 2.5, 0, TWO_PI);
+        ctx.fillStyle = 'rgba(200,200,240,0.35)';
+        ctx.fill();
+      }
+      ctx.restore();
+      cy += silH + 14;
+    } else {
+      cy += 44;
+    }
 
     const btnW = cardW * 0.44;
     const btnH = 40;
@@ -1018,6 +1150,54 @@ function _drawResultOverlay(ctx, W, H) {
   }
 }
 
+// ── Pause overlay (STORY-00236) ───────────────────────────────
+function _drawPauseOverlay(ctx, W, H) {
+  // Dim background
+  ctx.save();
+  ctx.fillStyle = 'rgba(5,8,30,0.70)';
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  const cardW = Math.min(W - 60, 260);
+  const cardH = 220;
+  const cardX = (W - cardW) / 2;
+  const cardY = (H - cardH) / 2;
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(20,25,60,0.95)';
+  _roundRect(ctx, cardX, cardY, cardW, cardH, 16);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(124,92,191,0.50)';
+  ctx.lineWidth   = 1.5;
+  ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.font         = 'bold 22px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = '#e8e8f0';
+  ctx.fillText('游戏暂停', W / 2, cardY + 36);
+  ctx.restore();
+
+  const btnW = cardW - 40;
+  const btnH = 40;
+  const btnX = cardX + 20;
+
+  _btnResume = drawButton(ctx, btnX, cardY + 70, btnW, btnH, '继续 ▶', {
+    fontSize: 15,
+    color0: '#7c5cbf', color1: '#4a90d9',
+  });
+  _btnPauseRetry = drawButton(ctx, btnX, cardY + 120, btnW, btnH, '重试 🔄', {
+    fontSize: 14,
+    color0: 'rgba(40,80,60,0.85)', color1: 'rgba(20,120,80,0.85)',
+  });
+  _btnPauseLevels = drawButton(ctx, btnX, cardY + 168, btnW - 0, 36, '选关', {
+    fontSize: 13,
+    color0: 'rgba(80,60,140,0.75)', color1: 'rgba(60,90,180,0.75)',
+  });
+}
+
 // ── Touch handling ────────────────────────────────────────────
 function _onTouch(e) {
   const touch = e.changedTouches[0];
@@ -1026,6 +1206,29 @@ function _onTouch(e) {
   const ty = touch.clientY;
 
   if (_phase === 'play') {
+    // Pause button check (STORY-00236)
+    if (_btnPause && hitTest(_btnPause, tx, ty)) {
+      _paused = !_paused;
+      return;
+    }
+
+    // Pause overlay buttons
+    if (_paused) {
+      if (_btnResume && hitTest(_btnResume, tx, ty)) {
+        _paused = false;
+        return;
+      }
+      if (_btnPauseRetry && hitTest(_btnPauseRetry, tx, ty)) {
+        if (_navigate) _navigate('game');
+        return;
+      }
+      if (_btnPauseLevels && hitTest(_btnPauseLevels, tx, ty)) {
+        if (_navigate) _navigate('levels');
+        return;
+      }
+      return; // swallow all other taps while paused
+    }
+
     // Bomb button check (before net fire)
     if (_btnBomb && hitTest(_btnBomb, tx, ty)) {
       // Spawn explosion particles at each debris location
@@ -1063,6 +1266,13 @@ function _onTouch(e) {
 
   // Result screen buttons
   if (_phase === 'result') {
+    // Lore page navigation (STORY-00238)
+    if (_btnLoreNext && hitTest(_btnLoreNext, tx, ty)) {
+      if (_lorePage < _lorePages.length - 1) {
+        _lorePage++;
+      }
+      return;
+    }
     if (_btnNext && hitTest(_btnNext, tx, ty)) {
       const nextIdx = (_levelIdx + 1) % 30;
       state.currentLevel = nextIdx;
@@ -1093,6 +1303,27 @@ function _onTouch(e) {
 }
 
 // ── Helpers ───────────────────────────────────────────────────
+// Split lore text into pages of ~maxChars chars at space/sentence boundary
+function _splitLorePages(text, maxChars) {
+  const pages = [];
+  let remaining = text;
+  while (remaining.length > maxChars) {
+    // Find last space or punctuation at or before maxChars
+    let cut = maxChars;
+    for (let i = maxChars; i > maxChars - 20 && i > 0; i--) {
+      const ch = remaining[i];
+      if (ch === '。' || ch === '，' || ch === ' ' || ch === '！' || ch === '？') {
+        cut = i + 1;
+        break;
+      }
+    }
+    pages.push(remaining.substring(0, cut).trim());
+    remaining = remaining.substring(cut).trim();
+  }
+  if (remaining.length > 0) pages.push(remaining.trim());
+  return pages;
+}
+
 function _hexAlpha(hex, alpha) {
   const h = hex.replace('#', '');
   const r = parseInt(h.substring(0, 2), 16);

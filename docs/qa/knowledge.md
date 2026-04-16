@@ -332,3 +332,16 @@ No backend, no network requests. All data in localStorage + local files.
 - **navigate防抖**: game.js (app entry) 中300ms防抖，防止双击重复导航。
 - **帧率无关性 (STORY-00222)**: _timerFlash用dt(秒), particles用scale=dt*60, debris spin用_dt*60 — 全部frame-rate independent。
 
+
+### 已验证状态（Sprint 10-mini）
+- 星星颜色：暖白金色调 warmPalette=['#fff8e0','#ffd700','#fffbe8','#ffec6e']，typeToColor 完全移除
+- 星星尺寸：cap 从 14 降至 10，r = Math.max(3, Math.min(10, magToRadius(s.mag)*1.4))
+- 已抓星星：r*0.4，globalAlpha=0.20，fillStyle='#aaaacc'（灰蓝淡化）
+- 网兜常显：idle stub=22px，rope rgba(200,150,100,0.50)，head rgba(255,220,100,0.40) r=6*mult
+  延伸状态：rope '#cc9966'，head rgba(255,220,100,0.85) r=8*mult
+- 暂停系统：_paused gates all _update* calls；_cleanup() 重置 _paused=false，防 stuck
+  覆盖层：rgba(5,8,30,0.70)暗幕 + 240×220 card + 继续▶/重试🔄/选关 三个按钮
+- 失败屏：卡片高 340px，silhouette 110×80 bounding box，rgba(180,180,220,0.28) 线条
+  个性化文本：_conDef.nameZh + '还在等你！'
+- 胜利 lore 翻页：_splitLorePages(text, 80) 在。/，/！/？/空格处断行
+  "完成 ✓" 按钮当前为 no-op（已记录为 Medium backlog STORY-00239）

@@ -1,5 +1,14 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 10-mini — 2026-04-16 (mini branch)
+
+Sprint 10-mini: clean Sprint, no retrospective actions.
+- All 5 polish stories implemented in a single file (game.js). Brace balance verified (161=161). No regressions.
+- UX found one Medium friction: "完成 ✓" button on last lore page is a no-op. Queued as STORY-00239 backlog. Not Sprint-blocking.
+- Lore split uses sentence boundary lookback (up to 20 chars) — handles Chinese punctuation correctly.
+- Pause stuck-state prevention via `_cleanup()` reset confirmed by code analysis. Pattern to maintain for all future navigate-on-overlay flows.
+- QA confidence=MEDIUM for STORY-00238 (lore pagination) due to Canvas screenshot limitation. Established pattern — no action required.
+
 ## Sprint 6-mini — 2026-04-15 (mini branch)
 
 Sprint 6-mini: clean Sprint, no retrospective actions.

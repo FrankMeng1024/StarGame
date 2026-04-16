@@ -69,7 +69,16 @@
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-16). All PRD Must-Haves delivered across Sprints 1-9 mini.
+**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-16). All PRD Must-Haves delivered across Sprints 1-9 mini. Sprint 10-mini polish complete (2026-04-16).
+
+### Sprint 10-mini Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00234 | 星网常显 — 收网时保持可见 | Done |
+| STORY-00235 | 星星统一暖白金色 + 尺寸优化 | Done |
+| STORY-00236 | 游戏内暂停按钮 | Done |
+| STORY-00237 | 失败界面星座剪影 + 个性化鼓励语 | Done |
+| STORY-00238 | 胜利界面故事翻页 | Done |
 
 | Sprint | Status | Goal |
 |---|---|---|
@@ -83,6 +92,7 @@
 | Sprint 8-mini | COMPLETE | 刘海屏安全区适配 — 竖屏保持，全屏幕UI避开刘海/Home条 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 9-mini | COMPLETE | PRD F-001完成 — 背景音乐接入+静音按钮+BUG修复 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 7-mini | COMPLETE | VU ACCEPTED 9.5/10 — All PRD Must-Haves verified. |
+| Sprint 10-mini | COMPLETE | 游戏体验精修 — 网兜常显/暖色星星/暂停/失败剪影/胜利翻页 (QA PASS, UX no Blockers, Arch PASS) |
 
 ### Sprint 9-mini Stories
 | Story | Title | Status |
