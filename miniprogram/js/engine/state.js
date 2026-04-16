@@ -36,6 +36,27 @@ const state = {
     if (this.coins === 0 && this.levelScores.size === 0) this.coins = 100;
   },
 
+  // 后台云端数据合并 — 取本地+云端各字段最大值，不覆盖玩家本次会话操作
+  mergeFromCloudData(data) {
+    if (!data) return;
+    // Union unlocked levels (never regress)
+    for (const lvl of (data.unlockedLevels || [])) this.unlockedLevels.add(lvl);
+    // Keep best score per level
+    for (const [k, v] of Object.entries(data.levelScores || {})) {
+      const cur = this.levelScores.get(k);
+      if (!cur || v.stars > cur.stars || (v.stars === cur.stars && v.time > cur.time)) {
+        this.levelScores.set(k, v);
+      }
+    }
+    // Keep higher coin balance
+    this.coins = Math.max(this.coins, data.coins ?? 0);
+    // Union seen scenes
+    for (const s of (data.seenScenes || [])) this.seenScenes.add(s);
+    // Nickname/avatar: take cloud value only if local is empty
+    if (!this.nickname && data.nickname) this.nickname = data.nickname;
+    if (!this.avatarUrl && data.avatarUrl) this.avatarUrl = data.avatarUrl;
+  },
+
   toSaveData() {
     return {
       unlockedLevels: [...this.unlockedLevels],

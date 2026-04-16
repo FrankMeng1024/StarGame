@@ -79,10 +79,11 @@ async function boot() {
   wx.__navigate = navigate;
 
   // 2. 后台异步：静默登录 + 云端存档同步（不阻塞UI）
+  // 用 merge 而非 fromSaveData，避免覆盖玩家本次会话中的进度
   try {
     await AuthManager.login();
     const saveData = await StorageAdapter.loadSave();
-    state.fromSaveData(saveData);
+    state.mergeFromCloudData(saveData);
   } catch (e) {
     console.warn('[boot] background sync failed, running offline:', e.message);
   }

@@ -190,7 +190,7 @@ function _loop(now) {
     drawSubtitle(ctx, '探索88星座的奇妙旅程', midX, H * 0.26 + 32, 12);
 
     const BW  = rightW;
-    const BH  = Math.min(42, (H - G.SAFE_TOP - G.SAFE_BOTTOM - 120) / 3);
+    const BH  = Math.max(32, Math.min(42, (H - G.SAFE_TOP - G.SAFE_BOTTOM - 120) / 3));
     const GAP = 10;
     // Stack 3 buttons vertically in right pane, centered
     const totalBtnsH = 3 * BH + 2 * GAP;
