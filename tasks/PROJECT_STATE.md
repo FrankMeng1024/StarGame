@@ -68,7 +68,7 @@
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: VU PENDING — Sprint 6-mini COMPLETE, awaiting screen unlock for Virtual User acceptance
+**Status**: VU INVOCATION READY — All PRD Must-Haves done (Sprints 1-9), awaiting screen unlock for live screenshots
 
 | Sprint | Status | Goal |
 |---|---|---|
@@ -81,7 +81,7 @@
 | Sprint 6-mini | COMPLETE | PRD完整度 — 磁力星引/宇航员手套 + 胜利庆典动画 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 8-mini | COMPLETE | 刘海屏安全区适配 — 竖屏保持，全屏幕UI避开刘海/Home条 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 9-mini | COMPLETE | PRD F-001完成 — 背景音乐接入+静音按钮+BUG修复 (QA PASS, UX no Blockers, Arch PASS) |
-| Sprint 7-mini | VU INVOCATION PENDING | All PRD Must-Haves done. VU walkthrough ready. Screen locked — awaiting unlock for live screenshots. |
+| Sprint 7-mini | VU INVOCATION READY | All PRD Must-Haves done (Sprints 1-9 mini COMPLETE). VU walkthrough ready. Screen locked — awaiting unlock for live screenshots. |
 
 ### Sprint 9-mini Stories
 | Story | Title | Status |
