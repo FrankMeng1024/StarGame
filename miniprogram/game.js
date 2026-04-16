@@ -64,26 +64,28 @@ function navigate(key) {
 }
 
 async function boot() {
-  // 1. 静默登录 — 获取 openid + JWT token
-  try {
-    await AuthManager.login();
-  } catch (e) {
-    console.warn('[boot] login failed, running offline:', e.message);
-  }
-
-  // 2. 加载存档（云端优先，本地降级）
-  const saveData = await StorageAdapter.loadSave();
-  state.fromSaveData(saveData);
+  // 1. 立即从本地存档启动，消除黑屏等待
+  // 先用本地存档（同步读取，无网络等待）启动主菜单
+  const localSave = StorageAdapter.loadSaveLocal();
+  state.fromSaveData(localSave);
   gameState = state;
 
-  // 3. 启动页面 — 开发后门：读取 __initScreen storage key 决定初始屏幕
-  // 生产使用时 key 不存在，走正常主菜单
+  // 立刻显示主菜单（不等网络）
   let startScreen = 'menu';
   try { startScreen = wx.getStorageSync('__initScreen') || 'menu'; } catch (e) {}
   navigate(startScreen);
 
   // 开发后门：挂到 wx 命名空间，DevTools console 可调用 wx.__navigate('levels')
   wx.__navigate = navigate;
+
+  // 2. 后台异步：静默登录 + 云端存档同步（不阻塞UI）
+  try {
+    await AuthManager.login();
+    const saveData = await StorageAdapter.loadSave();
+    state.fromSaveData(saveData);
+  } catch (e) {
+    console.warn('[boot] background sync failed, running offline:', e.message);
+  }
 }
 
 boot();

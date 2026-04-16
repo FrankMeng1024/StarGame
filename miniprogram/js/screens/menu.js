@@ -71,9 +71,13 @@ function _buildConLayout() {
 
   const W = G.SCREEN_W;
   const H = G.SCREEN_H;
-  const cx = W * 0.50;
-  const cy = H * 0.32;
-  const BOX = H * 0.72;
+  const isLandscape = W > H;
+
+  // In landscape: constellation fills the left 55% of screen
+  // In portrait: constellation fills the top ~60% of screen
+  const cx = isLandscape ? W * 0.28 : W * 0.50;
+  const cy = isLandscape ? H * 0.45 : H * 0.32;
+  const BOX = isLandscape ? Math.min(H * 0.80, W * 0.44) : Math.min(H * 0.60, W * 0.80);
 
   // Raw positions
   const raw = conDef.stars.map((s, si) => ({
@@ -88,24 +92,23 @@ function _buildConLayout() {
   // Auto-center bounding box
   const xs  = raw.map(s => s.cx);
   const ys  = raw.map(s => s.cy);
-  const dx  = W * 0.50 - (Math.min(...xs) + Math.max(...xs)) / 2;
-  const dy  = H * 0.32 - (Math.min(...ys) + Math.max(...ys)) / 2;
+  const dx  = cx - (Math.min(...xs) + Math.max(...xs)) / 2;
+  const dy  = cy - (Math.min(...ys) + Math.max(...ys)) / 2;
   for (const s of raw) { s.cx += dx; s.cy += dy; }
 
-  // Scale down if overflowing
-  const MARGIN = 48;
+  // Scale down if overflowing (landscape: constrain to left 55%; portrait: full width)
+  const MARGIN = 32;
   const xs2 = raw.map(s => s.cx);
   const ys2 = raw.map(s => s.cy);
   const conW = Math.max(...xs2) - Math.min(...xs2);
   const conH = Math.max(...ys2) - Math.min(...ys2);
-  const maxW = W - MARGIN * 2;
-  const maxH = H * 0.55;
+  const maxW = isLandscape ? W * 0.50 - MARGIN : W - MARGIN * 2;
+  const maxH = isLandscape ? H - MARGIN * 2 : H * 0.55;
   const scale = Math.min(1, maxW / (conW || 1), maxH / (conH || 1));
   if (scale < 1) {
-    const pivX = W * 0.50, pivY = H * 0.32;
     for (const s of raw) {
-      s.cx = pivX + (s.cx - pivX) * scale;
-      s.cy = pivY + (s.cy - pivY) * scale;
+      s.cx = cx + (s.cx - cx) * scale;
+      s.cy = cy + (s.cy - cy) * scale;
       s.r  = Math.max(2, s.r * scale);
     }
   }
@@ -167,40 +170,68 @@ function _loop(now) {
   const W   = G.SCREEN_W;
   const H   = G.SCREEN_H;
   const t   = now * 0.001;
+  const isLandscape = W > H;
 
   // Background
   drawSkyBg(ctx, W, H);
   drawBgStars(ctx, t);
   _drawConBg(t);
 
-  // Title — 向上移以为三个按钮腾出空间
-  drawTitle(ctx, '追星少女', W / 2, H * 0.72, 38);
-  drawSubtitle(ctx, '探索88星座的奇妙旅程', W / 2, H * 0.72 + 38, 14);
-
-  // Buttons — 三个主按钮，垂直排列在下方
-  // startY 计算：确保第3个按钮底部 + 8px 边距不超出安全区底部
-  // 3按钮总高 = 3×48 + 2×14 = 172px；startY = H - SAFE_BOTTOM - 172 - 8
   _buttons = [];
-  const BW = W * 0.60;
-  const BH = 48;
-  const BX = (W - BW) / 2;
-  const GAP = 14;
-  const startY = H - G.SAFE_BOTTOM - 180;
 
-  const defs = [
-    { key: 'levels',  label: '挑战关卡', icon: '★' },
-    { key: 'gallery', label: '星座展厅', icon: '◉' },
-    { key: 'shop',    label: '道具商店', icon: '◈' },
-  ];
+  if (isLandscape) {
+    // ── Landscape layout ─────────────────────────────────────
+    // Constellation fills left 55%; title + buttons in right 45%
+    const rightX  = W * 0.56;
+    const rightW  = W - rightX - G.SAFE_RIGHT - 12;
+    const midX    = rightX + rightW / 2;
 
-  defs.forEach((d, i) => {
-    const by = startY + i * (BH + GAP);
-    const rect = drawButton(ctx, BX, by, BW, BH, d.label, {
-      icon:   d.icon,
-      alpha:  0.92,
+    drawTitle(ctx, '追星少女', midX, H * 0.26, 30);
+    drawSubtitle(ctx, '探索88星座的奇妙旅程', midX, H * 0.26 + 32, 12);
+
+    const BW  = rightW;
+    const BH  = Math.min(42, (H - G.SAFE_TOP - G.SAFE_BOTTOM - 120) / 3);
+    const GAP = 10;
+    // Stack 3 buttons vertically in right pane, centered
+    const totalBtnsH = 3 * BH + 2 * GAP;
+    const startY = H / 2 - totalBtnsH / 2 + 16;
+
+    const defs = [
+      { key: 'levels',  label: '挑战关卡', icon: '★' },
+      { key: 'gallery', label: '星座展厅', icon: '◉' },
+      { key: 'shop',    label: '道具商店', icon: '◈' },
+    ];
+    defs.forEach((d, i) => {
+      const by = startY + i * (BH + GAP);
+      const rect = drawButton(ctx, rightX, by, BW, BH, d.label, {
+        icon: d.icon, alpha: 0.92, fontSize: 15,
+      });
+      _buttons.push({ ...rect, key: d.key });
     });
-    _buttons.push({ ...rect, key: d.key });
-  });
+  } else {
+    // ── Portrait layout (original) ───────────────────────────
+    drawTitle(ctx, '追星少女', W / 2, H * 0.72, 38);
+    drawSubtitle(ctx, '探索88星座的奇妙旅程', W / 2, H * 0.72 + 38, 14);
+
+    const BW = W * 0.60;
+    const BH = 48;
+    const BX = (W - BW) / 2;
+    const GAP = 14;
+    const startY = H - G.SAFE_BOTTOM - 180;
+
+    const defs = [
+      { key: 'levels',  label: '挑战关卡', icon: '★' },
+      { key: 'gallery', label: '星座展厅', icon: '◉' },
+      { key: 'shop',    label: '道具商店', icon: '◈' },
+    ];
+    defs.forEach((d, i) => {
+      const by = startY + i * (BH + GAP);
+      const rect = drawButton(ctx, BX, by, BW, BH, d.label, {
+        icon: d.icon, alpha: 0.92,
+      });
+      _buttons.push({ ...rect, key: d.key });
+    });
+  }
 
   // Mute button — top-right corner, within safe area
   const muteBtnSize = 36;

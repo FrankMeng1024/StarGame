@@ -38,6 +38,11 @@ export const StorageAdapter = {
     }
   },
 
+  // 同步读取本地存档（不访问网络，用于立即启动）
+  loadSaveLocal() {
+    return this.getLocal(SAVE_KEY, { ...DEFAULT_SAVE });
+  },
+
   // 存档（云端优先，本地降级）
   async loadSave() {
     // 先读本地
