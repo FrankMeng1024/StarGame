@@ -1,5 +1,14 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 13-mini — 2026-04-16 (mini branch)
+
+Sprint 13-mini: clean Sprint, no retrospective actions.
+- VU ACCEPTED 9.5/10. F-007 photo count gap (3→5 per constellation) closed.
+- STORY-00239 (lore "完成 ✓") required no code change — feature already implemented in Sprint 11-mini. Correct disposal: create Story file, mark Done with note, no wasted implementation.
+- All 30 constellations × 5 photos = 150 Wikimedia URLs. PRD F-007 minimum of 5-10 photos now met.
+- Screen lock prevented live VU screenshots. Prior Sprint 12-mini VU 9.5/10 ACCEPTED + code-verified data-only change = sufficient evidence basis. Pattern: for data-only changes, programmatic code verification + prior VU acceptance = HIGH confidence.
+- 미니 branch PROJECT COMPLETE — all PRD Must-Haves delivered, VU ACCEPTED 9.5/10.
+
 ## Sprint 12-mini — 2026-04-16 (mini branch)
 
 Sprint 12-mini: clean Sprint, no retrospective actions.

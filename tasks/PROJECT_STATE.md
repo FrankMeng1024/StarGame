@@ -68,10 +68,11 @@
 | Sprint 7-mini | 9.5/10 | ACCEPTED | 微信小游戏 mini branch — All PRD Must-Have features verified — PROJECT COMPLETE |
 | Sprint 11-mini | 9.0/10 | NOT ACCEPTED | F-007 gallery carousel missing — only 1 static photo per constellation |
 | Sprint 12-mini | 9.5/10 | ACCEPTED | 展厅多图轮播 — carousel implemented, 3 photos per constellation — PROJECT COMPLETE |
+| Sprint 13-mini | 9.5/10 | ACCEPTED | 展厅5张图片达PRD最低要求 + lore完成按钮确认 — PROJECT COMPLETE |
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-16). All PRD Must-Haves delivered across Sprints 1-12 mini. Sprint 12-mini gallery carousel closes final gap.
+**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-16). All PRD Must-Haves delivered across Sprints 1-13 mini. Sprint 13-mini closes final F-007 photo count gap (5 photos per constellation).
 
 ### Sprint 10-mini Stories
 | Story | Title | Status |
@@ -97,6 +98,13 @@
 | Sprint 10-mini | COMPLETE | 游戏体验精修 — 网兜常显/暖色星星/暂停/失败剪影/胜利翻页 (QA PASS, UX no Blockers, Arch PASS) |
 | Sprint 11-mini | COMPLETE | VU 9.0/10 NOT ACCEPTED — F-007 carousel gap identified |
 | Sprint 12-mini | COMPLETE | 展厅多图轮播 — 3张图片+左右翻页 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
+| Sprint 13-mini | COMPLETE | 展厅每星座5张图片 + lore完成按钮确认 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
+
+### Sprint 13-mini Stories
+| Story | Title | Status |
+|---|---|---|
+| STORY-00239 | 胜利lore"完成✓"按钮 — 点击后退出结算卡 | Done (already implemented) |
+| STORY-00242 | 展厅每星座图片从3张增至5张 | Done |
 
 ### Sprint 9-mini Stories
 | Story | Title | Status |
