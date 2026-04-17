@@ -14,7 +14,102 @@ const BGM_SRC = 'assets/audio/bgm.mp3';
 
 const TWO_PI = Math.PI * 2;
 
-// ── Module state ──────────────────────────────────────────────
+// ── Premium menu button renderer (STORY-00270) ────────────────
+// Draws a visually rich button with gradient fill, glow border, shadow, and icon.
+// Returns {x, y, w, h} for hitTest.
+function _drawMenuButton(ctx, x, y, w, h, label, opts = {}) {
+  const {
+    icon      = '',
+    primary   = false,   // true = CTA style (brighter gradient)
+    fontSize  = 16,
+    radius    = 14,
+  } = opts;
+
+  ctx.save();
+
+  // Drop shadow for depth
+  ctx.shadowColor = primary ? 'rgba(220,120,255,0.55)' : 'rgba(140,80,220,0.40)';
+  ctx.shadowBlur  = primary ? 18 : 12;
+  ctx.shadowOffsetX = 0;
+  ctx.shadowOffsetY = 3;
+
+  // Main gradient fill — diagonal for richness
+  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
+  if (primary) {
+    grad.addColorStop(0,   '#c044ff');
+    grad.addColorStop(0.45,'#9933ee');
+    grad.addColorStop(1,   '#6622cc');
+  } else {
+    grad.addColorStop(0,   '#8833cc');
+    grad.addColorStop(0.45,'#6622aa');
+    grad.addColorStop(1,   '#441188');
+  }
+  ctx.fillStyle = grad;
+
+  // Rounded rect fill
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.arcTo(x + w, y, x + w, y + radius, radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.arcTo(x + w, y + h, x + w - radius, y + h, radius);
+  ctx.lineTo(x + radius, y + h);
+  ctx.arcTo(x, y + h, x, y + h - radius, radius);
+  ctx.lineTo(x, y + radius);
+  ctx.arcTo(x, y, x + radius, y, radius);
+  ctx.closePath();
+  ctx.fill();
+
+  // Reset shadow before border/text
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur  = 0;
+  ctx.shadowOffsetY = 0;
+
+  // Gold/star glow border
+  ctx.strokeStyle = primary ? 'rgba(255,220,80,0.75)' : 'rgba(200,160,255,0.55)';
+  ctx.lineWidth   = primary ? 1.8 : 1.2;
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y);
+  ctx.lineTo(x + w - radius, y);
+  ctx.arcTo(x + w, y, x + w, y + radius, radius);
+  ctx.lineTo(x + w, y + h - radius);
+  ctx.arcTo(x + w, y + h, x + w - radius, y + h, radius);
+  ctx.lineTo(x + radius, y + h);
+  ctx.arcTo(x, y + h, x, y + h - radius, radius);
+  ctx.lineTo(x, y + radius);
+  ctx.arcTo(x, y, x + radius, y, radius);
+  ctx.closePath();
+  ctx.stroke();
+
+  // Inner top highlight for glass effect
+  const highlightGrad = ctx.createLinearGradient(x, y, x, y + h * 0.45);
+  highlightGrad.addColorStop(0,   'rgba(255,255,255,0.18)');
+  highlightGrad.addColorStop(1,   'rgba(255,255,255,0)');
+  ctx.fillStyle = highlightGrad;
+  ctx.beginPath();
+  ctx.moveTo(x + radius, y + 1);
+  ctx.lineTo(x + w - radius, y + 1);
+  ctx.arcTo(x + w - 1, y + 1, x + w - 1, y + radius, radius - 1);
+  ctx.lineTo(x + w - 1, y + h * 0.45);
+  ctx.lineTo(x + 1, y + h * 0.45);
+  ctx.lineTo(x + 1, y + radius);
+  ctx.arcTo(x + 1, y + 1, x + radius, y + 1, radius - 1);
+  ctx.closePath();
+  ctx.fill();
+
+  // Label text
+  ctx.fillStyle    = primary ? '#ffe566' : '#f0e0ff';
+  ctx.font         = `bold ${fontSize}px sans-serif`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  const text = icon ? `${icon}  ${label}` : label;
+  ctx.fillText(text, x + w / 2, y + h / 2);
+
+  ctx.restore();
+  return { x, y, w, h };
+}
+
+
 let _navigate   = null;
 let _rafId      = null;
 let _buttons    = [];   // [{x,y,w,h, key}]
@@ -204,8 +299,8 @@ function _loop(now) {
     ];
     defs.forEach((d, i) => {
       const by = startY + i * (BH + GAP);
-      const rect = drawButton(ctx, rightX, by, BW, BH, d.label, {
-        icon: d.icon, alpha: 0.92, fontSize: 15,
+      const rect = _drawMenuButton(ctx, rightX, by, BW, BH, d.label, {
+        icon: d.icon, primary: i === 0, fontSize: 15,
       });
       _buttons.push({ ...rect, key: d.key });
     });
@@ -236,8 +331,8 @@ function _loop(now) {
     ];
     defs.forEach((d, i) => {
       const by = startY + i * (BH + GAP);
-      const rect = drawButton(ctx, BX, by, BW, BH, d.label, {
-        icon: d.icon, alpha: 0.92,
+      const rect = _drawMenuButton(ctx, BX, by, BW, BH, d.label, {
+        icon: d.icon, primary: i === 0, fontSize: 17,
       });
       _buttons.push({ ...rect, key: d.key });
     });
@@ -276,8 +371,8 @@ function _loop(now) {
 function _onTouch(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const tx = touch.clientX * G.DPR;  // fixed: DPR correction (STORY-00266)
-  const ty = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+  const tx = touch.clientX;  // fixed: revert incorrect DPR (STORY-00269)
+  const ty = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
 
   // Mute button tap
   if (_muteBtn && hitTest(_muteBtn, tx, ty)) {

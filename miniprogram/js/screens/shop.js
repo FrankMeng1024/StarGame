@@ -224,14 +224,14 @@ function _drawItemCard(ctx, W, item, idx, cardY, now) {
 function _onTouchStart(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  _lastTouchY = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+  _lastTouchY = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
   _isDragging = false;
 }
 
 function _onTouchMove(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const rawY = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+  const rawY = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
   const dy = rawY - _lastTouchY;
   _lastTouchY = rawY;
   if (Math.abs(dy) > 3) _isDragging = true;
@@ -243,8 +243,8 @@ function _onTouchEnd(e) {
   if (_isDragging) { _isDragging = false; return; }
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const tx = touch.clientX * G.DPR;  // fixed: DPR correction (STORY-00266)
-  const ty = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+  const tx = touch.clientX;  // fixed: revert incorrect DPR (STORY-00269)
+  const ty = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
 
   if (_backRect && hitTest(_backRect, tx, ty)) {
     if (_navigate) _navigate('levels');

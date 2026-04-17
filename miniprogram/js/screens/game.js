@@ -1830,8 +1830,8 @@ function _drawPauseOverlay(ctx, W, H) {
 function _onTouch(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const tx = touch.clientX * G.DPR;  // fixed: DPR correction (STORY-00266)
-  const ty = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+  const tx = touch.clientX;  // fixed: revert incorrect DPR (STORY-00269)
+  const ty = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
 
   if (_phase === 'play') {
     // Pause button check (STORY-00236)

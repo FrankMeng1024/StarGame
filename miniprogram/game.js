@@ -16,10 +16,10 @@ import { showIntro, hideIntro } from './js/screens/intro.js';
 // 全局 Canvas — 立即初始化 globals（其他模块从 globals.js import，无循环依赖）
 const canvas = wx.createCanvas();
 const ctx = canvas.getContext('2d');
-// canvas.width/height 可能为 0，用 systemInfo 作为可靠来源
+// canvas.width/height 可能为 0（QR码扫码冷启动时Canvas尚未就绪），用 systemInfo 作为可靠来源
 const sysInfo = wx.getSystemInfoSync();
-const screenW = canvas.width  || sysInfo.windowWidth;
-const screenH = canvas.height || sysInfo.windowHeight;
+const screenW = sysInfo.windowWidth  || 375;
+const screenH = sysInfo.windowHeight || 667;
 canvas.width  = screenW;
 canvas.height = screenH;
 // safeArea: {top, left, bottom, right, width, height} in px — notch + home indicator
@@ -83,7 +83,16 @@ async function boot() {
   // 立刻显示开场动画（不等网络）— 动画结束自动导航到 menu
   let startScreen = 'intro';
   try { startScreen = wx.getStorageSync('__initScreen') || 'intro'; } catch (e) {}
-  navigate(startScreen);
+
+  // 确保 canvas 尺寸已生效再开始渲染：延迟一帧，防止扫码冷启动黑屏 (STORY-00271)
+  requestAnimationFrame(() => {
+    // 再次校验 canvas 尺寸（防止极端情况下仍为0）
+    if (canvas.width === 0 || canvas.height === 0) {
+      canvas.width  = screenW;
+      canvas.height = screenH;
+    }
+    navigate(startScreen);
+  });
 
   // 开发后门：挂到 wx 命名空间，DevTools console 可调用 wx.__navigate('levels')
   wx.__navigate = navigate;

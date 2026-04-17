@@ -197,7 +197,7 @@ function _roundRect(ctx, x, y, w, h, r) {
 function _onTouchStart(e) {
   const t = e.touches[0];
   if (!t) return;
-  _lastTouchY = t.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+  _lastTouchY = t.clientY;  // fixed: revert incorrect DPR (STORY-00269)
   _isDragging = false;
 }
 
@@ -205,7 +205,7 @@ function _onTouchMove(e) {
   e.preventDefault();
   const t = e.touches[0];
   if (!t) return;
-  const rawY = t.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+  const rawY = t.clientY;  // fixed: revert incorrect DPR (STORY-00269)
   const dy = _lastTouchY - rawY;
   if (Math.abs(dy) > 5) _isDragging = true;
   _lastTouchY = rawY;
@@ -217,7 +217,7 @@ function _onTouchEnd(e) {
   if (_isDragging) { _isDragging = false; return; }
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const tx = touch.clientX * G.DPR, ty = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+  const tx = touch.clientX, ty = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
 
   if (_backRect && hitTest(_backRect, tx, ty)) {
     if (_navigate) _navigate('menu');

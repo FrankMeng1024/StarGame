@@ -574,10 +574,10 @@ function _onTouchStart(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
   if (_view === 'list') {
-    _lastTouchY = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+    _lastTouchY = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
     _isDragging = false;
   } else {
-    _detailLastTY  = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+    _detailLastTY  = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
     _detailDragging = false;
   }
 }
@@ -587,14 +587,14 @@ function _onTouchMove(e) {
   if (!touch) return;
 
   if (_view === 'list') {
-    const rawY = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+    const rawY = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
     const dy = rawY - _lastTouchY;
     _lastTouchY = rawY;
     if (Math.abs(dy) > 3) _isDragging = true;
     const maxScroll = Math.max(0, _totalH - G.SCREEN_H);
     _scrollTarget = Math.max(0, Math.min(maxScroll, _scrollTarget - dy));
   } else {
-    const rawY = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+    const rawY = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
     const dy = rawY - _detailLastTY;
     _detailLastTY = rawY;
     if (Math.abs(dy) > 3) _detailDragging = true;
@@ -606,8 +606,8 @@ function _onTouchMove(e) {
 function _onTouchEnd(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const tx = touch.clientX * G.DPR;  // fixed: DPR correction (STORY-00266)
-  const ty = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+  const tx = touch.clientX;  // fixed: revert incorrect DPR (STORY-00269)
+  const ty = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
 
   if (_view === 'list') {
     if (_isDragging) { _isDragging = false; return; }
