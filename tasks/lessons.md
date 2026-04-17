@@ -1,5 +1,11 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 20-mini — 2026-04-17 (mini branch, production blocker fixes)
+
+- [pending] Real device testing revealed all 4 issues that code-path QA missed: package size (metrics can be measured), net geometry (math verifiable), DPR mismatch (systematic but missed achievement.js touchStart/Move), character visual quality (aesthetic — cannot be verified without screenshot). Root cause of Sprint 19-mini's inflated 9.5/10: VU explicitly noted "I cannot judge visual quality" but still scored 9.5. Pattern: when VU notes confidence limitations, scores should be adjusted DOWN, not held at maximum.
+- [pending] DPR fix inconsistency (BUG-00268): When applying systematic touch coordinate fixes, manually verify EACH screen's START+MOVE+END handlers independently. A fix that touches 6 screens can still miss touchStart/touchMove in one (achievement.js). Pattern: create a checklist when applying cross-screen systematic fixes — explicitly tick off each handler per screen.
+- [archived: CLAUDE.md §Guardrails] Code-path verification = MEDIUM confidence — cannot catch visual quality, touch responsiveness, geometry errors on real device. This was already documented but Sprint 20-mini confirms it remains the primary quality gap.
+
 ## Sprint 19-mini — 2026-04-17 (mini branch, visual overhaul v2)
 
 - [pending] QA caught 5 numeric AC deviations (trail density, hat font 14→12px, SFX volume 0.3→0.4, aura alpha 0.14→0.12, mesh opacity 0.40→0.55). Root cause: implementation tuned values without checking against final AC specs. Pattern: QA must explicitly verify every numeric AC value (font sizes, opacity, volume, particle counts) — "close enough" is a bug.
