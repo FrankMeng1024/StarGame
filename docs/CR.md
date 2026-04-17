@@ -352,3 +352,55 @@ Remove the localStorage gate from playIntro() — intro plays on every fresh pag
 
 ## CR-086: 关卡加载极速化 — decode Promise缓存复用 (Sprint 32 approved)
 Level load time was 3+ seconds because getSpriteReady() called img.decode() on every invocation, re-rasterizing complex SVGs (girl.svg = 440px wide, 4 animation frames). Fix: _prewarmAssets() IIFE now creates the decode Promise once at onload time and stores it in _decodeCache[src]. getSpriteReady() returns the cached Promise directly on all subsequent calls. Result: game screen appears in ~14ms from level card click (down from 3+ seconds). Verified with MutationObserver timing on screen-game.active class.
+
+---
+
+## CR-087 (mini): 关卡选择滚动修复 (Sprint 18-mini approved)
+Level select screen scroll is broken. Root cause: in WeChat Mini Game landscape mode, touch clientY coordinates may use physical pixels while canvas uses logical pixels (DPR mismatch), causing erratic scroll jumps. Additionally scroll direction inversion needs verification. Fix: (1) divide dy by devicePixelRatio if needed, (2) verify scroll direction is natural (drag down = see more levels below), (3) add momentum/inertia to make scroll feel smooth, (4) ensure clip rect covers full scrollable area without cutting off last row.
+
+## CR-088 (mini): 刘海屏安全区全面适配 (Sprint 18-mini approved)
+All screens must respect G.SAFE_LEFT and G.SAFE_RIGHT (not just SAFE_TOP/SAFE_BOTTOM). In landscape mode on notch phones (iPhone X+), the notch is on the LEFT side, meaning SAFE_LEFT can be 44px or more. All button placement, text, and UI elements must be inset by SAFE_LEFT on the left and SAFE_RIGHT on the right. Currently only SAFE_TOP/SAFE_BOTTOM are applied. Affects: menu.js, levels.js, game.js, gallery.js, shop.js, achievement.js, intro.js.
+
+## CR-089 (mini): 角色形象视觉升级 (Sprint 18-mini approved)
+The girl character in game.js is drawn with primitive geometric shapes (trapezoid dress, circle head, rectangle hat, stick legs) and looks very rough. Upgrade to a more appealing Canvas-drawn character: (1) Rounder, more expressive head with simple face (dot eyes, small smile), (2) Dress with gradient fill and curved hem instead of flat trapezoid, (3) Hair detail (simple arc or shape above hat), (4) Arms visible holding the net pole, (5) Scale up slightly to be more visible on landscape screen. Keep same anchor point (_poleX, _poleY) for net compatibility.
+
+## CR-090 (mini): UI视觉比例全面优化 (Sprint 18-mini approved)
+Multiple UI proportion issues in landscape 667×375 layout: (1) Buttons too small and text too tiny — min font 14px for buttons, 16px for titles, (2) Card sizes in level select too tall — reduce CARD_H to CARD_W (square cards), (3) HUD elements too small to read comfortably — timer/coin display font 18px minimum, (4) Victory/failure overlay cards use better vertical spacing with more padding, (5) Shop item rows taller (60px) with larger icon and text for readability.
+
+## CR-091 (mini): 网兜全面重绘 — 真实网袋形状 + 弧光尾迹 (Sprint 19-mini approved)
+The current net is just a rope line + a tiny filled circle (r=8px). This is visually indistinguishable from a ball. Full redesign:
+1. **Net bag shape**: When extended, draw a proper triangular/teardrop mesh bag hanging from the rope tip. Bag outline: 2 curved bezier lines forming a bag shape (open mouth at top, pointed bottom). Mesh interior: 4-5 horizontal arcs + 4-5 vertical arcs inside the bag, drawn with semi-transparent gold lines. Mouth ring: a slightly thicker gold ellipse at the bag opening.
+2. **Stub state (swinging, not launched)**: Show a compact closed bag (smaller, mouth slightly narrowed) to indicate "ready to throw".
+3. **Arc trail**: When the net is extending (_netState === 'extend'), draw a glowing arc trail behind the rope head — a series of 8-10 fading white circles along the previous rope path. Creates "meteor-in-reverse" feel (per UI_SPEC interaction story).
+4. **Catch flash**: On catching a star, briefly flash the net gold (2-3 frames of bright gold overlay on the bag).
+5. **Color**: Main rope = warm brown (#c8874a), mesh lines = rgba(255,215,100,0.55), mouth ring = #ffd700 with shadowBlur 6.
+
+## CR-092 (mini): 少女角色精品重绘 — 更大更精美 (Sprint 19-mini approved)
+Sprint 18-mini upgraded from stick figure to basic shapes, but the character is still visually weak. Full quality overhaul:
+1. **Scale up**: Character height from ~72px to ~110px (GIRL_W=70, GIRL_H=110). Bigger presence on screen.
+2. **Head**: Larger relative to body (anime 1:3 ratio). Rounder face (ctx.arc, not ellipse). Add eyebrow strokes above eyes. Eyes use 3px radius with white shine dot. Mouth as a gentle curve (not flat arc). Add ear dots.
+3. **Hair**: Full flowing hair using cubic bezier paths — back hair swoops down past shoulders, side strands frame the face, hair color = #1a0a0a (very dark brown/black) with a #553399 purple hair ribbon/bow on top.
+4. **Dress**: Wider at hem (±30px), proper bodice shape. Two-stop gradient: #7733bb → #cc55aa. Add 3 sparkle dot highlights on bodice (tiny filled circles, alpha 0.5).
+5. **Arms**: Both arms visible. Holding arm (right): extends upward toward the pole at a natural angle showing the throwing motion. Free arm (left): slightly raised for balance, not hanging limp.
+6. **Hands**: Draw small rounded hand shapes at arm ends (not just line endpoints).
+7. **Hat**: Keep the witch/star-catcher hat but make it larger and more detailed: brim is a wide flat ellipse, crown has a slight curve, star decoration is larger (12px font), hat band has gold gradient.
+8. **Shoes**: Visible pointed shoes sticking out below dress hem.
+9. **Body glow**: A very faint purple radial gradient behind the whole character (rgba(120,60,200,0.12) at center → transparent) for a magical aura effect.
+
+## CR-093 (mini): 操作流程精修 — 发射手感 + 反馈完整 (Sprint 19-mini approved)
+Multiple operation flow improvements for maximum game feel:
+1. **Launch trail particles**: When net extends, spawn 3-4 small glowing white particles per frame along the rope path, each fading over 15 frames. This creates the "arc trail" feel even before the net bag is drawn.
+2. **Catch burst upgrade**: When a star is caught, spawn 12 particles (up from 6) in a star-burst pattern. 6 gold (#ffd700) + 3 white (#ffffff) + 3 in the star's own color. Larger particles (r=4→5) with slightly longer life (24→36 frames).
+3. **Debris hit shake**: When debris is caught, add a brief screen shake effect — translate the canvas ctx by a small random offset (±3px) for 6 frames then return to 0. Adds physicality to the penalty.
+4. **Net swing visual feedback**: The stub net (not launched) should visibly sway with the swing angle — the bag should tilt/orient in the direction of motion, not just translate.
+5. **Level entry delay guard**: Already exists (STORY: 300ms delay before click listener), keep it. But ADD a "点击发射！" hint overlay for the first 1.5s showing a hand tap animation (pulsing circle at bottom of screen).
+6. **Completion line-draw sound**: Add a subtle "whoosh" SFX for each constellation line drawn during the victory animation (reuse sfx-catch.wav at lower volume or add sfx-linedraw.wav).
+
+## CR-094 (mini): 全屏视觉效果拉满 — 粒子/光晕/动态背景 (Sprint 19-mini approved)
+Push all visual effects to maximum quality:
+1. **Star twinkle upgrade**: Stars should have a 4-point cross sparkle (like real star photos) — draw 4 thin lines crossing at the star center with alpha modulated by the twinkle sine. Length = r*3.
+2. **Background stars denser**: Increase background star count from 60 to 100. Add 5-8 "bright background stars" (r=2.5, with soft glow) scattered across the sky.
+3. **Ground silhouette glow**: The ground silhouette should emit a subtle warm glow upward — a narrow gradient strip at the top of the silhouette (from rgba(255,140,40,0.15) at ground edge to transparent over 30px).
+4. **Victory particle upgrade**: On victory, spawn 40 particles (up from 20), mix of stars (★), gold dots, and white sparks. Some particles should arc upward with gravity pull-down (vy starts negative, gravity adds 0.04/frame).
+5. **Constellation line glow**: During the animated line-draw on victory, each line should have shadowBlur=12 (up from 6) and a bright golden pulse — briefly flashing to alpha 1.0 then settling to 0.75.
+6. **HUD timer urgent pulse**: When timer ≤ 10s, the timer text should pulse in size (font oscillates between 18px and 22px at 2Hz) in addition to the existing red color.

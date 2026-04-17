@@ -1,20 +1,10 @@
-# Sprint 19-mini — Sprint Goal
-
-**Goal**: VU acceptance evaluation — Sprint 18-mini visual upgrades verified by Virtual User
+# Sprint 19-mini Goal
 
 **Sprint**: Sprint 19-mini
-**Branch**: mini
-**Status**: Planned
-**Date**: 2026-04-17
+**Goal**: 视觉效果全面拉满 — 网兜真实网袋 + 角色精品重绘 + 操作手感完美 + 粒子/光晕/动态效果全升级
 
-## Prerequisites
-- WeChat DevTools must be open with mini project loaded (requires user action)
-- Game must be playable in simulator at 667×375 landscape
+**Stories**: STORY-00257, STORY-00258, STORY-00259, STORY-00260
 
-## Stories
-- STORY-00257: VU evaluation — Sprint 18-mini visual changes acceptance
+**Acceptance mode**: auto (Virtual User gate at Sprint completion)
 
-## Acceptance
-acceptance_mode: auto
-Virtual User score >= 9.5/10 → PROJECT COMPLETE (final, mini branch)
-Virtual User score < 9.5/10 → new Sprint to address gaps
+**Dreamer**: ON

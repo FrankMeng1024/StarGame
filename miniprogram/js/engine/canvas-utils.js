@@ -41,6 +41,19 @@ export function initBgStars(w, h, count = 80) {
       ph:   Math.random() * TWO_PI,
       spd:  0.3 + Math.random() * 0.8,
       base: 0.2 + Math.random() * 0.5,
+      bright: false,
+    });
+  }
+  // Add 6 bright background stars (STORY-00260) — larger with soft glow
+  for (let i = 0; i < 6; i++) {
+    _bgStars.push({
+      x:     Math.random() * w,
+      y:     Math.random() * h * 0.6,  // only in upper sky area
+      r:     2.0 + Math.random() * 0.8,
+      ph:    Math.random() * TWO_PI,
+      spd:   0.2 + Math.random() * 0.4,
+      base:  0.5 + Math.random() * 0.3,
+      bright: true,
     });
   }
 }
@@ -50,10 +63,21 @@ export function drawBgStars(ctx, t) {
   for (const s of _bgStars) {
     const a = s.base + (1 - s.base) * Math.abs(Math.sin(t * s.spd + s.ph));
     ctx.globalAlpha = a;
-    ctx.fillStyle   = '#e8e8f8';
-    ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
-    ctx.fill();
+    if (s.bright) {
+      // Bright background star with soft glow (STORY-00260)
+      ctx.fillStyle   = '#fff8e0';
+      ctx.shadowColor = '#ffffcc';
+      ctx.shadowBlur  = 6;
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+    } else {
+      ctx.fillStyle   = '#e8e8f8';
+      ctx.beginPath();
+      ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
+      ctx.fill();
+    }
   }
   ctx.globalAlpha = 1;
   ctx.restore();

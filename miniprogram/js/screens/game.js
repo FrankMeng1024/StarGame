@@ -24,8 +24,8 @@ const SWING_SPEED   = Math.PI * 2 / (3.5 * 60);   // 3.5s per full cycle
 const SWING_AMP     = (80 * Math.PI) / 180;         // ±80° in radians
 const NET_SPEED     = 9;                             // px per frame extension/retraction
 const NET_MAX_LEN   = 0;                             // computed at showGame time (55% H)
-const GIRL_W        = 52;
-const GIRL_H        = 72;
+const GIRL_W        = 70;
+const GIRL_H        = 110;
 
 // ── 游戏状态机 ────────────────────────────────────────────────
 let _navigate   = null;
@@ -56,6 +56,21 @@ let _debris     = [];   // {x,y,r,type,spin,angle}
 
 // Particles
 let _particles  = [];   // {x,y,vx,vy,life,maxLife,color}
+
+// Screen shake (STORY-00259)
+let _shakeFrames = 0;
+let _shakeX      = 0;
+let _shakeY      = 0;
+
+// Arc trail points (STORY-00257) — ring buffer of last N head positions
+const ARC_TRAIL_LEN = 10;
+let _trailPoints = [];  // {x,y} — last N net head positions during extension
+
+// Net catch flash (STORY-00257)
+let _catchFlashFrames = 0;
+
+// Reusable audio context for line-draw SFX — cached to avoid context leak (Arch review fix)
+let _lineDrawSfxCtx = null;
 
 // Timer
 let _timeLeft   = 0;
@@ -192,7 +207,7 @@ export function showGame(navigate) {
   // Debris
   _initDebris(W, H);
 
-  initBgStars(W, H, 60);
+  initBgStars(W, H, 100);  // 100 stars for denser sky (STORY-00260)
   _particles = [];
   _paused = false;
   _lorePage = 0;
@@ -306,6 +321,11 @@ function _cleanup() {
   _stars   = [];
   _debris  = [];
   _particles = [];
+  _shakeFrames = 0;
+  _shakeX = 0;
+  _shakeY = 0;
+  _trailPoints = [];
+  _catchFlashFrames = 0;
   _phase   = 'play';
   _paused  = false;
   _hintTimer = 0;
@@ -324,6 +344,11 @@ function _cleanup() {
   _passiveCoins = false;
   _celebrateTimer = 0;
   _lineDrawProgress = 0;
+  // Destroy cached line-draw SFX context to prevent cross-game leak (Arch review fix)
+  if (_lineDrawSfxCtx) {
+    try { _lineDrawSfxCtx.destroy(); } catch (e) {}
+    _lineDrawSfxCtx = null;
+  }
 }
 
 // ── Main loop ─────────────────────────────────────────────────
@@ -362,6 +387,14 @@ function _loop(now) {
       _updateParticles(dt);
       _updateSlots(now);
       if (_magnetActive) _updateMagnet(dt);
+      _updateShake();
+    }
+
+    // Apply screen shake offset
+    const didShake = _shakeFrames > 0;
+    if (didShake) {
+      ctx.save();
+      ctx.translate(_shakeX, _shakeY);
     }
 
     _drawConLines(ctx);
@@ -373,6 +406,10 @@ function _loop(now) {
     _drawHUD(ctx, W);
     if (_hintTimer > 0 && !_paused) _drawHint(ctx, W, H);
     if (_paused) _drawPauseOverlay(ctx, W, H);
+
+    if (didShake) {
+      ctx.restore();
+    }
   } else if (_phase === 'celebrate') {
     _updateParticles(dt);
     _celebrateTimer -= dt;
@@ -494,19 +531,40 @@ function _updateNet(dt) {
       _updateNetHead();
       _checkCollisions();
     }
+    // Record trail point + spawn launch trail particles (STORY-00257/00259)
+    _trailPoints.push({ x: _netHeadX, y: _netHeadY });
+    if (_trailPoints.length > ARC_TRAIL_LEN) _trailPoints.shift();
+    // Spawn 3-4 glowing trail particles per frame (BUG-00261 fix: was single probabilistic spawn)
+    const trailCount = 3 + (Math.random() < 0.5 ? 1 : 0);  // 3 or 4 per frame
+    for (let tp = 0; tp < trailCount; tp++) {
+      _particles.push({
+        x: _netHeadX + (Math.random() - 0.5) * 5,
+        y: _netHeadY + (Math.random() - 0.5) * 5,
+        vx: (Math.random() - 0.5) * 0.6,
+        vy: (Math.random() - 0.5) * 0.6,
+        life: 15,
+        maxLife: 15,
+        color: '#ffffff',
+        r: 1.5 + Math.random() * 1.0,
+      });
+    }
   } else if (_netState === 'retract') {
     _netLen -= NET_SPEED * scale;
     if (_netLen <= 0) {
       _netLen   = 0;
       _netState = 'swing';
+      _trailPoints = [];  // clear trail when retracted
     }
   }
   _updateNetHead();
 }
 
 function _updateNetHead() {
-  _netHeadX = _poleX + Math.sin(_netAngle) * _netLen;
-  _netHeadY = _poleY - Math.cos(_netAngle) * _netLen;
+  // Rope origin = girl's right hand position (same as _drawNet rope origin)
+  const ropeOriX = _poleX + 12;
+  const ropeOriY = _poleY - 60;
+  _netHeadX = ropeOriX + Math.sin(_netAngle) * _netLen;
+  _netHeadY = ropeOriY - Math.cos(_netAngle) * _netLen;
 }
 
 function _checkCollisions() {
@@ -522,6 +580,7 @@ function _checkCollisions() {
       _caught++;
       _spawnParticles(s.x, s.y, s.color);
       _netState = 'retract';
+      _catchFlashFrames = 3;  // gold flash on net (STORY-00257)
       AudioAdapter.playSFX(SFX_CATCH);
 
       if (_caught >= _total) {
@@ -539,6 +598,8 @@ function _checkCollisions() {
       if (!_gloveActive) {
         _timeLeft  = Math.max(0, _timeLeft - 1.0);
         _timerFlash = 0.5; // 0.5 seconds of red flash
+        // Screen shake on debris hit (STORY-00259)
+        _shakeFrames = 6;
       }
       AudioAdapter.playSFX(SFX_DEBRIS);
       _netState   = 'retract';
@@ -549,15 +610,20 @@ function _checkCollisions() {
 
 // ── Particles ─────────────────────────────────────────────────
 function _spawnParticles(x, y, color) {
-  for (let i = 0; i < 6; i++) {
-    const angle = (i / 6) * TWO_PI;
+  // 12 particles: 6 gold + 3 white + 3 star-color (STORY-00259)
+  const colors = ['#ffd700', '#ffd700', '#ffd700', '#ffd700', '#ffd700', '#ffd700',
+                  '#ffffff', '#ffffff', '#ffffff', color, color, color];
+  for (let i = 0; i < 12; i++) {
+    const angle = (i / 12) * TWO_PI + Math.random() * 0.3;
+    const speed = 2.5 + Math.random() * 3;
     _particles.push({
       x, y,
-      vx: Math.cos(angle) * (2 + Math.random() * 2),
-      vy: Math.sin(angle) * (2 + Math.random() * 2),
-      life: 24,
-      maxLife: 24,
-      color,
+      vx: Math.cos(angle) * speed,
+      vy: Math.sin(angle) * speed,
+      life: 36,
+      maxLife: 36,
+      color: colors[i],
+      r: 5,
     });
   }
 }
@@ -568,6 +634,7 @@ function _updateParticles(dt) {
     const p = _particles[i];
     p.x    += p.vx * scale;
     p.y    += p.vy * scale;
+    if (p.gravity) p.vy += p.gravity * scale;  // gravity for victory particles (STORY-00260)
     p.life -= scale;
     if (p.life <= 0) _particles.splice(i, 1);
   }
@@ -590,6 +657,19 @@ function _updateMagnet(dt) {
       s.x += dx * fraction;
       s.y += dy * fraction;
     }
+  }
+}
+
+// ── Screen shake (STORY-00259) ────────────────────────────────
+function _updateShake() {
+  if (_shakeFrames <= 0) return;
+  _shakeFrames--;
+  if (_shakeFrames > 0) {
+    _shakeX = (Math.random() - 0.5) * 6;
+    _shakeY = (Math.random() - 0.5) * 6;
+  } else {
+    _shakeX = 0;
+    _shakeY = 0;
   }
 }
 
@@ -618,27 +698,44 @@ function _updateLineDrawProgress(dt) {
   }
   const totalLines = _conDef.lines.length;
   const totalDuration = Math.max(totalLines * 0.12, 0.5);
+  const prevDrawn = Math.floor(_lineDrawProgress);
   _lineDrawProgress += (dt / totalDuration) * totalLines;
+  const newDrawn = Math.floor(_lineDrawProgress);
+  // Play SFX for each newly drawn line (STORY-00259) — reuse cached context to avoid leak
+  if (newDrawn > prevDrawn && newDrawn <= totalLines) {
+    try {
+      if (!_lineDrawSfxCtx) {
+        _lineDrawSfxCtx = wx.createInnerAudioContext();
+        _lineDrawSfxCtx.src = SFX_CATCH;
+        _lineDrawSfxCtx.volume = 0.4;  // fixed: was 0.3, AC specifies 0.4
+      }
+      _lineDrawSfxCtx.stop();
+      _lineDrawSfxCtx.play();
+    } catch (e) {}
+  }
   if (_lineDrawProgress >= totalLines) {
     _lineDrawProgress = totalLines;
     _phase = 'result';
   }
 }
 
-// ── Victory: animated constellation lines ────────────────────
+// ── Victory: animated constellation lines (STORY-00260) ──────
 function _drawAnimatedConLines(ctx) {
   if (!_conDef.lines) return;
   const drawn = Math.floor(_lineDrawProgress);
   ctx.save();
-  ctx.lineWidth   = 2;
+  ctx.lineWidth   = 2.5;
   for (let i = 0; i <= drawn && i < _conDef.lines.length; i++) {
     const [ai, bi] = _conDef.lines[i];
     const a = _stars[ai], b = _stars[bi];
     if (!a || !b) continue;
-    const alpha = i < drawn ? 0.85 : 0.85 * (_lineDrawProgress - drawn);
+    // Newest line pulses bright, older lines settle at 0.75
+    const isNewest = i === drawn;
+    const baseAlpha = isNewest ? _lineDrawProgress - drawn : 0.75;
+    const alpha = isNewest ? Math.min(1.0, baseAlpha * 2) : 0.75;
     ctx.strokeStyle = `rgba(255,215,0,${alpha.toFixed(2)})`;
     ctx.shadowColor = '#ffd700';
-    ctx.shadowBlur  = 6;
+    ctx.shadowBlur  = isNewest ? 16 : 12;
     ctx.beginPath();
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
@@ -647,11 +744,11 @@ function _drawAnimatedConLines(ctx) {
   ctx.restore();
 }
 
-// ── Draw: stars ───────────────────────────────────────────────
+// ── Draw: stars (STORY-00260 sparkle upgrade) ────────────────
 function _drawStars(ctx, t) {
   for (const s of _stars) {
     if (s.caught) {
-      // Caught stars: dim, small, grey (STORY-00235)
+      // Caught stars: dim, small, grey
       ctx.save();
       ctx.globalAlpha = 0.20;
       ctx.fillStyle   = '#aaaacc';
@@ -683,6 +780,27 @@ function _drawStars(ctx, t) {
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
     ctx.fill();
+    ctx.restore();
+
+    // 4-point cross sparkle (STORY-00260)
+    const sparkleLen = s.r * 3;
+    const sparkleAlpha = alpha * 0.65;
+    ctx.save();
+    ctx.strokeStyle = _hexAlpha(s.color, sparkleAlpha);
+    ctx.lineWidth   = 0.9;
+    ctx.lineCap     = 'round';
+    ctx.shadowColor = s.color;
+    ctx.shadowBlur  = 3;
+    // Horizontal arm
+    ctx.beginPath();
+    ctx.moveTo(s.x - sparkleLen, s.y);
+    ctx.lineTo(s.x + sparkleLen, s.y);
+    ctx.stroke();
+    // Vertical arm
+    ctx.beginPath();
+    ctx.moveTo(s.x, s.y - sparkleLen);
+    ctx.lineTo(s.x, s.y + sparkleLen);
+    ctx.stroke();
     ctx.restore();
   }
 }
@@ -790,17 +908,20 @@ function _drawCloth(ctx, r) {
 function _drawParticles(ctx) {
   for (const p of _particles) {
     const alpha = p.life / p.maxLife;
+    const pr = p.r || 3;
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.fillStyle   = p.color;
+    ctx.shadowColor = p.color;
+    ctx.shadowBlur  = pr * 2;
     ctx.beginPath();
-    ctx.arc(p.x, p.y, 3, 0, TWO_PI);
+    ctx.arc(p.x, p.y, pr, 0, TWO_PI);
     ctx.fill();
     ctx.restore();
   }
 }
 
-// ── Draw: girl character ──────────────────────────────────────
+// ── Draw: girl character (STORY-00258) ───────────────────────
 function _drawGirl(ctx) {
   const x = _poleX;
   const y = _poleY;
@@ -808,199 +929,409 @@ function _drawGirl(ctx) {
   ctx.save();
   ctx.translate(x, y);
 
-  // ── Legs ──────────────────────────────────────────────────
-  ctx.strokeStyle = '#d4736a';
-  ctx.lineWidth   = 5;
-  ctx.lineCap     = 'round';
-  // Left leg
+  // ── Purple aura (magical atmosphere) ─────────────────────────
+  const auraGrd = ctx.createRadialGradient(0, -40, 5, 0, -40, 65);
+  auraGrd.addColorStop(0, 'rgba(120,60,200,0.12)');  // fixed: was 0.14, AC specifies 0.12
+  auraGrd.addColorStop(1, 'rgba(120,60,200,0)');
+  ctx.save();
+  ctx.fillStyle = auraGrd;
   ctx.beginPath();
-  ctx.moveTo(-5, 14);
-  ctx.quadraticCurveTo(-8, 22, -9, 32);
-  ctx.stroke();
-  // Right leg
-  ctx.beginPath();
-  ctx.moveTo(5, 14);
-  ctx.quadraticCurveTo(7, 22, 8, 32);
-  ctx.stroke();
-  // Shoes
-  ctx.fillStyle = '#442255';
-  ctx.beginPath(); ctx.ellipse(-9, 33, 6, 3, -0.2, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(9, 33, 6, 3, 0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.arc(0, -40, 65, 0, TWO_PI);
+  ctx.fill();
+  ctx.restore();
 
-  // ── Dress (gradient, curved hem) ─────────────────────────
-  const dressGrd = ctx.createLinearGradient(-18, -28, 18, 14);
-  dressGrd.addColorStop(0, '#9966cc');
-  dressGrd.addColorStop(1, '#dd88bb');
-  ctx.fillStyle = dressGrd;
+  // ── Shoes (pointed, below dress) ─────────────────────────────
+  ctx.fillStyle = '#331144';
+  // Left shoe
   ctx.beginPath();
-  ctx.moveTo(-10, -28);
-  ctx.lineTo(-20, 14);
-  ctx.quadraticCurveTo(-16, 18, -10, 16);
-  ctx.quadraticCurveTo(0, 20, 10, 16);
-  ctx.quadraticCurveTo(16, 18, 20, 14);
-  ctx.lineTo(10, -28);
+  ctx.moveTo(-14, 14);
+  ctx.bezierCurveTo(-18, 14, -22, 18, -20, 22);
+  ctx.bezierCurveTo(-18, 26, -10, 25, -8, 22);
+  ctx.lineTo(-10, 14);
+  ctx.closePath();
+  ctx.fill();
+  // Right shoe
+  ctx.beginPath();
+  ctx.moveTo(14, 14);
+  ctx.bezierCurveTo(18, 14, 22, 18, 20, 22);
+  ctx.bezierCurveTo(18, 26, 10, 25, 8, 22);
+  ctx.lineTo(10, 14);
   ctx.closePath();
   ctx.fill();
 
-  // Dress highlight stripe
-  ctx.save();
-  ctx.globalAlpha = 0.18;
-  ctx.fillStyle = '#ffffff';
+  // ── Legs ──────────────────────────────────────────────────────
+  ctx.strokeStyle = '#d4736a';
+  ctx.lineWidth   = 5;
+  ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(-4, -28); ctx.lineTo(-6, 14); ctx.lineTo(0, 16); ctx.lineTo(4, -28);
+  ctx.moveTo(-7, 6);
+  ctx.quadraticCurveTo(-10, 12, -12, 16);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.moveTo(7, 6);
+  ctx.quadraticCurveTo(10, 12, 12, 16);
+  ctx.stroke();
+
+  // ── Dress ──────────────────────────────────────────────────────
+  const dressGrd = ctx.createLinearGradient(-30, -46, 30, 8);
+  dressGrd.addColorStop(0, '#7733bb');
+  dressGrd.addColorStop(0.5, '#9944cc');
+  dressGrd.addColorStop(1, '#cc55aa');
+  ctx.fillStyle = dressGrd;
+  ctx.beginPath();
+  ctx.moveTo(-14, -46);
+  ctx.lineTo(-30, 6);
+  ctx.quadraticCurveTo(-24, 12, -16, 10);
+  ctx.quadraticCurveTo(-6, 14, 0, 14);
+  ctx.quadraticCurveTo(6, 14, 16, 10);
+  ctx.quadraticCurveTo(24, 12, 30, 6);
+  ctx.lineTo(14, -46);
+  ctx.closePath();
+  ctx.fill();
+
+  // Dress shimmer highlight
+  ctx.save();
+  ctx.globalAlpha = 0.20;
+  const shimGrd = ctx.createLinearGradient(-8, -46, 2, 10);
+  shimGrd.addColorStop(0, '#ffffff');
+  shimGrd.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = shimGrd;
+  ctx.beginPath();
+  ctx.moveTo(-5, -46); ctx.lineTo(-8, 8); ctx.lineTo(0, 10); ctx.lineTo(6, -46);
   ctx.closePath(); ctx.fill();
   ctx.restore();
 
-  // ── Left arm (hanging at side) ────────────────────────────
+  // Sparkle dots on bodice
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle = '#ffffff';
+  const sparklePts = [[-6, -35], [4, -28], [-2, -20]];
+  for (const [sx, sy] of sparklePts) {
+    ctx.beginPath(); ctx.arc(sx, sy, 1.5, 0, TWO_PI); ctx.fill();
+  }
+  ctx.restore();
+
+  // ── Left arm (slightly raised for balance) ────────────────────
   ctx.strokeStyle = '#f5c8a0';
-  ctx.lineWidth   = 4;
+  ctx.lineWidth   = 5;
   ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(-10, -18);
-  ctx.quadraticCurveTo(-22, -10, -18, 2);
+  ctx.moveTo(-14, -38);
+  ctx.bezierCurveTo(-28, -36, -32, -22, -26, -12);
   ctx.stroke();
-
-  // ── Right arm (holding net pole) ─────────────────────────
-  ctx.beginPath();
-  ctx.moveTo(10, -18);
-  ctx.quadraticCurveTo(18, -14, 14, -4);
-  ctx.stroke();
-
-  // ── Net pole grip ─────────────────────────────────────────
-  ctx.strokeStyle = '#8b6914';
-  ctx.lineWidth   = 4;
-  ctx.beginPath();
-  ctx.moveTo(14, -4);
-  ctx.lineTo(10, 10);
-  ctx.stroke();
-
-  // ── Neck ─────────────────────────────────────────────────
+  // Left hand
   ctx.fillStyle = '#f5c8a0';
   ctx.beginPath();
-  ctx.fillRect(-4, -32, 8, 8);
+  ctx.arc(-26, -11, 4, 0, TWO_PI);
+  ctx.fill();
 
-  // ── Head ─────────────────────────────────────────────────
-  // Shadow
-  ctx.save();
-  ctx.globalAlpha = 0.15;
-  ctx.fillStyle = '#000';
+  // ── Right arm (extended upward — throwing pose) ───────────────
+  ctx.strokeStyle = '#f5c8a0';
+  ctx.lineWidth   = 5;
+  ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.ellipse(1, -42, 13, 12, 0, 0, Math.PI * 2);
+  ctx.moveTo(14, -38);
+  ctx.bezierCurveTo(22, -44, 18, -54, 12, -60);
+  ctx.stroke();
+  // Right hand
+  ctx.fillStyle = '#f5c8a0';
+  ctx.beginPath();
+  ctx.arc(12, -60, 4, 0, TWO_PI);
+  ctx.fill();
+
+  // ── Neck ──────────────────────────────────────────────────────
+  ctx.fillStyle = '#f5c8a0';
+  ctx.beginPath();
+  ctx.moveTo(-5, -46);
+  ctx.lineTo(-4, -56);
+  ctx.lineTo(4, -56);
+  ctx.lineTo(5, -46);
+  ctx.closePath();
+  ctx.fill();
+
+  // ── Head ──────────────────────────────────────────────────────
+  // Drop shadow
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle   = '#000';
+  ctx.beginPath();
+  ctx.arc(1, -70, 18, 0, TWO_PI);
   ctx.fill();
   ctx.restore();
   // Face
   ctx.fillStyle = '#f8d5b0';
   ctx.beginPath();
-  ctx.ellipse(0, -43, 12, 13, 0, 0, Math.PI * 2);
+  ctx.arc(0, -72, 17, 0, TWO_PI);
   ctx.fill();
+  // Ear dots
+  ctx.fillStyle = '#f0c090';
+  ctx.beginPath(); ctx.arc(-17, -72, 4, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(17, -72, 4, 0, TWO_PI); ctx.fill();
+
   // Cheeks
   ctx.save();
-  ctx.globalAlpha = 0.28;
+  ctx.globalAlpha = 0.32;
   ctx.fillStyle = '#ff9999';
-  ctx.beginPath(); ctx.ellipse(-7, -40, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(7, -40, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-9, -67, 5, 4, 0, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(9, -67, 5, 4, 0, 0, TWO_PI); ctx.fill();
   ctx.restore();
-  // Eyes
-  ctx.fillStyle = '#2a1a3a';
-  ctx.beginPath(); ctx.arc(-4.5, -44, 2, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(4.5, -44, 2, 0, Math.PI * 2); ctx.fill();
-  // Eye shine
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath(); ctx.arc(-3.8, -45, 0.8, 0, Math.PI * 2); ctx.fill();
-  ctx.beginPath(); ctx.arc(5.2, -45, 0.8, 0, Math.PI * 2); ctx.fill();
-  // Smile
-  ctx.strokeStyle = '#cc6644';
+
+  // Eyebrows
+  ctx.strokeStyle = '#3a2a1a';
   ctx.lineWidth   = 1.5;
+  ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.arc(0, -40, 4, 0.2, Math.PI - 0.2);
+  ctx.arc(-5.5, -79, 3.5, Math.PI + 0.4, TWO_PI - 0.4);
+  ctx.stroke();
+  ctx.beginPath();
+  ctx.arc(5.5, -79, 3.5, Math.PI + 0.4, TWO_PI - 0.4);
   ctx.stroke();
 
-  // ── Hair ─────────────────────────────────────────────────
-  ctx.fillStyle = '#2a1a0a';
-  // Side hair tufts
+  // Eyes
+  ctx.fillStyle = '#2a1a3a';
+  ctx.beginPath(); ctx.arc(-5.5, -74, 3, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(5.5, -74, 3, 0, TWO_PI); ctx.fill();
+  // Eye whites/shine
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(-4.5, -75.2, 1.2, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(6.5, -75.2, 1.2, 0, TWO_PI); ctx.fill();
+
+  // Smile
+  ctx.strokeStyle = '#cc6644';
+  ctx.lineWidth   = 1.8;
   ctx.beginPath();
-  ctx.ellipse(-11, -44, 5, 9, -0.4, 0, Math.PI * 2);
+  ctx.arc(0, -69, 5, 0.25, Math.PI - 0.25);
+  ctx.stroke();
+
+  // ── Hair ──────────────────────────────────────────────────────
+  // Back hair (sweeps behind/below)
+  ctx.fillStyle = '#1a0a0a';
+  ctx.beginPath();
+  ctx.moveTo(-16, -56);
+  ctx.bezierCurveTo(-26, -48, -30, -28, -24, -10);
+  ctx.bezierCurveTo(-22, -4, -18, 0, -14, 4);
+  ctx.lineTo(-12, -10);
+  ctx.bezierCurveTo(-16, -20, -18, -40, -12, -58);
+  ctx.closePath();
+  ctx.fill();
+  // Right back hair
+  ctx.beginPath();
+  ctx.moveTo(12, -58);
+  ctx.bezierCurveTo(22, -50, 26, -30, 20, -12);
+  ctx.bezierCurveTo(18, -6, 14, 0, 10, 4);
+  ctx.lineTo(12, -8);
+  ctx.bezierCurveTo(16, -22, 18, -44, 14, -60);
+  ctx.closePath();
+  ctx.fill();
+  // Side hair tufts framing face
+  ctx.beginPath();
+  ctx.ellipse(-14, -72, 6, 11, -0.3, 0, TWO_PI);
   ctx.fill();
   ctx.beginPath();
-  ctx.ellipse(11, -44, 5, 9, 0.4, 0, Math.PI * 2);
+  ctx.ellipse(14, -72, 6, 11, 0.3, 0, TWO_PI);
   ctx.fill();
-  // Back hair
+  // Top hair (crown)
   ctx.beginPath();
-  ctx.moveTo(-10, -32);
-  ctx.quadraticCurveTo(-16, -20, -12, -10);
-  ctx.quadraticCurveTo(-14, -5, -10, 0);
-  ctx.lineTo(-8, -15);
-  ctx.quadraticCurveTo(-12, -22, -8, -32);
+  ctx.arc(0, -86, 15, Math.PI + 0.2, TWO_PI - 0.2);
+  ctx.fill();
+  // Front hair fringe
+  ctx.beginPath();
+  ctx.moveTo(-14, -83);
+  ctx.bezierCurveTo(-10, -78, -2, -76, 0, -74);
+  ctx.bezierCurveTo(2, -76, 10, -78, 14, -83);
   ctx.closePath();
   ctx.fill();
 
-  // ── Hat ──────────────────────────────────────────────────
-  // Brim
-  const hatGrd = ctx.createLinearGradient(-18, -58, 18, -48);
-  hatGrd.addColorStop(0, '#6633aa');
-  hatGrd.addColorStop(1, '#8844cc');
+  // ── Hat ──────────────────────────────────────────────────────
+  // Brim (wide flat ellipse)
+  const hatGrd = ctx.createLinearGradient(-24, -94, 24, -84);
+  hatGrd.addColorStop(0, '#5522aa');
+  hatGrd.addColorStop(1, '#8833cc');
   ctx.fillStyle = hatGrd;
   ctx.beginPath();
-  ctx.ellipse(0, -51, 17, 5, 0, 0, Math.PI * 2);
+  ctx.ellipse(0, -88, 22, 6, 0, 0, TWO_PI);
   ctx.fill();
-  // Crown
+  // Crown (slightly curved)
   ctx.beginPath();
-  ctx.moveTo(-10, -51);
-  ctx.quadraticCurveTo(-11, -66, 0, -68);
-  ctx.quadraticCurveTo(11, -66, 10, -51);
+  ctx.moveTo(-13, -88);
+  ctx.bezierCurveTo(-14, -108, -6, -116, 0, -118);
+  ctx.bezierCurveTo(6, -116, 14, -108, 13, -88);
   ctx.closePath();
   ctx.fill();
-  // Hat band
-  ctx.fillStyle = '#ffdd44';
-  ctx.globalAlpha = 0.7;
+  // Hat band (gold gradient)
+  const bandGrd = ctx.createLinearGradient(-13, -96, 13, -90);
+  bandGrd.addColorStop(0, '#cc9900');
+  bandGrd.addColorStop(0.5, '#ffdd44');
+  bandGrd.addColorStop(1, '#cc9900');
+  ctx.fillStyle = bandGrd;
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+  ctx.fillRect(-13, -96, 26, 5);
+  ctx.restore();
+  // Purple ribbon bow on back of hat
+  ctx.save();
+  ctx.globalAlpha = 0.8;
+  ctx.fillStyle   = '#9933bb';
   ctx.beginPath();
-  ctx.rect(-10, -57, 20, 4);
+  ctx.ellipse(-10, -92, 7, 3.5, -0.5, 0, TWO_PI);
   ctx.fill();
-  ctx.globalAlpha = 1;
-  // Star on hat
-  ctx.fillStyle = '#ffee88';
-  ctx.font      = '8px sans-serif';
-  ctx.textAlign = 'center';
+  ctx.beginPath();
+  ctx.ellipse(-10, -92, 7, 3.5, 0.5, 0, TWO_PI);
+  ctx.fill();
+  ctx.fillStyle = '#cc55dd';
+  ctx.beginPath();
+  ctx.arc(-10, -92, 2.5, 0, TWO_PI);
+  ctx.fill();
+  ctx.restore();
+  // Star decoration on hat (larger)
+  ctx.fillStyle    = '#ffee88';
+  ctx.shadowColor  = '#ffd700';
+  ctx.shadowBlur   = 6;
+  ctx.font         = '12px sans-serif';  // fixed: was 14px, AC specifies 12px (BUG-00263 fix)
+  ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('★', 0, -62);
+  ctx.fillText('★', 4, -108);
+  ctx.shadowBlur = 0;
 
   ctx.restore();
 }
 
-// ── Draw: net ─────────────────────────────────────────────────
+// ── Draw: net (STORY-00257) ───────────────────────────────────
 function _drawNet(ctx) {
-  // STORY-00234: net always visible — show stub when swinging
-  const showLen = _netLen > 0 ? _netLen : 22; // stub length during swing
-  const angle   = _netLen > 0 ? _netAngle : _netAngle; // always use current angle
+  const isExtended = _netLen > 0;
+  const showLen = isExtended ? _netLen : 20;
+  const angle   = _netAngle;
 
-  // Compute net head position from pole
-  const headX = _poleX + 8 + Math.sin(angle) * showLen;
-  const headY = _poleY - 2  - Math.cos(angle) * showLen;
+  // Rope origin — from girl's right hand position
+  const ropeOriX = _poleX + 12;
+  const ropeOriY = _poleY - 60;
 
-  // Net line (rope from girl's hand to net head)
+  // Net head (mouth ring center)
+  const headX = ropeOriX + Math.sin(angle) * showLen;
+  const headY = ropeOriY - Math.cos(angle) * showLen;
+
+  // ── Arc trail (STORY-00257) — glowing white dots behind head ──
+  if (_trailPoints.length > 1) {
+    ctx.save();
+    for (let i = 0; i < _trailPoints.length; i++) {
+      const tp   = _trailPoints[i];
+      const frac = (i + 1) / _trailPoints.length;  // 0→1 (oldest→newest)
+      ctx.globalAlpha = frac * 0.6;
+      ctx.fillStyle   = '#ffffff';
+      ctx.shadowColor = '#aaccff';
+      ctx.shadowBlur  = 4;
+      ctx.beginPath();
+      ctx.arc(tp.x, tp.y, frac * 3.5, 0, TWO_PI);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ── Rope ──────────────────────────────────────────────────────
   ctx.save();
-  ctx.strokeStyle = _netLen > 0 ? '#cc9966' : 'rgba(200,150,100,0.50)';
-  ctx.lineWidth   = 2;
+  ctx.strokeStyle = isExtended ? '#c8874a' : 'rgba(200,135,74,0.45)';
+  ctx.lineWidth   = isExtended ? 2.5 : 1.8;
+  ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(_poleX + 8, _poleY - 2);
+  ctx.moveTo(ropeOriX, ropeOriY);
   ctx.lineTo(headX, headY);
   ctx.stroke();
-
-  // Net head hoop
-  const netHeadR = (_netLen > 0 ? 8 : 6) * _netRadiusMult;
-  ctx.fillStyle   = _netLen > 0 ? 'rgba(255,220,100,0.85)' : 'rgba(255,220,100,0.40)';
-  ctx.strokeStyle = _netLen > 0 ? '#ffcc33' : 'rgba(255,200,50,0.50)';
-  ctx.lineWidth   = 1.5;
-  ctx.beginPath();
-  ctx.arc(headX, headY, netHeadR, 0, TWO_PI);
-  ctx.fill();
-  ctx.stroke();
-
   ctx.restore();
 
-  // Keep _netHeadX/Y in sync for collision detection (only meaningful when extended)
-  if (_netLen > 0) {
-    // _netHeadX and _netHeadY are set in _updateNet; no override needed here
+  // ── Net bag ───────────────────────────────────────────────────
+  const mouthR = (isExtended ? 14 : 8) * _netRadiusMult;
+  const bagDepth = mouthR * 1.8;
+
+  // Bag fill
+  ctx.save();
+  ctx.globalAlpha = isExtended ? 0.22 : 0.12;
+  ctx.fillStyle   = '#ffd770';
+  ctx.beginPath();
+  // Mouth opening (top arc)
+  ctx.arc(headX, headY, mouthR, Math.PI, 0, false);  // top semicircle
+  // Bag sides taper to a point
+  ctx.bezierCurveTo(
+    headX + mouthR * 0.8, headY + bagDepth * 0.6,
+    headX + mouthR * 0.3, headY + bagDepth,
+    headX, headY + bagDepth
+  );
+  ctx.bezierCurveTo(
+    headX - mouthR * 0.3, headY + bagDepth,
+    headX - mouthR * 0.8, headY + bagDepth * 0.6,
+    headX - mouthR, headY
+  );
+  ctx.closePath();
+  ctx.fill();
+  ctx.restore();
+
+  // Bag outline stroke
+  ctx.save();
+  ctx.strokeStyle = isExtended ? 'rgba(255,210,80,0.75)' : 'rgba(255,210,80,0.35)';
+  ctx.lineWidth   = isExtended ? 1.5 : 1.0;
+  ctx.beginPath();
+  ctx.arc(headX, headY, mouthR, Math.PI, 0, false);
+  ctx.bezierCurveTo(
+    headX + mouthR * 0.8, headY + bagDepth * 0.6,
+    headX + mouthR * 0.3, headY + bagDepth,
+    headX, headY + bagDepth
+  );
+  ctx.bezierCurveTo(
+    headX - mouthR * 0.3, headY + bagDepth,
+    headX - mouthR * 0.8, headY + bagDepth * 0.6,
+    headX - mouthR, headY
+  );
+  ctx.stroke();
+  ctx.restore();
+
+  // Mesh lines inside bag — horizontal arcs
+  if (isExtended) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,215,100,0.55)';  // fixed: was 0.40, AC specifies 0.55
+    ctx.lineWidth   = 0.8;
+    for (let i = 1; i <= 4; i++) {
+      const frac = i / 5;
+      const yr   = headY + bagDepth * frac;
+      const xr   = mouthR * (1 - frac * 0.85);
+      ctx.beginPath();
+      ctx.arc(headX, yr, xr, Math.PI, 0, false);
+      ctx.stroke();
+    }
+    // Vertical lines (2 center lines)
+    for (let i = -1; i <= 1; i++) {
+      if (i === 0) continue;
+      const xOff = mouthR * i * 0.45;
+      ctx.beginPath();
+      ctx.moveTo(headX + xOff, headY);
+      ctx.quadraticCurveTo(headX + xOff * 0.7, headY + bagDepth * 0.6, headX + xOff * 0.15, headY + bagDepth);
+      ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  // Mouth ring (hoop)
+  ctx.save();
+  const ringAlpha = isExtended ? 0.9 : 0.45;
+  ctx.strokeStyle = `rgba(255,215,0,${ringAlpha})`;
+  ctx.lineWidth   = isExtended ? 2.5 : 1.5;
+  ctx.shadowColor = '#ffd700';
+  ctx.shadowBlur  = isExtended ? 6 : 2;
+  ctx.beginPath();
+  ctx.ellipse(headX, headY, mouthR, mouthR * 0.35, 0, 0, TWO_PI);
+  ctx.stroke();
+  ctx.restore();
+
+  // Catch flash (STORY-00257) — brief gold overlay on bag
+  if (_catchFlashFrames > 0) {
+    _catchFlashFrames--;
+    ctx.save();
+    ctx.globalAlpha = _catchFlashFrames / 3 * 0.7;
+    ctx.fillStyle   = '#ffd700';
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur  = 20;
+    ctx.beginPath();
+    ctx.arc(headX, headY + bagDepth * 0.4, mouthR * 1.1, 0, TWO_PI);
+    ctx.fill();
+    ctx.restore();
   }
 }
 
@@ -1077,15 +1408,19 @@ function _drawHUD(ctx, W) {
   const secs    = Math.floor(_timeLeft % 60);
   const timerStr = mins + ':' + String(secs).padStart(2, '0');
   const timerFlashing = _timerFlash > 0 || _timeLeft <= 15;
+  const timerUrgent   = _timeLeft <= 10;
 
   ctx.save();
-  ctx.font         = 'bold 18px sans-serif';
+  // Pulse font size when urgent (STORY-00260)
+  const t2 = Date.now() * 0.001;
+  const pulsedSize = timerUrgent ? Math.round(18 + 4 * Math.abs(Math.sin(t2 * Math.PI * 2))) : 18;
+  ctx.font         = `bold ${pulsedSize}px sans-serif`;
   ctx.textAlign    = 'right';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = timerFlashing ? '#ff4444' : COLORS.text;
   if (timerFlashing) {
     ctx.shadowColor = '#ff2222';
-    ctx.shadowBlur  = 8;
+    ctx.shadowBlur  = timerUrgent ? 14 : 8;
   }
   ctx.fillText(timerStr, W - G.SAFE_RIGHT - 14, ST + 26);
   ctx.restore();
@@ -1221,18 +1556,21 @@ function _triggerResult(victory) {
 
   if (victory) {
     AudioAdapter.playSFX(SFX_VICTORY);
-    // Spawn victory celebration particles (gold star rain)
+    // Spawn victory celebration particles — 40 particles with gravity (STORY-00260)
     const W = G.SCREEN_W;
     const H = G.SCREEN_H;
-    for (let i = 0; i < 20; i++) {
+    for (let i = 0; i < 40; i++) {
+      const pColor = i % 3 === 0 ? '#ffffff' : i % 3 === 1 ? '#ffd700' : '#ffee88';
       _particles.push({
         x: Math.random() * W,
         y: Math.random() * H * 0.5,
-        vx: (Math.random() - 0.5) * 2,
-        vy: -1.5 - Math.random() * 2,
-        life: 60 + Math.random() * 30,
-        maxLife: 90,
-        color: i % 3 === 0 ? '#ffffff' : '#ffd700',
+        vx: (Math.random() - 0.5) * 3,
+        vy: -2 - Math.random() * 3,
+        life: 80 + Math.random() * 40,
+        maxLife: 120,
+        color: pColor,
+        r: 3 + Math.random() * 3,
+        gravity: 0.04,
       });
     }
     _phase = 'celebrate';

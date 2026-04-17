@@ -335,7 +335,45 @@
 - Sprint 17: Fail screen layout improved — centered vertically with generous spacing. Hierarchy: title → stats → constellation canvas → encouragement → buttons. No longer cramped.
 - Sprint 17: Zero console errors across all navigation transitions.
 
-## Sprint 19 Updates (2026-04-12)
+## Sprint 19-mini Updates (2026-04-17)
+
+### Visual Overhaul — All 4 Stories Verified (Code-path, MEDIUM confidence)
+
+#### Net (STORY-00257) — Full Mesh Bag
+- Extended state: 28px mouth ring (golden ellipse with shadowBlur=6 glow), semi-transparent gold bag fill (bezier triangular shape), 4 horizontal arc mesh lines + 2 vertical curves, brown rope. Clearly readable as catching tool in flight.
+- Idle state: 16px stub at reduced opacity — Medium UX gap (affordance weak before first tap, but resolves immediately on extension)
+- Arc trail: 10 fading white dots (0→3.5px radius, 0→0.6 alpha) behind net head during extension — satisfying motion history
+- Catch flash: 3-frame bright gold overlay (shadowBlur=20, alpha 0.7→0) — instant "got it" signal
+
+#### Character (STORY-00258) — Anime Quality
+- Height ~140px (~37% of 375px screen height) — substantial, clearly the visual centerpiece
+- Distinctive silhouette: tall purple witch hat, 60px-wide purple gradient dress, star emblem, throwing pose with right arm up
+- Purple radial aura (r=65, subtle 14% opacity) adds magical atmosphere
+- Head: r=17 with anime eyes (3px dark iris + 1.2px shine), eyebrows, smile, blush cheeks
+- Hair: dark bezier strands sweeping behind, side tufts framing face, crown arc, fringe — reads as "flowing hair" at game scale
+- Throwing pose: right arm extended up to y=-60 (rope origin) communicates the mechanics without tutorial
+
+#### Catch Feedback (STORY-00259) — Dual Channel
+- 12-particle burst (6 gold + 3 white + 3 star-color) at evenly-spaced radial angles, 0.6s life
+- 3-frame golden flash on net bag — clear "caught" signal
+- Screen shake on debris: 6-frame ±3px translate — standard punishment signal
+
+#### Global Visual Effects (STORY-00260) — Rich Atmosphere
+- 106 background stars (100 normal + 6 bright with blue shadow glow) — rich starfield
+- Warm orange ground glow at horizon (H*0.76) — anchors the scene, adds depth
+- 4-point star sparkle on catchable stars (sparkleLen=r×3, alpha modulated by twinkle) — clear "grab me" affordance
+- Timer urgency: 18→22px font pulse at 2Hz when ≤10s — kinetic typography for tension
+- Victory: 40 upward-arcing particles (gravity=0.04) in white/gold/warm-yellow, 1.3-2s life — satisfying fireworks
+
+### Navigation Regression (Sprint 19-mini)
+- All state (particles, trail, flash, shake, SFX context) properly reset in _cleanup()
+- No stale visual artifacts expected between game sessions
+- _lineDrawSfxCtx: cached single context with destroy() on cleanup — audio context leak RESOLVED
+
+### UX Risk Remaining
+- Net idle affordance: Medium — user must tap once to see the full net. Tutorial hint text already present from Sprint 2. Low priority for current quality bar.
+
+
 
 - Sprint 19: Item-select overlay has clear "← 返回" back button top-left — dismisses cleanly to levels screen, no friction. One-tap back navigation confirmed.
 - Sprint 19: Stars appear immediately on game entry (<50ms) — no blank canvas delay. Sprite pre-warming on levels screen eliminates previous 400ms delay.

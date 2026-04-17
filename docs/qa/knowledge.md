@@ -2,7 +2,43 @@
 
 ---
 
-## Sprint 16-mini Updates (2026-04-17)
+## Sprint 19-mini Updates (2026-04-17)
+
+### Visual Overhaul — 4 Stories PASS
+
+#### Net (STORY-00257) — Full Mesh Bag
+- `_drawNet()` has two states: idle (mouthR=8, stub bag) and extended (mouthR=14, full bag)
+- Bag shape: top semicircle arc + two bezier sides tapering to bottom point at depth=mouthR×1.8
+- Mesh lines: `rgba(255,215,100,0.55)` — 4 horizontal arcs + 2 vertical quadratic curves (extended only)
+- Mouth ring: `ctx.ellipse(headX, headY, mouthR, mouthR*0.35, ...)` — slightly flattened hoop
+- Arc trail: `ARC_TRAIL_LEN=10` ring buffer of {x,y} net head positions; drawn as fading white dots (alpha=frac×0.6, radius=frac×3.5) with blue shadow
+- Catch flash: `_catchFlashFrames=3`, gold circle at shadowBlur=20
+
+#### Character (STORY-00258) — Anime Quality
+- `GIRL_H=110`, spans y=22 (shoes) to y=-118 (hat tip) = ~140px total
+- `_poleX = W/2, _poleY = H*0.82` — anchor unchanged
+- Aura: `createRadialGradient(0,-40,5, 0,-40,65)`, inner stop `rgba(120,60,200,0.12)`
+- Hat star: `ctx.font = '12px sans-serif'`, fillText '★' at (4,-108) with gold shadow
+- Purple ribbon bow: on hat at (-10,-92), separate from hair color
+
+#### Operation Feedback (STORY-00259) — Fixed
+- Launch trail: 3-4 particles/frame (deterministic loop), `r=1.5-2.5px`, `life=15`, white
+- Catch burst: 12 particles [6×#ffd700 + 3×#ffffff + 3×star-color], r=5, life=36
+- Screen shake: `_shakeFrames=6`, `_shakeX/Y=(random-0.5)×6`, explicit reset to 0 at end
+- SFX: `_lineDrawSfxCtx.volume=0.4`, cached single context, destroyed in `_cleanup()`
+- Audio context leak RESOLVED — single InnerAudioContext for line-draw, destroyed on cleanup
+
+#### Global Effects (STORY-00260)
+- Background: `initBgStars(W, H, 100)` + 6 bright stars = 106 total
+- Victory particles: 40 total, `gravity=0.04`, rise then fall like fireworks
+- Timer urgency: `18 + 4×|sin(t×π×2)|` when ≤10s remaining = 2Hz pulse 18-22px
+- Line glow: settled=shadowBlur 12, newest line pulses to shadowBlur 16 + alpha 1.0
+
+### Bug Patterns (Sprint 19-mini)
+- AC numeric values (font size, volume, alpha) often drift during development tuning — always verify exact values against AC spec
+- BUG-00262 backlog: text-only pill hint at center is functional; aspirational pulsing circle AC deferred
+
+
 
 ### Intro Animation (STORY-00250)
 - 3-phase canvas animation: Phase 1 meteors (0-3s), Phase 2 constellation reveal (3-8s), Phase 3 title fade-in (8-12s). Tap-to-skip supported.

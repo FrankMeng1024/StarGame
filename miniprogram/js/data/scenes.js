@@ -123,6 +123,15 @@ export function drawGroundSilhouette(ctx, W, H, sceneIdx) {
   ctx.fillStyle = scene.groundColor;
   ctx.fill();
 
+  // Warm glow strip above silhouette top edge (STORY-00260)
+  // Draw a gradient strip that overlaps the top of the silhouette
+  const warmGlow = ctx.createLinearGradient(0, groundY - H * 0.08, 0, groundY);
+  warmGlow.addColorStop(0, 'rgba(0,0,0,0)');
+  warmGlow.addColorStop(0.7, 'rgba(255,140,40,0)');
+  warmGlow.addColorStop(1, 'rgba(255,140,40,0.15)');
+  ctx.fillStyle = warmGlow;
+  ctx.fillRect(0, groundY - H * 0.08, W, H * 0.08);
+
   ctx.restore();
 }
 
