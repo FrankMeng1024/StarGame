@@ -1,10 +1,10 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
-## Sprint 24-mini — 2026-04-17 (mini branch, 8 user-reported quality fixes)
+## Sprint 24-mini — 2026-04-17 (mini branch, 8 user-reported quality fixes) — RETROSPECTIVE COMPLETE
 
-- [pending] Arch code review caught: caught debris rendered at TWO positions simultaneously — original position in _drawDebris AND net head position in _drawNet. Pattern: when adding a "drag visual" for a caught object, always add a guard `if (obj === _caughtObj) continue` in the original draw loop, AND handle removal from the source array on completion. Both fixes were missed in implementation.
-- [pending] Sprint 24-mini code was fully implemented (7 stories coded, all ACs passing) but never committed — the sprint sat in the working tree from a previous session. User re-submitted the exact same 8 complaints because they never saw the sprint 24 changes. Lesson: incomplete sprints (coded but not committed) should be surfaced in PROJECT_STATE.md more prominently — "IN PROGRESS (working tree)" vs "COMPLETE". Also: don't mark stories as Done until the sprint is committed.
-- [pending] Net physics speed calibration is a game feel question, not a fixed spec: NET_SPEED=9 was too fast, NET_SPEED=4 may be too slow (2.76s round-trip per UX review). Debris retract at 20% = 3-7s immobilization is very punishing for casual players. Physics constants need real-device play testing. Consider adding a CR for physics tuning after VU evaluation.
+- [archived: docs/qa/knowledge.md] Caught debris double-render pattern: when adding a "drag visual" for a caught object, always add `if (obj === _caughtObj) continue` in the original draw loop AND remove the object from source array on completion. Both fixes were caught by Arch code review; added to qa/knowledge.md regression checklist.
+- [archived: docs/PROJECT_STATE.md §status-wording] Sprint sitting in working tree issue: incomplete sprints (coded but not committed) should use status "IN PROGRESS (working tree)" to distinguish from sprints awaiting VU only. Stories must not be marked Done until sprint is committed. Added clarity to PROJECT_STATE.md status block pattern.
+- [pending] Net physics speed calibration is a game feel question, not a fixed spec: NET_SPEED=9 was too fast, NET_SPEED=4 may be too slow (2.76s round-trip per UX review). Debris retract at 20% = 3-7s immobilization is very punishing for casual players. Physics constants need real-device play testing. Consider adding a CR for physics tuning after real-device feedback.
 
 ## Sprint 22-mini — 2026-04-17 (mini branch, gameplay + visual polish fixes)
 
