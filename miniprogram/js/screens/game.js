@@ -418,7 +418,7 @@ function _loop(now) {
       _updateShake();
     }
 
-    // Apply screen shake offset
+    // Apply screen shake offset (game world only — HUD stays fixed)
     const didShake = _shakeFrames > 0;
     if (didShake) {
       ctx.save();
@@ -431,13 +431,15 @@ function _loop(now) {
     _drawParticles(ctx);
     _drawGirl(ctx);
     _drawNet(ctx);
-    _drawHUD(ctx, W);
-    if (_hintTimer > 0 && !_paused) _drawHint(ctx, W, H);
-    if (_paused) _drawPauseOverlay(ctx, W, H);
 
     if (didShake) {
       ctx.restore();
     }
+
+    // HUD and overlays drawn after shake restore — always screen-space fixed
+    _drawHUD(ctx, W);
+    if (_hintTimer > 0 && !_paused) _drawHint(ctx, W, H);
+    if (_paused) _drawPauseOverlay(ctx, W, H);
   } else if (_phase === 'celebrate') {
     _updateParticles(dt);
     _celebrateTimer -= dt;
@@ -1826,7 +1828,8 @@ function _drawResultOverlay(ctx, W, H) {
     // Buttons (3 buttons: 下一关/全部通关, 重玩, 选关)
     const btnW3 = (cardW - 20) / 3;
     const btnH = 40;
-    const bY   = cardY + cardH - 112;
+    // Position buttons after content (cy), but no higher than cardH-112 from top
+    const bY   = Math.max(cy + 8, cardY + cardH - 112);
     const isLastLevel = _levelIdx >= 29;
 
     if (isLastLevel) {

@@ -308,7 +308,7 @@ function _loop(now) {
     // Achievement button — small, below main buttons (STORY-00287: achH even smaller)
     const achH = Math.max(20, Math.min(24, BH * 0.75));
     const achY = startY + 3 * (BH + GAP) + 6;
-    const achRect = _drawMenuButton(ctx, rightX, achY, BW, achH, '🏆 星座图鉴', {
+    const achRect = _drawMenuButton(ctx, rightX, achY, BW, achH, '🏆 通关成就', {
       fontSize: 10, primary: false,  // STORY-00287: was 11
     });
     _buttons.push({ ...achRect, key: 'achievement' });
@@ -338,7 +338,7 @@ function _loop(now) {
 
     // Achievement button — portrait
     const achY = startY + 3 * (BH + GAP) + 4;
-    const achRect = _drawMenuButton(ctx, BX, achY, BW, 28, '🏆 星座图鉴', {
+    const achRect = _drawMenuButton(ctx, BX, achY, BW, 28, '🏆 通关成就', {
       fontSize: 11, primary: false,
     });
     _buttons.push({ ...achRect, key: 'achievement' });

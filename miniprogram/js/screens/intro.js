@@ -15,6 +15,7 @@ const TWO_PI = Math.PI * 2;
 let _navigate  = null;
 let _rafId     = null;
 let _startTime = 0;
+let _lastNow   = 0;
 let _done      = false;
 
 // Meteors
@@ -69,6 +70,7 @@ function _cleanup() {
   try { G.CANVAS.removeEventListener('touchstart', _onSkip); } catch (e) {}
   _sparkles = [];
   _sparkleTriggered = new Set();
+  _lastNow = 0;
 }
 
 function _onSkip() {
@@ -122,6 +124,8 @@ function _spawnMeteor(delayMs) {
 function _loop(now) {
   if (_done) return;
   if (_startTime === 0) _startTime = now;
+  const dt = _lastNow > 0 ? Math.min((now - _lastNow) / 1000, 0.05) : 1 / 60;
+  _lastNow = now;
   // QA FREEZE HOOK: wx.__introFreezeAt = N freezes animation at N seconds
   let elapsed = (now - _startTime) / 1000; // seconds
   if (typeof wx !== 'undefined' && typeof wx.__introFreezeAt === 'number') {
@@ -162,8 +166,8 @@ function _loop(now) {
     for (const m of _meteors) {
       if (m.dead || elapsedMs < m.born) continue;
       const age = (elapsedMs - m.born) / 1000;
-      m.x += m.vx * (1 / 60);
-      m.y += m.vy * (1 / 60);
+      m.x += m.vx * dt;
+      m.y += m.vy * dt;
       if (m.y > H + 50 || m.x > W + 50) { m.dead = true; continue; }
       // Trail: draw line from current pos back along velocity — longer trail (STORY-00277)
       const trailFactor = 0.28; // STORY-00283: was 0.22 — even longer, more dramatic trails
@@ -392,8 +396,8 @@ function _loop(now) {
     ctx.save();
     for (let si = _sparkles.length - 1; si >= 0; si--) {
       const sp = _sparkles[si];
-      sp.x += sp.vx * (1 / 60);
-      sp.y += sp.vy * (1 / 60);
+      sp.x += sp.vx * dt;
+      sp.y += sp.vy * dt;
       sp.life--;
       if (sp.life <= 0) { _sparkles.splice(si, 1); continue; }
       const a = sp.life / sp.maxLife;

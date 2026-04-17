@@ -77,10 +77,7 @@ function _loop(now) {
   drawSkyBg(ctx, W, H);
   drawBgStars(ctx, t);
 
-  ctx.save();
-  ctx.translate(0, -_scrollY);
-
-  // Title
+  // Fixed header (outside scroll block)
   ctx.save();
   ctx.font         = `bold 18px sans-serif`;
   ctx.textAlign    = 'center';
@@ -89,7 +86,7 @@ function _loop(now) {
   ctx.fillText('⭐ 星座图鉴', W / 2, G.SAFE_TOP + 28);
   ctx.restore();
 
-  // Count completed
+  // Count completed (fixed)
   const completed = CONSTELLATIONS.filter((c, i) => {
     const s = state.getScore(i);
     return s && s.stars > 0;
@@ -101,6 +98,14 @@ function _loop(now) {
   ctx.fillStyle    = COLORS.text2;
   ctx.fillText(`已发现 ${completed} / ${CONSTELLATIONS.length} 个星座`, W / 2, G.SAFE_TOP + 46);
   ctx.restore();
+
+  // Scrollable grid with clip region
+  const clipTop = G.SAFE_TOP + 56;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(0, clipTop, W, H - clipTop);
+  ctx.clip();
+  ctx.translate(0, -_scrollY);
 
   // Grid cells
   for (const cr of _cellRects) {

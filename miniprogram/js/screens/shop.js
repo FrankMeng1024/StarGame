@@ -127,8 +127,8 @@ function _loop(now) {
   ctx.restore();
 
   // ── Feedback toast ──
-  if (_feedback && now < _feedback.until) {
-    const alpha = Math.min(1, (_feedback.until - now) / 400);
+  if (_feedback && Date.now() < _feedback.expiresAt) {
+    const alpha = Math.min(1, (_feedback.expiresAt - Date.now()) / 400);
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.fillStyle = _feedback.error ? 'rgba(200,60,60,0.92)' : 'rgba(30,200,120,0.92)';
@@ -268,11 +268,11 @@ function _tryBuy(itemIdx) {
   const item = ITEMS[itemIdx];
   if (!item) return;
   if (!state.spendCoins(item.cost)) {
-    _feedback = { msg: '金币不足！', error: true, until: performance.now() + 1200 };
+    _feedback = { msg: '金币不足！', error: true, expiresAt: Date.now() + 1200 };
     return;
   }
   state.addItem(item.id, 1);
-  _feedback = { msg: '已购买 ' + item.nameZh + '！', until: performance.now() + 1200 };
+  _feedback = { msg: '已购买 ' + item.nameZh + '！', expiresAt: Date.now() + 1200 };
 }
 
 // ── Helper: rounded rect path ─────────────────────────────────

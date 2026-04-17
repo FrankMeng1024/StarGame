@@ -32,11 +32,16 @@ const PAD_X   = 12;
 const GAP     = 8;
 
 // ── Item selection overlay state ───────────────────────────────
-let _overlayActive   = false;
-let _overlayToggled  = new Set(); // item IDs selected for use
-let _overlayBtnRects = [];        // [{id, rect}] toggle buttons
-let _overlayConfirm  = null;
-let _overlaySkip     = null;
+let _overlayActive      = false;
+let _overlayToggled     = new Set(); // item IDs selected for use
+let _overlayBtnRects    = [];        // [{id, rect}] toggle buttons
+let _overlayConfirm     = null;
+let _overlaySkip        = null;
+let _overlayScrollY     = 0;
+let _overlayScrollTarget = 0;
+let _overlayTotalRowsH  = 0;  // total height of all item rows
+let _overlayRowsClipY   = 0;  // clip top for rows area
+let _overlayRowsClipH   = 0;  // clip height for rows area
 
 // ── Public API ────────────────────────────────────────────────
 export function showLevels(navigate) {
@@ -79,6 +84,8 @@ function _cleanup() {
   _overlayBtnRects = [];
   _overlayConfirm = null;
   _overlaySkip = null;
+  _overlayScrollY = _overlayScrollTarget = 0;
+  _overlayTotalRowsH = 0;
 }
 
 function _computeLayout() {
@@ -286,6 +293,9 @@ function _drawCard(ctx, cr, t) {
 
 // ── Item selection overlay ────────────────────────────────────
 function _drawItemOverlay(ctx, W, H) {
+  // Smooth overlay scroll
+  _overlayScrollY += (_overlayScrollTarget - _overlayScrollY) * 0.22;
+
   // Dim background
   ctx.save();
   ctx.fillStyle = 'rgba(0,0,0,0.70)';
@@ -295,7 +305,12 @@ function _drawItemOverlay(ctx, W, H) {
   const ownedItems = ITEMS.filter(it => state.getItemQty(it.id) > 0);
   const cardW = Math.min(W - 40, 340);
   const rowH  = 60;
-  const cardH = 90 + ownedItems.length * rowH + 60;
+  const HEADER_H = 70;   // title + subtitle area
+  const FOOTER_H = 60;   // bottom buttons area
+  const naturalContentH = HEADER_H + ownedItems.length * rowH + FOOTER_H;
+  // Clamp card height to available screen (safe margins)
+  const maxCardH = H - G.SAFE_TOP - G.SAFE_BOTTOM - 16;
+  const cardH = Math.min(naturalContentH, maxCardH);
   const cardX = (W - cardW) / 2;
   const cardY = Math.max(G.SAFE_TOP + 8, (H - cardH) / 2);
 
@@ -327,11 +342,25 @@ function _drawItemOverlay(ctx, W, H) {
   ctx.fillText('（本关结束后自动消耗）', W / 2, cardY + 54);
   ctx.restore();
 
-  // Item rows
+  // Scrollable rows area — clipped between header and footer
+  const rowsAreaTop  = cardY + HEADER_H;
+  const rowsAreaH    = cardH - HEADER_H - FOOTER_H;
+  _overlayTotalRowsH = ownedItems.length * rowH;
+  _overlayRowsClipY  = rowsAreaTop;
+  _overlayRowsClipH  = rowsAreaH;
+  const maxRowScroll = Math.max(0, _overlayTotalRowsH - rowsAreaH);
+  _overlayScrollTarget = Math.max(0, Math.min(maxRowScroll, _overlayScrollTarget));
+
+  // Item rows (clipped + scrolled)
   _overlayBtnRects = [];
-  const rowStartY = cardY + 70;
+  ctx.save();
+  ctx.beginPath();
+  ctx.rect(cardX, rowsAreaTop, cardW, rowsAreaH);
+  ctx.clip();
+  ctx.translate(0, -_overlayScrollY);
+
   ownedItems.forEach((it, i) => {
-    const rowY   = rowStartY + i * rowH;
+    const rowY   = rowsAreaTop + i * rowH;
     const toggled = _overlayToggled.has(it.id);
     const qty = state.getItemQty(it.id);
 
@@ -371,7 +400,7 @@ function _drawItemOverlay(ctx, W, H) {
     ctx.fillText(it.desc, cardX + 50, rowY + 28);
     ctx.restore();
 
-    // Toggle button
+    // Toggle button — record in content-space (before scroll offset removed)
     const btnW = 58, btnH = 30;
     const btnX = cardX + cardW - 18 - btnW;
     const btnY = rowY + (rowH - 5 - btnH) / 2;
@@ -381,10 +410,13 @@ function _drawItemOverlay(ctx, W, H) {
       color0: toggled ? 'rgba(30,140,70,0.85)' : 'rgba(60,90,160,0.85)',
       color1: toggled ? 'rgba(20,180,80,0.85)' : 'rgba(50,110,200,0.85)',
     });
+    // Store btn in content-space y (caller adjusts for scroll)
     _overlayBtnRects.push({ id: it.id, rect: btn });
   });
 
-  // Bottom buttons: 跳过 + 确定出发
+  ctx.restore();
+
+  // Bottom buttons: 跳过 + 确定出发 (outside clip, always visible)
   const btnY2  = cardY + cardH - 52;
   const btnW2  = (cardW - 36) / 2;
   _overlaySkip    = drawButton(ctx, cardX + 10,               btnY2, btnW2, 40, '跳过', {
@@ -408,13 +440,21 @@ function _onTouchStart(e) {
 }
 
 function _onTouchMove(e) {
-  if (_overlayActive) return; // block scroll when overlay shown
   const touch = e.changedTouches[0];
   if (!touch) return;
   const rawY = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
   const dy = rawY - _lastTouchY;
-  _scrollVelocity = -dy;  // track velocity for momentum
   _lastTouchY = rawY;
+
+  if (_overlayActive) {
+    // Scroll the overlay rows
+    if (Math.abs(dy) > 2) _isDragging = true;
+    const maxScroll = Math.max(0, _overlayTotalRowsH - _overlayRowsClipH);
+    _overlayScrollTarget = Math.max(0, Math.min(maxScroll, _overlayScrollTarget - dy));
+    return;
+  }
+
+  _scrollVelocity = -dy;  // track velocity for momentum
   if (Math.abs(dy) > 2) _isDragging = true;
 
   const maxScroll = Math.max(0, _totalH - G.SCREEN_H);
@@ -433,9 +473,11 @@ function _onTouchEnd(e) {
 
   // ── Overlay touch handling ───────────────────────────────────
   if (_overlayActive) {
-    // Toggle item buttons
+    if (_isDragging) { _isDragging = false; return; }
+    // Toggle item buttons — adjust ty for the overlay scroll offset
+    const scrolledTY = ty + _overlayScrollY;
     for (const { id, rect } of _overlayBtnRects) {
-      if (hitTest(rect, tx, ty)) {
+      if (hitTest(rect, tx, scrolledTY)) {
         if (_overlayToggled.has(id)) {
           _overlayToggled.delete(id);
         } else {
@@ -448,6 +490,7 @@ function _onTouchEnd(e) {
     if (_overlaySkip && hitTest(_overlaySkip, tx, ty)) {
       state.selectedItems = [];
       _overlayActive = false;
+      _overlayScrollY = _overlayScrollTarget = 0;
       if (_navigate) _navigate('game');
       return;
     }
@@ -455,11 +498,13 @@ function _onTouchEnd(e) {
     if (_overlayConfirm && hitTest(_overlayConfirm, tx, ty)) {
       state.selectedItems = [..._overlayToggled];
       _overlayActive = false;
+      _overlayScrollY = _overlayScrollTarget = 0;
       if (_navigate) _navigate('game');
       return;
     }
     // Tap outside overlay dismisses it (cancel)
     _overlayActive = false;
+    _overlayScrollY = _overlayScrollTarget = 0;
     return;
   }
 
@@ -491,6 +536,7 @@ function _onTouchEnd(e) {
         _overlayActive = true;
         _overlayToggled.clear();
         _overlayBtnRects = [];
+        _overlayScrollY = _overlayScrollTarget = 0;
         return;
       }
 
