@@ -14,7 +14,7 @@ export const G = {
   SAFE_BOTTOM: 0,   // px from bottom edge to safe area (home indicator height)
   SAFE_LEFT:   0,   // px from left edge (usually 0 in portrait)
   SAFE_RIGHT:  0,   // px from right edge (usually 0 in portrait)
-  DPR:         1,   // device pixel ratio — clientX/Y must be multiplied by this to get canvas px
+  DPR:         1,   // device pixel ratio — stored for reference only; canvas and touch coords both use CSS pixels, no DPR scaling needed (STORY-00269)
 };
 
 /**
