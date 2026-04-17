@@ -27,24 +27,14 @@ function _drawMenuButton(ctx, x, y, w, h, label, opts = {}) {
 
   ctx.save();
 
-  // Drop shadow for depth
-  ctx.shadowColor = primary ? 'rgba(220,120,255,0.55)' : 'rgba(140,80,220,0.40)';
-  ctx.shadowBlur  = primary ? 18 : 12;
+  // Drop shadow for depth — lighter for ghost style (STORY-00275)
+  ctx.shadowColor = primary ? 'rgba(200,100,255,0.45)' : 'rgba(120,60,200,0.30)';
+  ctx.shadowBlur  = primary ? 12 : 8;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 3;
 
-  // Main gradient fill — diagonal for richness
-  const grad = ctx.createLinearGradient(x, y, x + w, y + h);
-  if (primary) {
-    grad.addColorStop(0,   '#c044ff');
-    grad.addColorStop(0.45,'#9933ee');
-    grad.addColorStop(1,   '#6622cc');
-  } else {
-    grad.addColorStop(0,   '#8833cc');
-    grad.addColorStop(0.45,'#6622aa');
-    grad.addColorStop(1,   '#441188');
-  }
-  ctx.fillStyle = grad;
+  // Ghost fill — semi-transparent, background shows through (STORY-00275)
+  ctx.fillStyle = primary ? 'rgba(160,0,220,0.28)' : 'rgba(80,0,160,0.20)';
 
   // Rounded rect fill
   ctx.beginPath();
@@ -65,8 +55,8 @@ function _drawMenuButton(ctx, x, y, w, h, label, opts = {}) {
   ctx.shadowBlur  = 0;
   ctx.shadowOffsetY = 0;
 
-  // Gold/star glow border
-  ctx.strokeStyle = primary ? 'rgba(255,220,80,0.75)' : 'rgba(200,160,255,0.55)';
+  // Brighter border for ghost style — border defines the button shape (STORY-00275)
+  ctx.strokeStyle = primary ? 'rgba(200,80,255,0.80)' : 'rgba(160,100,255,0.55)';
   ctx.lineWidth   = primary ? 1.8 : 1.2;
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
@@ -81,9 +71,9 @@ function _drawMenuButton(ctx, x, y, w, h, label, opts = {}) {
   ctx.closePath();
   ctx.stroke();
 
-  // Inner top highlight for glass effect
+  // Subtle inner top highlight — reduced for ghost style (STORY-00275)
   const highlightGrad = ctx.createLinearGradient(x, y, x, y + h * 0.45);
-  highlightGrad.addColorStop(0,   'rgba(255,255,255,0.18)');
+  highlightGrad.addColorStop(0,   'rgba(255,255,255,0.10)');
   highlightGrad.addColorStop(1,   'rgba(255,255,255,0)');
   ctx.fillStyle = highlightGrad;
   ctx.beginPath();

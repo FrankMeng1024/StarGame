@@ -79,7 +79,7 @@ let _dt         = 0;      // last frame dt (seconds) — used by draw helpers ne
 let _timerFlash = 0;     // seconds of red flash remaining on HUD
 
 // Result state
-let _phase      = 'play'; // 'play' | 'celebrate' | 'linedraw' | 'result'
+let _phase      = 'play'; // 'play' | 'celebrate' | 'linedraw' | 'linger' | 'result'
 let _result     = null;   // {victory, timeLeft, coins, stars, uncaught}
 
 // Pause state
@@ -105,6 +105,7 @@ let _victoryPhotoFor  = -1;    // levelIdx the photo is for
 // Victory animation state
 let _celebrateTimer = 0;  // seconds remaining in celebrate phase
 let _lineDrawProgress = 0; // float: how many lines have been drawn so far
+let _lingerTimer = 0;     // seconds remaining in linger phase (STORY-00274)
 
 // Tutorial hint
 let _hintTimer  = 0;      // seconds remaining for hint display
@@ -161,7 +162,7 @@ export function showGame(navigate) {
 
   _poleX     = W / 2;
   _poleY     = H * 0.82;
-  _netMaxLen = H * 0.75;  // fixed: was 0.55 — net couldn't reach stars (STORY-00265)
+  _netMaxLen = H * 0.88;  // fixed: was 0.75 — still too short for top-row stars (STORY-00272)
   _netLen    = 0;
   _swingT    = 0;
   _netState  = 'swing';
@@ -169,6 +170,7 @@ export function showGame(navigate) {
   _result    = null;
   _celebrateTimer = 0;
   _lineDrawProgress = 0;
+  _lingerTimer = 0;
 
   // Timer
   const diffMap = [90, 80, 70, 60, 50];
@@ -270,10 +272,30 @@ function _initStars(W, H) {
     // All stars warm white/gold (STORY-00235 — removes confusing multi-color system)
     const warmPalette = ['#fff8e0', '#ffd700', '#fffbe8', '#ffec6e'];
     const starColor = warmPalette[i % warmPalette.length];
+    const r = Math.max(3, Math.min(8, magToRadius(s.mag) * 1.4));  // STORY-00273: max 8 (was 10)
+    let cx = skyX0 + s.x * (skyX1 - skyX0);
+    let cy = skyY0 + s.y * (skyY1 - skyY0);
+
+    // Minimum separation check — nudge position if too close to existing star (STORY-00273)
+    for (let attempt = 0; attempt < 10; attempt++) {
+      let tooClose = false;
+      for (const existing of _stars) {
+        const dx = cx - existing.x, dy = cy - existing.y;
+        if (dx * dx + dy * dy < (r + existing.r + 6) * (r + existing.r + 6)) {
+          tooClose = true;
+          break;
+        }
+      }
+      if (!tooClose) break;
+      // Nudge: offset by a fraction of the sky area
+      cx = skyX0 + ((s.x + (attempt + 1) * 0.07) % 1.0) * (skyX1 - skyX0);
+      cy = skyY0 + ((s.y + (attempt + 1) * 0.06) % 1.0) * (skyY1 - skyY0);
+    }
+
     _stars.push({
-      x:     skyX0 + s.x * (skyX1 - skyX0),
-      y:     skyY0 + s.y * (skyY1 - skyY0),
-      r:     Math.max(3, Math.min(10, magToRadius(s.mag) * 1.4)),
+      x:     cx,
+      y:     cy,
+      r:     r,
       color: starColor,
       phase: (i * 1.618) % TWO_PI,
       speed: 0.4 + (i % 5) * 0.15,
@@ -329,6 +351,7 @@ function _cleanup() {
   _phase   = 'play';
   _paused  = false;
   _hintTimer = 0;
+  _lingerTimer = 0;
   _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
   _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
   _lorePage = 0;
@@ -428,6 +451,17 @@ function _loop(now) {
     _drawAnimatedConLines(ctx);
     _drawParticles(ctx);
     _drawGirl(ctx);
+  } else if (_phase === 'linger') {
+    // STORY-00274: all lines drawn — stars pulse/flash for 1.5s before result
+    _lingerTimer -= dt;
+    _drawConLines(ctx);
+    _drawStars(ctx, t);
+    _drawAnimatedConLines(ctx);
+    _drawLingerFlash(ctx, t);
+    _drawGirl(ctx);
+    if (_lingerTimer <= 0) {
+      _phase = 'result';
+    }
   } else {
     // Still draw scene for visual context
     _drawConLines(ctx);
@@ -693,11 +727,12 @@ function _drawConLines(ctx) {
 // ── Victory: line draw animation progress ────────────────────
 function _updateLineDrawProgress(dt) {
   if (!_conDef.lines || _conDef.lines.length === 0) {
-    _phase = 'result';
+    _phase = 'linger';
+    _lingerTimer = 1.5;
     return;
   }
   const totalLines = _conDef.lines.length;
-  const totalDuration = Math.max(totalLines * 0.12, 0.5);
+  const totalDuration = Math.max(totalLines * 0.35, 1.5);  // STORY-00274: slowed from 0.12
   const prevDrawn = Math.floor(_lineDrawProgress);
   _lineDrawProgress += (dt / totalDuration) * totalLines;
   const newDrawn = Math.floor(_lineDrawProgress);
@@ -715,7 +750,8 @@ function _updateLineDrawProgress(dt) {
   }
   if (_lineDrawProgress >= totalLines) {
     _lineDrawProgress = totalLines;
-    _phase = 'result';
+    _phase = 'linger';       // STORY-00274: linger before result
+    _lingerTimer = 1.5;
   }
 }
 
@@ -740,6 +776,28 @@ function _drawAnimatedConLines(ctx) {
     ctx.moveTo(a.x, a.y);
     ctx.lineTo(b.x, b.y);
     ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ── Victory linger: stars pulse bright (STORY-00274) ─────────
+function _drawLingerFlash(ctx, t) {
+  if (!_conDef.lines || !_stars) return;
+  // Collect which star indices appear in constellation lines
+  const linedStarSet = new Set();
+  for (const [ai, bi] of _conDef.lines) { linedStarSet.add(ai); linedStarSet.add(bi); }
+  const pulse = 0.55 + 0.45 * Math.abs(Math.sin(t * 5.5));  // fast pulse ~0.57s period
+  ctx.save();
+  for (const idx of linedStarSet) {
+    const s = _stars[idx];
+    if (!s) continue;
+    ctx.globalAlpha = pulse;
+    ctx.shadowColor = '#ffe566';
+    ctx.shadowBlur  = 20 * pulse;
+    ctx.fillStyle   = '#ffe566';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r * 1.3, 0, TWO_PI);
+    ctx.fill();
   }
   ctx.restore();
 }
@@ -1873,8 +1931,8 @@ function _onTouch(e) {
     return;
   }
 
-  // Tap during celebrate/linedraw: skip to result
-  if (_phase === 'celebrate' || _phase === 'linedraw') {
+  // Tap during celebrate/linedraw/linger: skip to result
+  if (_phase === 'celebrate' || _phase === 'linedraw' || _phase === 'linger') {
     _phase = 'result';
     return;
   }
