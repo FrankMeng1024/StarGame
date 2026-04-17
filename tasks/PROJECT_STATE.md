@@ -1,10 +1,10 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: COMPLETE — Sprint 24-mini
-**Current Sprint**: Sprint 24-mini
+**Status**: IN PROGRESS — Sprint 25-mini
+**Current Sprint**: Sprint 25-mini
 **Last Updated**: 2026-04-17
 
-> **Mini branch current**: Sprint 24-mini COMPLETE — VU ACCEPTED 9.5/10. 8 user-reported fixes: 登录界面/登录动画/女角色/网兜物理/碎片碰撞/按钮尺寸/关卡图标/Web视觉对齐. All CRs (102-110) delivered. PROJECT COMPLETE (final).
+> **Mini branch current**: Sprint 25-mini IN PROGRESS — 9 user-reported fixes: 开场动画黑屏根因修复/比例优化/关卡导航死锁/星座图鉴重命名/展厅卡片缩小/女角色v5/星星闪烁感增强.
 
 ## Mini branch 微信小游戏分支（mini branch）
 

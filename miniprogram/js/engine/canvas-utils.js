@@ -183,6 +183,15 @@ let _fadeDir   = 0;  // 0=none, 1=fade-out (→black), -1=fade-in (black→clear
 let _fadeCb    = null;
 
 /**
+ * 强制重置淡入淡出状态为透明（解决黑屏：上一次导航残留 _fadeAlpha=1）
+ */
+export function resetFade() {
+  _fadeAlpha = 0;
+  _fadeDir   = 0;
+  _fadeCb    = null;
+}
+
+/**
  * 触发屏幕切换淡入淡出。
  * 先淡出(150ms)→ 执行 cb → 淡入(150ms)。
  */

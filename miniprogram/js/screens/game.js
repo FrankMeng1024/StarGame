@@ -302,7 +302,7 @@ function _initStars(W, H) {
       r:     r,
       color: starColor,
       phase: (i * 1.618) % TWO_PI,
-      speed: 0.4 + (i % 5) * 0.15,
+      speed: 1.5 + (i % 5) * 0.6,  // STORY-00294: was 0.4+(i%5)*0.15 — wider range for visible twinkling
       caught: false,
     });
   });
@@ -836,7 +836,7 @@ function _drawStars(ctx, t) {
       ctx.restore();
       continue;
     }
-    const alpha = 0.50 + 0.50 * Math.abs(Math.sin(t * s.speed + s.phase));
+    const alpha = 0.35 + 0.65 * Math.abs(Math.sin(t * s.speed + s.phase));  // STORY-00294: was 0.50+0.50 — deeper swing
 
     // Glow halo
     const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 4.5);
@@ -860,8 +860,8 @@ function _drawStars(ctx, t) {
     ctx.fill();
     ctx.restore();
 
-    // 4-point cross sparkle (STORY-00260)
-    const sparkleLen = s.r * 3;
+    // 4-point cross sparkle (STORY-00260) + pulsing arm length + 8-point at peak (STORY-00294)
+    const sparkleLen = s.r * (2.5 + 1.5 * Math.abs(Math.sin(t * s.speed * 1.3 + s.phase)));  // arms pulse with twinkle
     const sparkleAlpha = alpha * 0.65;
     ctx.save();
     ctx.strokeStyle = _hexAlpha(s.color, sparkleAlpha);
@@ -879,6 +879,19 @@ function _drawStars(ctx, t) {
     ctx.moveTo(s.x, s.y - sparkleLen);
     ctx.lineTo(s.x, s.y + sparkleLen);
     ctx.stroke();
+    // Diagonal arms at peak brightness (STORY-00294: 8-point star effect)
+    if (alpha > 0.85) {
+      const diagLen = sparkleLen * 0.55;
+      ctx.globalAlpha = (alpha - 0.85) / 0.15 * 0.5;  // fade in only at peak
+      ctx.beginPath();
+      ctx.moveTo(s.x - diagLen, s.y - diagLen);
+      ctx.lineTo(s.x + diagLen, s.y + diagLen);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.moveTo(s.x + diagLen, s.y - diagLen);
+      ctx.lineTo(s.x - diagLen, s.y + diagLen);
+      ctx.stroke();
+    }
     ctx.restore();
   }
 }
@@ -1000,8 +1013,8 @@ function _drawParticles(ctx) {
   }
 }
 
-// ── Draw: girl character (STORY-00278) ───────────────────────
-// v4: 80×130px — larger anime-style character with detailed face, hair, dress, and aura
+// ── Draw: girl character (STORY-00293) ───────────────────────
+// v5: rim light + hair shine streak + waist ribbon + richer hat band
 // Origin: center bottom at (_poleX, _poleY). All coords relative to that.
 function _drawGirl(ctx) {
   const x = _poleX;
@@ -1075,6 +1088,27 @@ function _drawGirl(ctx) {
   }
   ctx.restore();
 
+  // ── Waist ribbon (STORY-00293: v5) ────────────────────────────
+  ctx.save();
+  // Bow center knot
+  ctx.fillStyle = '#ff88bb';
+  ctx.shadowColor = '#ff44aa'; ctx.shadowBlur = 4;
+  ctx.beginPath(); ctx.ellipse(0, -42, 4, 3, 0, 0, TWO_PI); ctx.fill();
+  // Left bow petal
+  ctx.beginPath();
+  ctx.moveTo(-2, -42);
+  ctx.bezierCurveTo(-10, -47, -14, -46, -12, -41);
+  ctx.bezierCurveTo(-10, -37, -5, -39, -2, -42);
+  ctx.fill();
+  // Right bow petal
+  ctx.beginPath();
+  ctx.moveTo(2, -42);
+  ctx.bezierCurveTo(10, -47, 14, -46, 12, -41);
+  ctx.bezierCurveTo(10, -37, 5, -39, 2, -42);
+  ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
+
   // ── Left arm (balance, 15° outward) ──────────────────────────
   ctx.strokeStyle = '#f5c090';
   ctx.lineWidth   = 4.5;
@@ -1108,6 +1142,13 @@ function _drawGirl(ctx) {
   // ── Head (anime round, larger) ────────────────────────────
   ctx.fillStyle = '#f8d5b0';
   ctx.beginPath(); ctx.arc(0, -66, 20, 0, TWO_PI); ctx.fill();  // STORY-00285: r=20 (was 16)
+  // Rim light outline — cool purple edge (STORY-00293: v5)
+  ctx.save();
+  ctx.strokeStyle = '#b080ff';
+  ctx.lineWidth   = 1.2;
+  ctx.globalAlpha = 0.5;
+  ctx.beginPath(); ctx.arc(0, -66, 21, 0, TWO_PI); ctx.stroke();
+  ctx.restore();
   // Ears
   ctx.fillStyle = '#f0c090';
   ctx.beginPath(); ctx.arc(-20, -66, 4.5, 0, TWO_PI); ctx.fill();
@@ -1179,6 +1220,14 @@ function _drawGirl(ctx) {
   ctx.globalAlpha = 0.45;
   ctx.lineCap     = 'round';
   ctx.beginPath(); ctx.arc(0, -76, 12, Math.PI + 0.4, TWO_PI - 0.4); ctx.stroke();
+  ctx.restore();
+  // Hair shine streak — bright diagonal highlight (STORY-00293: v5)
+  ctx.save();
+  ctx.strokeStyle = '#ccaaff';
+  ctx.lineWidth   = 1.5;
+  ctx.globalAlpha = 0.55;
+  ctx.lineCap     = 'round';
+  ctx.beginPath(); ctx.moveTo(-6, -80); ctx.bezierCurveTo(-3, -83, 3, -83, 8, -79); ctx.stroke();
   ctx.restore();
   // Star hair clips (twin tail ties)
   ctx.fillStyle = '#ffdd55';

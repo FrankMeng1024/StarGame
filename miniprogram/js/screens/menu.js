@@ -294,7 +294,7 @@ function _loop(now) {
 
     const defs = [
       { key: 'levels',  label: '挑战关卡', icon: '★' },
-      { key: 'gallery', label: '星座展厅', icon: '◉' },
+      { key: 'gallery', label: '星座图鉴', icon: '◉' },
       { key: 'shop',    label: '道具商店', icon: '◈' },
     ];
     defs.forEach((d, i) => {
@@ -325,7 +325,7 @@ function _loop(now) {
 
     const defs = [
       { key: 'levels',  label: '挑战关卡', icon: '★' },
-      { key: 'gallery', label: '星座展厅', icon: '◉' },
+      { key: 'gallery', label: '星座图鉴', icon: '◉' },
       { key: 'shop',    label: '道具商店', icon: '◈' },
     ];
     defs.forEach((d, i) => {

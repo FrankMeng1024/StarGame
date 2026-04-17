@@ -2,6 +2,43 @@
 
 ---
 
+## Sprint 25-mini Updates (2026-04-17)
+
+### Sprint 25-mini — PASS (HIGH confidence: code-path verification)
+
+#### Black screen fix: resetFade() in showIntro() (STORY-00290)
+- `resetFade()` exported from canvas-utils.js, imported and called at intro.js L41 before RAF starts.
+- Prevents stale `_fadeAlpha=1` from prior `fadeNavigate()` calls.
+- **Pattern note**: any future screen using `fadeNavigate` to reach it should call `resetFade()` in its show function as a defensive guard.
+
+#### Intro two-zone layout (STORY-00290)
+- Constellation: `cy = H * 0.28`, SIZE = `min(W,H)*0.50` (intro.js L93)
+- Constellation name text: `H * 0.52` (intro.js L256)
+- Title group anchor: `TY = H * 0.68` (intro.js L266)
+- Subtitle: `TY + 38 + floatOffset` (intro.js L379)
+
+#### Level navigation debounce fix (STORY-00291)
+- `navigate()` debounce: `< 100` ms (game.js L37) — was 300ms
+- `_lastNavTime = 0` reset on `case 'levels':` before `showLevels()` (game.js L57)
+- **Pattern**: any screen with immediate-tap UX after navigation should reset `_lastNavTime = 0` on entry.
+
+#### Gallery rename + COLS=4 (STORY-00292)
+- Both landscape (menu.js L297) and portrait (menu.js L328) gallery button labels: '星座图鉴' (was '星座展厅')
+- gallery.js L47: `const COLS = 4` (was 3)
+
+#### Girl character v5 (STORY-00293)
+- Rim light: `ctx.arc(0, -66, 21)` stroke, strokeStyle '#b080ff', lineWidth 1.2, globalAlpha 0.5 (game.js ~L1148)
+- Hair shine streak: bezierCurveTo(-6,-80)→(8,-79), strokeStyle '#ccaaff', globalAlpha 0.55 (game.js ~L1226)
+- Waist ribbon: ellipse (0,-42), fillStyle '#ff88bb' + two bezierCurveTo bow petals (game.js ~L1091)
+
+#### Star twinkle (STORY-00294)
+- Speed init: `1.5 + (i % 5) * 0.6` range 1.5-3.9 (game.js L305)
+- Alpha: `0.35 + 0.65 * Math.abs(Math.sin(...))` range 0.35-1.0 (game.js L839)
+- Sparkle arm: `s.r * (2.5 + 1.5 * Math.abs(Math.sin(t * s.speed * 1.3 + s.phase)))` (game.js L864)
+- Diagonal arms when `alpha > 0.85`: `globalAlpha = (alpha - 0.85) / 0.15 * 0.5` (game.js L883)
+
+---
+
 ## Sprint 24-mini Updates (2026-04-17)
 
 ### Sprint 24-mini — PASS (HIGH confidence: code-path verification)

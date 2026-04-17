@@ -44,7 +44,7 @@ let _carouselPrevRect = null;
 let _carouselNextRect = null;
 
 // Layout
-const COLS    = 3;
+const COLS    = 4;  // STORY-00292: was 3 — 4 cols makes cards smaller, less dominant
 const PAD_X   = 12;
 const GAP     = 8;
 

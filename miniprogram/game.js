@@ -32,9 +32,9 @@ let gameState = null;
 // ── 导航路由 ──────────────────────────────────────────────────
 let _lastNavTime = 0;
 function navigate(key) {
-  // Debounce: ignore navigate calls within 300ms of each other (prevents double-tap)
+  // Debounce: ignore navigate calls within 100ms of each other (STORY-00291: was 300ms — caused level tap deadlock)
   const now = Date.now();
-  if (now - _lastNavTime < 300) return;
+  if (now - _lastNavTime < 100) return;
   _lastNavTime = now;
 
   // 先全部清理
@@ -54,6 +54,7 @@ function navigate(key) {
       showMenu(navigate);
       break;
     case 'levels':
+      _lastNavTime = 0; // STORY-00291: reset debounce so level taps are immediately responsive
       showLevels(navigate);
       break;
     case 'game':

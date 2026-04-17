@@ -1,13 +1,13 @@
 // intro.js — 开场动画（微信小游戏版 Canvas）
-// Phase 1 (0-3s):  流星雨 — gold diagonal streaks across dark sky
-// Phase 2 (3-8s):  随机星座节点逐一显现 + 连线绘制
-// Phase 3 (8-12s): 标题 "追星少女" 淡入
+// Phase 1 (0-5s):  流星雨 — gold diagonal streaks across dark sky
+// Phase 2 (5-9s):  随机星座节点逐一显现 + 连线绘制  (upper screen area)
+// Phase 3 (9-13s): 标题 "追星少女" 淡入  (lower screen area)
 // 触摸任意位置可跳过
 // 结束后调用 navigate('menu')
 
 import { G } from '../engine/globals.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
-import { drawFadeOverlay, tickFade } from '../engine/canvas-utils.js';
+import { drawFadeOverlay, tickFade, resetFade } from '../engine/canvas-utils.js';
 
 const TWO_PI = Math.PI * 2;
 
@@ -35,6 +35,10 @@ export function showIntro(navigate) {
   _navigate = navigate;
   _cleanup();
   _done = false;
+
+  // STORY-00290: Force-clear any stuck fade overlay from previous navigation
+  // (root cause of black screen on real device: _fadeAlpha=1 from prior fadeNavigate call)
+  resetFade();
 
   // Pick a random unlocked-like constellation (just use a random one)
   _conDef = CONSTELLATIONS[Math.floor(Math.random() * CONSTELLATIONS.length)];
@@ -82,10 +86,12 @@ function _buildConStars() {
   if (!_conDef || !_conDef.stars) { _mappedStars = []; _mappedLines = []; return; }
   const W = G.SCREEN_W;
   const H = G.SCREEN_H;
-  const SIZE = Math.min(W, H) * 0.55;
+  // STORY-00290: Constellation in upper 35% of screen — better visual proportion
+  // Portrait: cx=center, cy=28% down; Landscape: similar upper placement
+  const SIZE = Math.min(W, H) * 0.50;
   const cx = W / 2;
-  const cy = H * 0.42;
-  const PAD = 20;
+  const cy = H * 0.28;  // was H*0.42 — moved to upper area for breathing room with title
+  const PAD = 18;
   const AREA = SIZE - PAD * 2;
 
   _mappedStars = _conDef.stars.map(s => ({
@@ -246,17 +252,20 @@ function _loop(now) {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = 'rgba(200,190,255,0.9)';
-      ctx.fillText(_conDef.nameZh + '  ' + _conDef.nameEn, W / 2, H * 0.7);
+      // STORY-00290: position below the upper constellation area
+      ctx.fillText(_conDef.nameZh + '  ' + _conDef.nameEn, W / 2, H * 0.52);
       ctx.restore();
     }
   }
 
   // ── Phase 3: Title fade-in (8-12s) ─────────────────────────
+  // STORY-00290: title in lower area (H*0.68) — upper area has constellation
   if (elapsed >= 8) {
     const t3 = elapsed - 8; // 0-4s
     const titleAlpha = Math.min(1, t3 / 1.5);
+    const TY = H * 0.68;  // lower anchor for title group
 
-    // Dim constellation for focus on title
+    // Dim constellation for focus on title (upper area dims slightly)
     if (_mappedStars.length > 0) {
       ctx.save();
       ctx.globalAlpha = Math.max(0, 1 - (t3 / 4) * 0.5);
@@ -279,32 +288,32 @@ function _loop(now) {
       ctx.restore();
     }
 
-    // ── Cosmic portal glow (STORY-00284) — 3 pulsing concentric rings ──
+    // ── Cosmic portal glow (STORY-00284) — 3 pulsing concentric rings around title ──
     ctx.save();
     ctx.globalAlpha = titleAlpha;
     const pulseA = 0.5 + 0.5 * Math.sin(elapsed * 1.2);
     const pulseB = 0.5 + 0.5 * Math.sin(elapsed * 0.8 + 1.0);
     const pulseC = 0.5 + 0.5 * Math.sin(elapsed * 0.5 + 2.1);
-    // Ring 1 — innermost purple
-    const grd1 = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, 80);
+    // Ring 1 — innermost purple (centered on title)
+    const grd1 = ctx.createRadialGradient(W/2, TY, 0, W/2, TY, 70);
     grd1.addColorStop(0, `rgba(160,80,255,${(0.18 + 0.10 * pulseA).toFixed(2)})`);
     grd1.addColorStop(1, 'rgba(120,0,200,0)');
     ctx.fillStyle = grd1;
-    ctx.beginPath(); ctx.arc(W/2, H/2, 80, 0, TWO_PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(W/2, TY, 70, 0, TWO_PI); ctx.fill();
     // Ring 2 — mid indigo
-    const grd2 = ctx.createRadialGradient(W/2, H/2, 30, W/2, H/2, 140);
+    const grd2 = ctx.createRadialGradient(W/2, TY, 25, W/2, TY, 120);
     grd2.addColorStop(0, 'rgba(80,0,180,0)');
     grd2.addColorStop(0.5, `rgba(100,40,220,${(0.10 + 0.06 * pulseB).toFixed(2)})`);
     grd2.addColorStop(1, 'rgba(60,0,160,0)');
     ctx.fillStyle = grd2;
-    ctx.beginPath(); ctx.arc(W/2, H/2, 140, 0, TWO_PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(W/2, TY, 120, 0, TWO_PI); ctx.fill();
     // Ring 3 — outer violet fade
-    const grd3 = ctx.createRadialGradient(W/2, H/2, 80, W/2, H/2, 200);
+    const grd3 = ctx.createRadialGradient(W/2, TY, 60, W/2, TY, 170);
     grd3.addColorStop(0, 'rgba(60,0,140,0)');
     grd3.addColorStop(0.5, `rgba(80,20,180,${(0.06 + 0.04 * pulseC).toFixed(2)})`);
     grd3.addColorStop(1, 'rgba(40,0,100,0)');
     ctx.fillStyle = grd3;
-    ctx.beginPath(); ctx.arc(W/2, H/2, 200, 0, TWO_PI); ctx.fill();
+    ctx.beginPath(); ctx.arc(W/2, TY, 170, 0, TWO_PI); ctx.fill();
     ctx.restore();
 
     // Outer title glow halo
@@ -316,7 +325,7 @@ function _loop(now) {
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#c090ff';
-    ctx.fillText('追  星  少  女', W / 2, H / 2);
+    ctx.fillText('追  星  少  女', W / 2, TY);
     ctx.restore();
 
     // Title with gradient fill (STORY-00284)
@@ -327,18 +336,18 @@ function _loop(now) {
     ctx.textBaseline = 'middle';
     ctx.shadowColor = '#c090ff';
     ctx.shadowBlur = 14;
-    const titleGrd = ctx.createLinearGradient(W/2 - 80, H/2 - 25, W/2 + 80, H/2 + 25);
+    const titleGrd = ctx.createLinearGradient(W/2 - 80, TY - 25, W/2 + 80, TY + 25);
     titleGrd.addColorStop(0, '#e0d0ff');
     titleGrd.addColorStop(0.5, '#c8a8ff');
     titleGrd.addColorStop(1, '#b090ff');
     ctx.fillStyle = titleGrd;
-    ctx.fillText('追  星  少  女', W / 2, H / 2);
+    ctx.fillText('追  星  少  女', W / 2, TY);
     ctx.restore();
 
     // Decorative separator (STORY-00284)
     if (t3 > 1.2) {
       const sepAlpha = Math.min(1, (t3 - 1.2) / 0.8) * titleAlpha;
-      const sepY = H / 2 + 28;
+      const sepY = TY + 28;
       const sepLineW = W * 0.18;
       ctx.save();
       ctx.globalAlpha = sepAlpha * 0.65;
@@ -367,7 +376,7 @@ function _loop(now) {
       ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
       ctx.fillStyle = 'rgba(185,165,230,0.9)';
-      ctx.fillText('探索88星座的奇妙旅程', W / 2, H / 2 + 38 + floatOffset);
+      ctx.fillText('探索88星座的奇妙旅程', W / 2, TY + 38 + floatOffset);
       ctx.restore();
     }
 
