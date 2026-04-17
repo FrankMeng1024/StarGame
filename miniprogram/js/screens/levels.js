@@ -360,7 +360,7 @@ function _drawItemOverlay(ctx, W, H) {
 function _onTouchStart(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  _lastTouchY = touch.clientY;
+  _lastTouchY = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
   _isDragging = false;
   _scrollVelocity = 0;
   _lastTouchTime = Date.now();
@@ -370,9 +370,10 @@ function _onTouchMove(e) {
   if (_overlayActive) return; // block scroll when overlay shown
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const dy = touch.clientY - _lastTouchY;
+  const rawY = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
+  const dy = rawY - _lastTouchY;
   _scrollVelocity = -dy;  // track velocity for momentum
-  _lastTouchY = touch.clientY;
+  _lastTouchY = rawY;
   if (Math.abs(dy) > 2) _isDragging = true;
 
   const maxScroll = Math.max(0, _totalH - G.SCREEN_H);
@@ -386,8 +387,8 @@ function _onTouchEnd(e) {
   }
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const tx = touch.clientX;
-  const ty = touch.clientY;
+  const tx = touch.clientX * G.DPR;  // fixed: DPR correction (STORY-00266)
+  const ty = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
 
   // ── Overlay touch handling ───────────────────────────────────
   if (_overlayActive) {

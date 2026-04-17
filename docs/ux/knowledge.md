@@ -1,6 +1,27 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 20-mini Updates (2026-04-17)
+
+### 4 Production Blockers Fixed — Primary Flow Now Completable
+
+#### DPR Touch Fix
+- All 6 screens (menu, levels, game, gallery, shop, achievement) now apply `touch.clientX/Y * G.DPR`
+- Scroll and tap interactions now work correctly on all DPR>1 devices
+- Pattern confirmed: `_lastTouchY = touch.clientY * G.DPR` in touchStart, same in touchMove
+
+#### Net Length (H*0.75)
+- Stars spawn between `SAFE_TOP+60` and `H*0.62`. Net now reaches `-13px` (above screen top) → full sky zone coverage
+- Game is mechanically completable from Sprint 20-mini onward
+
+#### Girl Character v3 (81px)
+- Anchor: `_poleX=W/2, _poleY=H*0.82`. Visual range: hat top at -67, shoes at +14 → 81px
+- Net rope origin: `(_poleX+12, _poleY-60)` — rope connects at raised right hand
+- Character does NOT overlap star zone: character top at H*0.82-67 = 480px, star ceiling at H*0.62 = 414px ✓
+- Anime proportions correct: head diameter 20px / total 81px ≈ 25%
+- Persistent minor: no idle animation on character in miniprogram version
+
 ## Sprint 16-mini Updates (2026-04-17)
+
 
 ### Intro Animation
 - 3-phase sequence: meteor shower → constellation reveal (with name label) → "追星少女" title + "轻触屏幕开始". Clear call-to-action. Atmospheric, thematically unified.

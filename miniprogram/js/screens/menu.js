@@ -276,8 +276,8 @@ function _loop(now) {
 function _onTouch(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const tx = touch.clientX;
-  const ty = touch.clientY;
+  const tx = touch.clientX * G.DPR;  // fixed: DPR correction (STORY-00266)
+  const ty = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
 
   // Mute button tap
   if (_muteBtn && hitTest(_muteBtn, tx, ty)) {

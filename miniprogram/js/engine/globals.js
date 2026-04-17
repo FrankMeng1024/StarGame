@@ -14,6 +14,7 @@ export const G = {
   SAFE_BOTTOM: 0,   // px from bottom edge to safe area (home indicator height)
   SAFE_LEFT:   0,   // px from left edge (usually 0 in portrait)
   SAFE_RIGHT:  0,   // px from right edge (usually 0 in portrait)
+  DPR:         1,   // device pixel ratio — clientX/Y must be multiplied by this to get canvas px
 };
 
 /**
@@ -21,11 +22,12 @@ export const G = {
  *   { top, left, bottom, right, width, height } all in px
  *   Falls back gracefully if undefined (older wx SDK).
  */
-export function initGlobals(canvas, ctx, w, h, safeArea) {
+export function initGlobals(canvas, ctx, w, h, safeArea, dpr) {
   G.CANVAS   = canvas;
   G.CTX      = ctx;
   G.SCREEN_W = w;
   G.SCREEN_H = h;
+  G.DPR      = dpr || 1;
   if (safeArea) {
     G.SAFE_TOP    = safeArea.top    || 0;
     G.SAFE_BOTTOM = h - (safeArea.bottom || h);

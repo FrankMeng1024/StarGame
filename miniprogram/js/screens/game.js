@@ -24,8 +24,8 @@ const SWING_SPEED   = Math.PI * 2 / (3.5 * 60);   // 3.5s per full cycle
 const SWING_AMP     = (80 * Math.PI) / 180;         // ±80° in radians
 const NET_SPEED     = 9;                             // px per frame extension/retraction
 const NET_MAX_LEN   = 0;                             // computed at showGame time (55% H)
-const GIRL_W        = 70;
-const GIRL_H        = 110;
+const GIRL_W        = 44;
+const GIRL_H        = 78;
 
 // ── 游戏状态机 ────────────────────────────────────────────────
 let _navigate   = null;
@@ -161,7 +161,7 @@ export function showGame(navigate) {
 
   _poleX     = W / 2;
   _poleY     = H * 0.82;
-  _netMaxLen = H * 0.55;
+  _netMaxLen = H * 0.75;  // fixed: was 0.55 — net couldn't reach stars (STORY-00265)
   _netLen    = 0;
   _swingT    = 0;
   _netState  = 'swing';
@@ -921,7 +921,10 @@ function _drawParticles(ctx) {
   }
 }
 
-// ── Draw: girl character (STORY-00258) ───────────────────────
+// ── Draw: girl character (STORY-00267) ───────────────────────
+// Redesigned v3: total visual height ≤78px (hat top -65, shoes +12)
+// Proper anime proportions: head ~1/4 total height, body compact
+// Scale factor ~0.55× vs original 140px design
 function _drawGirl(ctx) {
   const x = _poleX;
   const y = _poleY;
@@ -929,268 +932,202 @@ function _drawGirl(ctx) {
   ctx.save();
   ctx.translate(x, y);
 
-  // ── Purple aura (magical atmosphere) ─────────────────────────
-  const auraGrd = ctx.createRadialGradient(0, -40, 5, 0, -40, 65);
-  auraGrd.addColorStop(0, 'rgba(120,60,200,0.12)');  // fixed: was 0.14, AC specifies 0.12
-  auraGrd.addColorStop(1, 'rgba(120,60,200,0)');
+  // ── Soft aura ────────────────────────────────────────────────
+  const auraGrd = ctx.createRadialGradient(0, -24, 3, 0, -24, 38);
+  auraGrd.addColorStop(0, 'rgba(160,80,240,0.14)');
+  auraGrd.addColorStop(1, 'rgba(160,80,240,0)');
   ctx.save();
   ctx.fillStyle = auraGrd;
   ctx.beginPath();
-  ctx.arc(0, -40, 65, 0, TWO_PI);
+  ctx.arc(0, -24, 38, 0, TWO_PI);
   ctx.fill();
   ctx.restore();
 
-  // ── Shoes (pointed, below dress) ─────────────────────────────
+  // ── Shoes ────────────────────────────────────────────────────
   ctx.fillStyle = '#331144';
-  // Left shoe
   ctx.beginPath();
-  ctx.moveTo(-14, 14);
-  ctx.bezierCurveTo(-18, 14, -22, 18, -20, 22);
-  ctx.bezierCurveTo(-18, 26, -10, 25, -8, 22);
-  ctx.lineTo(-10, 14);
+  ctx.moveTo(-8, 8);
+  ctx.bezierCurveTo(-10, 8, -13, 10, -12, 12);
+  ctx.bezierCurveTo(-11, 14, -6, 14, -5, 12);
+  ctx.lineTo(-6, 8);
   ctx.closePath();
   ctx.fill();
-  // Right shoe
   ctx.beginPath();
-  ctx.moveTo(14, 14);
-  ctx.bezierCurveTo(18, 14, 22, 18, 20, 22);
-  ctx.bezierCurveTo(18, 26, 10, 25, 8, 22);
-  ctx.lineTo(10, 14);
+  ctx.moveTo(8, 8);
+  ctx.bezierCurveTo(10, 8, 13, 10, 12, 12);
+  ctx.bezierCurveTo(11, 14, 6, 14, 5, 12);
+  ctx.lineTo(6, 8);
   ctx.closePath();
   ctx.fill();
 
-  // ── Legs ──────────────────────────────────────────────────────
+  // ── Legs ─────────────────────────────────────────────────────
   ctx.strokeStyle = '#d4736a';
-  ctx.lineWidth   = 5;
+  ctx.lineWidth   = 3;
   ctx.lineCap     = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-7, 6);
-  ctx.quadraticCurveTo(-10, 12, -12, 16);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(7, 6);
-  ctx.quadraticCurveTo(10, 12, 12, 16);
-  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-4, 3); ctx.lineTo(-7, 9); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(4, 3);  ctx.lineTo(7, 9);  ctx.stroke();
 
-  // ── Dress ──────────────────────────────────────────────────────
-  const dressGrd = ctx.createLinearGradient(-30, -46, 30, 8);
+  // ── Dress ────────────────────────────────────────────────────
+  const dressGrd = ctx.createLinearGradient(-17, -27, 17, 4);
   dressGrd.addColorStop(0, '#7733bb');
-  dressGrd.addColorStop(0.5, '#9944cc');
+  dressGrd.addColorStop(0.55, '#9944cc');
   dressGrd.addColorStop(1, '#cc55aa');
   ctx.fillStyle = dressGrd;
   ctx.beginPath();
-  ctx.moveTo(-14, -46);
-  ctx.lineTo(-30, 6);
-  ctx.quadraticCurveTo(-24, 12, -16, 10);
-  ctx.quadraticCurveTo(-6, 14, 0, 14);
-  ctx.quadraticCurveTo(6, 14, 16, 10);
-  ctx.quadraticCurveTo(24, 12, 30, 6);
-  ctx.lineTo(14, -46);
+  ctx.moveTo(-8, -27);
+  ctx.lineTo(-17, 3);
+  ctx.quadraticCurveTo(-13, 7, -9, 6);
+  ctx.quadraticCurveTo(-3, 8, 0, 8);
+  ctx.quadraticCurveTo(3, 8, 9, 6);
+  ctx.quadraticCurveTo(13, 7, 17, 3);
+  ctx.lineTo(8, -27);
   ctx.closePath();
   ctx.fill();
-
-  // Dress shimmer highlight
+  // Shimmer
   ctx.save();
-  ctx.globalAlpha = 0.20;
-  const shimGrd = ctx.createLinearGradient(-8, -46, 2, 10);
+  ctx.globalAlpha = 0.18;
+  const shimGrd = ctx.createLinearGradient(-4, -27, 1, 6);
   shimGrd.addColorStop(0, '#ffffff');
   shimGrd.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = shimGrd;
   ctx.beginPath();
-  ctx.moveTo(-5, -46); ctx.lineTo(-8, 8); ctx.lineTo(0, 10); ctx.lineTo(6, -46);
+  ctx.moveTo(-3, -27); ctx.lineTo(-4, 5); ctx.lineTo(3, 5); ctx.lineTo(4, -27);
   ctx.closePath(); ctx.fill();
   ctx.restore();
-
-  // Sparkle dots on bodice
+  // Bodice sparkles
   ctx.save();
-  ctx.globalAlpha = 0.55;
+  ctx.globalAlpha = 0.6;
   ctx.fillStyle = '#ffffff';
-  const sparklePts = [[-6, -35], [4, -28], [-2, -20]];
-  for (const [sx, sy] of sparklePts) {
-    ctx.beginPath(); ctx.arc(sx, sy, 1.5, 0, TWO_PI); ctx.fill();
+  for (const [sx, sy] of [[-3, -20], [3, -15], [-1, -11]]) {
+    ctx.beginPath(); ctx.arc(sx, sy, 1, 0, TWO_PI); ctx.fill();
   }
   ctx.restore();
 
-  // ── Left arm (slightly raised for balance) ────────────────────
+  // ── Left arm (lowered, relaxed) ───────────────────────────────
   ctx.strokeStyle = '#f5c8a0';
-  ctx.lineWidth   = 5;
+  ctx.lineWidth   = 3;
   ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(-14, -38);
-  ctx.bezierCurveTo(-28, -36, -32, -22, -26, -12);
+  ctx.moveTo(-8, -22);
+  ctx.bezierCurveTo(-16, -20, -18, -13, -15, -7);
   ctx.stroke();
-  // Left hand
   ctx.fillStyle = '#f5c8a0';
-  ctx.beginPath();
-  ctx.arc(-26, -11, 4, 0, TWO_PI);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(-15, -6, 2.5, 0, TWO_PI); ctx.fill();
 
-  // ── Right arm (extended upward — throwing pose) ───────────────
+  // ── Right arm (raised — holding net rope) ────────────────────
   ctx.strokeStyle = '#f5c8a0';
-  ctx.lineWidth   = 5;
+  ctx.lineWidth   = 3;
   ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(14, -38);
-  ctx.bezierCurveTo(22, -44, 18, -54, 12, -60);
+  ctx.moveTo(8, -22);
+  ctx.bezierCurveTo(13, -26, 12, -32, 8, -36);
   ctx.stroke();
-  // Right hand
+  ctx.fillStyle = '#f5c8a0';
+  ctx.beginPath(); ctx.arc(8, -36, 2.5, 0, TWO_PI); ctx.fill();
+
+  // ── Neck ─────────────────────────────────────────────────────
   ctx.fillStyle = '#f5c8a0';
   ctx.beginPath();
-  ctx.arc(12, -60, 4, 0, TWO_PI);
-  ctx.fill();
+  ctx.moveTo(-3, -27); ctx.lineTo(-2, -32); ctx.lineTo(2, -32); ctx.lineTo(3, -27);
+  ctx.closePath(); ctx.fill();
 
-  // ── Neck ──────────────────────────────────────────────────────
-  ctx.fillStyle = '#f5c8a0';
-  ctx.beginPath();
-  ctx.moveTo(-5, -46);
-  ctx.lineTo(-4, -56);
-  ctx.lineTo(4, -56);
-  ctx.lineTo(5, -46);
-  ctx.closePath();
-  ctx.fill();
-
-  // ── Head ──────────────────────────────────────────────────────
-  // Drop shadow
-  ctx.save();
-  ctx.globalAlpha = 0.18;
-  ctx.fillStyle   = '#000';
-  ctx.beginPath();
-  ctx.arc(1, -70, 18, 0, TWO_PI);
-  ctx.fill();
-  ctx.restore();
+  // ── Head ─────────────────────────────────────────────────────
   // Face
   ctx.fillStyle = '#f8d5b0';
-  ctx.beginPath();
-  ctx.arc(0, -72, 17, 0, TWO_PI);
-  ctx.fill();
-  // Ear dots
+  ctx.beginPath(); ctx.arc(0, -41, 10, 0, TWO_PI); ctx.fill();
+  // Ears
   ctx.fillStyle = '#f0c090';
-  ctx.beginPath(); ctx.arc(-17, -72, 4, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(17, -72, 4, 0, TWO_PI); ctx.fill();
-
+  ctx.beginPath(); ctx.arc(-10, -41, 2.5, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(10, -41, 2.5, 0, TWO_PI); ctx.fill();
   // Cheeks
   ctx.save();
-  ctx.globalAlpha = 0.32;
-  ctx.fillStyle = '#ff9999';
-  ctx.beginPath(); ctx.ellipse(-9, -67, 5, 4, 0, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(9, -67, 5, 4, 0, 0, TWO_PI); ctx.fill();
+  ctx.globalAlpha = 0.35;
+  ctx.fillStyle = '#ff8899';
+  ctx.beginPath(); ctx.ellipse(-5.5, -38, 3, 2.5, 0, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(5.5, -38, 3, 2.5, 0, 0, TWO_PI); ctx.fill();
   ctx.restore();
-
-  // Eyebrows
-  ctx.strokeStyle = '#3a2a1a';
-  ctx.lineWidth   = 1.5;
-  ctx.lineCap     = 'round';
-  ctx.beginPath();
-  ctx.arc(-5.5, -79, 3.5, Math.PI + 0.4, TWO_PI - 0.4);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.arc(5.5, -79, 3.5, Math.PI + 0.4, TWO_PI - 0.4);
-  ctx.stroke();
-
-  // Eyes
+  // Eyes (large anime style)
   ctx.fillStyle = '#2a1a3a';
-  ctx.beginPath(); ctx.arc(-5.5, -74, 3, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(5.5, -74, 3, 0, TWO_PI); ctx.fill();
-  // Eye whites/shine
+  ctx.beginPath(); ctx.arc(-3.5, -42, 2.2, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(3.5, -42, 2.2, 0, TWO_PI); ctx.fill();
+  ctx.fillStyle = '#6633cc';
+  ctx.beginPath(); ctx.arc(-3.5, -42, 1.5, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(3.5, -42, 1.5, 0, TWO_PI); ctx.fill();
   ctx.fillStyle = '#ffffff';
-  ctx.beginPath(); ctx.arc(-4.5, -75.2, 1.2, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(6.5, -75.2, 1.2, 0, TWO_PI); ctx.fill();
-
+  ctx.beginPath(); ctx.arc(-2.8, -43, 0.8, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(4.2, -43, 0.8, 0, TWO_PI); ctx.fill();
   // Smile
   ctx.strokeStyle = '#cc6644';
-  ctx.lineWidth   = 1.8;
+  ctx.lineWidth   = 1.2;
   ctx.beginPath();
-  ctx.arc(0, -69, 5, 0.25, Math.PI - 0.25);
+  ctx.arc(0, -39, 3, 0.3, Math.PI - 0.3);
   ctx.stroke();
 
-  // ── Hair ──────────────────────────────────────────────────────
-  // Back hair (sweeps behind/below)
-  ctx.fillStyle = '#1a0a0a';
+  // ── Hair ─────────────────────────────────────────────────────
+  ctx.fillStyle = '#1a0808';
+  // Back hair tails (below ears)
   ctx.beginPath();
-  ctx.moveTo(-16, -56);
-  ctx.bezierCurveTo(-26, -48, -30, -28, -24, -10);
-  ctx.bezierCurveTo(-22, -4, -18, 0, -14, 4);
-  ctx.lineTo(-12, -10);
-  ctx.bezierCurveTo(-16, -20, -18, -40, -12, -58);
-  ctx.closePath();
-  ctx.fill();
-  // Right back hair
+  ctx.moveTo(-9, -33);
+  ctx.bezierCurveTo(-15, -26, -16, -16, -12, -6);
+  ctx.bezierCurveTo(-10, -2, -7, 0, -5, 2);
+  ctx.lineTo(-5, -8);
+  ctx.bezierCurveTo(-8, -16, -9, -26, -6, -35);
+  ctx.closePath(); ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(12, -58);
-  ctx.bezierCurveTo(22, -50, 26, -30, 20, -12);
-  ctx.bezierCurveTo(18, -6, 14, 0, 10, 4);
-  ctx.lineTo(12, -8);
-  ctx.bezierCurveTo(16, -22, 18, -44, 14, -60);
-  ctx.closePath();
-  ctx.fill();
-  // Side hair tufts framing face
+  ctx.moveTo(9, -33);
+  ctx.bezierCurveTo(15, -26, 16, -16, 12, -6);
+  ctx.bezierCurveTo(10, -2, 7, 0, 5, 2);
+  ctx.lineTo(5, -8);
+  ctx.bezierCurveTo(8, -16, 9, -26, 6, -35);
+  ctx.closePath(); ctx.fill();
+  // Top hair cap
   ctx.beginPath();
-  ctx.ellipse(-14, -72, 6, 11, -0.3, 0, TWO_PI);
+  ctx.arc(0, -46, 9, Math.PI + 0.15, TWO_PI - 0.15);
   ctx.fill();
+  // Side tufts
+  ctx.beginPath(); ctx.ellipse(-9, -41, 3.5, 6, -0.25, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(9, -41, 3.5, 6, 0.25, 0, TWO_PI);  ctx.fill();
+  // Fringe
   ctx.beginPath();
-  ctx.ellipse(14, -72, 6, 11, 0.3, 0, TWO_PI);
-  ctx.fill();
-  // Top hair (crown)
-  ctx.beginPath();
-  ctx.arc(0, -86, 15, Math.PI + 0.2, TWO_PI - 0.2);
-  ctx.fill();
-  // Front hair fringe
-  ctx.beginPath();
-  ctx.moveTo(-14, -83);
-  ctx.bezierCurveTo(-10, -78, -2, -76, 0, -74);
-  ctx.bezierCurveTo(2, -76, 10, -78, 14, -83);
-  ctx.closePath();
-  ctx.fill();
+  ctx.moveTo(-9, -49);
+  ctx.bezierCurveTo(-6, -44, -2, -43, 0, -41);
+  ctx.bezierCurveTo(2, -43, 6, -44, 9, -49);
+  ctx.closePath(); ctx.fill();
 
-  // ── Hat ──────────────────────────────────────────────────────
-  // Brim (wide flat ellipse)
-  const hatGrd = ctx.createLinearGradient(-24, -94, 24, -84);
+  // ── Witch hat ────────────────────────────────────────────────
+  const hatGrd = ctx.createLinearGradient(-14, -53, 14, -48);
   hatGrd.addColorStop(0, '#5522aa');
   hatGrd.addColorStop(1, '#8833cc');
   ctx.fillStyle = hatGrd;
+  // Brim
   ctx.beginPath();
-  ctx.ellipse(0, -88, 22, 6, 0, 0, TWO_PI);
+  ctx.ellipse(0, -51, 14, 3.5, 0, 0, TWO_PI);
   ctx.fill();
-  // Crown (slightly curved)
+  // Crown
   ctx.beginPath();
-  ctx.moveTo(-13, -88);
-  ctx.bezierCurveTo(-14, -108, -6, -116, 0, -118);
-  ctx.bezierCurveTo(6, -116, 14, -108, 13, -88);
+  ctx.moveTo(-8, -51);
+  ctx.bezierCurveTo(-9, -62, -4, -66, 0, -67);
+  ctx.bezierCurveTo(4, -66, 9, -62, 8, -51);
   ctx.closePath();
   ctx.fill();
-  // Hat band (gold gradient)
-  const bandGrd = ctx.createLinearGradient(-13, -96, 13, -90);
+  // Gold band
+  ctx.save();
+  ctx.globalAlpha = 0.85;
+  const bandGrd = ctx.createLinearGradient(-8, -56, 8, -53);
   bandGrd.addColorStop(0, '#cc9900');
   bandGrd.addColorStop(0.5, '#ffdd44');
   bandGrd.addColorStop(1, '#cc9900');
   ctx.fillStyle = bandGrd;
-  ctx.save();
-  ctx.globalAlpha = 0.85;
-  ctx.fillRect(-13, -96, 26, 5);
+  ctx.fillRect(-8, -56, 16, 3);
   ctx.restore();
-  // Purple ribbon bow on back of hat
-  ctx.save();
-  ctx.globalAlpha = 0.8;
-  ctx.fillStyle   = '#9933bb';
-  ctx.beginPath();
-  ctx.ellipse(-10, -92, 7, 3.5, -0.5, 0, TWO_PI);
-  ctx.fill();
-  ctx.beginPath();
-  ctx.ellipse(-10, -92, 7, 3.5, 0.5, 0, TWO_PI);
-  ctx.fill();
-  ctx.fillStyle = '#cc55dd';
-  ctx.beginPath();
-  ctx.arc(-10, -92, 2.5, 0, TWO_PI);
-  ctx.fill();
-  ctx.restore();
-  // Star decoration on hat (larger)
+  // Star on hat
   ctx.fillStyle    = '#ffee88';
   ctx.shadowColor  = '#ffd700';
-  ctx.shadowBlur   = 6;
-  ctx.font         = '12px sans-serif';  // fixed: was 14px, AC specifies 12px (BUG-00263 fix)
+  ctx.shadowBlur   = 5;
+  ctx.font         = '8px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText('★', 4, -108);
+  ctx.fillText('★', 2, -62);
   ctx.shadowBlur = 0;
 
   ctx.restore();
@@ -1893,8 +1830,8 @@ function _drawPauseOverlay(ctx, W, H) {
 function _onTouch(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const tx = touch.clientX;
-  const ty = touch.clientY;
+  const tx = touch.clientX * G.DPR;  // fixed: DPR correction (STORY-00266)
+  const ty = touch.clientY * G.DPR;  // fixed: DPR correction (STORY-00266)
 
   if (_phase === 'play') {
     // Pause button check (STORY-00236)

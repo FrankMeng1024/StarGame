@@ -2,7 +2,45 @@
 
 ---
 
+## Sprint 20-mini Updates (2026-04-17)
+
+### 4 Production Blocker Fixes — PASS (after BUG-00268 fix)
+
+#### Package Size (STORY-00264)
+- Total miniprogram/ directory: ~875KB (well under 4MB WeChat limit)
+- bgm.mp3: 592KB (64kbps CBR mono, compressed from 2.9MB)
+- miniprogram/docs/ moved to docs/miniprogram-qa-evidence/ (saves ~1.3MB)
+
+#### Net Length (STORY-00265)
+- `_netMaxLen = H * 0.75` (was 0.55)
+- Net top reach on 667px screen: -13px (above top — can reach entire sky zone)
+- Stars spawn at `skyY1 = H * 0.62` = ~414px on 667px → well within net range
+- Rope anchor unchanged: `ropeOriX = _poleX + 12`, `ropeOriY = _poleY - 60`
+
+#### DPR Touch Fix (STORY-00266)
+- G.DPR added to globals.js G object, populated from `sysInfo.pixelRatio || 1` in game.js entry
+- All 6 screens have DPR correction in ALL touch handlers (touchStart, touchMove, touchEnd)
+- **BUG-00268 (Critical)**: achievement.js touchStart/touchMove were missing G.DPR — FIXED
+- Pattern to check: any future screen module must multiply ALL touch.clientX/Y by G.DPR in ALL three handlers
+- achievement.js uniquely uses `e.touches[0]` (not `e.changedTouches[0]`) in start/move — this is fine but note the difference
+
+#### Girl Character v3 (STORY-00267)
+- GIRL_W=44, GIRL_H=78 (was 70/110)
+- Total visual height: shoes at y=+12, hat tip at y=-67 → 79px (was ~140px)
+- Head: arc at y=-41, radius 10 → head occupies ~25% of total height (correct anime ratio)
+- Dress gradient: linearGradient #7733bb→#9944cc→#cc55aa
+- Hair: #1a0808, back tails + fringe + side tufts + top cap
+- Arms: left (lowered) moveTo(-8,-22)→bezier to (-15,-7); right (raised) moveTo(8,-22)→bezier to (8,-36)
+- Eyes: dark iris #2a1a3a + purple highlight #6633cc + white shine
+- Hat: brim ellipse at y=-51, crown bezier tip at y=-67, gold band, star '★' at y=-62
+
+### Bug Pattern (Sprint 20-mini)
+- DPR fix inconsistency: when applying systematic touch coordinate fixes, manually verify each screen's START+MOVE+END (not just END). achievement.js only had END fixed initially.
+
+---
+
 ## Sprint 19-mini Updates (2026-04-17)
+
 
 ### Visual Overhaul — 4 Stories PASS
 
