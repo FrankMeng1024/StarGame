@@ -1,5 +1,13 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 18-mini — 2026-04-17 (mini branch, visual overhaul)
+
+Sprint 18-mini: clean Sprint, no retrospective actions.
+- QA PASS (code-review gated — DevTools unavailable for live screenshots), Arch PASS (after 2 spec drift fixes), UX no Blockers.
+- Arch review caught gallery.js + achievement.js grid layouts not applying SAFE_LEFT to card x-positions. Pattern: any new grid layout must follow levels.js reference implementation pattern (`SL = (G.SAFE_LEFT||0) + PAD_X; usableW = W - SL - SR; cardX = SL + col*(CARD_W+GAP)`).
+- PrintWindow PW_RENDERFULLCONTENT=2 cannot capture GPU-composited Chrome render widgets in WeChat DevTools — returns solid black. mss library also returns nothing when DevTools window is 0×0 (hidden/minimized). Code-review-based QA remains the only viable path when DevTools is not actively running.
+- DevTools CLI (`cli.bat open --project`) fails silently when WeChat login session is not active — process appears briefly then exits. No workaround available programmatically; requires user to manually launch DevTools.
+
 ## Sprint 17-mini — 2026-04-17 (mini branch, VU acceptance)
 
 Sprint 17-mini: VU invocation + acceptance. VU ACCEPTED 9.5/10 on second evaluation round.
