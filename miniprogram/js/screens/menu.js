@@ -75,9 +75,10 @@ function _buildConLayout() {
 
   // In landscape: constellation fills the left 55% of screen
   // In portrait: constellation fills the top ~60% of screen
-  const cx = isLandscape ? W * 0.28 : W * 0.50;
+  const safeL = G.SAFE_LEFT || 0;
+  const cx = isLandscape ? safeL + (W * 0.52 - safeL) * 0.5 : W * 0.50;
   const cy = isLandscape ? H * 0.45 : H * 0.32;
-  const BOX = isLandscape ? Math.min(H * 0.80, W * 0.44) : Math.min(H * 0.60, W * 0.80);
+  const BOX = isLandscape ? Math.min(H * 0.80, (W * 0.52 - safeL) * 0.88) : Math.min(H * 0.60, W * 0.80);
 
   // Raw positions
   const raw = conDef.stars.map((s, si) => ({
@@ -181,16 +182,16 @@ function _loop(now) {
 
   if (isLandscape) {
     // ── Landscape layout ─────────────────────────────────────
-    // Constellation fills left 55%; title + buttons in right 45%
-    const rightX  = W * 0.56;
-    const rightW  = W - rightX - G.SAFE_RIGHT - 12;
+    // Constellation fills left 52%; title + buttons in right 44%
+    const rightX  = W * 0.54 + G.SAFE_LEFT * 0.3;
+    const rightW  = W - rightX - G.SAFE_RIGHT - 14;
     const midX    = rightX + rightW / 2;
 
-    drawTitle(ctx, '追星少女', midX, H * 0.26, 30);
-    drawSubtitle(ctx, '探索88星座的奇妙旅程', midX, H * 0.26 + 32, 12);
+    drawTitle(ctx, '追星少女', midX, H * 0.26, 32);
+    drawSubtitle(ctx, '探索88星座的奇妙旅程', midX, H * 0.26 + 34, 13);
 
     const BW  = rightW;
-    const BH  = Math.max(32, Math.min(42, (H - G.SAFE_TOP - G.SAFE_BOTTOM - 120) / 3));
+    const BH  = Math.max(36, Math.min(44, (H - G.SAFE_TOP - G.SAFE_BOTTOM - 120) / 3));
     const GAP = 10;
     // Stack 3 buttons vertically in right pane, centered
     const totalBtnsH = 3 * BH + 2 * GAP;

@@ -23,11 +23,12 @@ let _scrollTarget = 0;
 let _lastTouchY   = 0;
 let _isDragging   = false;
 let _totalH       = 0;
+let _scrollVelocity = 0;  // for momentum scrolling
+let _lastTouchTime  = 0;
 
 // Layout constants (computed at showLevels time, not module load)
-const COLS    = 5;
 const PAD_X   = 12;
-const GAP     = 6;
+const GAP     = 8;
 
 // ── Item selection overlay state ───────────────────────────────
 let _overlayActive   = false;
@@ -70,6 +71,7 @@ function _cleanup() {
   _backRect  = null;
   _scrollY   = 0;
   _scrollTarget = 0;
+  _scrollVelocity = 0;
   _overlayActive = false;
   _overlayToggled.clear();
   _overlayBtnRects = [];
@@ -78,17 +80,22 @@ function _cleanup() {
 }
 
 function _computeLayout() {
-  const PAD_TOP = G.SAFE_TOP + 80;  // below back button + notch
+  const isLandscape = G.SCREEN_W > G.SCREEN_H;
+  const COLS   = isLandscape ? 6 : 5;
+  const SL     = G.SAFE_LEFT  + PAD_X;  // safe left inset
+  const SR     = G.SAFE_RIGHT + PAD_X;  // safe right inset
+  const usableW = G.SCREEN_W - SL - SR;
+  const PAD_TOP = G.SAFE_TOP + 56;  // below back button + notch
   _cardRects = [];
-  const CARD_W = Math.floor((G.SCREEN_W - 32) / COLS) - 4;
-  const CARD_H = CARD_W + 12;
+  const CARD_W = Math.floor((usableW - (COLS - 1) * GAP) / COLS);
+  const CARD_H = CARD_W;  // square cards
   const rows = Math.ceil(CONSTELLATIONS.length / COLS);
   _totalH = PAD_TOP + rows * (CARD_H + GAP) + 16 + G.SAFE_BOTTOM;
 
   CONSTELLATIONS.forEach((c, idx) => {
     const col = idx % COLS;
     const row = Math.floor(idx / COLS);
-    const x   = PAD_X + col * (CARD_W + GAP);
+    const x   = SL + col * (CARD_W + GAP);
     const y   = PAD_TOP + row * (CARD_H + GAP);
     _cardRects.push({ x, y, w: CARD_W, h: CARD_H, idx });
   });
@@ -107,8 +114,14 @@ function _loop(now) {
   const H   = G.SCREEN_H;
   const t   = now * 0.001;
 
-  // Smooth scroll
-  _scrollY += (_scrollTarget - _scrollY) * 0.18;
+  // Smooth scroll with momentum
+  if (!_isDragging) {
+    _scrollTarget += _scrollVelocity;
+    _scrollVelocity *= 0.88;  // friction
+    const maxScroll = Math.max(0, _totalH - G.SCREEN_H);
+    _scrollTarget = Math.max(0, Math.min(maxScroll, _scrollTarget));
+  }
+  _scrollY += (_scrollTarget - _scrollY) * 0.22;
 
   // Background
   const scene = _getSceneBg();
@@ -116,8 +129,8 @@ function _loop(now) {
   drawBgStars(ctx, t);
 
   // ── Back button (fixed, above scroll area) ────────────────
-  _backRect = drawButton(ctx, 12, G.SAFE_TOP + 14, 80, 36, '← 返回', {
-    fontSize: 13,
+  _backRect = drawButton(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 10, 88, 38, '← 返回', {
+    fontSize: 14,
     radius:   10,
     color0:   'rgba(80,60,140,0.85)',
     color1:   'rgba(60,90,180,0.85)',
@@ -129,14 +142,14 @@ function _loop(now) {
   ctx.textAlign   = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle   = COLORS.text;
-  ctx.fillText('选择关卡', W / 2, G.SAFE_TOP + 32);
+  ctx.fillText('选择关卡', W / 2, G.SAFE_TOP + 29);
   ctx.restore();
 
   // ── Scrollable card area ──────────────────────────────────
-  const padTop = G.SAFE_TOP + 80;
+  const padTop = G.SAFE_TOP + 56;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, padTop - 8, W, H - padTop + 8);
+  ctx.rect(0, padTop, W, H - padTop);
   ctx.clip();
   ctx.translate(0, -_scrollY);
 
@@ -161,24 +174,15 @@ function _drawCard(ctx, cr, t) {
   const score    = state.getScore(idx);
 
   // Card background
-  const bgAlpha = unlocked ? 0.82 : 0.45;
+  const bgAlpha = unlocked ? 0.88 : 0.45;
   ctx.save();
   ctx.globalAlpha = bgAlpha;
   ctx.fillStyle   = unlocked ? COLORS.cardBg : 'rgba(20,20,40,0.7)';
-  _roundRect(ctx, x, y, w, h, 8);
+  _roundRect(ctx, x, y, w, h, 10);
   ctx.fill();
   ctx.strokeStyle = unlocked ? COLORS.cardBorder : 'rgba(80,80,120,0.3)';
   ctx.lineWidth   = 1;
   ctx.stroke();
-  ctx.restore();
-
-  // Number
-  ctx.save();
-  ctx.font         = `10px sans-serif`;
-  ctx.textAlign    = 'left';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle    = unlocked ? COLORS.text2 : 'rgba(120,120,160,0.6)';
-  ctx.fillText(String(idx + 1), x + 5, y + 4);
   ctx.restore();
 
   // Level number (large, center) for unlocked; lock icon for locked
@@ -186,31 +190,32 @@ function _drawCard(ctx, cr, t) {
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   if (unlocked) {
-    ctx.font      = `bold ${Math.round(w * 0.36)}px sans-serif`;
+    ctx.font      = `bold ${Math.round(w * 0.40)}px sans-serif`;
     ctx.fillStyle = COLORS.starGold;
     ctx.globalAlpha = 0.95;
-    ctx.fillText(String(idx + 1), x + w / 2, y + h * 0.42);
+    ctx.fillText(String(idx + 1), x + w / 2, y + h * 0.38);
   } else {
-    ctx.font      = `${Math.round(w * 0.38)}px sans-serif`;
+    ctx.font      = `${Math.round(w * 0.42)}px sans-serif`;
     ctx.globalAlpha = 0.35;
-    ctx.fillText('🔒', x + w / 2, y + h * 0.42);
+    ctx.fillText('🔒', x + w / 2, y + h * 0.38);
   }
   ctx.restore();
 
   // Name
+  const nameFontSize = Math.max(9, Math.min(12, Math.round(w * 0.175)));
   ctx.save();
-  ctx.font         = `bold 11px sans-serif`;
+  ctx.font         = `bold ${nameFontSize}px sans-serif`;
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = unlocked ? COLORS.text : 'rgba(120,120,160,0.5)';
-  ctx.fillText(c.nameZh || c.name, x + w / 2, y + h * 0.72);
+  ctx.fillText(c.nameZh || c.name, x + w / 2, y + h * 0.68);
   ctx.restore();
 
-  // Difficulty dots (STORY-00248): 1-5 filled dots
+  // Difficulty dots
   const diff   = Math.max(1, Math.min(5, c.difficulty || 1));
-  const dotR   = Math.max(2, Math.min(3, w * 0.025));
-  const dotGap = dotR * 2.8;
-  const dotY   = y + h * 0.81;
+  const dotR   = Math.max(2, Math.min(3, w * 0.03));
+  const dotGap = dotR * 2.6;
+  const dotY   = y + h * 0.85;
   const dotStartX = x + w / 2 - (4 * dotGap) / 2;
   for (let di = 0; di < 5; di++) {
     ctx.save();
@@ -228,12 +233,12 @@ function _drawCard(ctx, cr, t) {
   // Stars (score)
   if (unlocked && score && score.stars > 0) {
     ctx.save();
-    ctx.font        = `10px sans-serif`;
+    ctx.font        = `${Math.max(9, Math.round(w * 0.14))}px sans-serif`;
     ctx.textAlign   = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle   = COLORS.starGold;
     const stars = '★'.repeat(score.stars) + '☆'.repeat(3 - score.stars);
-    ctx.fillText(stars, x + w / 2, y + h * 0.92);
+    ctx.fillText(stars, x + w / 2, y + h * 0.95);
     ctx.restore();
   }
 }
@@ -247,11 +252,11 @@ function _drawItemOverlay(ctx, W, H) {
   ctx.restore();
 
   const ownedItems = ITEMS.filter(it => state.getItemQty(it.id) > 0);
-  const cardW = Math.min(W - 40, 320);
-  const rowH  = 52;
-  const cardH = 80 + ownedItems.length * rowH + 60;
+  const cardW = Math.min(W - 40, 340);
+  const rowH  = 60;
+  const cardH = 90 + ownedItems.length * rowH + 60;
   const cardX = (W - cardW) / 2;
-  const cardY = (H - cardH) / 2;
+  const cardY = Math.max(G.SAFE_TOP + 8, (H - cardH) / 2);
 
   // Card background
   ctx.save();
@@ -265,25 +270,25 @@ function _drawItemOverlay(ctx, W, H) {
 
   // Title
   ctx.save();
-  ctx.font         = 'bold 16px sans-serif';
+  ctx.font         = 'bold 17px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = COLORS.text;
-  ctx.fillText('选择使用道具', W / 2, cardY + 28);
+  ctx.fillText('选择使用道具', W / 2, cardY + 30);
   ctx.restore();
 
   // Sub-title
   ctx.save();
-  ctx.font         = '11px sans-serif';
+  ctx.font         = '12px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = COLORS.text2;
-  ctx.fillText('（本关结束后自动消耗）', W / 2, cardY + 50);
+  ctx.fillText('（本关结束后自动消耗）', W / 2, cardY + 54);
   ctx.restore();
 
   // Item rows
   _overlayBtnRects = [];
-  const rowStartY = cardY + 66;
+  const rowStartY = cardY + 70;
   ownedItems.forEach((it, i) => {
     const rowY   = rowStartY + i * rowH;
     const toggled = _overlayToggled.has(it.id);
@@ -292,7 +297,7 @@ function _drawItemOverlay(ctx, W, H) {
     // Row bg
     ctx.save();
     ctx.fillStyle = toggled ? 'rgba(60,180,100,0.18)' : 'rgba(255,255,255,0.04)';
-    _roundRect(ctx, cardX + 8, rowY, cardW - 16, rowH - 4, 8);
+    _roundRect(ctx, cardX + 10, rowY, cardW - 20, rowH - 5, 8);
     ctx.fill();
     if (toggled) {
       ctx.strokeStyle = 'rgba(60,220,100,0.5)';
@@ -303,34 +308,34 @@ function _drawItemOverlay(ctx, W, H) {
 
     // Icon + name + desc
     ctx.save();
-    ctx.font         = '20px sans-serif';
+    ctx.font         = '22px sans-serif';
     ctx.textAlign    = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(it.icon, cardX + 16, rowY + rowH * 0.5 - 4);
+    ctx.fillText(it.icon, cardX + 18, rowY + rowH * 0.5 - 4);
     ctx.restore();
 
     ctx.save();
-    ctx.font         = 'bold 13px sans-serif';
+    ctx.font         = 'bold 14px sans-serif';
     ctx.textAlign    = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle    = COLORS.text;
-    ctx.fillText(it.nameZh + '  ×' + qty, cardX + 44, rowY + 7);
+    ctx.fillText(it.nameZh + '  ×' + qty, cardX + 50, rowY + 8);
     ctx.restore();
 
     ctx.save();
-    ctx.font         = '11px sans-serif';
+    ctx.font         = '12px sans-serif';
     ctx.textAlign    = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle    = COLORS.text2;
-    ctx.fillText(it.desc, cardX + 44, rowY + 26);
+    ctx.fillText(it.desc, cardX + 50, rowY + 28);
     ctx.restore();
 
     // Toggle button
-    const btnW = 52, btnH = 28;
-    const btnX = cardX + cardW - 16 - btnW;
-    const btnY = rowY + (rowH - 4 - btnH) / 2;
+    const btnW = 58, btnH = 30;
+    const btnX = cardX + cardW - 18 - btnW;
+    const btnY = rowY + (rowH - 5 - btnH) / 2;
     const btn = drawButton(ctx, btnX, btnY, btnW, btnH, toggled ? '✓ 已选' : '使用', {
-      fontSize: 11,
+      fontSize: 12,
       radius: 8,
       color0: toggled ? 'rgba(30,140,70,0.85)' : 'rgba(60,90,160,0.85)',
       color1: toggled ? 'rgba(20,180,80,0.85)' : 'rgba(50,110,200,0.85)',
@@ -339,14 +344,14 @@ function _drawItemOverlay(ctx, W, H) {
   });
 
   // Bottom buttons: 跳过 + 确定出发
-  const btnY2  = cardY + cardH - 48;
-  const btnW2  = (cardW - 32) / 2;
-  _overlaySkip    = drawButton(ctx, cardX + 8,               btnY2, btnW2, 36, '跳过', {
-    fontSize: 13, radius: 10,
+  const btnY2  = cardY + cardH - 52;
+  const btnW2  = (cardW - 36) / 2;
+  _overlaySkip    = drawButton(ctx, cardX + 10,               btnY2, btnW2, 40, '跳过', {
+    fontSize: 14, radius: 10,
     color0: 'rgba(60,60,100,0.75)', color1: 'rgba(80,80,130,0.75)',
   });
-  _overlayConfirm = drawButton(ctx, cardX + cardW - 8 - btnW2, btnY2, btnW2, 36, '确定出发 →', {
-    fontSize: 13, radius: 10,
+  _overlayConfirm = drawButton(ctx, cardX + cardW - 10 - btnW2, btnY2, btnW2, 40, '确定出发 →', {
+    fontSize: 14, radius: 10,
     color0: 'rgba(30,130,60,0.85)', color1: 'rgba(20,180,80,0.85)',
   });
 }
@@ -357,6 +362,8 @@ function _onTouchStart(e) {
   if (!touch) return;
   _lastTouchY = touch.clientY;
   _isDragging = false;
+  _scrollVelocity = 0;
+  _lastTouchTime = Date.now();
 }
 
 function _onTouchMove(e) {
@@ -364,8 +371,9 @@ function _onTouchMove(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
   const dy = touch.clientY - _lastTouchY;
+  _scrollVelocity = -dy;  // track velocity for momentum
   _lastTouchY = touch.clientY;
-  if (Math.abs(dy) > 3) _isDragging = true;
+  if (Math.abs(dy) > 2) _isDragging = true;
 
   const maxScroll = Math.max(0, _totalH - G.SCREEN_H);
   _scrollTarget = Math.max(0, Math.min(maxScroll, _scrollTarget - dy));

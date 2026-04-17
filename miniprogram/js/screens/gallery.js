@@ -84,9 +84,12 @@ function _cleanup() {
 }
 
 function _computeLayout() {
+  const SL     = (G.SAFE_LEFT  || 0) + PAD_X;
+  const SR     = (G.SAFE_RIGHT || 0) + PAD_X;
+  const usableW = G.SCREEN_W - SL - SR;
   const PAD_TOP = G.SAFE_TOP + 76;  // below back button + notch
   _cardRects = [];
-  const CARD_W = Math.floor((G.SCREEN_W - PAD_X * 2 - GAP * (COLS - 1)) / COLS);
+  const CARD_W = Math.floor((usableW - GAP * (COLS - 1)) / COLS);
   const CARD_H = CARD_W + 24;
   const rows   = Math.ceil(CONSTELLATIONS.length / COLS);
   _totalH      = PAD_TOP + rows * (CARD_H + GAP) + 24 + G.SAFE_BOTTOM;
@@ -94,7 +97,7 @@ function _computeLayout() {
   CONSTELLATIONS.forEach((c, idx) => {
     const col = idx % COLS;
     const row = Math.floor(idx / COLS);
-    const x   = PAD_X + col * (CARD_W + GAP);
+    const x   = SL + col * (CARD_W + GAP);
     const y   = PAD_TOP + row * (CARD_H + GAP);
     _cardRects.push({ x, y, w: CARD_W, h: CARD_H, idx });
   });
@@ -125,8 +128,8 @@ function _drawList(ctx, W, H, t) {
   _scrollY += (_scrollTarget - _scrollY) * 0.18;
 
   // Back button (fixed)
-  _backRect = drawButton(ctx, 12, G.SAFE_TOP + 14, 72, 34, '← 返回', {
-    fontSize: 13, radius: 10,
+  _backRect = drawButton(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 10, 88, 38, '← 返回', {
+    fontSize: 14, radius: 10,
     color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
   });
 
@@ -141,11 +144,11 @@ function _drawList(ctx, W, H, t) {
 
   // Coin display
   ctx.save();
-  ctx.font = '13px sans-serif';
+  ctx.font = '14px sans-serif';
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = COLORS.starGold;
-  ctx.fillText('🪙 ' + state.coins, W - 12, G.SAFE_TOP + 31);
+  ctx.fillText('🪙 ' + state.coins, W - G.SAFE_RIGHT - 12, G.SAFE_TOP + 29);
   ctx.restore();
 
   // Scrollable grid
@@ -238,8 +241,8 @@ function _drawDetail(ctx, W, H, t) {
   const c = CONSTELLATIONS[_detailIdx];
 
   // Fixed top bar
-  _detailBackRect = drawButton(ctx, 12, G.SAFE_TOP + 14, 72, 34, '← 返回', {
-    fontSize: 13, radius: 10,
+  _detailBackRect = drawButton(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 10, 88, 38, '← 返回', {
+    fontSize: 14, radius: 10,
     color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
   });
   // Show prev only if there's a previous unlocked constellation

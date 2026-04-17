@@ -87,8 +87,8 @@ function _loop(now) {
   _scrollY += (_scrollTarget - _scrollY) * 0.18;
 
   // ── Fixed header ──
-  _backRect = drawButton(ctx, 12, G.SAFE_TOP + 14, 72, 34, '← 返回', {
-    fontSize: 13, radius: 10,
+  _backRect = drawButton(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 10, 88, 38, '← 返回', {
+    fontSize: 14, radius: 10,
     color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
   });
 
@@ -106,16 +106,16 @@ function _loop(now) {
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = COLORS.starGold;
-  ctx.fillText('🪙 ' + state.coins, W - 12, G.SAFE_TOP + 31);
+  ctx.fillText('🪙 ' + state.coins, W - G.SAFE_RIGHT - 12, G.SAFE_TOP + 29);
   ctx.restore();
 
   // ── Scrollable item list ──
   _buyRects = [];
 
-  const padTop = G.SAFE_TOP + 70;
+  const padTop = G.SAFE_TOP + 60;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, padTop - 4, W, H - padTop + 4);
+  ctx.rect(0, padTop, W, H - padTop);
   ctx.clip();
   ctx.translate(0, -_scrollY);
 
@@ -146,8 +146,10 @@ function _loop(now) {
 }
 
 function _drawItemCard(ctx, W, item, idx, cardY, now) {
-  const cardX  = PAD_X;
-  const cardW  = W - PAD_X * 2;
+  const safeL  = G.SAFE_LEFT || 0;
+  const safeR  = G.SAFE_RIGHT || 0;
+  const cardX  = safeL + PAD_X;
+  const cardW  = W - safeL - safeR - PAD_X * 2;
   const owned  = state.getItemQty(item.id);
   const canBuy = state.coins >= item.cost;
 

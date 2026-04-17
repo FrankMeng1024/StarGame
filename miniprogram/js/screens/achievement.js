@@ -45,7 +45,10 @@ function _buildLayout(W, H) {
   const PAD_X       = 16;
   const PAD_TOP     = G.SAFE_TOP + 56;
   const GAP         = 8;
-  const CELL_W      = Math.floor((W - PAD_X * 2 - GAP * (COLS - 1)) / COLS);
+  const SL          = (G.SAFE_LEFT  || 0) + PAD_X;
+  const SR          = (G.SAFE_RIGHT || 0) + PAD_X;
+  const usableW     = W - SL - SR;
+  const CELL_W      = Math.floor((usableW - GAP * (COLS - 1)) / COLS);
   const CELL_H      = CELL_W + 14;
   const rows        = Math.ceil(CONSTELLATIONS.length / COLS);
 
@@ -55,7 +58,7 @@ function _buildLayout(W, H) {
   CONSTELLATIONS.forEach((c, idx) => {
     const col = idx % COLS;
     const row = Math.floor(idx / COLS);
-    const x   = PAD_X + col * (CELL_W + GAP);
+    const x   = SL + col * (CELL_W + GAP);
     const y   = PAD_TOP + row * (CELL_H + GAP);
     _cellRects.push({ x, y, w: CELL_W, h: CELL_H, idx });
   });
@@ -107,8 +110,8 @@ function _loop(now) {
   ctx.restore();
 
   // Back button (fixed, not scrolled)
-  _backRect = drawButton(ctx, 12, G.SAFE_TOP + 8, 60, 32, '← 返回', {
-    fontSize: 12, radius: 8,
+  _backRect = drawButton(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 8, 88, 38, '← 返回', {
+    fontSize: 14, radius: 10,
     color0: 'rgba(40,50,90,0.85)', color1: 'rgba(30,60,120,0.85)',
   });
 

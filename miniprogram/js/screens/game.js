@@ -804,53 +804,165 @@ function _drawParticles(ctx) {
 function _drawGirl(ctx) {
   const x = _poleX;
   const y = _poleY;
-  const s = 1.0;
 
   ctx.save();
   ctx.translate(x, y);
 
-  // Dress / body
-  ctx.fillStyle = '#cc88aa';
+  // ── Legs ──────────────────────────────────────────────────
+  ctx.strokeStyle = '#d4736a';
+  ctx.lineWidth   = 5;
+  ctx.lineCap     = 'round';
+  // Left leg
   ctx.beginPath();
-  ctx.moveTo(-12 * s, -28 * s);
-  ctx.lineTo(-18 * s, 10 * s);
-  ctx.lineTo(18 * s, 10 * s);
-  ctx.lineTo(12 * s, -28 * s);
+  ctx.moveTo(-5, 14);
+  ctx.quadraticCurveTo(-8, 22, -9, 32);
+  ctx.stroke();
+  // Right leg
+  ctx.beginPath();
+  ctx.moveTo(5, 14);
+  ctx.quadraticCurveTo(7, 22, 8, 32);
+  ctx.stroke();
+  // Shoes
+  ctx.fillStyle = '#442255';
+  ctx.beginPath(); ctx.ellipse(-9, 33, 6, 3, -0.2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(9, 33, 6, 3, 0.2, 0, Math.PI * 2); ctx.fill();
+
+  // ── Dress (gradient, curved hem) ─────────────────────────
+  const dressGrd = ctx.createLinearGradient(-18, -28, 18, 14);
+  dressGrd.addColorStop(0, '#9966cc');
+  dressGrd.addColorStop(1, '#dd88bb');
+  ctx.fillStyle = dressGrd;
+  ctx.beginPath();
+  ctx.moveTo(-10, -28);
+  ctx.lineTo(-20, 14);
+  ctx.quadraticCurveTo(-16, 18, -10, 16);
+  ctx.quadraticCurveTo(0, 20, 10, 16);
+  ctx.quadraticCurveTo(16, 18, 20, 14);
+  ctx.lineTo(10, -28);
   ctx.closePath();
   ctx.fill();
 
-  // Head
-  ctx.fillStyle = '#f5d0a9';
+  // Dress highlight stripe
+  ctx.save();
+  ctx.globalAlpha = 0.18;
+  ctx.fillStyle = '#ffffff';
   ctx.beginPath();
-  ctx.arc(0, -36 * s, 12 * s, 0, TWO_PI);
+  ctx.moveTo(-4, -28); ctx.lineTo(-6, 14); ctx.lineTo(0, 16); ctx.lineTo(4, -28);
+  ctx.closePath(); ctx.fill();
+  ctx.restore();
+
+  // ── Left arm (hanging at side) ────────────────────────────
+  ctx.strokeStyle = '#f5c8a0';
+  ctx.lineWidth   = 4;
+  ctx.lineCap     = 'round';
+  ctx.beginPath();
+  ctx.moveTo(-10, -18);
+  ctx.quadraticCurveTo(-22, -10, -18, 2);
+  ctx.stroke();
+
+  // ── Right arm (holding net pole) ─────────────────────────
+  ctx.beginPath();
+  ctx.moveTo(10, -18);
+  ctx.quadraticCurveTo(18, -14, 14, -4);
+  ctx.stroke();
+
+  // ── Net pole grip ─────────────────────────────────────────
+  ctx.strokeStyle = '#8b6914';
+  ctx.lineWidth   = 4;
+  ctx.beginPath();
+  ctx.moveTo(14, -4);
+  ctx.lineTo(10, 10);
+  ctx.stroke();
+
+  // ── Neck ─────────────────────────────────────────────────
+  ctx.fillStyle = '#f5c8a0';
+  ctx.beginPath();
+  ctx.fillRect(-4, -32, 8, 8);
+
+  // ── Head ─────────────────────────────────────────────────
+  // Shadow
+  ctx.save();
+  ctx.globalAlpha = 0.15;
+  ctx.fillStyle = '#000';
+  ctx.beginPath();
+  ctx.ellipse(1, -42, 13, 12, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.restore();
+  // Face
+  ctx.fillStyle = '#f8d5b0';
+  ctx.beginPath();
+  ctx.ellipse(0, -43, 12, 13, 0, 0, Math.PI * 2);
+  ctx.fill();
+  // Cheeks
+  ctx.save();
+  ctx.globalAlpha = 0.28;
+  ctx.fillStyle = '#ff9999';
+  ctx.beginPath(); ctx.ellipse(-7, -40, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(7, -40, 4, 3, 0, 0, Math.PI * 2); ctx.fill();
+  ctx.restore();
+  // Eyes
+  ctx.fillStyle = '#2a1a3a';
+  ctx.beginPath(); ctx.arc(-4.5, -44, 2, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(4.5, -44, 2, 0, Math.PI * 2); ctx.fill();
+  // Eye shine
+  ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.arc(-3.8, -45, 0.8, 0, Math.PI * 2); ctx.fill();
+  ctx.beginPath(); ctx.arc(5.2, -45, 0.8, 0, Math.PI * 2); ctx.fill();
+  // Smile
+  ctx.strokeStyle = '#cc6644';
+  ctx.lineWidth   = 1.5;
+  ctx.beginPath();
+  ctx.arc(0, -40, 4, 0.2, Math.PI - 0.2);
+  ctx.stroke();
+
+  // ── Hair ─────────────────────────────────────────────────
+  ctx.fillStyle = '#2a1a0a';
+  // Side hair tufts
+  ctx.beginPath();
+  ctx.ellipse(-11, -44, 5, 9, -0.4, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(11, -44, 5, 9, 0.4, 0, Math.PI * 2);
+  ctx.fill();
+  // Back hair
+  ctx.beginPath();
+  ctx.moveTo(-10, -32);
+  ctx.quadraticCurveTo(-16, -20, -12, -10);
+  ctx.quadraticCurveTo(-14, -5, -10, 0);
+  ctx.lineTo(-8, -15);
+  ctx.quadraticCurveTo(-12, -22, -8, -32);
+  ctx.closePath();
   ctx.fill();
 
-  // Hat (stargazer brim hat)
-  ctx.fillStyle = '#7755aa';
+  // ── Hat ──────────────────────────────────────────────────
+  // Brim
+  const hatGrd = ctx.createLinearGradient(-18, -58, 18, -48);
+  hatGrd.addColorStop(0, '#6633aa');
+  hatGrd.addColorStop(1, '#8844cc');
+  ctx.fillStyle = hatGrd;
   ctx.beginPath();
-  ctx.ellipse(0, -46 * s, 16 * s, 5 * s, 0, 0, TWO_PI);
+  ctx.ellipse(0, -51, 17, 5, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.fillRect(-8 * s, -58 * s, 16 * s, 14 * s);
-
-  // Net pole (arm holding it)
-  ctx.strokeStyle = '#886644';
-  ctx.lineWidth   = 3 * s;
+  // Crown
   ctx.beginPath();
-  ctx.moveTo(8 * s, -22 * s);
-  ctx.lineTo(8 * s, -2 * s);
-  ctx.stroke();
-
-  // Legs
-  ctx.strokeStyle = '#cc88aa';
-  ctx.lineWidth   = 4 * s;
+  ctx.moveTo(-10, -51);
+  ctx.quadraticCurveTo(-11, -66, 0, -68);
+  ctx.quadraticCurveTo(11, -66, 10, -51);
+  ctx.closePath();
+  ctx.fill();
+  // Hat band
+  ctx.fillStyle = '#ffdd44';
+  ctx.globalAlpha = 0.7;
   ctx.beginPath();
-  ctx.moveTo(-6 * s, 10 * s);
-  ctx.lineTo(-8 * s, 28 * s);
-  ctx.stroke();
-  ctx.beginPath();
-  ctx.moveTo(6 * s, 10 * s);
-  ctx.lineTo(8 * s, 28 * s);
-  ctx.stroke();
+  ctx.rect(-10, -57, 20, 4);
+  ctx.fill();
+  ctx.globalAlpha = 1;
+  // Star on hat
+  ctx.fillStyle = '#ffee88';
+  ctx.font      = '8px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillText('★', 0, -62);
 
   ctx.restore();
 }
@@ -944,7 +1056,7 @@ function _drawHUD(ctx, W) {
 
   // Level name (center) — drawn below the notch
   ctx.save();
-  ctx.font         = 'bold 15px sans-serif';
+  ctx.font         = 'bold 16px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = COLORS.text;
@@ -953,11 +1065,11 @@ function _drawHUD(ctx, W) {
 
   // Caught count (left)
   ctx.save();
-  ctx.font         = '13px sans-serif';
+  ctx.font         = 'bold 15px sans-serif';
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = COLORS.starGold;
-  ctx.fillText('已抓: ' + _caught + ' / ' + _total, 12, ST + 26);
+  ctx.fillText('已抓: ' + _caught + ' / ' + _total, G.SAFE_LEFT + 14, ST + 26);
   ctx.restore();
 
   // Timer (right)
@@ -967,7 +1079,7 @@ function _drawHUD(ctx, W) {
   const timerFlashing = _timerFlash > 0 || _timeLeft <= 15;
 
   ctx.save();
-  ctx.font         = 'bold 14px sans-serif';
+  ctx.font         = 'bold 18px sans-serif';
   ctx.textAlign    = 'right';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = timerFlashing ? '#ff4444' : COLORS.text;
@@ -975,7 +1087,7 @@ function _drawHUD(ctx, W) {
     ctx.shadowColor = '#ff2222';
     ctx.shadowBlur  = 8;
   }
-  ctx.fillText(timerStr, W - 12, ST + 26);
+  ctx.fillText(timerStr, W - G.SAFE_RIGHT - 14, ST + 26);
   ctx.restore();
 
   // Bomb button (legacy — kept for backward compat; slot system handles space_bomb now)

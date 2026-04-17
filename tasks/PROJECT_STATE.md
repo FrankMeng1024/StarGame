@@ -4,7 +4,7 @@
 **Current Sprint**: 32 (Sprint Goal: 关卡加载极速化 — 消除进关等待，任何关卡直接可玩)
 **Last Updated**: 2026-04-17
 
-> **Mini branch current**: Sprint 17-mini VU ACCEPTED 9.5/10 — 全功能验收通过，微信小游戏分支 PROJECT COMPLETE
+> **Mini branch current**: Sprint 18-mini COMPLETE — 视觉全面升级（滚动/刘海屏/角色/比例），VU pending re-evaluation
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -106,6 +106,7 @@
 | Sprint 15-mini | COMPLETE | 游戏体验关键补全 — SFX+通关照片+成就页+难度条+自动暂停 (QA PASS, Arch PASS, UX no Blockers) |
 | Sprint 16-mini | COMPLETE | 小游戏质量对齐Web版 — 开场动画+展厅星图+HUD槽+道具ID对齐 (QA PASS, Arch PASS, UX no Blockers) |
 | Sprint 17-mini | COMPLETE | VU ACCEPTED 9.5/10 — All PRD F-001~F-008 + CRs verified — PROJECT COMPLETE |
+| Sprint 18-mini | COMPLETE | 视觉全面升级 — 滚动修复+刘海屏适配+角色重绘+UI比例优化 (Arch PASS, QA code-review PASS) |
 
 ### Sprint 14-mini Stories
 | Story | Title | Status |
