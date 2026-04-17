@@ -1,5 +1,12 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 22-mini — 2026-04-17 (mini branch, gameplay + visual polish fixes)
+
+- [pending] Screen capture via CopyFromScreen works when the DevTools window is restored (not minimized/iconic). Key: first check `IsIconic`, use `ShowWindow(hwnd, SW_SHOW=5)` to restore, then wait 800ms before capturing. Previous sprint's screen-locked failure was avoidable with this restore step.
+- [pending] WeChat DevTools simulator cannot be interacted with via Win32 mouse_event clicks. The simulator uses Chromium's internal touch event simulation, not OS-level mouse events. This means QA/UX confidence remains MEDIUM for gameplay stories even when screenshots work. For interactive gameplay testing, real device + manual testing is the only viable path.
+- [pending] Victory animation "linger phase" pattern: adding a named intermediate phase ('linger') between the action animation and the result screen creates satisfying emotional closure. The pattern — slow draw → linger flash → result — should be reused for any future "completion moment" designs.
+- [dropped: already obvious] Net geometry must account for landscape orientation (H≈375, not 667). This was the root cause of STORY-00272 recurring across Sprints 20/22. Documented in qa/knowledge.md.
+
 ## Sprint 21-mini — 2026-04-17 (mini branch, real-device blocker fixes)
 
 - [pending] Root cause of all-buttons-broken: Sprint 20's "DPR fix" was the wrong fix. canvas.width = sysInfo.windowWidth (CSS pixels). touch.clientX/Y = CSS pixels. They already match — multiplying by DPR (3×) makes coords 3× too large. The correct mental model: DPR is relevant for DRAWING sharpness (canvas physical resolution), NOT for touch→canvas coordinate mapping when canvas dimensions equal CSS dimensions. Future rule: before adding coordinate conversions, verify what coordinate space canvas.width is expressed in.

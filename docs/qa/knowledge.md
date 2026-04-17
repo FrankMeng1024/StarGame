@@ -2,6 +2,31 @@
 
 ---
 
+## Sprint 22-mini Updates (2026-04-17)
+
+### Sprint 22-mini — PASS (MEDIUM confidence: code-path + 1 visual screenshot)
+
+#### STORY-00272 — Net max length H*0.88
+- `_netMaxLen = H * 0.88` (was H*0.75). At H=375 landscape: netMaxLen=330px.
+- Rope origin: `_poleY - 60 = H*0.82 - 60 = 247.5px`. Stars at skyY0=60px need 188px vertical reach. Max angle 62° achievable within ±80° swing range.
+- Game is landscape (H≈375px), not portrait (H≈667px) — all net-reach calculations use landscape H.
+
+#### STORY-00273 — Star radius max 8 + separation nudge
+- `Math.max(3, Math.min(8, magToRadius(s.mag) * 1.4))` — max radius 8 (was 10).
+- Separation check: `(r1 + r2 + 6)px` minimum distance, up to 10 retries per star. Nudge: `(s.x + attempt*0.07) % 1.0`.
+
+#### STORY-00274 — Victory linger phase
+- Line draw: `totalDuration = max(lines*0.35, 1.5)` per constellation. For Orion (8 lines): 2.8s (was 0.96s).
+- New `'linger'` phase: 1.5s, pulsing yellow glow on all starred constellation points (`sin(t*5.5)` period ≈0.57s).
+- Phase sequence: play → celebrate(1.5s) → linedraw → linger(1.5s) → result.
+
+#### STORY-00275 — Ghost transparent buttons (HIGH confidence)
+- Visual screenshot confirms: star background visible through all button fills.
+- Primary: `rgba(160,0,220,0.28)` fill, gold border, gold text. Secondary: `rgba(80,0,160,0.20)` fill, purple border, light text.
+- DevTools simulator interaction remains blocked for interactive testing (Canvas input limitation).
+
+---
+
 ## Sprint 21-mini Updates (2026-04-17)
 
 ### Sprint 21-mini — PASS (code-path verification)

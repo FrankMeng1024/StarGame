@@ -1,5 +1,18 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 22-mini Updates (2026-04-17)
+
+### Ghost Button Home Screen — Confirmed Visual Improvement
+- Home screen uses two-column landscape layout: constellation art (left), title+buttons (right).
+- Ghost-style buttons: semi-transparent fills let star background show through, creating cohesive starscape scene.
+- Button hierarchy: primary (★ 挑战关卡, gold border+text) → secondary (◉/◈, softer border, light text) → tertiary (🏆, smallest).
+- Medium friction: button icons (★ ◉ ◈ 🏆) inconsistent symbol system — text carries navigation weight, not icons.
+
+### Victory Linger Phase — Emotional Payoff Improved
+- Constellation line draw slowed 3x: `max(lines*0.35, 1.5)s` total. 1.5s linger phase after completion.
+- Stars pulse with yellow glow during linger — "I built that" satisfaction moment before result card.
+- Players can tap to skip linger if impatient.
+
 ## Sprint 21-mini Updates (2026-04-17)
 
 ### All Buttons Now Functional — Primary Flow Fully Completable
