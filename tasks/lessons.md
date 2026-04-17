@@ -1,6 +1,12 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
-## Sprint 24-mini — 2026-04-17 (mini branch, 8 user-reported quality fixes) — RETROSPECTIVE COMPLETE
+## Sprint 25-mini — 2026-04-17 (mini branch, 9 user-reported quality fixes) — RETROSPECTIVE COMPLETE
+
+- [archived: canvas-utils.js resetFade pattern] Stale fade state causes black screen: any screen that can be reached via `fadeNavigate()` must call `resetFade()` in its show function as a defensive guard. Root cause: `fadeNavigate` sets `_fadeAlpha=1` before calling its callback; if the destination screen's RAF starts with `_fadeDir=0` (before the fade direction flips to -1), the screen renders black for an indefinite number of frames. Pattern documented in qa/knowledge.md.
+- [archived: debounce reset on screen entry] Tap-after-navigation deadlock: any screen with immediate-tap UX (e.g., level select where player just arrived from game) must reset `_lastNavTime = 0` on entry. The debounce was introduced to prevent double-tap, but it inadvertently blocked the first intentional tap after the navigation that set the timestamp. Pattern: debounce timestamps are set at call time, so screen-entry resets are needed when the debounce source and the blocked action are on different screens.
+- [pending] Sprint 25-mini is a clean sprint: zero bugs found by QA/UX, no Integration restart loops, no Spec Drift, VU ACCEPTED 9.6/10. Lightweight retro applies.
+
+
 
 - [archived: docs/qa/knowledge.md] Caught debris double-render pattern: when adding a "drag visual" for a caught object, always add `if (obj === _caughtObj) continue` in the original draw loop AND remove the object from source array on completion. Both fixes were caught by Arch code review; added to qa/knowledge.md regression checklist.
 - [archived: docs/PROJECT_STATE.md §status-wording] Sprint sitting in working tree issue: incomplete sprints (coded but not committed) should use status "IN PROGRESS (working tree)" to distinguish from sprints awaiting VU only. Stories must not be marked Done until sprint is committed. Added clarity to PROJECT_STATE.md status block pattern.

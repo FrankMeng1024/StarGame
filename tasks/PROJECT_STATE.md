@@ -1,14 +1,14 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: IN PROGRESS — Sprint 25-mini
+**Status**: COMPLETE — VU ACCEPTED 9.6/10 (2026-04-17). Sprint 25-mini user-reported fixes applied. PROJECT COMPLETE (final).
 **Current Sprint**: Sprint 25-mini
 **Last Updated**: 2026-04-17
 
-> **Mini branch current**: Sprint 25-mini IN PROGRESS — 9 user-reported fixes: 开场动画黑屏根因修复/比例优化/关卡导航死锁/星座图鉴重命名/展厅卡片缩小/女角色v5/星星闪烁感增强.
+> **Mini branch current**: Sprint 25-mini COMPLETE — 9 user-reported fixes: 开场动画黑屏根因修复/比例优化/关卡导航死锁/星座图鉴重命名/展厅卡片缩小/女角色v5/星星闪烁感增强.
 
 ## Mini branch 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-17). All PRD Must-Haves (F-001~F-008) delivered and CRs fully verified. Sprint 24-mini user-reported fixes applied. PROJECT COMPLETE (final).
+**Status**: COMPLETE — VU ACCEPTED 9.6/10 (2026-04-17). All PRD Must-Haves (F-001~F-008) delivered and CRs fully verified. Sprint 25-mini user-reported fixes applied. PROJECT COMPLETE (final).
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -74,6 +74,7 @@
 | Sprint 19-mini | 9.5/10 | ACCEPTED | Sprint 18/19 视觉全面升级 (网兜+角色+操作反馈+全屏特效) + 全功能回归通过 — PROJECT COMPLETE |
 | Sprint 20-mini | 9.5/10 | ACCEPTED | 4 production Blockers fixed: 包体压缩/DPR触控/网兜长度/角色重绘v3 — PROJECT COMPLETE |
 | Sprint 22-mini | 9.6/10 | ACCEPTED | 4 user-reported fixes verified — 网兜可达性/星星防重叠/胜利慢连线/首页透明按钮 — PROJECT COMPLETE |
+| Sprint 25-mini | 9.6/10 | ACCEPTED | 9 user-reported fixes verified — 黑屏/比例/导航死锁/图鉴重命名/卡片缩小/女角色v5/星星闪烁 — PROJECT COMPLETE |
 | Sprint 24-mini | 9.5/10 | ACCEPTED | 8 user-reported fixes verified — 登录界面+动画/女角色/网兜物理/碎片碰撞/按钮尺寸/关卡图标/Web视觉对齐 — PROJECT COMPLETE |
 | Sprint 21-mini | 9.7/10 | ACCEPTED | 3 real-device Blockers fixed: 按钮无法点击(DPR revert)/黑屏扫码/首页按钮视觉 — PROJECT COMPLETE |
 | Sprint 11-mini | 9.0/10 | NOT ACCEPTED | F-007 gallery carousel missing — only 1 static photo per constellation |
@@ -119,6 +120,7 @@
 | Sprint 20-mini | COMPLETE | 修复真机4个Blocker: 包体压缩+DPR触控+网兜长度+角色重绘v3 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
 | Sprint 21-mini | COMPLETE | 修复真机3个Blocker: 按钮无法点击+黑屏扫码+首页按钮视觉优化 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.7/10) |
 | Sprint 22-mini | COMPLETE | 4项用户反馈修复 — 网兜可达性+星星防重叠+胜利慢连线+首页透明按钮 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.6/10) |
+| Sprint 25-mini | COMPLETE | 9项用户反馈修复 — 开场动画黑屏/比例/导航死锁/图鉴重命名/卡片缩小/女角色v5/星星闪烁 (QA PASS, Arch PASS, UX no Blockers, VU ACCEPTED 9.6/10) |
 | Sprint 24-mini | COMPLETE | 8项用户反馈修复 — 登录界面+动画/女角色/网兜物理/碎片碰撞/按钮尺寸/关卡图标/Web视觉对齐 (QA PASS, Arch PASS, UX no Blockers, VU ACCEPTED 9.5/10) |
 
 ### Sprint 14-mini Stories
