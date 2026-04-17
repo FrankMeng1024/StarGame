@@ -2,6 +2,39 @@
 
 ---
 
+## Sprint 24-mini Updates (2026-04-17)
+
+### Sprint 24-mini — PASS (HIGH confidence: code-path verification)
+
+#### NET_SPEED = 4 px/frame (STORY-00286)
+- Full extension traverse: 330px / 4 = 82.5 frames ≈ 1.38s at 60fps.
+- Debris retract: 4 * 0.20 = 0.8 px/frame → full traverse ~6.9s.
+- _caughtDebris removed from _debris array on retract complete (ARCH FIX: prevents re-catch).
+- _drawDebris skips d === _caughtDebris (ARCH FIX: no double-render).
+- Net physics: `_caughtDebris ? NET_SPEED * 0.20 : NET_SPEED` (game.js L596).
+
+#### Menu buttons now solid gradient (STORY-00289)
+- Primary: rgba(122,68,214,0.88) → rgba(74,28,150,0.88). Secondary: rgba(61,40,117,0.80) → rgba(30,16,69,0.80).
+- **OBSOLETES Sprint 22-mini STORY-00275 ghost button knowledge.**
+- Landscape BH = max(26, min(30, (H-SAFE_TOP-SAFE_BOTTOM-110)/3)) (menu.js L288).
+
+#### Level card grid (STORY-00288)
+- COLS=6 landscape (isLandscape ? 6 : 5, levels.js L86).
+- Card width ≈100px at 667px landscape with PAD_X=12, GAP=8.
+- Constellation icon: substring(0,2) of nameZh (levels.js L216) — no emoji.
+- Level number at y+h*(conAbbr ? 0.45 : 0.40), name at y+h*0.70.
+
+#### Intro animation (STORY-00283, STORY-00284)
+- 4 meteors pre-spawned born=0 (L45-46). Alpha min 0.85, trailFactor=0.28.
+- Constellation reveal at elapsed>=2 (was 3). Skip hint from elapsed>=0.
+- Phase 3 portal glow: 3 radial gradient rings (L289/295/302). 80 twinkling bg stars sin(t) (L135/139).
+
+#### Girl character (STORY-00285)
+- Head r=20 (was 16), game.js L1110. Eye sclera (ellipse rx=4,ry=5), iris r=3, pupil r=1.8, shine r=1.5.
+- Eyebrow lineWidth=2.5. Dress hem ±32px. Hat brim rx=26, crown y=-114. Hat star: polygon for-loop not emoji.
+
+---
+
 ## Sprint 22-mini Updates (2026-04-17)
 
 ### Sprint 22-mini — PASS (MEDIUM confidence: code-path + 1 visual screenshot)

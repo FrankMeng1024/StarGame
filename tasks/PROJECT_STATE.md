@@ -1,10 +1,10 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: COMPLETE
-**Current Sprint**: Sprint 22-mini
+**Status**: IN PROGRESS — Sprint 24-mini
+**Current Sprint**: Sprint 24-mini
 **Last Updated**: 2026-04-17
 
-> **Mini branch current**: Sprint 22-mini COMPLETE — VU ACCEPTED 9.6/10 (2026-04-17). 4 user-reported fixes: 网兜可达性/星星防重叠/胜利慢连线/首页透明按钮. PROJECT COMPLETE.
+> **Mini branch current**: Sprint 24-mini IN PROGRESS — 8 user-reported fixes: 登录界面/登录动画/女角色/网兜物理/碎片碰撞/按钮尺寸/关卡图标/Web视觉对齐. QA PASS, Arch PASS, UX no Blockers. Awaiting commit + VU acceptance.
 
 ## Mini branch 微信小游戏分支（mini branch）
 
@@ -118,6 +118,7 @@
 | Sprint 20-mini | COMPLETE | 修复真机4个Blocker: 包体压缩+DPR触控+网兜长度+角色重绘v3 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
 | Sprint 21-mini | COMPLETE | 修复真机3个Blocker: 按钮无法点击+黑屏扫码+首页按钮视觉优化 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.7/10) |
 | Sprint 22-mini | COMPLETE | 4项用户反馈修复 — 网兜可达性+星星防重叠+胜利慢连线+首页透明按钮 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.6/10) |
+| Sprint 24-mini | IN PROGRESS | 8项用户反馈修复 — 登录界面+动画/女角色/网兜物理/碎片碰撞/按钮尺寸/关卡图标/Web视觉对齐 (QA PASS, Arch PASS, UX no Blockers — awaiting commit+VU) |
 
 ### Sprint 14-mini Stories
 | Story | Title | Status |

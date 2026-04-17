@@ -4,7 +4,7 @@
 import { G } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
-  drawButton, hitTest,
+  drawButton, hitTest, drawFadeOverlay, tickFade,
 } from '../engine/canvas-utils.js';
 import state from '../engine/state.js';
 
@@ -141,6 +141,10 @@ function _loop(now) {
     ctx.fillText(_feedback.msg, W / 2, H / 2);
     ctx.restore();
   }
+
+  // Global fade overlay (STORY-00282)
+  tickFade(1 / 60);
+  drawFadeOverlay(ctx, W, H);
 
   _rafId = requestAnimationFrame(_loop);
 }

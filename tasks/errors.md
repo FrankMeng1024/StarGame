@@ -17,3 +17,6 @@
 - 根本原因：需要在微信开发者工具中手动开启 CLI 服务（设置 → 安全设置 → 开启 CLI/HTTP 调用）
 - 待用户操作后重新运行 `node scripts/mp_qa_runner.js --smoke`
 
+Push failure logged
+Fri Apr 17 03:44:33 CST 2026: git push failed — curl 55 connection aborted. Commits local: 68c8c48
+2026-04-17T04:34:32Z push failed: docs(sprint20-mini) VU acceptance commit — Connection refused to github.com:443. Will retry at next trigger point.

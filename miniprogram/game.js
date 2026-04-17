@@ -81,8 +81,8 @@ async function boot() {
   gameState = state;
 
   // 立刻显示开场动画（不等网络）— 动画结束自动导航到 menu
-  let startScreen = 'intro';
-  try { startScreen = wx.getStorageSync('__initScreen') || 'intro'; } catch (e) {}
+  // STORY-00276: always play intro on fresh launch — no storage gate
+  const startScreen = 'intro';
 
   // 确保 canvas 尺寸已生效再开始渲染：延迟一帧，防止扫码冷启动黑屏 (STORY-00271)
   requestAnimationFrame(() => {

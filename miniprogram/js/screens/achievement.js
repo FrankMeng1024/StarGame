@@ -4,7 +4,7 @@
 import { G } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
-  drawButton, hitTest,
+  drawButton, hitTest, drawFadeOverlay, tickFade,
 } from '../engine/canvas-utils.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
 import state from '../engine/state.js';
@@ -112,8 +112,12 @@ function _loop(now) {
   // Back button (fixed, not scrolled)
   _backRect = drawButton(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 8, 88, 38, '← 返回', {
     fontSize: 14, radius: 10,
-    color0: 'rgba(40,50,90,0.85)', color1: 'rgba(30,60,120,0.85)',
+    color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
   });
+
+  // Global fade overlay (STORY-00282)
+  tickFade(1 / 60);
+  drawFadeOverlay(ctx, W, H);
 
   _rafId = requestAnimationFrame(_loop);
 }

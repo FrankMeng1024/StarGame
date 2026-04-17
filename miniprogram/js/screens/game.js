@@ -4,7 +4,7 @@
 import { G } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
-  drawButton, drawTitle, drawCard, hitTest,
+  drawButton, drawTitle, drawCard, hitTest, drawFadeOverlay, tickFade, fadeNavigate,
 } from '../engine/canvas-utils.js';
 import { CONSTELLATIONS, magToRadius } from '../data/constellations.js';
 import { SCENE_PALETTES, drawGroundSilhouette } from '../data/scenes.js';
@@ -22,10 +22,10 @@ const TWO_PI = Math.PI * 2;
 // ── 网兜物理常量 ───────────────────────────────────────────────
 const SWING_SPEED   = Math.PI * 2 / (3.5 * 60);   // 3.5s per full cycle
 const SWING_AMP     = (80 * Math.PI) / 180;         // ±80° in radians
-const NET_SPEED     = 9;                             // px per frame extension/retraction
+const NET_SPEED     = 4;                             // px per frame — STORY-00286: reduced from 5 (web parity ~240px/s at 60fps)
 const NET_MAX_LEN   = 0;                             // computed at showGame time (55% H)
-const GIRL_W        = 44;
-const GIRL_H        = 78;
+const GIRL_W        = 80;
+const GIRL_H        = 130;
 
 // ── 游戏状态机 ────────────────────────────────────────────────
 let _navigate   = null;
@@ -53,6 +53,9 @@ let _total      = 0;
 
 // Debris
 let _debris     = [];   // {x,y,r,type,spin,angle}
+
+// Caught debris (STORY-00279) — net grabs debris and drags it back slowly
+let _caughtDebris = null;
 
 // Particles
 let _particles  = [];   // {x,y,vx,vy,life,maxLife,color}
@@ -161,7 +164,7 @@ export function showGame(navigate) {
   const H = G.SCREEN_H;
 
   _poleX     = W / 2;
-  _poleY     = H * 0.82;
+  _poleY     = H * 0.87;  // STORY-00278: moved down from 0.82 to keep 130px character below star zone
   _netMaxLen = H * 0.88;  // fixed: was 0.75 — still too short for top-row stars (STORY-00272)
   _netLen    = 0;
   _swingT    = 0;
@@ -171,6 +174,7 @@ export function showGame(navigate) {
   _celebrateTimer = 0;
   _lineDrawProgress = 0;
   _lingerTimer = 0;
+  _caughtDebris = null;
 
   // Timer
   const diffMap = [90, 80, 70, 60, 50];
@@ -352,6 +356,7 @@ function _cleanup() {
   _paused  = false;
   _hintTimer = 0;
   _lingerTimer = 0;
+  _caughtDebris = null;
   _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
   _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
   _lorePage = 0;
@@ -471,6 +476,10 @@ function _loop(now) {
     _drawResultOverlay(ctx, W, H);
   }
 
+  // Global fade overlay (STORY-00282)
+  tickFade(dt);
+  drawFadeOverlay(ctx, W, H);
+
   _rafId = requestAnimationFrame(_loop);
 }
 
@@ -583,20 +592,33 @@ function _updateNet(dt) {
       });
     }
   } else if (_netState === 'retract') {
-    _netLen -= NET_SPEED * scale;
+    // STORY-00286: if holding debris, retract very slowly (feels heavy); else normal speed
+    const retractSpeed = _caughtDebris ? NET_SPEED * 0.20 : NET_SPEED;  // was 0.30
+    _netLen -= retractSpeed * scale;
     if (_netLen <= 0) {
       _netLen   = 0;
       _netState = 'swing';
       _trailPoints = [];  // clear trail when retracted
+      // Apply debris time penalty on arrival (STORY-00279)
+      if (_caughtDebris) {
+        if (!_gloveActive) {
+          _timeLeft  = Math.max(0, _timeLeft - 1.0);
+          _timerFlash = 0.5;
+        }
+        // Arch review: remove caught debris from array so it cannot be caught again
+        const idx = _debris.indexOf(_caughtDebris);
+        if (idx >= 0) _debris.splice(idx, 1);
+        _caughtDebris = null;
+      }
     }
   }
   _updateNetHead();
 }
 
 function _updateNetHead() {
-  // Rope origin = girl's right hand position (same as _drawNet rope origin)
-  const ropeOriX = _poleX + 12;
-  const ropeOriY = _poleY - 60;
+  // Rope origin = girl's right hand position (STORY-00278: updated for 130px character)
+  const ropeOriX = _poleX + 14;
+  const ropeOriY = _poleY - 62;
   _netHeadX = ropeOriX + Math.sin(_netAngle) * _netLen;
   _netHeadY = ropeOriY - Math.cos(_netAngle) * _netLen;
 }
@@ -629,12 +651,10 @@ function _checkCollisions() {
     const dx = _netHeadX - d.x;
     const dy = _netHeadY - d.y;
     if (dx * dx + dy * dy <= (d.r + 18 * _netRadiusMult) * (d.r + 18 * _netRadiusMult)) {
-      if (!_gloveActive) {
-        _timeLeft  = Math.max(0, _timeLeft - 1.0);
-        _timerFlash = 0.5; // 0.5 seconds of red flash
-        // Screen shake on debris hit (STORY-00259)
-        _shakeFrames = 6;
-      }
+      // STORY-00279: mark debris as caught — time penalty applied on retract complete
+      _caughtDebris = d;
+      // Screen shake on debris hit (STORY-00259)
+      _shakeFrames = 6;
       AudioAdapter.playSFX(SFX_DEBRIS);
       _netState   = 'retract';
       return;
@@ -866,6 +886,7 @@ function _drawStars(ctx, t) {
 // ── Draw: debris ──────────────────────────────────────────────
 function _drawDebris(ctx) {
   for (const d of _debris) {
+    if (d === _caughtDebris) continue;  // Arch review: skip — already drawn at net head in _drawNet
     d.angle += d.spin * (_dt * 60);
     ctx.save();
     ctx.translate(d.x, d.y);
@@ -979,10 +1000,9 @@ function _drawParticles(ctx) {
   }
 }
 
-// ── Draw: girl character (STORY-00267) ───────────────────────
-// Redesigned v3: total visual height ≤78px (hat top -65, shoes +12)
-// Proper anime proportions: head ~1/4 total height, body compact
-// Scale factor ~0.55× vs original 140px design
+// ── Draw: girl character (STORY-00278) ───────────────────────
+// v4: 80×130px — larger anime-style character with detailed face, hair, dress, and aura
+// Origin: center bottom at (_poleX, _poleY). All coords relative to that.
 function _drawGirl(ctx) {
   const x = _poleX;
   const y = _poleY;
@@ -990,203 +1010,222 @@ function _drawGirl(ctx) {
   ctx.save();
   ctx.translate(x, y);
 
-  // ── Soft aura ────────────────────────────────────────────────
-  const auraGrd = ctx.createRadialGradient(0, -24, 3, 0, -24, 38);
-  auraGrd.addColorStop(0, 'rgba(160,80,240,0.14)');
-  auraGrd.addColorStop(1, 'rgba(160,80,240,0)');
-  ctx.save();
+  // ── Body aura (magical glow behind whole character) ──────────
+  const auraGrd = ctx.createRadialGradient(0, -55, 5, 0, -55, 70);
+  auraGrd.addColorStop(0, 'rgba(120,60,200,0.15)');
+  auraGrd.addColorStop(1, 'rgba(120,60,200,0)');
   ctx.fillStyle = auraGrd;
-  ctx.beginPath();
-  ctx.arc(0, -24, 38, 0, TWO_PI);
-  ctx.fill();
-  ctx.restore();
+  ctx.beginPath(); ctx.arc(0, -55, 70, 0, TWO_PI); ctx.fill();
 
-  // ── Shoes ────────────────────────────────────────────────────
-  ctx.fillStyle = '#331144';
+  // ── Shoes (pointed, dark purple) ─────────────────────────────
+  ctx.fillStyle = '#2a0d40';
   ctx.beginPath();
-  ctx.moveTo(-8, 8);
-  ctx.bezierCurveTo(-10, 8, -13, 10, -12, 12);
-  ctx.bezierCurveTo(-11, 14, -6, 14, -5, 12);
-  ctx.lineTo(-6, 8);
-  ctx.closePath();
-  ctx.fill();
+  ctx.moveTo(-12, 12); ctx.bezierCurveTo(-15, 12, -20, 16, -18, 19);
+  ctx.bezierCurveTo(-16, 22, -9, 22, -7, 19); ctx.lineTo(-9, 12); ctx.closePath(); ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(8, 8);
-  ctx.bezierCurveTo(10, 8, 13, 10, 12, 12);
-  ctx.bezierCurveTo(11, 14, 6, 14, 5, 12);
-  ctx.lineTo(6, 8);
-  ctx.closePath();
-  ctx.fill();
+  ctx.moveTo(12, 12); ctx.bezierCurveTo(15, 12, 20, 16, 18, 19);
+  ctx.bezierCurveTo(16, 22, 9, 22, 7, 19); ctx.lineTo(9, 12); ctx.closePath(); ctx.fill();
 
-  // ── Legs ─────────────────────────────────────────────────────
-  ctx.strokeStyle = '#d4736a';
-  ctx.lineWidth   = 3;
+  // ── Legs ──────────────────────────────────────────────────────
+  ctx.strokeStyle = '#e8b89a';
+  ctx.lineWidth   = 5;
   ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.moveTo(-4, 3); ctx.lineTo(-7, 9); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(4, 3);  ctx.lineTo(7, 9);  ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-6, 4); ctx.lineTo(-10, 14); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(6, 4);  ctx.lineTo(10, 14); ctx.stroke();
+
+  // ── White petticoat (below dress hem) ────────────────────────
+  ctx.save();
+  ctx.globalAlpha = 0.55;
+  ctx.fillStyle   = '#f0eaff';
+  ctx.beginPath();
+  ctx.moveTo(-28, 2); ctx.quadraticCurveTo(-22, 12, -16, 10);
+  ctx.quadraticCurveTo(-5, 14, 0, 14);
+  ctx.quadraticCurveTo(5, 14, 16, 10);
+  ctx.quadraticCurveTo(22, 12, 28, 2);
+  ctx.lineTo(20, 2); ctx.lineTo(-20, 2); ctx.closePath(); ctx.fill();
+  ctx.restore();
 
   // ── Dress ────────────────────────────────────────────────────
-  const dressGrd = ctx.createLinearGradient(-17, -27, 17, 4);
-  dressGrd.addColorStop(0, '#7733bb');
-  dressGrd.addColorStop(0.55, '#9944cc');
-  dressGrd.addColorStop(1, '#cc55aa');
+  const dressGrd = ctx.createLinearGradient(-32, -42, 32, 8);
+  dressGrd.addColorStop(0, '#6633aa');
+  dressGrd.addColorStop(0.5, '#9944cc');
+  dressGrd.addColorStop(1, '#cc44aa');
   ctx.fillStyle = dressGrd;
   ctx.beginPath();
-  ctx.moveTo(-8, -27);
-  ctx.lineTo(-17, 3);
-  ctx.quadraticCurveTo(-13, 7, -9, 6);
-  ctx.quadraticCurveTo(-3, 8, 0, 8);
-  ctx.quadraticCurveTo(3, 8, 9, 6);
-  ctx.quadraticCurveTo(13, 7, 17, 3);
-  ctx.lineTo(8, -27);
-  ctx.closePath();
-  ctx.fill();
-  // Shimmer
-  ctx.save();
-  ctx.globalAlpha = 0.18;
-  const shimGrd = ctx.createLinearGradient(-4, -27, 1, 6);
-  shimGrd.addColorStop(0, '#ffffff');
-  shimGrd.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = shimGrd;
-  ctx.beginPath();
-  ctx.moveTo(-3, -27); ctx.lineTo(-4, 5); ctx.lineTo(3, 5); ctx.lineTo(4, -27);
+  ctx.moveTo(-12, -42);
+  ctx.lineTo(-32, 4);          // STORY-00285: was -26
+  ctx.quadraticCurveTo(-24, 12, -16, 10);
+  ctx.quadraticCurveTo(-5, 14, 0, 14);
+  ctx.quadraticCurveTo(5, 14, 16, 10);
+  ctx.quadraticCurveTo(24, 12, 32, 4);  // STORY-00285: was 26
+  ctx.lineTo(12, -42);
   ctx.closePath(); ctx.fill();
+  // Dress shimmer
+  ctx.save();
+  ctx.globalAlpha = 0.14;
+  const shimGrd = ctx.createLinearGradient(-5, -42, 2, 10);
+  shimGrd.addColorStop(0, '#ffffff'); shimGrd.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = shimGrd;
+  ctx.beginPath(); ctx.moveTo(-4, -42); ctx.lineTo(-6, 8); ctx.lineTo(5, 8); ctx.lineTo(6, -42); ctx.closePath(); ctx.fill();
   ctx.restore();
   // Bodice sparkles
-  ctx.save();
-  ctx.globalAlpha = 0.6;
-  ctx.fillStyle = '#ffffff';
-  for (const [sx, sy] of [[-3, -20], [3, -15], [-1, -11]]) {
-    ctx.beginPath(); ctx.arc(sx, sy, 1, 0, TWO_PI); ctx.fill();
+  ctx.save(); ctx.globalAlpha = 0.65; ctx.fillStyle = '#ffffff';
+  for (const [sx, sy] of [[-5, -32], [4, -24], [-2, -18], [6, -35]]) {
+    ctx.beginPath(); ctx.arc(sx, sy, 1.5, 0, TWO_PI); ctx.fill();
   }
   ctx.restore();
 
-  // ── Left arm (lowered, relaxed) ───────────────────────────────
-  ctx.strokeStyle = '#f5c8a0';
-  ctx.lineWidth   = 3;
+  // ── Left arm (balance, 15° outward) ──────────────────────────
+  ctx.strokeStyle = '#f5c090';
+  ctx.lineWidth   = 4.5;
   ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(-8, -22);
-  ctx.bezierCurveTo(-16, -20, -18, -13, -15, -7);
+  ctx.moveTo(-12, -36);
+  ctx.bezierCurveTo(-24, -33, -28, -20, -24, -12);
   ctx.stroke();
-  ctx.fillStyle = '#f5c8a0';
-  ctx.beginPath(); ctx.arc(-15, -6, 2.5, 0, TWO_PI); ctx.fill();
+  // Left hand
+  ctx.fillStyle = '#f5c090';
+  ctx.beginPath(); ctx.arc(-24, -11, 4, 0, TWO_PI); ctx.fill();
 
-  // ── Right arm (raised — holding net rope) ────────────────────
-  ctx.strokeStyle = '#f5c8a0';
-  ctx.lineWidth   = 3;
+  // ── Right arm (raised 45°, holding pole) ─────────────────────
+  ctx.strokeStyle = '#f5c090';
+  ctx.lineWidth   = 4.5;
   ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(8, -22);
-  ctx.bezierCurveTo(13, -26, 12, -32, 8, -36);
+  ctx.moveTo(12, -36);
+  ctx.bezierCurveTo(20, -42, 20, -54, 14, -62);
   ctx.stroke();
-  ctx.fillStyle = '#f5c8a0';
-  ctx.beginPath(); ctx.arc(8, -36, 2.5, 0, TWO_PI); ctx.fill();
+  // Right hand
+  ctx.fillStyle = '#f5c090';
+  ctx.beginPath(); ctx.arc(14, -62, 4, 0, TWO_PI); ctx.fill();
 
-  // ── Neck ─────────────────────────────────────────────────────
-  ctx.fillStyle = '#f5c8a0';
+  // ── Neck ──────────────────────────────────────────────────────
+  ctx.fillStyle = '#f8d5b0';
   ctx.beginPath();
-  ctx.moveTo(-3, -27); ctx.lineTo(-2, -32); ctx.lineTo(2, -32); ctx.lineTo(3, -27);
+  ctx.moveTo(-4, -42); ctx.lineTo(-3, -50); ctx.lineTo(3, -50); ctx.lineTo(4, -42);
   ctx.closePath(); ctx.fill();
 
-  // ── Head ─────────────────────────────────────────────────────
-  // Face
+  // ── Head (anime round, larger) ────────────────────────────
   ctx.fillStyle = '#f8d5b0';
-  ctx.beginPath(); ctx.arc(0, -41, 10, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -66, 20, 0, TWO_PI); ctx.fill();  // STORY-00285: r=20 (was 16)
   // Ears
   ctx.fillStyle = '#f0c090';
-  ctx.beginPath(); ctx.arc(-10, -41, 2.5, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(10, -41, 2.5, 0, TWO_PI); ctx.fill();
-  // Cheeks
-  ctx.save();
-  ctx.globalAlpha = 0.35;
-  ctx.fillStyle = '#ff8899';
-  ctx.beginPath(); ctx.ellipse(-5.5, -38, 3, 2.5, 0, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(5.5, -38, 3, 2.5, 0, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(-20, -66, 4.5, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(20, -66, 4.5, 0, TWO_PI); ctx.fill();
+  // Cheek blush
+  ctx.save(); ctx.globalAlpha = 0.40; ctx.fillStyle = '#ff8899';
+  ctx.beginPath(); ctx.ellipse(-9, -61, 6, 4, 0, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(9, -61, 6, 4, 0, 0, TWO_PI); ctx.fill();
   ctx.restore();
-  // Eyes (large anime style)
-  ctx.fillStyle = '#2a1a3a';
-  ctx.beginPath(); ctx.arc(-3.5, -42, 2.2, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(3.5, -42, 2.2, 0, TWO_PI); ctx.fill();
-  ctx.fillStyle = '#6633cc';
-  ctx.beginPath(); ctx.arc(-3.5, -42, 1.5, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(3.5, -42, 1.5, 0, TWO_PI); ctx.fill();
+  // Eyes — white sclera (STORY-00285: larger, more detailed)
+  ctx.fillStyle = '#f0f0ff';
+  ctx.beginPath(); ctx.ellipse(-6, -67, 4, 5, 0, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(6, -67, 4, 5, 0, 0, TWO_PI); ctx.fill();
+  // Colored iris
+  ctx.fillStyle = '#5533cc';
+  ctx.beginPath(); ctx.arc(-6, -67, 3, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(6, -67, 3, 0, TWO_PI); ctx.fill();
+  // Pupils
+  ctx.fillStyle = '#1a0a2a';
+  ctx.beginPath(); ctx.arc(-6, -67, 1.8, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(6, -67, 1.8, 0, TWO_PI); ctx.fill();
+  // Eye shine (STORY-00285: larger dot)
   ctx.fillStyle = '#ffffff';
-  ctx.beginPath(); ctx.arc(-2.8, -43, 0.8, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(4.2, -43, 0.8, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(-4.5, -69, 1.5, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(7.5, -69, 1.5, 0, TWO_PI); ctx.fill();
+  // Eyebrows (STORY-00285: more pronounced, 2.5px, arched)
+  ctx.strokeStyle = '#331122';
+  ctx.lineWidth   = 2.5;
+  ctx.lineCap     = 'round';
+  ctx.beginPath(); ctx.moveTo(-10, -74); ctx.quadraticCurveTo(-6, -77, -2, -74); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(2, -74); ctx.quadraticCurveTo(6, -77, 10, -74); ctx.stroke();
   // Smile
   ctx.strokeStyle = '#cc6644';
-  ctx.lineWidth   = 1.2;
-  ctx.beginPath();
-  ctx.arc(0, -39, 3, 0.3, Math.PI - 0.3);
-  ctx.stroke();
+  ctx.lineWidth   = 1.8;
+  ctx.beginPath(); ctx.arc(0, -62, 5, 0.3, Math.PI - 0.3); ctx.stroke();
 
-  // ── Hair ─────────────────────────────────────────────────────
-  ctx.fillStyle = '#1a0808';
-  // Back hair tails (below ears)
+  // ── Hair ──────────────────────────────────────────────────────
+  ctx.fillStyle = '#1a0a0a';
+  // Back hair layers (twin tails sweep out)
   ctx.beginPath();
-  ctx.moveTo(-9, -33);
-  ctx.bezierCurveTo(-15, -26, -16, -16, -12, -6);
-  ctx.bezierCurveTo(-10, -2, -7, 0, -5, 2);
-  ctx.lineTo(-5, -8);
-  ctx.bezierCurveTo(-8, -16, -9, -26, -6, -35);
+  ctx.moveTo(-14, -53);
+  ctx.bezierCurveTo(-24, -40, -28, -24, -22, -10);
+  ctx.bezierCurveTo(-18, -2, -12, 2, -8, 4);
+  ctx.lineTo(-8, -10);
+  ctx.bezierCurveTo(-12, -24, -12, -42, -8, -56);
   ctx.closePath(); ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(9, -33);
-  ctx.bezierCurveTo(15, -26, 16, -16, 12, -6);
-  ctx.bezierCurveTo(10, -2, 7, 0, 5, 2);
-  ctx.lineTo(5, -8);
-  ctx.bezierCurveTo(8, -16, 9, -26, 6, -35);
+  ctx.moveTo(14, -53);
+  ctx.bezierCurveTo(24, -40, 28, -24, 22, -10);
+  ctx.bezierCurveTo(18, -2, 12, 2, 8, 4);
+  ctx.lineTo(8, -10);
+  ctx.bezierCurveTo(12, -24, 12, -42, 8, -56);
   ctx.closePath(); ctx.fill();
   // Top hair cap
-  ctx.beginPath();
-  ctx.arc(0, -46, 9, Math.PI + 0.15, TWO_PI - 0.15);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -72, 18, Math.PI + 0.2, TWO_PI - 0.2); ctx.fill();
   // Side tufts
-  ctx.beginPath(); ctx.ellipse(-9, -41, 3.5, 6, -0.25, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(9, -41, 3.5, 6, 0.25, 0, TWO_PI);  ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-18, -66, 6, 10, -0.28, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(18, -66, 6, 10, 0.28, 0, TWO_PI); ctx.fill();
   // Fringe
   ctx.beginPath();
-  ctx.moveTo(-9, -49);
-  ctx.bezierCurveTo(-6, -44, -2, -43, 0, -41);
-  ctx.bezierCurveTo(2, -43, 6, -44, 9, -49);
+  ctx.moveTo(-18, -78);
+  ctx.bezierCurveTo(-12, -70, -4, -68, 0, -64);
+  ctx.bezierCurveTo(4, -68, 12, -70, 18, -78);
   ctx.closePath(); ctx.fill();
-
-  // ── Witch hat ────────────────────────────────────────────────
-  const hatGrd = ctx.createLinearGradient(-14, -53, 14, -48);
-  hatGrd.addColorStop(0, '#5522aa');
-  hatGrd.addColorStop(1, '#8833cc');
-  ctx.fillStyle = hatGrd;
-  // Brim
-  ctx.beginPath();
-  ctx.ellipse(0, -51, 14, 3.5, 0, 0, TWO_PI);
-  ctx.fill();
-  // Crown
-  ctx.beginPath();
-  ctx.moveTo(-8, -51);
-  ctx.bezierCurveTo(-9, -62, -4, -66, 0, -67);
-  ctx.bezierCurveTo(4, -66, 9, -62, 8, -51);
-  ctx.closePath();
-  ctx.fill();
-  // Gold band
+  // Hair highlight arc — purple shine (STORY-00285)
   ctx.save();
-  ctx.globalAlpha = 0.85;
-  const bandGrd = ctx.createLinearGradient(-8, -56, 8, -53);
-  bandGrd.addColorStop(0, '#cc9900');
-  bandGrd.addColorStop(0.5, '#ffdd44');
-  bandGrd.addColorStop(1, '#cc9900');
-  ctx.fillStyle = bandGrd;
-  ctx.fillRect(-8, -56, 16, 3);
+  ctx.strokeStyle = '#553399';
+  ctx.lineWidth   = 2.5;
+  ctx.globalAlpha = 0.45;
+  ctx.lineCap     = 'round';
+  ctx.beginPath(); ctx.arc(0, -76, 12, Math.PI + 0.4, TWO_PI - 0.4); ctx.stroke();
   ctx.restore();
-  // Star on hat
-  ctx.fillStyle    = '#ffee88';
-  ctx.shadowColor  = '#ffd700';
-  ctx.shadowBlur   = 5;
-  ctx.font         = '8px sans-serif';
-  ctx.textAlign    = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText('★', 2, -62);
+  // Star hair clips (twin tail ties)
+  ctx.fillStyle = '#ffdd55';
+  ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 4;
+  ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('★', -20, -10);
+  ctx.fillText('★', 20, -10);
   ctx.shadowBlur = 0;
+
+  // ── Witch hat (STORY-00285: wider brim, taller crown, polygon star) ────────────
+  const hatGrd = ctx.createLinearGradient(-26, -82, 26, -76);
+  hatGrd.addColorStop(0, '#4411aa');
+  hatGrd.addColorStop(1, '#7722cc');
+  ctx.fillStyle = hatGrd;
+  // Brim (wider: rx=26 was 22)
+  ctx.beginPath(); ctx.ellipse(0, -80, 26, 5.5, 0, 0, TWO_PI); ctx.fill();
+  // Crown (taller: crown to -114 was -108)
+  ctx.beginPath();
+  ctx.moveTo(-13, -80);
+  ctx.bezierCurveTo(-15, -100, -7, -110, 0, -114);
+  ctx.bezierCurveTo(7, -110, 15, -100, 13, -80);
+  ctx.closePath(); ctx.fill();
+  // Gold band
+  ctx.save(); ctx.globalAlpha = 0.90;
+  const bandGrd = ctx.createLinearGradient(-13, -88, 13, -84);
+  bandGrd.addColorStop(0, '#aa7700'); bandGrd.addColorStop(0.5, '#ffdd44'); bandGrd.addColorStop(1, '#aa7700');
+  ctx.fillStyle = bandGrd;
+  ctx.fillRect(-13, -88, 26, 4);
+  ctx.restore();
+  // Hat star — 5-point polygon (STORY-00285: not emoji text)
+  ctx.save();
+  ctx.fillStyle   = '#ffee88';
+  ctx.shadowColor = '#ffd700';
+  ctx.shadowBlur  = 8;
+  ctx.globalAlpha = 0.95;
+  ctx.translate(2, -105);
+  ctx.beginPath();
+  for (let sp = 0; sp < 5; sp++) {
+    const outerA = (sp * 2 * Math.PI / 5) - Math.PI / 2;
+    const innerA = outerA + Math.PI / 5;
+    if (sp === 0) ctx.moveTo(Math.cos(outerA) * 7, Math.sin(outerA) * 7);
+    else          ctx.lineTo(Math.cos(outerA) * 7, Math.sin(outerA) * 7);
+    ctx.lineTo(Math.cos(innerA) * 3, Math.sin(innerA) * 3);
+  }
+  ctx.closePath(); ctx.fill();
+  ctx.shadowBlur = 0;
+  ctx.restore();
 
   ctx.restore();
 }
@@ -1197,9 +1236,9 @@ function _drawNet(ctx) {
   const showLen = isExtended ? _netLen : 20;
   const angle   = _netAngle;
 
-  // Rope origin — from girl's right hand position
-  const ropeOriX = _poleX + 12;
-  const ropeOriY = _poleY - 60;
+  // Rope origin — from girl's right hand position (STORY-00278: updated for 130px character)
+  const ropeOriX = _poleX + 14;
+  const ropeOriY = _poleY - 62;
 
   // Net head (mouth ring center)
   const headX = ropeOriX + Math.sin(angle) * showLen;
@@ -1328,6 +1367,21 @@ function _drawNet(ctx) {
     ctx.fill();
     ctx.restore();
   }
+
+  // ── Caught debris drag visual (STORY-00286) ──────────────────
+  // During retract, draw the caught debris at the net head so it visibly follows
+  if (_caughtDebris && _netState === 'retract') {
+    const d = _caughtDebris;
+    ctx.save();
+    ctx.globalAlpha = 0.75;
+    ctx.fillStyle = d.type === 'cloth' ? '#cc8844' : '#886644';
+    ctx.shadowColor = 'rgba(255,100,30,0.5)';
+    ctx.shadowBlur = 6;
+    ctx.beginPath();
+    ctx.arc(headX, headY + bagDepth * 0.6, (d.r || 12) * 0.7, 0, TWO_PI);
+    ctx.fill();
+    ctx.restore();
+  }
 }
 
 // ── Tutorial hint ─────────────────────────────────────────────
@@ -1380,25 +1434,26 @@ function _drawHUD(ctx, W) {
   ctx.fillRect(0, 0, W, ST + 52);
   ctx.restore();
 
-  // Level name (center) — drawn below the notch
+  // Level name (top-left after star count) — drawn below the notch
   ctx.save();
-  ctx.font         = 'bold 16px sans-serif';
-  ctx.textAlign    = 'center';
+  ctx.font         = 'bold 11px sans-serif';
+  ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle    = COLORS.text;
-  ctx.fillText((_conDef.icon || '★') + ' ' + _conDef.nameZh, W / 2, ST + 26);
+  ctx.fillStyle    = 'rgba(200,185,255,0.85)';
+  const levelLabel = (_conDef.icon || '★') + ' ' + _conDef.nameZh;
+  ctx.fillText(levelLabel, G.SAFE_LEFT + 14, ST + 38);  // STORY-00289: moved below star count
   ctx.restore();
 
-  // Caught count (left)
+  // Caught count (top-left) — primary info
   ctx.save();
-  ctx.font         = 'bold 15px sans-serif';
+  ctx.font         = 'bold 14px sans-serif';
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = COLORS.starGold;
-  ctx.fillText('已抓: ' + _caught + ' / ' + _total, G.SAFE_LEFT + 14, ST + 26);
+  ctx.fillText('✦ ' + _caught + ' / ' + _total, G.SAFE_LEFT + 14, ST + 22);
   ctx.restore();
 
-  // Timer (right)
+  // Timer (center top) — STORY-00289: web version puts timer center
   const mins    = Math.floor(_timeLeft / 60);
   const secs    = Math.floor(_timeLeft % 60);
   const timerStr = mins + ':' + String(secs).padStart(2, '0');
@@ -1406,18 +1461,17 @@ function _drawHUD(ctx, W) {
   const timerUrgent   = _timeLeft <= 10;
 
   ctx.save();
-  // Pulse font size when urgent (STORY-00260)
   const t2 = Date.now() * 0.001;
-  const pulsedSize = timerUrgent ? Math.round(18 + 4 * Math.abs(Math.sin(t2 * Math.PI * 2))) : 18;
+  const pulsedSize = timerUrgent ? Math.round(18 + 3 * Math.abs(Math.sin(t2 * Math.PI * 2))) : 18;
   ctx.font         = `bold ${pulsedSize}px sans-serif`;
-  ctx.textAlign    = 'right';
+  ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = timerFlashing ? '#ff4444' : COLORS.text;
   if (timerFlashing) {
     ctx.shadowColor = '#ff2222';
     ctx.shadowBlur  = timerUrgent ? 14 : 8;
   }
-  ctx.fillText(timerStr, W - G.SAFE_RIGHT - 14, ST + 26);
+  ctx.fillText(timerStr, W / 2, ST + 26);  // STORY-00289: centered
   ctx.restore();
 
   // Bomb button (legacy — kept for backward compat; slot system handles space_bomb now)
@@ -1509,8 +1563,8 @@ function _drawHUD(ctx, W) {
     }
   }
 
-  // Pause button (top-right corner, STORY-00236)
-  const pauseX = W - G.SAFE_RIGHT - 44;
+  // Pause button (top-right corner, STORY-00282: moved right so timer doesn't overlap)
+  const pauseX = W - G.SAFE_RIGHT - 36;
   const pauseY = ST + 6;
   _btnPause = { x: pauseX, y: pauseY, w: 36, h: 36 };
   ctx.save();
@@ -1905,11 +1959,11 @@ function _onTouch(e) {
         return;
       }
       if (_btnPauseRetry && hitTest(_btnPauseRetry, tx, ty)) {
-        if (_navigate) _navigate('game');
+        if (_navigate) fadeNavigate(() => _navigate('game'));
         return;
       }
       if (_btnPauseLevels && hitTest(_btnPauseLevels, tx, ty)) {
-        if (_navigate) _navigate('levels');
+        if (_navigate) fadeNavigate(() => _navigate('levels'));
         return;
       }
       return; // swallow all other taps while paused
@@ -1954,32 +2008,32 @@ function _onTouch(e) {
     if (_btnNext && hitTest(_btnNext, tx, ty)) {
       if (_levelIdx >= 29) {
         // Last level completed → go to achievement screen
-        if (_navigate) _navigate('achievement');
+        if (_navigate) fadeNavigate(() => _navigate('achievement'));
       } else {
         const nextIdx = _levelIdx + 1;
         state.currentLevel = nextIdx;
-        if (_navigate) _navigate('game');
+        if (_navigate) fadeNavigate(() => _navigate('game'));
       }
       return;
     }
     if (_btnRetry && hitTest(_btnRetry, tx, ty)) {
-      if (_navigate) _navigate('game');
+      if (_navigate) fadeNavigate(() => _navigate('game'));
       return;
     }
     if (_btnReplay && hitTest(_btnReplay, tx, ty)) {
-      if (_navigate) _navigate('game');
+      if (_navigate) fadeNavigate(() => _navigate('game'));
       return;
     }
     if (_btnLevels && hitTest(_btnLevels, tx, ty)) {
-      if (_navigate) _navigate('levels');
+      if (_navigate) fadeNavigate(() => _navigate('levels'));
       return;
     }
     if (_btnShop && hitTest(_btnShop, tx, ty)) {
-      if (_navigate) _navigate('shop');
+      if (_navigate) fadeNavigate(() => _navigate('shop'));
       return;
     }
     if (_btnGallery && hitTest(_btnGallery, tx, ty)) {
-      if (_navigate) _navigate('gallery');
+      if (_navigate) fadeNavigate(() => _navigate('gallery'));
       return;
     }
   }

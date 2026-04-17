@@ -7,6 +7,7 @@
 
 import { G } from '../engine/globals.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
+import { drawFadeOverlay, tickFade } from '../engine/canvas-utils.js';
 
 const TWO_PI = Math.PI * 2;
 
@@ -24,6 +25,11 @@ let _conDef    = null;
 let _mappedStars = [];
 let _mappedLines = [];
 
+// Sparkle particles for star reveal (STORY-00277)
+let _sparkles  = [];  // {x,y,vx,vy,life,maxLife}
+// Track which stars have already triggered sparkle burst
+let _sparkleTriggered = new Set();
+
 // ── Public API ────────────────────────────────────────────────
 export function showIntro(navigate) {
   _navigate = navigate;
@@ -34,10 +40,13 @@ export function showIntro(navigate) {
   _conDef = CONSTELLATIONS[Math.floor(Math.random() * CONSTELLATIONS.length)];
   _buildConStars();
 
-  // Spawn initial meteors
+  // Spawn initial meteors — 4 with born=0 for immediate visibility (STORY-00283)
   _meteors = [];
-  for (let i = 0; i < 8; i++) {
-    _spawnMeteor(Math.random() * 12000); // stagger start times across 12s
+  for (let i = 0; i < 4; i++) {
+    _spawnMeteor(0); // appear from frame 1
+  }
+  for (let i = 0; i < 5; i++) {
+    _spawnMeteor(1000 + Math.random() * 8000); // stagger remaining across 9s
   }
 
   G.CANVAS.addEventListener('touchstart', _onSkip);
@@ -54,6 +63,8 @@ export function hideIntro() {
 function _cleanup() {
   if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
   try { G.CANVAS.removeEventListener('touchstart', _onSkip); } catch (e) {}
+  _sparkles = [];
+  _sparkleTriggered = new Set();
 }
 
 function _onSkip() {
@@ -96,7 +107,7 @@ function _spawnMeteor(delayMs) {
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
     len: 60 + Math.random() * 80,
-    alpha: 0.7 + Math.random() * 0.3,
+    alpha: 0.85 + Math.random() * 0.15,  // STORY-00283: min 0.85 for visibility
     born: delayMs, // ms since intro start
     dead: false,
   });
@@ -119,14 +130,14 @@ function _loop(now) {
   ctx.fillStyle = '#020510';
   ctx.fillRect(0, 0, W, H);
 
-  // ── Background micro-stars ──────────────────────────────────
+  // ── Background micro-stars — active twinkle (STORY-00284) ────
   ctx.save();
   for (let i = 0; i < 80; i++) {
     // Deterministic pseudo-random using i as seed
     const sx = ((i * 137 + 41) % W);
     const sy = ((i * 97 + 23) % H);
-    const sa = 0.2 + (i % 5) * 0.1;
-    ctx.globalAlpha = sa;
+    const twinkle = 0.25 + 0.45 * Math.abs(Math.sin(elapsed * (0.5 + (i % 7) * 0.2) + i * 0.8));
+    ctx.globalAlpha = twinkle;
     ctx.fillStyle = '#ffffff';
     ctx.beginPath();
     ctx.arc(sx, sy, 0.7, 0, TWO_PI);
@@ -148,8 +159,8 @@ function _loop(now) {
       m.x += m.vx * (1 / 60);
       m.y += m.vy * (1 / 60);
       if (m.y > H + 50 || m.x > W + 50) { m.dead = true; continue; }
-      // Trail: draw line from current pos back along velocity
-      const trailFactor = 0.12; // fraction of velocity vector for trail length
+      // Trail: draw line from current pos back along velocity — longer trail (STORY-00277)
+      const trailFactor = 0.28; // STORY-00283: was 0.22 — even longer, more dramatic trails
       const tx0 = m.x - m.vx * trailFactor;
       const ty0 = m.y - m.vy * trailFactor;
       const fadeA = m.alpha * Math.max(0, 1 - age * 0.25);
@@ -167,16 +178,16 @@ function _loop(now) {
     }
   }
 
-  // ── Phase 2: Constellation reveal (3-8s) ───────────────────
-  if (elapsed >= 3 && elapsed < 8 && _mappedStars.length > 0) {
-    const t2 = elapsed - 3; // 0-5s within phase
-    const revealFrac = t2 / 5; // 0→1 over 5s
+  // ── Phase 2: Constellation reveal (2-8s) ───────────────────
+  if (elapsed >= 2 && elapsed < 8 && _mappedStars.length > 0) {
+    const t2 = elapsed - 2; // 0-6s within phase
+    const revealFrac = t2 / 6; // 0→1 over 6s — STORY-00283: starts at 2s (was 3s)
 
     const starsToShow = Math.floor(revealFrac * _mappedStars.length);
     const linesToShow = Math.floor(revealFrac * _mappedLines.length);
 
     // Fade in phase 2
-    const phaseAlpha = Math.min(1, (elapsed - 3) * 0.8);
+    const phaseAlpha = Math.min(1, (elapsed - 2) * 0.8);
 
     ctx.save();
     ctx.globalAlpha = phaseAlpha;
@@ -199,6 +210,14 @@ function _loop(now) {
     // Stars
     for (let si = 0; si < starsToShow; si++) {
       const s = _mappedStars[si];
+      // Sparkle burst trigger — once per star reveal (STORY-00277)
+      if (!_sparkleTriggered.has(si)) {
+        _sparkleTriggered.add(si);
+        for (let k = 0; k < 6; k++) {
+          const angle = (k * Math.PI * 2) / 6;
+          _sparkles.push({ x: s.x, y: s.y, vx: Math.cos(angle) * 60, vy: Math.sin(angle) * 60, life: 20, maxLife: 20 });
+        }
+      }
       // Glow
       ctx.save();
       ctx.globalAlpha = phaseAlpha * 0.4;
@@ -219,8 +238,8 @@ function _loop(now) {
     ctx.restore();
 
     // Constellation name
-    if (elapsed > 5 && _conDef) {
-      const nameAlpha = Math.min(1, (elapsed - 5) * 1.5);
+    if (elapsed > 4 && _conDef) {  // STORY-00283: was elapsed>5, adjusted for earlier start
+      const nameAlpha = Math.min(1, (elapsed - 4) * 1.5);
       ctx.save();
       ctx.globalAlpha = nameAlpha;
       ctx.font = '16px sans-serif';
@@ -260,38 +279,97 @@ function _loop(now) {
       ctx.restore();
     }
 
-    // Title glow
+    // ── Cosmic portal glow (STORY-00284) — 3 pulsing concentric rings ──
     ctx.save();
-    ctx.globalAlpha = titleAlpha * 0.3;
+    ctx.globalAlpha = titleAlpha;
+    const pulseA = 0.5 + 0.5 * Math.sin(elapsed * 1.2);
+    const pulseB = 0.5 + 0.5 * Math.sin(elapsed * 0.8 + 1.0);
+    const pulseC = 0.5 + 0.5 * Math.sin(elapsed * 0.5 + 2.1);
+    // Ring 1 — innermost purple
+    const grd1 = ctx.createRadialGradient(W/2, H/2, 0, W/2, H/2, 80);
+    grd1.addColorStop(0, `rgba(160,80,255,${(0.18 + 0.10 * pulseA).toFixed(2)})`);
+    grd1.addColorStop(1, 'rgba(120,0,200,0)');
+    ctx.fillStyle = grd1;
+    ctx.beginPath(); ctx.arc(W/2, H/2, 80, 0, TWO_PI); ctx.fill();
+    // Ring 2 — mid indigo
+    const grd2 = ctx.createRadialGradient(W/2, H/2, 30, W/2, H/2, 140);
+    grd2.addColorStop(0, 'rgba(80,0,180,0)');
+    grd2.addColorStop(0.5, `rgba(100,40,220,${(0.10 + 0.06 * pulseB).toFixed(2)})`);
+    grd2.addColorStop(1, 'rgba(60,0,160,0)');
+    ctx.fillStyle = grd2;
+    ctx.beginPath(); ctx.arc(W/2, H/2, 140, 0, TWO_PI); ctx.fill();
+    // Ring 3 — outer violet fade
+    const grd3 = ctx.createRadialGradient(W/2, H/2, 80, W/2, H/2, 200);
+    grd3.addColorStop(0, 'rgba(60,0,140,0)');
+    grd3.addColorStop(0.5, `rgba(80,20,180,${(0.06 + 0.04 * pulseC).toFixed(2)})`);
+    grd3.addColorStop(1, 'rgba(40,0,100,0)');
+    ctx.fillStyle = grd3;
+    ctx.beginPath(); ctx.arc(W/2, H/2, 200, 0, TWO_PI); ctx.fill();
+    ctx.restore();
+
+    // Outer title glow halo
+    ctx.save();
+    ctx.globalAlpha = titleAlpha * 0.35;
     ctx.shadowColor = '#a070ff';
     ctx.shadowBlur = 40;
     ctx.font = 'bold 42px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#e8d8ff';
-    ctx.fillText('追星少女', W / 2, H / 2);
+    ctx.fillStyle = '#c090ff';
+    ctx.fillText('追  星  少  女', W / 2, H / 2);
     ctx.restore();
 
+    // Title with gradient fill (STORY-00284)
     ctx.save();
     ctx.globalAlpha = titleAlpha;
     ctx.font = 'bold 42px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#f0e8ff';
     ctx.shadowColor = '#c090ff';
-    ctx.shadowBlur = 12;
-    ctx.fillText('追星少女', W / 2, H / 2);
+    ctx.shadowBlur = 14;
+    const titleGrd = ctx.createLinearGradient(W/2 - 80, H/2 - 25, W/2 + 80, H/2 + 25);
+    titleGrd.addColorStop(0, '#e0d0ff');
+    titleGrd.addColorStop(0.5, '#c8a8ff');
+    titleGrd.addColorStop(1, '#b090ff');
+    ctx.fillStyle = titleGrd;
+    ctx.fillText('追  星  少  女', W / 2, H / 2);
     ctx.restore();
 
-    // Subtitle
-    ctx.save();
-    ctx.globalAlpha = Math.min(1, t3 / 2.5);
-    ctx.font = '16px sans-serif';
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'top';
-    ctx.fillStyle = 'rgba(180,170,220,0.8)';
-    ctx.fillText('轻触屏幕开始', W / 2, H / 2 + 36);
-    ctx.restore();
+    // Decorative separator (STORY-00284)
+    if (t3 > 1.2) {
+      const sepAlpha = Math.min(1, (t3 - 1.2) / 0.8) * titleAlpha;
+      const sepY = H / 2 + 28;
+      const sepLineW = W * 0.18;
+      ctx.save();
+      ctx.globalAlpha = sepAlpha * 0.65;
+      ctx.strokeStyle = 'rgba(180,140,255,1)';
+      ctx.lineWidth = 0.8;
+      // Left line
+      ctx.beginPath(); ctx.moveTo(W/2 - 14, sepY); ctx.lineTo(W/2 - sepLineW, sepY); ctx.stroke();
+      // Right line
+      ctx.beginPath(); ctx.moveTo(W/2 + 14, sepY); ctx.lineTo(W/2 + sepLineW, sepY); ctx.stroke();
+      // Center star
+      ctx.fillStyle = 'rgba(200,170,255,1)';
+      ctx.font = '10px sans-serif';
+      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+      ctx.fillText('✦', W/2, sepY);
+      ctx.restore();
+    }
+
+    // Subtitle with upward float (STORY-00284)
+    const subAlpha = Math.min(1, t3 / 2.5);
+    if (subAlpha > 0) {
+      // Float: starts 8px below final position, floats up over 1.5s
+      const floatOffset = 8 * Math.max(0, 1 - t3 / 1.5);
+      ctx.save();
+      ctx.globalAlpha = subAlpha;
+      ctx.font = '15px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.fillStyle = 'rgba(185,165,230,0.9)';
+      ctx.fillText('探索88星座的奇妙旅程', W / 2, H / 2 + 38 + floatOffset);
+      ctx.restore();
+    }
 
     // Auto-finish at 13s (suppressed when QA freeze hook is active)
     if (elapsed >= 13 && !(typeof wx !== 'undefined' && typeof wx.__introFreezeAt === 'number')) {
@@ -299,6 +377,43 @@ function _loop(now) {
       return;
     }
   }
+
+  // ── Sparkle particles (STORY-00277) ──────────────────────────
+  if (_sparkles.length > 0) {
+    ctx.save();
+    for (let si = _sparkles.length - 1; si >= 0; si--) {
+      const sp = _sparkles[si];
+      sp.x += sp.vx * (1 / 60);
+      sp.y += sp.vy * (1 / 60);
+      sp.life--;
+      if (sp.life <= 0) { _sparkles.splice(si, 1); continue; }
+      const a = sp.life / sp.maxLife;
+      ctx.globalAlpha = a * 0.85;
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(sp.x, sp.y, 2, 0, TWO_PI);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // ── Skip hint (STORY-00283) — show from frame 1 ──────────────
+  if (elapsed >= 0) {
+    const hintAlpha = Math.min(0.75, elapsed * 1.5); // fade in quickly
+    ctx.save();
+    ctx.globalAlpha = hintAlpha;
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'bottom';
+    ctx.fillStyle = 'rgba(180,170,220,1)';
+    ctx.fillText('✦ 轻触跳过', W - 16, H - (G.SAFE_BOTTOM || 8) - 8);
+    ctx.restore();
+  }
+
+  // Global fade overlay (STORY-00282)
+  const dt282 = 1 / 60;
+  tickFade(dt282);
+  drawFadeOverlay(ctx, W, H);
 
   _rafId = requestAnimationFrame(_loop);
 }

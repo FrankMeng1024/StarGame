@@ -4,7 +4,7 @@
 import { G } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
-  drawButton, hitTest,
+  drawButton, hitTest, drawFadeOverlay, tickFade,
 } from '../engine/canvas-utils.js';
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
 import state from '../engine/state.js';
@@ -118,6 +118,10 @@ function _loop(now) {
   } else {
     _drawDetail(ctx, W, H, t);
   }
+
+  // Global fade overlay (STORY-00282)
+  tickFade(1 / 60);
+  drawFadeOverlay(ctx, W, H);
 
   _rafId = requestAnimationFrame(_loop);
 }

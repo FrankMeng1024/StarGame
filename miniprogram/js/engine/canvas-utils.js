@@ -177,6 +177,53 @@ export function hitTest(rect, tx, ty) {
          ty >= rect.y && ty <= rect.y + rect.h;
 }
 
+// ─── 全局淡入/淡出过渡（STORY-00282）────────────────────────
+let _fadeAlpha = 0;
+let _fadeDir   = 0;  // 0=none, 1=fade-out (→black), -1=fade-in (black→clear)
+let _fadeCb    = null;
+
+/**
+ * 触发屏幕切换淡入淡出。
+ * 先淡出(150ms)→ 执行 cb → 淡入(150ms)。
+ */
+export function fadeNavigate(cb) {
+  _fadeAlpha = 0;
+  _fadeDir   = 1;
+  _fadeCb    = cb;
+}
+
+/**
+ * 每帧调用。返回当前 alpha（供调用方判断是否需要 requestAnimationFrame 继续）。
+ */
+export function tickFade(dt) {
+  if (_fadeDir === 0) return;
+  const step = dt / 0.15;  // 0→1 in 150ms
+  if (_fadeDir === 1) {
+    _fadeAlpha = Math.min(1, _fadeAlpha + step);
+    if (_fadeAlpha >= 1 && _fadeCb) {
+      const cb = _fadeCb;
+      _fadeCb = null;
+      _fadeDir = -1;
+      cb();
+    }
+  } else if (_fadeDir === -1) {
+    _fadeAlpha = Math.max(0, _fadeAlpha - step);
+    if (_fadeAlpha <= 0) _fadeDir = 0;
+  }
+}
+
+/**
+ * 在每个屏幕的渲染循环末尾调用，覆盖黑色遮罩。
+ */
+export function drawFadeOverlay(ctx, w, h) {
+  if (_fadeAlpha <= 0) return;
+  ctx.save();
+  ctx.globalAlpha = _fadeAlpha;
+  ctx.fillStyle   = '#000000';
+  ctx.fillRect(0, 0, w, h);
+  ctx.restore();
+}
+
 // ─── 内部辅助：圆角矩形 path ──────────────────────────────────
 function _roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();

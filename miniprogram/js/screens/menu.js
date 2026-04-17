@@ -5,7 +5,7 @@
 import { G } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
-  drawButton, drawTitle, drawSubtitle, hitTest,
+  drawButton, drawTitle, drawSubtitle, hitTest, drawFadeOverlay, tickFade,
 } from '../engine/canvas-utils.js';
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
 import { AudioAdapter } from '../platform/wx-adapter.js';
@@ -27,14 +27,22 @@ function _drawMenuButton(ctx, x, y, w, h, label, opts = {}) {
 
   ctx.save();
 
-  // Drop shadow for depth — lighter for ghost style (STORY-00275)
-  ctx.shadowColor = primary ? 'rgba(200,100,255,0.45)' : 'rgba(120,60,200,0.30)';
-  ctx.shadowBlur  = primary ? 12 : 8;
+  // Drop shadow for depth
+  ctx.shadowColor = primary ? 'rgba(120,40,220,0.55)' : 'rgba(60,20,140,0.40)';
+  ctx.shadowBlur  = primary ? 14 : 10;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 3;
 
-  // Ghost fill — semi-transparent, background shows through (STORY-00275)
-  ctx.fillStyle = primary ? 'rgba(160,0,220,0.28)' : 'rgba(80,0,160,0.20)';
+  // Solid gradient fill — web version style (STORY-00289: replaces ghost/transparent)
+  const fillGrd = ctx.createLinearGradient(x, y, x, y + h);
+  if (primary) {
+    fillGrd.addColorStop(0, 'rgba(122,68,214,0.88)');
+    fillGrd.addColorStop(1, 'rgba(74,28,150,0.88)');
+  } else {
+    fillGrd.addColorStop(0, 'rgba(61,40,117,0.80)');
+    fillGrd.addColorStop(1, 'rgba(30,16,69,0.80)');
+  }
+  ctx.fillStyle = fillGrd;
 
   // Rounded rect fill
   ctx.beginPath();
@@ -55,9 +63,9 @@ function _drawMenuButton(ctx, x, y, w, h, label, opts = {}) {
   ctx.shadowBlur  = 0;
   ctx.shadowOffsetY = 0;
 
-  // Brighter border for ghost style — border defines the button shape (STORY-00275)
-  ctx.strokeStyle = primary ? 'rgba(200,80,255,0.80)' : 'rgba(160,100,255,0.55)';
-  ctx.lineWidth   = primary ? 1.8 : 1.2;
+  // Border — brightened for solid button style (STORY-00289)
+  ctx.strokeStyle = primary ? 'rgba(210,120,255,0.65)' : 'rgba(140,90,220,0.45)';
+  ctx.lineWidth   = primary ? 1.5 : 1.0;
   ctx.beginPath();
   ctx.moveTo(x + radius, y);
   ctx.lineTo(x + w - radius, y);
@@ -158,12 +166,12 @@ function _buildConLayout() {
   const H = G.SCREEN_H;
   const isLandscape = W > H;
 
-  // In landscape: constellation fills the left 55% of screen
+  // In landscape: constellation fills the left 60% of screen (STORY-00289: was 52%)
   // In portrait: constellation fills the top ~60% of screen
   const safeL = G.SAFE_LEFT || 0;
-  const cx = isLandscape ? safeL + (W * 0.52 - safeL) * 0.5 : W * 0.50;
+  const cx = isLandscape ? safeL + (W * 0.60 - safeL) * 0.5 : W * 0.50;
   const cy = isLandscape ? H * 0.45 : H * 0.32;
-  const BOX = isLandscape ? Math.min(H * 0.80, (W * 0.52 - safeL) * 0.88) : Math.min(H * 0.60, W * 0.80);
+  const BOX = isLandscape ? Math.min(H * 0.80, (W * 0.60 - safeL) * 0.88) : Math.min(H * 0.60, W * 0.80);
 
   // Raw positions
   const raw = conDef.stars.map((s, si) => ({
@@ -188,7 +196,7 @@ function _buildConLayout() {
   const ys2 = raw.map(s => s.cy);
   const conW = Math.max(...xs2) - Math.min(...xs2);
   const conH = Math.max(...ys2) - Math.min(...ys2);
-  const maxW = isLandscape ? W * 0.50 - MARGIN : W - MARGIN * 2;
+  const maxW = isLandscape ? W * 0.58 - MARGIN : W - MARGIN * 2;
   const maxH = isLandscape ? H - MARGIN * 2 : H * 0.55;
   const scale = Math.min(1, maxW / (conW || 1), maxH / (conH || 1));
   if (scale < 1) {
@@ -267,20 +275,22 @@ function _loop(now) {
 
   if (isLandscape) {
     // ── Landscape layout ─────────────────────────────────────
-    // Constellation fills left 52%; title + buttons in right 44%
-    const rightX  = W * 0.54 + G.SAFE_LEFT * 0.3;
-    const rightW  = W - rightX - G.SAFE_RIGHT - 14;
+    // Constellation fills left 60%; title + buttons in right 36% (STORY-00289: was 52%/44%)
+    const rightX  = W * 0.62 + (G.SAFE_LEFT || 0) * 0.2;
+    const rightW  = W - rightX - (G.SAFE_RIGHT || 0) - 16;  // STORY-00287: was -20
     const midX    = rightX + rightW / 2;
 
-    drawTitle(ctx, '追星少女', midX, H * 0.26, 32);
-    drawSubtitle(ctx, '探索88星座的奇妙旅程', midX, H * 0.26 + 34, 13);
+    // STORY-00280: title moved up to prevent overlap with tall constellation
+    drawTitle(ctx, '追  星  少  女', midX, H * 0.14, 30);  // STORY-00289: spaced title, slightly smaller for wider layout
+    drawSubtitle(ctx, '探索88星座的奇妙旅程', midX, H * 0.14 + 26, 12);
 
     const BW  = rightW;
-    const BH  = Math.max(36, Math.min(44, (H - G.SAFE_TOP - G.SAFE_BOTTOM - 120) / 3));
-    const GAP = 10;
-    // Stack 3 buttons vertically in right pane, centered
+    const BH  = Math.max(26, Math.min(30, (H - G.SAFE_TOP - G.SAFE_BOTTOM - 110) / 3));  // STORY-00287: was max(30,min(36,...))
+    const GAP = 8;
+    // Stack 3 buttons vertically in right pane — center in available height
     const totalBtnsH = 3 * BH + 2 * GAP;
-    const startY = H / 2 - totalBtnsH / 2 + 16;
+    const usableH = H - G.SAFE_TOP - G.SAFE_BOTTOM;
+    const startY = G.SAFE_TOP + usableH * 0.42 - totalBtnsH / 2;
 
     const defs = [
       { key: 'levels',  label: '挑战关卡', icon: '★' },
@@ -290,29 +300,28 @@ function _loop(now) {
     defs.forEach((d, i) => {
       const by = startY + i * (BH + GAP);
       const rect = _drawMenuButton(ctx, rightX, by, BW, BH, d.label, {
-        icon: d.icon, primary: i === 0, fontSize: 15,
+        icon: d.icon, primary: i === 0, fontSize: 13,  // STORY-00287: was 14
       });
       _buttons.push({ ...rect, key: d.key });
     });
 
-    // Achievement button — small, below main buttons
-    const achH = Math.max(24, Math.min(28, BH * 0.65));
-    const achY = startY + 3 * (BH + GAP) + 4;
-    const achRect = drawButton(ctx, rightX, achY, BW, achH, '🏆 星座图鉴', {
-      fontSize: 11, radius: 8, alpha: 0.60,
-      color0: 'rgba(40,35,10,0.70)', color1: 'rgba(70,55,10,0.70)',
+    // Achievement button — small, below main buttons (STORY-00287: achH even smaller)
+    const achH = Math.max(20, Math.min(24, BH * 0.75));
+    const achY = startY + 3 * (BH + GAP) + 6;
+    const achRect = _drawMenuButton(ctx, rightX, achY, BW, achH, '🏆 星座图鉴', {
+      fontSize: 10, primary: false,  // STORY-00287: was 11
     });
     _buttons.push({ ...achRect, key: 'achievement' });
   } else {
-    // ── Portrait layout (original) ───────────────────────────
-    drawTitle(ctx, '追星少女', W / 2, H * 0.72, 38);
+    // ── Portrait layout ───────────────────────────────────────
+    drawTitle(ctx, '追  星  少  女', W / 2, H * 0.72, 38);  // Arch review: portrait also uses double-space per STORY-00289
     drawSubtitle(ctx, '探索88星座的奇妙旅程', W / 2, H * 0.72 + 38, 14);
 
     const BW = W * 0.60;
-    const BH = 48;
+    const BH = 36;   // STORY-00287: was 40
     const BX = (W - BW) / 2;
-    const GAP = 14;
-    const startY = H - G.SAFE_BOTTOM - 180;
+    const GAP = 10;  // STORY-00280: was 14
+    const startY = H - G.SAFE_BOTTOM - 160;
 
     const defs = [
       { key: 'levels',  label: '挑战关卡', icon: '★' },
@@ -322,16 +331,15 @@ function _loop(now) {
     defs.forEach((d, i) => {
       const by = startY + i * (BH + GAP);
       const rect = _drawMenuButton(ctx, BX, by, BW, BH, d.label, {
-        icon: d.icon, primary: i === 0, fontSize: 17,
+        icon: d.icon, primary: i === 0, fontSize: 15,  // STORY-00287: was 16
       });
       _buttons.push({ ...rect, key: d.key });
     });
 
-    // Achievement button — small, below main buttons (portrait)
+    // Achievement button — portrait
     const achY = startY + 3 * (BH + GAP) + 4;
-    const achRect = drawButton(ctx, BX, achY, BW, 32, '🏆 星座图鉴', {
-      fontSize: 12, radius: 8, alpha: 0.60,
-      color0: 'rgba(40,35,10,0.70)', color1: 'rgba(70,55,10,0.70)',
+    const achRect = _drawMenuButton(ctx, BX, achY, BW, 28, '🏆 星座图鉴', {
+      fontSize: 11, primary: false,
     });
     _buttons.push({ ...achRect, key: 'achievement' });
   }
@@ -354,6 +362,10 @@ function _loop(now) {
   ctx.fillText(muteIcon, muteBtnX + muteBtnSize / 2, muteBtnY + muteBtnSize / 2);
   ctx.restore();
   _muteBtn = { x: muteBtnX, y: muteBtnY, w: muteBtnSize, h: muteBtnSize };
+
+  // Global fade overlay (STORY-00282)
+  tickFade(1 / 60);
+  drawFadeOverlay(ctx, W, H);
 
   _rafId = requestAnimationFrame(_loop);
 }

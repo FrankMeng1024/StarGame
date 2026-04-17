@@ -1,12 +1,37 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 24-mini Updates (2026-04-17)
+
+### Menu Buttons — Now Solid Gradient (STORY-00289, OBSOLETES Sprint 22 ghost-button notes)
+- Primary button: solid purple gradient with drop shadow. Ghost-style is gone.
+- Double-spaced title "追  星  少  女" both landscape and portrait.
+- Constellation left panel: 60% screen width (rightX=W*0.62).
+- Achievement button touch target 20-24px height — known tradeoff, below platform minimums but secondary feature.
+
+### Net Physics — Fundamentally Slower (STORY-00286)
+- NET_SPEED=4 px/frame (was 9→5→4). Round-trip ~2.76s clean, ~8+ seconds with debris catch.
+- Debris drag visual confirmed: debris follows net head during slow retract.
+- Game pacing is now slower than Gold Miner genre norm. User feedback needed after real device test.
+
+### Intro Animation — Full Visual Quality (STORY-00283/00284)
+- 4 pre-spawned meteors visible from frame 1. Portal glow + twinkling 80 stars. Subtitle float-up. ✦ separator.
+- Skip hint visible from frame 1 at bottom-right.
+
+### Girl Character — Substantially Improved (STORY-00285)
+- 130px tall, head r=20, full eye anatomy (sclera/iris/pupil/shine), polygon hat star.
+- Character takes 35% of 375px screen height — appropriate for protagonist prominence.
+
+### Level Cards — 6-Column Grid (STORY-00288)
+- 6 cols landscape, ~100px card width. 2-char Chinese abbreviation. Name min 7px — legible at 2x+ DPI.
+
 ## Sprint 22-mini Updates (2026-04-17)
 
-### Ghost Button Home Screen — Confirmed Visual Improvement
+### Ghost Button Home Screen — **OBSOLETE as of Sprint 24-mini**
 - Home screen uses two-column landscape layout: constellation art (left), title+buttons (right).
 - Ghost-style buttons: semi-transparent fills let star background show through, creating cohesive starscape scene.
 - Button hierarchy: primary (★ 挑战关卡, gold border+text) → secondary (◉/◈, softer border, light text) → tertiary (🏆, smallest).
 - Medium friction: button icons (★ ◉ ◈ 🏆) inconsistent symbol system — text carries navigation weight, not icons.
+
 
 ### Victory Linger Phase — Emotional Payoff Improved
 - Constellation line draw slowed 3x: `max(lines*0.35, 1.5)s` total. 1.5s linger phase after completion.

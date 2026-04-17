@@ -4,7 +4,7 @@
 import { G } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
-  drawButton, drawTitle, drawCard, hitTest,
+  drawButton, drawTitle, drawCard, hitTest, drawFadeOverlay, tickFade,
 } from '../engine/canvas-utils.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
 import { SCENE_PALETTES } from '../data/scenes.js';
@@ -18,6 +18,7 @@ let _navigate     = null;
 let _rafId        = null;
 let _cardRects    = [];   // [{x,y,w,h,idx}]
 let _backRect     = null;
+let _shopRect     = null;  // STORY-00282: shop shortcut
 let _scrollY      = 0;
 let _scrollTarget = 0;
 let _lastTouchY   = 0;
@@ -69,6 +70,7 @@ function _cleanup() {
   }
   _cardRects = [];
   _backRect  = null;
+  _shopRect  = null;
   _scrollY   = 0;
   _scrollTarget = 0;
   _scrollVelocity = 0;
@@ -81,7 +83,7 @@ function _cleanup() {
 
 function _computeLayout() {
   const isLandscape = G.SCREEN_W > G.SCREEN_H;
-  const COLS   = isLandscape ? 6 : 5;
+  const COLS   = isLandscape ? 6 : 5;  // STORY-00288: landscape 5→6 (reverts STORY-00281 change, user wants smaller cards)
   const SL     = G.SAFE_LEFT  + PAD_X;  // safe left inset
   const SR     = G.SAFE_RIGHT + PAD_X;  // safe right inset
   const usableW = G.SCREEN_W - SL - SR;
@@ -136,6 +138,14 @@ function _loop(now) {
     color1:   'rgba(60,90,180,0.85)',
   });
 
+  // Shop shortcut (top-right, STORY-00282)
+  _shopRect = drawButton(ctx, W - G.SAFE_RIGHT - 10 - 72, G.SAFE_TOP + 10, 72, 32, '🛒 商店', {
+    fontSize: 12,
+    radius:   10,
+    color0:   'rgba(80,60,140,0.85)',
+    color1:   'rgba(60,90,180,0.85)',
+  });
+
   // Title
   ctx.save();
   ctx.font        = 'bold 18px sans-serif';
@@ -164,6 +174,10 @@ function _loop(now) {
     _drawItemOverlay(ctx, W, H);
   }
 
+  // Global fade overlay (STORY-00282)
+  tickFade(1 / 60);
+  drawFadeOverlay(ctx, W, H);
+
   _rafId = requestAnimationFrame(_loop);
 }
 
@@ -180,42 +194,69 @@ function _drawCard(ctx, cr, t) {
   ctx.fillStyle   = unlocked ? COLORS.cardBg : 'rgba(20,20,40,0.7)';
   _roundRect(ctx, x, y, w, h, 10);
   ctx.fill();
-  ctx.strokeStyle = unlocked ? COLORS.cardBorder : 'rgba(80,80,120,0.3)';
-  ctx.lineWidth   = 1;
+  ctx.restore();
+
+  // Border: gradient for unlocked (gold→purple), flat for locked (STORY-00281)
+  ctx.save();
+  if (unlocked) {
+    const borderGrd = ctx.createLinearGradient(x, y, x, y + h);
+    borderGrd.addColorStop(0, 'rgba(255,200,50,0.70)');
+    borderGrd.addColorStop(1, 'rgba(120,50,200,0.50)');
+    ctx.strokeStyle = borderGrd;
+    ctx.lineWidth   = 1.2;
+  } else {
+    ctx.strokeStyle = 'rgba(80,80,120,0.3)';
+    ctx.lineWidth   = 1;
+  }
+  _roundRect(ctx, x, y, w, h, 10);
   ctx.stroke();
   ctx.restore();
 
-  // Level number (large, center) for unlocked; lock icon for locked
+  // Constellation abbreviation (STORY-00288: first 2 chars of nameZh — more reliable than emoji)
+  const conAbbr = (c.nameZh || c.name || '').substring(0, 2);
+  if (unlocked && conAbbr) {
+    ctx.save();
+    ctx.font         = `${Math.round(w * 0.18)}px sans-serif`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.globalAlpha  = 0.70;
+    ctx.fillStyle    = 'rgba(200,180,255,1)';
+    ctx.fillText(conAbbr, x + w / 2, y + h * 0.24);
+    ctx.restore();
+  }
+
+  // Level number — smaller (STORY-00281: 0.40 → 0.28) or lock icon
   ctx.save();
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   if (unlocked) {
-    ctx.font      = `bold ${Math.round(w * 0.40)}px sans-serif`;
+    ctx.font      = `bold ${Math.round(w * 0.28)}px sans-serif`;
     ctx.fillStyle = COLORS.starGold;
     ctx.globalAlpha = 0.95;
-    ctx.fillText(String(idx + 1), x + w / 2, y + h * 0.38);
+    // STORY-00288: adjusted y positions; Arch review: corrected to spec (h*0.45/0.40)
+    ctx.fillText(String(idx + 1), x + w / 2, y + h * (conAbbr ? 0.45 : 0.40));
   } else {
-    ctx.font      = `${Math.round(w * 0.42)}px sans-serif`;
+    ctx.font      = `${Math.round(w * 0.38)}px sans-serif`;
     ctx.globalAlpha = 0.35;
-    ctx.fillText('🔒', x + w / 2, y + h * 0.38);
+    ctx.fillText('🔒', x + w / 2, y + h * 0.42);
   }
   ctx.restore();
 
   // Name
-  const nameFontSize = Math.max(9, Math.min(12, Math.round(w * 0.175)));
+  const nameFontSize = Math.max(7, Math.min(9, Math.round(w * 0.14)));  // STORY-00288: smaller (was max(8,min(10,w*0.16)))
   ctx.save();
   ctx.font         = `bold ${nameFontSize}px sans-serif`;
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = unlocked ? COLORS.text : 'rgba(120,120,160,0.5)';
-  ctx.fillText(c.nameZh || c.name, x + w / 2, y + h * 0.68);
+  ctx.fillText(c.nameZh || c.name, x + w / 2, y + h * 0.70);  // STORY-00288: was h*0.72
   ctx.restore();
 
-  // Difficulty dots
+  // Difficulty dots — smaller max radius (STORY-00281: max 2.5 was 3)
   const diff   = Math.max(1, Math.min(5, c.difficulty || 1));
-  const dotR   = Math.max(2, Math.min(3, w * 0.03));
+  const dotR   = Math.max(2, Math.min(2.5, w * 0.03));
   const dotGap = dotR * 2.6;
-  const dotY   = y + h * 0.85;
+  const dotY   = y + h * 0.87;
   const dotStartX = x + w / 2 - (4 * dotGap) / 2;
   for (let di = 0; di < 5; di++) {
     ctx.save();
@@ -230,15 +271,15 @@ function _drawCard(ctx, cr, t) {
     ctx.restore();
   }
 
-  // Stars (score)
+  // Score stars — bottom-right corner badge (STORY-00281: was center-bottom row)
   if (unlocked && score && score.stars > 0) {
     ctx.save();
-    ctx.font        = `${Math.max(9, Math.round(w * 0.14))}px sans-serif`;
-    ctx.textAlign   = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.font        = `${Math.max(8, Math.round(w * 0.12))}px sans-serif`;
+    ctx.textAlign   = 'right';
+    ctx.textBaseline = 'bottom';
     ctx.fillStyle   = COLORS.starGold;
-    const stars = '★'.repeat(score.stars) + '☆'.repeat(3 - score.stars);
-    ctx.fillText(stars, x + w / 2, y + h * 0.95);
+    const stars = '★'.repeat(score.stars);
+    ctx.fillText(stars, x + w - 3, y + h - 2);
     ctx.restore();
   }
 }
@@ -426,6 +467,13 @@ function _onTouchEnd(e) {
   if (_backRect && hitTest(_backRect, tx, ty)) {
     console.log('navigate:menu');
     if (_navigate) _navigate('menu');
+    return;
+  }
+
+  // Shop shortcut (STORY-00282)
+  if (_shopRect && hitTest(_shopRect, tx, ty)) {
+    console.log('navigate:shop');
+    if (_navigate) _navigate('shop');
     return;
   }
 
