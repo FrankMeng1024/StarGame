@@ -4,7 +4,11 @@
 **Current Sprint**: 32 (Sprint Goal: 关卡加载极速化 — 消除进关等待，任何关卡直接可玩)
 **Last Updated**: 2026-04-17
 
-> **Mini branch current**: Sprint 19-mini PLANNED — VU acceptance evaluation pending (DevTools required). Sprint 18-mini COMPLETE (committed).
+> **Mini branch current**: Sprint 19-mini COMPLETE — VU ACCEPTED 9.5/10 (2026-04-17). All PRD Must-Haves + CRs 087-094 verified. PROJECT COMPLETE.
+
+## Mini branch 微信小游戏分支（mini branch）
+
+**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-17). All PRD Must-Haves (F-001~F-008) delivered and CRs 087-094 visual upgrades fully verified. PROJECT COMPLETE (final).
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -67,7 +71,7 @@
 | Sprint 31 | — | COMPLETE | CR-084 流星雨开场 + 星座上移 + 信息栏优雅化 — committed |
 
 | Sprint 32 | — | COMPLETE | CR-085/086 关卡加载极速化 + 开场动画F5播放 — committed |
-| Sprint 7-mini | 9.5/10 | ACCEPTED | 微信小游戏 mini branch — All PRD Must-Have features verified — PROJECT COMPLETE |
+| Sprint 19-mini | 9.5/10 | ACCEPTED | Sprint 18/19 视觉全面升级 (网兜+角色+操作反馈+全屏特效) + 全功能回归通过 — PROJECT COMPLETE |
 | Sprint 11-mini | 9.0/10 | NOT ACCEPTED | F-007 gallery carousel missing — only 1 static photo per constellation |
 | Sprint 12-mini | 9.5/10 | ACCEPTED | 展厅多图轮播 — carousel implemented, 3 photos per constellation — PROJECT COMPLETE |
 | Sprint 13-mini | 9.5/10 | ACCEPTED | 展厅5张图片达PRD最低要求 + lore完成按钮确认 — PROJECT COMPLETE |
@@ -107,7 +111,7 @@
 | Sprint 16-mini | COMPLETE | 小游戏质量对齐Web版 — 开场动画+展厅星图+HUD槽+道具ID对齐 (QA PASS, Arch PASS, UX no Blockers) |
 | Sprint 17-mini | COMPLETE | VU ACCEPTED 9.5/10 — All PRD F-001~F-008 + CRs verified — PROJECT COMPLETE |
 | Sprint 18-mini | COMPLETE | 视觉全面升级 — 滚动修复+刘海屏适配+角色重绘+UI比例优化 (Arch PASS, QA code-review PASS)
-| Sprint 19-mini | PLANNED | VU acceptance evaluation — Sprint 18-mini visual upgrades (DevTools required) | |
+| Sprint 19-mini | COMPLETE | 网兜精品重绘+角色精品重绘+操作流程精修+全屏视觉效果拉满 (QA PASS, UX no Blockers, Arch PASS, VU ACCEPTED 9.5/10) |
 
 ### Sprint 14-mini Stories
 | Story | Title | Status |

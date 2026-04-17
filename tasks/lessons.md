@@ -1,5 +1,12 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 19-mini — 2026-04-17 (mini branch, visual overhaul v2)
+
+- [pending] QA caught 5 numeric AC deviations (trail density, hat font 14→12px, SFX volume 0.3→0.4, aura alpha 0.14→0.12, mesh opacity 0.40→0.55). Root cause: implementation tuned values without checking against final AC specs. Pattern: QA must explicitly verify every numeric AC value (font sizes, opacity, volume, particle counts) — "close enough" is a bug.
+- [pending] Arch caught wx.createInnerAudioContext() leak — called once per constellation line (~15× per victory with no destroy). Fix: cache single reusable context, destroy in _cleanup(). Pattern: any wx context (audio, canvas, etc.) created in game loop must have a paired destroy in _cleanup().
+- [pending] BUG-00262 (pulsing circle hint) deferred — text hint at center is functionally sufficient; pulsing circle at bottom was aspirational design. In backlog.
+- [pending] Code-path verification (no DevTools) remains MEDIUM confidence — cannot catch actual frame rate under load, touch responsiveness, real audio playback, anti-aliasing, or color blending artifacts. This is the floor for WeChat Mini Game QA without DevTools access.
+
 ## Sprint 18-mini — 2026-04-17 (mini branch, visual overhaul)
 
 Sprint 18-mini: clean Sprint, no retrospective actions.
