@@ -2,7 +2,31 @@
 
 ---
 
-## Sprint 20-mini Updates (2026-04-17)
+## Sprint 21-mini Updates (2026-04-17)
+
+### Sprint 21-mini — PASS (code-path verification)
+
+#### STORY-00269 — DPR touch fix REVERTED (all 6 screens)
+- Sprint 20's `* G.DPR` on touch coords was WRONG. canvas.width = CSS pixels; touch.clientX/Y = CSS pixels. No scaling needed.
+- **OBSOLETE**: Sprint 20 knowledge entry "must multiply touch.clientX/Y by G.DPR" — this is now documented as incorrect. G.DPR stored for reference only.
+- All 6 screen files: menu.js, levels.js, game.js, gallery.js, shop.js, achievement.js use direct clientX/Y.
+- Scroll delta pattern confirmed correct: `rawY = touch.clientY; dy = rawY - _lastTouchY` (CSS px delta applied to CSS px scroll target).
+- achievement.js uses inverted delta `dy = _lastTouchY - rawY` — this is intentional scroll direction.
+
+#### STORY-00271 — QR scan black screen fix
+- Boot entry (game.js): `screenW = sysInfo.windowWidth || 375` — getSystemInfoSync() is always reliable at cold launch.
+- `navigate(startScreen)` deferred inside `requestAnimationFrame()` — canvas render waits one tick for canvas size to commit.
+- Canonical boot pattern for future: use sysInfo.windowWidth/Height as primary, never canvas.width/height as primary.
+
+#### STORY-00270 — _drawMenuButton (menu.js only)
+- New local helper: premium button renderer for home screen only. 
+- For future home screen button changes: modify `_drawMenuButton` in menu.js (not `drawButton` in canvas-utils.js).
+- `drawButton` in canvas-utils.js remains the default for all other screens.
+- Both functions return `{x,y,w,h}` — hitTest compatible.
+
+---
+
+
 
 ### 4 Production Blocker Fixes — PASS (after BUG-00268 fix)
 

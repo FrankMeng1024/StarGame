@@ -1,13 +1,33 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 21-mini Updates (2026-04-17)
+
+### All Buttons Now Functional — Primary Flow Fully Completable
+
+#### DPR Touch Fix CORRECTED (STORY-00269)
+- **OBSOLETE**: Sprint 20 entry said "apply `touch.clientX/Y * G.DPR`" — this was WRONG. The correct pattern is NO DPR multiplication.
+- canvas.width = CSS pixels (from sysInfo.windowWidth). touch.clientX/Y = CSS pixels. No conversion needed.
+- All 6 screens use `touch.clientX` / `touch.clientY` directly. G.DPR stored for reference only.
+- Full primary flow now completable: intro → menu → levels → item-select → game → complete/fail.
+
+#### QR Scan Black Screen Fix (STORY-00271)
+- game.js uses `sysInfo.windowWidth || 375` (always non-zero) for screenW/H.
+- `navigate(startScreen)` deferred inside `requestAnimationFrame()` — canvas committed before first draw.
+- User experience: scan QR → immediate intro animation → menu.
+
+#### Home Screen Button Visual Redesign (STORY-00270)
+- `_drawMenuButton` in menu.js is the premium button renderer for home screen only.
+- 3-tier hierarchy: primary CTA (挑战关卡, bright #c044ff gradient, gold border), secondary (darker purple, light border), achievement (old drawButton at 60% alpha).
+- All return `{x,y,w,h}` — hitTest unchanged.
+- Pre-existing gap: no visual pressed/tap state on buttons.
+
 ## Sprint 20-mini Updates (2026-04-17)
 
 ### 4 Production Blockers Fixed — Primary Flow Now Completable
 
-#### DPR Touch Fix
-- All 6 screens (menu, levels, game, gallery, shop, achievement) now apply `touch.clientX/Y * G.DPR`
-- Scroll and tap interactions now work correctly on all DPR>1 devices
-- Pattern confirmed: `_lastTouchY = touch.clientY * G.DPR` in touchStart, same in touchMove
+#### DPR Touch Fix (OBSOLETE — see Sprint 21-mini)
+- ~~All 6 screens now apply `touch.clientX/Y * G.DPR`~~ — **INCORRECT, reverted in Sprint 21-mini**
+- Scroll and tap interactions now work correctly on all DPR>1 devices (via the correct fix in Sprint 21)
 
 #### Net Length (H*0.75)
 - Stars spawn between `SAFE_TOP+60` and `H*0.62`. Net now reaches `-13px` (above screen top) → full sky zone coverage

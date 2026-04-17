@@ -1,5 +1,11 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 21-mini — 2026-04-17 (mini branch, real-device blocker fixes)
+
+- [pending] Root cause of all-buttons-broken: Sprint 20's "DPR fix" was the wrong fix. canvas.width = sysInfo.windowWidth (CSS pixels). touch.clientX/Y = CSS pixels. They already match — multiplying by DPR (3×) makes coords 3× too large. The correct mental model: DPR is relevant for DRAWING sharpness (canvas physical resolution), NOT for touch→canvas coordinate mapping when canvas dimensions equal CSS dimensions. Future rule: before adding coordinate conversions, verify what coordinate space canvas.width is expressed in.
+- [pending] QR scan black screen root cause: canvas.width is 0 at module load during cold QR launch. sysInfo.windowWidth is always available from getSystemInfoSync(). Pattern: always use sysInfo dimensions as primary, never canvas.width/height as primary.
+- [archived: this sprint] Sprint 20 lessons.md [pending] DPR fix inconsistency — now superseded. The correct fix is to remove ALL DPR multiplication from touch handlers, not to ensure consistency. Updated qa/knowledge.md and ux/knowledge.md accordingly.
+
 ## Sprint 20-mini — 2026-04-17 (mini branch, production blocker fixes)
 
 - [pending] Real device testing revealed all 4 issues that code-path QA missed: package size (metrics can be measured), net geometry (math verifiable), DPR mismatch (systematic but missed achievement.js touchStart/Move), character visual quality (aesthetic — cannot be verified without screenshot). Root cause of Sprint 19-mini's inflated 9.5/10: VU explicitly noted "I cannot judge visual quality" but still scored 9.5. Pattern: when VU notes confidence limitations, scores should be adjusted DOWN, not held at maximum.
