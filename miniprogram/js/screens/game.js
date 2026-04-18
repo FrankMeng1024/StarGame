@@ -129,7 +129,8 @@ let _debrisRadiusMult = 1;  // shrink item: ×0.5
 let _coinsMult     = 1;     // double_coins: ×2
 let _bombActive    = false; // bomb item: one-time debris clear
 let _btnBomb       = null;  // bomb HUD button (legacy — kept for compatibility)
-let _magnetActive  = false; // star_magnet: stars drift toward net head
+let _starMapActive = false; // star_map: show constellation line hints — STORY-00296
+let _starMapTimer  = 0;     // star_map: seconds remaining
 let _gloveActive   = false; // glove: no speed penalty on debris catch
 
 // Item slot HUD system (STORY-00252)
@@ -141,11 +142,11 @@ let _passiveCoins = false; // double_coins passive item
 
 const ITEM_CONFIG = {
   net_speed:    { icon: '⚡', duration: 15 },
-  net_enlarge:  { icon: '🔵', duration: 15 },
+  net_enlarge:  { icon: '🪢', duration: 15 },
   space_bomb:   { icon: '💣', duration: 0  },
   time_ext:     { icon: '⏱', duration: 0  },
   shrink_debris:{ icon: '🔬', duration: 30 },
-  star_magnet:  { icon: '🧲', duration: 15 },
+  star_map:     { icon: '🗺', duration: 60 },  // STORY-00296: replaces star_magnet
   glove:        { icon: '🧤', duration: 30 },
   double_coins: { icon: '🪙', duration: 0  },  // passive only
 };
@@ -185,7 +186,7 @@ export function showGame(navigate) {
   _netSpeedMult = _netRadiusMult = _coinsMult = 1;
   _debrisRadiusMult = 1;
   _bombActive = false;
-  _magnetActive = false;
+  _starMapActive = false; _starMapTimer = 0;  // STORY-00296
   _gloveActive = false;
   _passiveCoins = false;
   _slots = [];
@@ -365,7 +366,7 @@ function _cleanup() {
   _netSpeedMult = _netRadiusMult = _coinsMult = 1;
   _debrisRadiusMult = 1;
   _bombActive = false;
-  _magnetActive = false;
+  _starMapActive = false; _starMapTimer = 0;  // STORY-00296: replaces _magnetActive
   _gloveActive = false;
   _slots = [];
   _slotBoxes = [];
@@ -414,7 +415,7 @@ function _loop(now) {
       _updateNet(dt);
       _updateParticles(dt);
       _updateSlots(now);
-      if (_magnetActive) _updateMagnet(dt);
+      if (_starMapActive) { _starMapTimer -= dt; if (_starMapTimer <= 0) _starMapActive = false; }  // STORY-00296
       _updateShake();
     }
 
@@ -510,7 +511,7 @@ function _updateSlots(nowMs) {
         case 'net_speed':     _netSpeedMult    = 1;    break;
         case 'net_enlarge':   _netRadiusMult   = 1;    break;
         case 'shrink_debris': _debrisRadiusMult = 1;   break;
-        case 'star_magnet':   _magnetActive    = false; break;
+        case 'star_map':      _starMapActive   = false; break;  // STORY-00296
         case 'glove':         _gloveActive     = false; break;
       }
       slot.duration = -1; // mark fully expired (duration = -1 sentinel)
@@ -550,11 +551,11 @@ function _activateSlot(slotIdx, nowMs) {
       _debris = [];
       break;
     case 'time_ext':
-      _timeLeft += 15;
+      _timeLeft += 20;  // STORY-00297: +20s to match web version (was +15s)
       AudioAdapter.playSFX(SFX_TIMEEXT);
       break;
     case 'shrink_debris': _debrisRadiusMult = 0.5; break;
-    case 'star_magnet':   _magnetActive    = true;  break;
+    case 'star_map':      _starMapActive = true; _starMapTimer = 60; break;  // STORY-00296: star_map replaces star_magnet
     case 'glove':         _gloveActive     = true;  break;
   }
 }
@@ -732,9 +733,11 @@ function _updateShake() {
 // ── Draw: constellation lines ─────────────────────────────────
 function _drawConLines(ctx) {
   if (!_conDef.lines) return;
+  // star_map item: show bright lines when active; dim lines otherwise (STORY-00296)
+  const alpha = _starMapActive ? 0.65 : 0.22;
   ctx.save();
-  ctx.strokeStyle = 'rgba(255,210,100,0.22)';
-  ctx.lineWidth   = 1;
+  ctx.strokeStyle = `rgba(255,210,100,${alpha})`;
+  ctx.lineWidth   = _starMapActive ? 1.8 : 1;
   for (const [ai, bi] of _conDef.lines) {
     const a = _stars[ai], b = _stars[bi];
     if (!a || !b) continue;

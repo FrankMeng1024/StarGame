@@ -8,16 +8,16 @@ import {
 } from '../engine/canvas-utils.js';
 import state from '../engine/state.js';
 
-// ── Item definitions ──────────────────────────────────────────
+// ── Item definitions — STORY-00296: aligned to web version prices + star_map replaces star_magnet ──
 export const ITEMS = [
-  { id: 'net_speed',     icon: '⚡', nameZh: '网兜加速',   desc: '本关网兜速度+50%',   cost: 20 },
-  { id: 'net_enlarge',  icon: '🔵', nameZh: '网兜扩大',   desc: '本关网兜半径×1.5',   cost: 25 },
-  { id: 'space_bomb',   icon: '💣', nameZh: '宇宙炸弹',   desc: '清除所有垃圾一次',   cost: 40 },
-  { id: 'time_ext',     icon: '⏱', nameZh: '时间延长',   desc: '本关+15秒',          cost: 30 },
-  { id: 'shrink_debris',icon: '🔬', nameZh: '缩小垃圾',   desc: '本关垃圾体积减半',   cost: 35 },
-  { id: 'double_coins', icon: '🪙', nameZh: '双倍金币',   desc: '本关金币×2',         cost: 50 },
-  { id: 'star_magnet',  icon: '🧲', nameZh: '磁力星引',   desc: '星星主动靠近网兜',   cost: 80 },
-  { id: 'glove',        icon: '🧤', nameZh: '宇航员手套', desc: '抓到垃圾不扣时间',     cost: 70 },
+  { id: 'net_speed',     icon: '⚡', nameZh: '网兜加速',   desc: '激活后15秒网兜速度+50%',       type: '主动', duration: '15秒', cost: 50 },
+  { id: 'net_enlarge',  icon: '🪢', nameZh: '网兜扩大',   desc: '激活后15秒网兜口径增大50%',     type: '主动', duration: '15秒', cost: 60 },
+  { id: 'space_bomb',   icon: '💣', nameZh: '宇宙炸弹',   desc: '摧毁当前抓住的垃圾并重置网兜',  type: '主动', duration: '即时', cost: 100 },
+  { id: 'time_ext',     icon: '⏱', nameZh: '时间延长',   desc: '即时+20秒剩余时间',             type: '主动', duration: '即时', cost: 60 },
+  { id: 'shrink_debris',icon: '🔬', nameZh: '缩小垃圾',   desc: '激活后30秒所有垃圾缩小50%',     type: '主动', duration: '30秒', cost: 40 },
+  { id: 'star_map',     icon: '🗺', nameZh: '星图揭示',   desc: '激活后60秒显示星座连线提示',    type: '主动', duration: '60秒', cost: 20 },
+  { id: 'glove',        icon: '🧤', nameZh: '宇航员手套', desc: '激活后30秒抓垃圾不减速',        type: '主动', duration: '30秒', cost: 70 },
+  { id: 'double_coins', icon: '🪙', nameZh: '双倍金币',   desc: '本关金币奖励自动×2（被动）',    type: '被动', duration: '全局', cost: 30 },
 ];
 
 // ── Module state ──────────────────────────────────────────────

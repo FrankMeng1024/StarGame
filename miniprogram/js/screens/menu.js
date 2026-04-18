@@ -116,6 +116,7 @@ let _muteBtn    = null; // {x,y,w,h}
 // Constellation hero state
 let _conStars = [];
 let _conLines = [];
+let _conDef   = null; // current constellation definition (STORY-00298)
 
 // ── Public API ────────────────────────────────────────────────
 /**
@@ -150,6 +151,7 @@ function _cleanup() {
   _buttons  = [];
   _conStars = [];
   _conLines = [];
+  _conDef   = null;
 }
 
 // Pick a featured constellation (index cycles by day to feel alive)
@@ -161,6 +163,7 @@ function _pickCon() {
 function _buildConLayout() {
   const conDef = _pickCon();
   if (!conDef || !conDef.stars) return;
+  _conDef = conDef; // STORY-00298: store for info panel
 
   const W = G.SCREEN_W;
   const H = G.SCREEN_H;
@@ -305,13 +308,7 @@ function _loop(now) {
       _buttons.push({ ...rect, key: d.key });
     });
 
-    // Achievement button — small, below main buttons (STORY-00287: achH even smaller)
-    const achH = Math.max(20, Math.min(24, BH * 0.75));
-    const achY = startY + 3 * (BH + GAP) + 6;
-    const achRect = _drawMenuButton(ctx, rightX, achY, BW, achH, '🏆 通关成就', {
-      fontSize: 10, primary: false,  // STORY-00287: was 11
-    });
-    _buttons.push({ ...achRect, key: 'achievement' });
+    // Achievement button removed — STORY-00295 (CR-080 parity: web removed it in Sprint 27)
   } else {
     // ── Portrait layout ───────────────────────────────────────
     drawTitle(ctx, '追  星  少  女', W / 2, H * 0.72, 38);  // Arch review: portrait also uses double-space per STORY-00289
@@ -336,13 +333,11 @@ function _loop(now) {
       _buttons.push({ ...rect, key: d.key });
     });
 
-    // Achievement button — portrait
-    const achY = startY + 3 * (BH + GAP) + 4;
-    const achRect = _drawMenuButton(ctx, BX, achY, BW, 28, '🏆 通关成就', {
-      fontSize: 11, primary: false,
-    });
-    _buttons.push({ ...achRect, key: 'achievement' });
+    // Achievement button removed — STORY-00295 (CR-080 parity)
   }
+
+  // ── Constellation info panel (STORY-00298) ──
+  _drawConInfoPanel(ctx, W, H, isLandscape);
 
   // Mute button — top-right corner, within safe area
   const muteBtnSize = 36;
@@ -368,6 +363,77 @@ function _loop(now) {
   drawFadeOverlay(ctx, W, H);
 
   _rafId = requestAnimationFrame(_loop);
+}
+
+// ── Constellation info panel (STORY-00298) ────────────────────
+// Frosted-glass strip at bottom showing name + viewing tip
+function _drawConInfoPanel(ctx, W, H, isLandscape) {
+  if (!_conDef) return;
+
+  const safeB = G.SAFE_BOTTOM || 0;
+  const safeL = G.SAFE_LEFT   || 0;
+  const safeR = G.SAFE_RIGHT  || 0;
+
+  const PANEL_H = 44;
+  const PAD_X   = 16;
+  // In landscape, panel spans the constellation half (left 60%)
+  // In portrait, panel spans full width
+  const panelW = isLandscape ? W * 0.62 - safeL - 8 : W - safeL - safeR - 24;
+  const panelX = safeL + (isLandscape ? 4 : 12);
+  const panelY = H - safeB - PANEL_H - 8;
+
+  // Glass background
+  ctx.save();
+  ctx.globalAlpha = 0.82;
+  ctx.fillStyle   = 'rgba(12,10,38,0.75)';
+  _roundRectPanel(ctx, panelX, panelY, panelW, PANEL_H, 10);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(200,185,130,0.35)';
+  ctx.lineWidth   = 1;
+  ctx.stroke();
+  ctx.globalAlpha = 1;
+
+  // Location icon + constellation name
+  ctx.font         = 'bold 13px sans-serif';
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = 'rgba(255,220,120,0.92)';
+  ctx.fillText('✦ ' + _conDef.nameZh, panelX + PAD_X, panelY + 14);
+
+  // Viewing tip (bestViewMonth)
+  if (_conDef.bestViewMonth) {
+    ctx.font      = '11px sans-serif';
+    ctx.fillStyle = 'rgba(200,195,240,0.78)';
+    ctx.fillText(_conDef.bestViewMonth + '最易观测', panelX + PAD_X, panelY + 31);
+  }
+
+  // Notable stars (right-aligned, truncated if needed)
+  if (_conDef.mainStars) {
+    const maxChars = isLandscape ? 14 : 12;
+    const starsText = _conDef.mainStars.length > maxChars
+      ? _conDef.mainStars.substring(0, maxChars) + '…'
+      : _conDef.mainStars;
+    ctx.font         = '11px sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.fillStyle    = 'rgba(180,175,220,0.65)';
+    ctx.fillText('★ ' + starsText, panelX + panelW - PAD_X, panelY + PANEL_H / 2);
+  }
+
+  ctx.restore();
+}
+
+function _roundRectPanel(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
 }
 
 function _onTouch(e) {
