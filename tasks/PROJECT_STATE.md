@@ -1,14 +1,14 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: COMPLETE — VU ACCEPTED 9.6/10 (2026-04-17). Sprint 25-mini user-reported fixes applied. PROJECT COMPLETE (final).
-**Current Sprint**: Sprint 25-mini
-**Last Updated**: 2026-04-17
+**Status**: COMPLETE — VU ACCEPTED 9.7/10 (2026-04-18). Sprint 26-mini 7 user-reported bug fixes applied. PROJECT COMPLETE (final).
+**Current Sprint**: Sprint 26-mini
+**Last Updated**: 2026-04-18
 
-> **Mini branch current**: Sprint 25-mini COMPLETE — 9 user-reported fixes: 开场动画黑屏根因修复/比例优化/关卡导航死锁/星座图鉴重命名/展厅卡片缩小/女角色v5/星星闪烁感增强.
+> **Mini branch current**: Sprint 26-mini COMPLETE — 7 bug fixes: achievement标题滚动/HUD抖动/胜利按钮遮挡/成就按钮标签/商店Toast/流星帧率/关卡叠加层裁剪.
 
 ## Mini branch 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.6/10 (2026-04-17). All PRD Must-Haves (F-001~F-008) delivered and CRs fully verified. Sprint 25-mini user-reported fixes applied. PROJECT COMPLETE (final).
+**Status**: COMPLETE — VU ACCEPTED 9.7/10 (2026-04-18). All PRD Must-Haves (F-001~F-008) delivered and CRs fully verified. Sprint 26-mini 7 user-reported bug fixes applied. PROJECT COMPLETE (final).
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -46,6 +46,15 @@
 | Sprint 30 | COMPLETE | 开场动画精修 + 封面居中修复 + 按钮透明度调整 (CR-083) |
 | Sprint 31 | COMPLETE | 封面体验全面精修 — 流星雨开场 + 星座上移放大 + 信息栏优雅化 (CR-084) |
 | Sprint 32 | COMPLETE | 关卡加载极速化 — decode Promise缓存复用 + 开场动画F5播放 (CR-085/086) |
+| Sprint 18-mini | COMPLETE | 微信小游戏分支 — 关卡选择滚动/安全区/角色升级/UI比例优化 (CR-087-090) |
+| Sprint 19-mini | COMPLETE | 网兜真实网袋重绘/角色精品重绘/操作手感/全屏特效升级 (CR-091-094) |
+| Sprint 20-mini | COMPLETE | 4 production Blockers: 包体压缩/DPR触控/网兜可达/角色v3 |
+| Sprint 21-mini | COMPLETE | 按钮无法点击(DPR revert)/黑屏扫码/首页按钮视觉 — VU ACCEPTED 9.7/10 |
+| Sprint 22-mini | COMPLETE | 网兜可达性/星星防重叠/胜利慢连线/首页透明按钮 — VU ACCEPTED 9.6/10 |
+| Sprint 23-mini | COMPLETE | 开场动画修复/流星视觉/女角色深度重绘/网兜物理/菜单布局/关卡卡片 (CR-095-101) |
+| Sprint 24-mini | COMPLETE | 登录界面/动画/女角色/网兜物理/碰撞/按钮/关卡图标/Web对齐 (CR-102-110) — VU ACCEPTED 9.5/10 |
+| Sprint 25-mini | COMPLETE | 9项用户反馈 — 黑屏/比例/导航死锁/图鉴重命名/卡片缩小/女角色v5/星星闪烁 (CR-111) — VU ACCEPTED 9.6/10 |
+| Sprint 26-mini | COMPLETE | 7项用户报告bug修复 — achievement标题/HUD抖动/胜利按钮/成就标签/商店Toast/流星帧率/叠加层裁剪 — VU ACCEPTED 9.7/10 |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -75,6 +84,7 @@
 | Sprint 20-mini | 9.5/10 | ACCEPTED | 4 production Blockers fixed: 包体压缩/DPR触控/网兜长度/角色重绘v3 — PROJECT COMPLETE |
 | Sprint 22-mini | 9.6/10 | ACCEPTED | 4 user-reported fixes verified — 网兜可达性/星星防重叠/胜利慢连线/首页透明按钮 — PROJECT COMPLETE |
 | Sprint 25-mini | 9.6/10 | ACCEPTED | 9 user-reported fixes verified — 黑屏/比例/导航死锁/图鉴重命名/卡片缩小/女角色v5/星星闪烁 — PROJECT COMPLETE |
+| Sprint 26-mini | 9.7/10 | ACCEPTED | 7 user-reported bug fixes verified — achievement标题/HUD抖动/胜利按钮/成就标签/商店Toast/流星帧率/叠加层裁剪 — PROJECT COMPLETE |
 | Sprint 24-mini | 9.5/10 | ACCEPTED | 8 user-reported fixes verified — 登录界面+动画/女角色/网兜物理/碎片碰撞/按钮尺寸/关卡图标/Web视觉对齐 — PROJECT COMPLETE |
 | Sprint 21-mini | 9.7/10 | ACCEPTED | 3 real-device Blockers fixed: 按钮无法点击(DPR revert)/黑屏扫码/首页按钮视觉 — PROJECT COMPLETE |
 | Sprint 11-mini | 9.0/10 | NOT ACCEPTED | F-007 gallery carousel missing — only 1 static photo per constellation |
