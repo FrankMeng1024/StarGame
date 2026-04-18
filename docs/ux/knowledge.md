@@ -1,5 +1,14 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 27 Updates — Web Version (2026-04-19)
+
+### Menu Cover — Full-Screen Constellation Background
+- Random constellation fills upper ~60% of screen (375×812 mobile). Stars + connecting lines visible as background art.
+- Each menu visit randomly selects a new constellation (no persistent selection across navigations).
+- Info panel (bottom): emoji + Chinese name + viewing season tip + notable stars. NO location text in any state.
+- 全天星图 button permanently removed. Menu has exactly 3 buttons: 挑战关卡, 星座展厅, 道具商店.
+- All 3 navigation paths (level select, gallery, shop) → return to menu: constellation restarts cleanly, no JS errors.
+
 ## Sprint 24-mini Updates (2026-04-17)
 
 ### Menu Buttons — Now Solid Gradient (STORY-00289, OBSOLETES Sprint 22 ghost-button notes)

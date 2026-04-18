@@ -2,6 +2,34 @@
 
 ---
 
+## Sprint 27 Updates (2026-04-19)
+
+### Sprint 27 — PASS (STORY-00126: 封面三项精修)
+
+#### Random constellation fallback
+- Menu uses random constellation selection from 30+ constellations when geolocation is unavailable.
+- Verified: 猎户座, 金牛座, 飞马座, 御夫座, 天龙座, 水瓶座 observed across multiple sessions.
+- No "新西兰", "特卡波", "NZ" text appears anywhere in the no-location path.
+
+#### Menu button structure (permanent change)
+- Menu now has exactly 3 buttons: 挑战关卡, 星座展厅, 道具商店.
+- 全天星图 button physically removed. Future regression must verify it stays absent.
+
+#### Info panel format
+- Content: constellation Chinese name + sky position + viewing season + notable stars.
+- No geographic location text in the no-location path.
+- Example: "位于北天（猎犬座），5月（春末最佳）最易观测。主要亮星：常陈一（Cor Caroli）、漩涡星系M51。"
+
+#### Navigation regression baseline
+- All paths (menu↔level_select, menu↔shop, menu↔gallery) produce 0 JS runtime errors.
+- Only recurring error: favicon.ico 404 — pre-existing, non-blocking, excluded from error counts.
+
+#### Untested: AC2 geolocation path
+- Geolocation-enabled code path (lat/lon + 📍 display) not testable in offline environment.
+- Future QA: test via geolocation mock or navigator.geolocation override in browser console.
+
+---
+
 ## Sprint 25-mini Updates (2026-04-17)
 
 ### Sprint 25-mini — PASS (HIGH confidence: code-path verification)
