@@ -14,19 +14,27 @@
 
 ---
 
-## Sprint 28-mini Updates (2026-04-19)
+## Sprint 28-mini Updates (2026-04-19) — UPDATED with Playwright evidence
 
-### Menu — Final Confirmed State
-- Exactly 3 buttons: ★ 挑战关卡, ◉ 星座图鉴, ◆ 道具商店. Achievement button permanently removed.
-- Info panel at bottom: frosted glass strip, constellation name + viewing season + notable star (truncated with ...). Persists across navigation.
+### Menu — Final Confirmed State (HIGH confidence)
+- Exactly 3 buttons: ★ 挑战关卡, ◉ 星座展厅 (web) / 星座图鉴 (mini), ◆ 道具商店. Achievement button permanently removed.
+- Info panel at bottom: frosted glass strip, constellation name + viewing season + notable star. Confirmed from Playwright screenshots of web version at localhost:8090.
+- No overlap with buttons. Readable contrast on dark background.
 
-### Shop — Prices Aligned to Web Version
-- Prices: 网兜加速 50, 网兜扩大 60, 宇宙炸弹 100, 时间延长 60, 收缩碎片 40, 护盾 20, 星图揭示 70(?), 其他 30(?)
-- star_map (星图揭示, 🗺, 60s, 20 coins) replaces star_magnet — confirmed in code, not visually captured
+### Shop — All 8 Items Confirmed (HIGH confidence)
+- Prices: 网兜加速 50, 网兜扩大 60, 宇宙炸弹 100, 时间延长 60, 缩小垃圾 40, 星图揭示 20, 宇航员手套 70, 双倍金币 30
+- star_map (星图揭示, 🗺★, 60s, 20 coins) replaces star_magnet — visually confirmed in full shop screenshot
 - 宇宙炸弹: single-target (destroys only currently-caught debris + resets net) — web parity
+- 时间延长 description shows "+20秒" clearly on shop card
+- All 8 items visible in single Playwright screenshot (2x4 grid)
 
 ### time_ext
-- +20s, capped at startTime+20 (prevents exploiting multiple uses to go beyond initial time limit)
+- +20s, capped at startTime+20 (prevents exploiting multiple uses beyond initial time limit)
+- Shop description clear: "即时+20秒剩余时间"
+
+### Ongoing Low Friction (backlog)
+- Gallery: 30 '?' cards give no hint about unlock mechanic — first-time users may not understand
+- Fail screen shows 0 coins but no explanation of how coins are earned on success
 
 ## Sprint 27 Updates — Web Version (2026-04-19)
 

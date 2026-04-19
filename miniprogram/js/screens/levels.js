@@ -474,6 +474,7 @@ function _onTouchEnd(e) {
   // ── Overlay touch handling ───────────────────────────────────
   if (_overlayActive) {
     if (_isDragging) { _isDragging = false; return; }
+
     // Toggle item buttons — adjust ty for the overlay scroll offset
     const scrolledTY = ty + _overlayScrollY;
     for (const { id, rect } of _overlayBtnRects) {
