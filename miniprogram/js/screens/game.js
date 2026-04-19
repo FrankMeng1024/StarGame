@@ -76,7 +76,8 @@ let _catchFlashFrames = 0;
 let _lineDrawSfxCtx = null;
 
 // Timer
-let _timeLeft   = 0;
+let _timeLeft      = 0;
+let _levelInitTime = 0;  // initial time for this level — used to cap time_ext (Arch fix)
 let _lastNow    = 0;
 let _dt         = 0;      // last frame dt (seconds) — used by draw helpers needing physics
 let _timerFlash = 0;     // seconds of red flash remaining on HUD
@@ -181,6 +182,7 @@ export function showGame(navigate) {
   const diffMap = [90, 80, 70, 60, 50];
   const diff    = (_conDef.difficulty || 1) - 1;
   _timeLeft     = diffMap[Math.max(0, Math.min(4, diff))];
+  _levelInitTime = _timeLeft;  // Arch fix: store for time_ext cap
 
   // Set up item slots (STORY-00252) — effects activate on tap, not at level start
   _netSpeedMult = _netRadiusMult = _coinsMult = 1;
@@ -534,24 +536,28 @@ function _activateSlot(slotIdx, nowMs) {
     case 'net_speed':     _netSpeedMult    = 1.5;  break;
     case 'net_enlarge':   _netRadiusMult   = 1.5;  break;
     case 'space_bomb':
-      // Explode all debris
-      for (const d of _debris) {
+      // Destroy currently caught debris + reset net (web parity: STORY-00296 Arch fix)
+      if (_caughtDebris) {
         for (let i = 0; i < 8; i++) {
           const angle = (i / 8) * TWO_PI;
           const speed = 3 + Math.random() * 4;
           _particles.push({
-            x: d.x, y: d.y,
+            x: _caughtDebris.x, y: _caughtDebris.y,
             vx: Math.cos(angle) * speed,
             vy: Math.sin(angle) * speed,
             life: 30, maxLife: 30,
             color: i % 2 === 0 ? '#ff6600' : '#ffcc00',
           });
         }
+        const idx = _debris.indexOf(_caughtDebris);
+        if (idx >= 0) _debris.splice(idx, 1);
+        _caughtDebris = null;
       }
-      _debris = [];
+      // Reset net to swing state
+      _netState = 'swing'; _netLen = 0;
       break;
     case 'time_ext':
-      _timeLeft += 20;  // STORY-00297: +20s to match web version (was +15s)
+      _timeLeft = Math.min(_timeLeft + 20, _levelInitTime + 20);  // STORY-00297 + Arch cap fix
       AudioAdapter.playSFX(SFX_TIMEEXT);
       break;
     case 'shrink_debris': _debrisRadiusMult = 0.5; break;
@@ -694,26 +700,6 @@ function _updateParticles(dt) {
     if (p.gravity) p.vy += p.gravity * scale;  // gravity for victory particles (STORY-00260)
     p.life -= scale;
     if (p.life <= 0) _particles.splice(i, 1);
-  }
-}
-
-// star_magnet: pull uncaught stars toward net head
-function _updateMagnet(dt) {
-  const scale = dt * 60;
-  const MAGNET_RANGE = 80;
-  const PULL_SPEED   = 1.2;
-  for (const s of _stars) {
-    if (s.caught) continue;
-    const dx = _netHeadX - s.x;
-    const dy = _netHeadY - s.y;
-    const dist = Math.sqrt(dx * dx + dy * dy);
-    if (dist < MAGNET_RANGE && dist > 1) {
-      const move = PULL_SPEED * scale;
-      // Move toward net head, cap to not overshoot
-      const fraction = Math.min(move / dist, 1);
-      s.x += dx * fraction;
-      s.y += dy * fraction;
-    }
   }
 }
 
