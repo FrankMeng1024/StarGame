@@ -1,14 +1,14 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: COMPLETE — VU ACCEPTED 9.7/10 (2026-04-18). Sprint 26-mini 7 user-reported bug fixes applied. PROJECT COMPLETE (final).
-**Current Sprint**: Sprint 26-mini
-**Last Updated**: 2026-04-18
+**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-19). Sprint 28-mini 4 Stories: 去成就按钮/商店Web对齐/时间延长+20s/星座信息面板. Backlog: STORY-00299 画廊标题修复.
+**Current Sprint**: Sprint 28-mini
+**Last Updated**: 2026-04-19
 
-> **Mini branch current**: Sprint 26-mini COMPLETE — 7 bug fixes: achievement标题滚动/HUD抖动/胜利按钮遮挡/成就按钮标签/商店Toast/流星帧率/关卡叠加层裁剪.
+> **Mini branch current**: Sprint 28-mini COMPLETE — STORY-00295/96/97/98 verified. VU ACCEPTED 9.5/10. Open backlog: STORY-00299 (画廊标题"星座展厅"→"星座图鉴", 1pt).
 
 ## Mini branch 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.7/10 (2026-04-18). All PRD Must-Haves (F-001~F-008) delivered and CRs fully verified. Sprint 26-mini 7 user-reported bug fixes applied. PROJECT COMPLETE (final).
+**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-19). Sprint 28-mini verified: 去成就按钮/商店Web对齐/时间延长+20s/星座信息面板. Open backlog: STORY-00299 画廊标题修复 (1pt).
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -55,6 +55,8 @@
 | Sprint 24-mini | COMPLETE | 登录界面/动画/女角色/网兜物理/碰撞/按钮/关卡图标/Web对齐 (CR-102-110) — VU ACCEPTED 9.5/10 |
 | Sprint 25-mini | COMPLETE | 9项用户反馈 — 黑屏/比例/导航死锁/图鉴重命名/卡片缩小/女角色v5/星星闪烁 (CR-111) — VU ACCEPTED 9.6/10 |
 | Sprint 26-mini | COMPLETE | 7项用户报告bug修复 — achievement标题/HUD抖动/胜利按钮/成就标签/商店Toast/流星帧率/叠加层裁剪 — VU ACCEPTED 9.7/10 |
+| Sprint 27-mini | COMPLETE | SPIKE-002 全屏幕导航管道验证 — mss_navigate.py exit 0 |
+| Sprint 28-mini | COMPLETE | 去成就按钮/商店Web对齐/时间延长+20s/星座信息面板 (STORY-00295~00298) — VU ACCEPTED 9.5/10 |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -85,6 +87,7 @@
 | Sprint 22-mini | 9.6/10 | ACCEPTED | 4 user-reported fixes verified — 网兜可达性/星星防重叠/胜利慢连线/首页透明按钮 — PROJECT COMPLETE |
 | Sprint 25-mini | 9.6/10 | ACCEPTED | 9 user-reported fixes verified — 黑屏/比例/导航死锁/图鉴重命名/卡片缩小/女角色v5/星星闪烁 — PROJECT COMPLETE |
 | Sprint 26-mini | 9.7/10 | ACCEPTED | 7 user-reported bug fixes verified — achievement标题/HUD抖动/胜利按钮/成就标签/商店Toast/流星帧率/叠加层裁剪 — PROJECT COMPLETE |
+| Sprint 28-mini | 9.5/10 | ACCEPTED | 4 Stories: 去成就按钮/商店Web对齐/时间延长+20s/星座信息面板 — PROJECT COMPLETE. Open backlog: STORY-00299 (1pt). |
 | Sprint 24-mini | 9.5/10 | ACCEPTED | 8 user-reported fixes verified — 登录界面+动画/女角色/网兜物理/碎片碰撞/按钮尺寸/关卡图标/Web视觉对齐 — PROJECT COMPLETE |
 | Sprint 21-mini | 9.7/10 | ACCEPTED | 3 real-device Blockers fixed: 按钮无法点击(DPR revert)/黑屏扫码/首页按钮视觉 — PROJECT COMPLETE |
 | Sprint 11-mini | 9.0/10 | NOT ACCEPTED | F-007 gallery carousel missing — only 1 static photo per constellation |
@@ -94,7 +97,16 @@
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-17). All PRD Must-Haves (F-001~F-008) delivered and verified across Sprints 1-16 mini. Sprint 17-mini VU acceptance confirms full product quality with intro animation, gallery star charts, in-game item HUD, landscape orientation, SFX, achievement screen, and difficulty bars all verified. PROJECT COMPLETE (final).
+**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-19). Sprint 28-mini verified: STORY-00295/96/97/98 all ACs passed. Gallery header naming inconsistency (STORY-00299) is the only open backlog item (1pt), does not block acceptance.
+
+### Sprint 27/28-mini Stories
+| Sprint | Story | Title | Status |
+|---|---|---|---|
+| Sprint 27-mini | SPIKE-002 | 全屏幕导航管道验证 — mss_navigate.py | Done |
+| Sprint 28-mini | STORY-00295 | 去成就按钮 — 主菜单仅保留3个按钮 | Done |
+| Sprint 28-mini | STORY-00296 | 商店Web对齐 — 价格修复+star_map替换star_magnet | Done |
+| Sprint 28-mini | STORY-00297 | 时间延长道具 +20秒 | Done |
+| Sprint 28-mini | STORY-00298 | 星座信息面板 — 主菜单底部毛玻璃面板 | Done |
 
 ### Sprint 10-mini Stories
 | Story | Title | Status |
