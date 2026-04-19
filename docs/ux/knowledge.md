@@ -1,5 +1,19 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 29-mini Updates (2026-04-19)
+
+### Label Consistency — Gallery Header and Menu Button Now Unified
+- Gallery header and menu button are both "星座图鉴" — label consistency principle confirmed for this screen pair.
+- Before: tapping "星座图鉴" menu button led to a screen titled "星座展厅" — orientation mismatch resolved.
+- Any future rename of gallery/menu labels must update both menu.js and gallery.js simultaneously.
+
+### Cross-Platform Text Parity — Victory/Fail Headlines
+- Victory "关卡完成！" and fail "⏰ 时间到了！" now match web complete.js.
+- Web and mini versions now read identically on both result screens.
+- Time emoji (⏰) on fail headline provides immediate visual recognition of time-based failure — clear affordance.
+
+---
+
 ## Sprint 28-mini Updates (2026-04-19)
 
 ### Menu — Final Confirmed State

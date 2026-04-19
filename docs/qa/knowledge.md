@@ -2,6 +2,24 @@
 
 ---
 
+## Sprint 29-mini Updates (2026-04-19)
+
+### Sprint 29-mini — PASS (HIGH confidence: code-path verification)
+
+#### Gallery header "星座图鉴" (STORY-00299)
+- gallery.js:146: fillText '星座图鉴' (was '星座展厅')
+- menu.js:300/325: button label '星座图鉴' — strings now identical. Regression: verify gallery header matches menu button on any future rename.
+- knowledge_update: gallery.js line 0 comment still references 星座展厅 — cosmetic only.
+- knowledge_update: web index.html still uses 星座展厅 in 3 places (button, h2, aria-label) — pre-existing, backlog candidate.
+
+#### Victory/fail text alignment to web (STORY-00300)
+- game.js:1712: fillText '关卡完成！' (was '恭喜通关！') — matches web complete.js:24
+- game.js:1860: fillText '⏰ 时间到了！' (was '时间到！') — matches web complete.js:108
+- Diff scope: exactly 2 lines in game.js. No button/layout changes.
+- Cross-platform text parity: mini victory/fail headlines now identical to HTML5 web version.
+
+---
+
 ## Sprint 28-mini Updates (2026-04-19)
 
 ### Sprint 28-mini — PASS (MEDIUM-HIGH confidence)

@@ -143,7 +143,7 @@ function _drawList(ctx, W, H, t) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = COLORS.text;
-  ctx.fillText('星座展厅', W / 2, G.SAFE_TOP + 31);
+  ctx.fillText('星座图鉴', W / 2, G.SAFE_TOP + 31);
   ctx.restore();
 
   // Coin display

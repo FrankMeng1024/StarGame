@@ -1709,7 +1709,7 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.fillStyle    = '#ffd700';
     ctx.shadowColor  = '#ffd700';
     ctx.shadowBlur   = 14;
-    ctx.fillText('恭喜通关！', cx, cy);
+    ctx.fillText('关卡完成！', cx, cy);
     ctx.restore();
     cy += 38;
 
@@ -1857,7 +1857,7 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.fillStyle    = '#ff5555';
     ctx.shadowColor  = '#ff3333';
     ctx.shadowBlur   = 12;
-    ctx.fillText('时间到！', cx, cy);
+    ctx.fillText('⏰ 时间到了！', cx, cy);
     ctx.restore();
     cy += 40;
 
