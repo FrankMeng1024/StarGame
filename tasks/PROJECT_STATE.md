@@ -1,14 +1,14 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-19). Sprint 28-mini 4 Stories: 去成就按钮/商店Web对齐/时间延长+20s/星座信息面板. Backlog: STORY-00299 画廊标题修复.
-**Current Sprint**: Sprint 28-mini
+**Status**: Sprint 29-mini COMPLETE — VU ACCEPTED 9.6/10 (2026-04-19). Gallery header "星座图鉴" + victory "关卡完成！" + fail "⏰ 时间到了！" all verified with real screenshots. PROJECT COMPLETE.
+**Current Sprint**: Sprint 29-mini
 **Last Updated**: 2026-04-19
 
-> **Mini branch current**: Sprint 28-mini COMPLETE — STORY-00295/96/97/98 verified. VU ACCEPTED 9.5/10. Open backlog: STORY-00299 (画廊标题"星座展厅"→"星座图鉴", 1pt).
+> **Mini branch current**: Sprint 29-mini COMPLETE — STORY-00299 (画廊标题) + STORY-00300 (胜利/失败文字Web对齐) verified. VU ACCEPTED 9.6/10. No open backlog.
 
 ## Mini branch 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-19). Sprint 28-mini verified: 去成就按钮/商店Web对齐/时间延长+20s/星座信息面板. Open backlog: STORY-00299 画廊标题修复 (1pt).
+**Status**: COMPLETE — VU ACCEPTED 9.6/10 (2026-04-19). Sprint 29-mini verified: 画廊标题"星座图鉴"/胜利"关卡完成！"/失败"⏰ 时间到了！". All PRD+CR features Done. PROJECT COMPLETE.
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -57,6 +57,7 @@
 | Sprint 26-mini | COMPLETE | 7项用户报告bug修复 — achievement标题/HUD抖动/胜利按钮/成就标签/商店Toast/流星帧率/叠加层裁剪 — VU ACCEPTED 9.7/10 |
 | Sprint 27-mini | COMPLETE | SPIKE-002 全屏幕导航管道验证 — mss_navigate.py exit 0 |
 | Sprint 28-mini | COMPLETE | 去成就按钮/商店Web对齐/时间延长+20s/星座信息面板 (STORY-00295~00298) — VU ACCEPTED 9.5/10 |
+| Sprint 29-mini | COMPLETE | 画廊标题"星座图鉴" + 胜利/失败文字Web对齐 (STORY-00299~00300) — VU ACCEPTED 9.6/10 |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -87,7 +88,8 @@
 | Sprint 22-mini | 9.6/10 | ACCEPTED | 4 user-reported fixes verified — 网兜可达性/星星防重叠/胜利慢连线/首页透明按钮 — PROJECT COMPLETE |
 | Sprint 25-mini | 9.6/10 | ACCEPTED | 9 user-reported fixes verified — 黑屏/比例/导航死锁/图鉴重命名/卡片缩小/女角色v5/星星闪烁 — PROJECT COMPLETE |
 | Sprint 26-mini | 9.7/10 | ACCEPTED | 7 user-reported bug fixes verified — achievement标题/HUD抖动/胜利按钮/成就标签/商店Toast/流星帧率/叠加层裁剪 — PROJECT COMPLETE |
-| Sprint 28-mini | 9.5/10 | ACCEPTED | 4 Stories: 去成就按钮/商店Web对齐/时间延长+20s/星座信息面板 — PROJECT COMPLETE. Open backlog: STORY-00299 (1pt). |
+| Sprint 28-mini | 9.5/10 | ACCEPTED | 4 Stories: 去成就按钮/商店Web对齐/时间延长+20s/星座信息面板 — PROJECT COMPLETE. |
+| Sprint 29-mini | 9.6/10 | ACCEPTED | 2 Stories: 画廊标题"星座图鉴"/胜利"关卡完成！"/失败"⏰ 时间到了！" — PROJECT COMPLETE. |
 | Sprint 24-mini | 9.5/10 | ACCEPTED | 8 user-reported fixes verified — 登录界面+动画/女角色/网兜物理/碎片碰撞/按钮尺寸/关卡图标/Web视觉对齐 — PROJECT COMPLETE |
 | Sprint 21-mini | 9.7/10 | ACCEPTED | 3 real-device Blockers fixed: 按钮无法点击(DPR revert)/黑屏扫码/首页按钮视觉 — PROJECT COMPLETE |
 | Sprint 11-mini | 9.0/10 | NOT ACCEPTED | F-007 gallery carousel missing — only 1 static photo per constellation |
