@@ -2,6 +2,31 @@
 
 ---
 
+## Sprint 28-mini Updates (2026-04-19)
+
+### Sprint 28-mini — PASS (MEDIUM-HIGH confidence)
+
+#### Menu: 3 buttons only (STORY-00295)
+- 通关成就 button permanently removed. Future regression must verify no 4th button.
+- Exactly: ★ 挑战关卡, ◉ 星座图鉴, ◆ 道具商店.
+
+#### Shop web parity (STORY-00296)
+- 8 items at prices 50/60/100/60/40/20/70/30.
+- star_magnet replaced by star_map (星图揭示, 🗺, 60s active, 20 coins) at position 6.
+- Legacy migration: state.js legacyMap `star_magnet → star_map`.
+- 宇宙炸弹 now single-target ("摧毁当前抓住的垃圾并重置网兜") — NOT clear-all.
+- **Evidence gap**: shop screenshot only covers top 4 items. Future: capture full scrolled shop.
+
+#### time_ext +20s (STORY-00297)
+- `_timeLeft = Math.min(_timeLeft + 20, _levelInitTime + 20)` — +20 with cap at initial time.
+- All ACs logic-only (Canvas mini-game limitation).
+
+#### Info panel (STORY-00298)
+- Frosted glass strip at menu bottom: constellation name + viewing season + notable star.
+- Panel persists after navigation round-trips. 0 errors across all navigation.
+
+---
+
 ## Sprint 27 Updates (2026-04-19)
 
 ### Sprint 27 — PASS (STORY-00126: 封面三项精修)

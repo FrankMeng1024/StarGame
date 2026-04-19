@@ -1,4 +1,13 @@
 
+## 2026-04-17 Sprint24-mini
+- git push origin mini 失败：无法连接 github.com:443
+- commit 71df9a2 已在本地，下次触发点一起 push
+
+
+## 2026-04-18 Sprint26-mini
+- git push origin mini 失败：Connection was aborted
+- commits 2f25813, 3eb5308 已在本地，下次触发点一起 push
+
 ## 2026-04-14 Sprint0-mini
 - git push origin mini 失败：无法连接 github.com:443
 - commit 4965934 已在本地，下次触发点一起 push
@@ -20,3 +29,4 @@
 Push failure logged
 Fri Apr 17 03:44:33 CST 2026: git push failed — curl 55 connection aborted. Commits local: 68c8c48
 2026-04-17T04:34:32Z push failed: docs(sprint20-mini) VU acceptance commit — Connection refused to github.com:443. Will retry at next trigger point.
+2026-04-18 01:50:17 push failed: Connection was aborted (mini branch, commit 1ab5f37)

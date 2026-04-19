@@ -1,5 +1,19 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 28-mini Updates (2026-04-19)
+
+### Menu — Final Confirmed State
+- Exactly 3 buttons: ★ 挑战关卡, ◉ 星座图鉴, ◆ 道具商店. Achievement button permanently removed.
+- Info panel at bottom: frosted glass strip, constellation name + viewing season + notable star (truncated with ...). Persists across navigation.
+
+### Shop — Prices Aligned to Web Version
+- Prices: 网兜加速 50, 网兜扩大 60, 宇宙炸弹 100, 时间延长 60, 收缩碎片 40, 护盾 20, 星图揭示 70(?), 其他 30(?)
+- star_map (星图揭示, 🗺, 60s, 20 coins) replaces star_magnet — confirmed in code, not visually captured
+- 宇宙炸弹: single-target (destroys only currently-caught debris + resets net) — web parity
+
+### time_ext
+- +20s, capped at startTime+20 (prevents exploiting multiple uses to go beyond initial time limit)
+
 ## Sprint 27 Updates — Web Version (2026-04-19)
 
 ### Menu Cover — Full-Screen Constellation Background
