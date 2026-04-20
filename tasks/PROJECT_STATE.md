@@ -1,10 +1,10 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: Sprint 32-mini COMPLETE — Arch PASS + QA PASS (code-path, DevTools offline) + UX no Blockers. 8 Stories STORY-00301~00308 Done. VU check pending (DevTools login needed for real screenshot acceptance).
+**Status**: Sprint 32-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE.
 **Current Sprint**: Sprint 32-mini
 **Last Updated**: 2026-04-20
 
-> **Mini branch current**: Sprint 32-mini COMPLETE — STORY-00301~00308 all Done. Visual quality full upgrade: black screen fix, gallery flicker fix, star animation, victory card, gallery detail redesign, girl redesign, item overlay redesign, web parity verification. QA PASS (code-path). VU pending real screenshots (DevTools login required).
+> **Mini branch current**: Sprint 32-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE. All 8 Stories STORY-00301~00308 Done. Visual quality full upgrade: black screen fix, gallery flicker fix, star animation, victory card, gallery detail redesign, girl redesign, item overlay redesign, web parity verification. Full real-screenshot VU acceptance passed.
 
 ## Mini branch 微信小游戏分支（mini branch）
 
@@ -60,7 +60,7 @@
 | Sprint 29-mini | COMPLETE | 画廊标题"星座图鉴" + 胜利/失败文字Web对齐 (STORY-00299~00300) — VU ACCEPTED 9.6/10 |
 | Sprint 30-mini | COMPLETE | 修复3个Blocker级真机bug: 黑屏/展厅闪烁/星连线动画 (STORY-00301~00303) — QA PASS (code-path) |
 | Sprint 31-mini | COMPLETE | 通关界面修复: 结算卡不超边界+3按钮/展厅详情重设计 (STORY-00304~00305) — QA PASS (code-path) |
-| Sprint 32-mini | COMPLETE | 视觉品质全面升级: 女角角色/道具覆盖层/全流程Web对标 (STORY-00306~00308) — QA PASS (code-path) |
+| Sprint 32-mini | COMPLETE | 视觉品质全面升级: 女角角色/道具覆盖层/全流程Web对标 (STORY-00306~00308) — VU ACCEPTED 9.6/10 — PROJECT COMPLETE |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -97,12 +97,13 @@
 | Sprint 21-mini | 9.7/10 | ACCEPTED | 3 real-device Blockers fixed: 按钮无法点击(DPR revert)/黑屏扫码/首页按钮视觉 — PROJECT COMPLETE |
 | Sprint 11-mini | 9.0/10 | NOT ACCEPTED | F-007 gallery carousel missing — only 1 static photo per constellation |
 | Sprint 12-mini | 9.5/10 | ACCEPTED | 展厅多图轮播 — carousel implemented, 3 photos per constellation — PROJECT COMPLETE |
+| Sprint 32-mini | 9.6/10 | ACCEPTED | 视觉品质全面升级: 女角色/道具覆盖层/全流程Web对标 + 全8个PRD特性真实截图验收 — PROJECT COMPLETE |
 | Sprint 13-mini | 9.5/10 | ACCEPTED | 展厅5张图片达PRD最低要求 + lore完成按钮确认 — PROJECT COMPLETE |
 | Sprint 17-mini | 9.5/10 | ACCEPTED | 全功能验收 — F-001~F-008全部通过 + 开场动画/星图/HUD槽/横屏/SFX等CRs — PROJECT COMPLETE (final) |
 
 ## 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.5/10 (2026-04-19). Sprint 28-mini verified: STORY-00295/96/97/98 all ACs passed. Gallery header naming inconsistency (STORY-00299) is the only open backlog item (1pt), does not block acceptance.
+**Status**: COMPLETE — VU ACCEPTED 9.6/10 (2026-04-20). Sprint 32-mini verified: STORY-00301~00308 all ACs passed. All 8 PRD features (F-001~F-008) confirmed with real screenshots. PROJECT COMPLETE.
 
 ### Sprint 27/28-mini Stories
 | Sprint | Story | Title | Status |
