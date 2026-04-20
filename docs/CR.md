@@ -456,3 +456,15 @@ User feedback batch submitted 2026-04-17. 8 items: (1) 登录界面很丑 → ma
 ## CR-111 (mini): 用户反馈 — 9项质量问题修复第二批 (Sprint 25-mini approved)
 User feedback batch submitted 2026-04-17. 9 items: (1) 登录界面上下比例不协调 → STORY-00290: intro layout proportion fix (constellation upper 30%, title lower area). (2) 登录动画没了 → STORY-00290: root cause is `tickFade`/`drawFadeOverlay` missing from intro.js — _fadeAlpha stays at 1 (black) during entire intro. (3) 点击进入关卡进不去，跳转混乱 → STORY-00291: 300ms debounce in navigate() blocks level→game tap after arriving from game-end. Fix: debounce 300→100ms + reset _lastNavTime when entering levels. (4) 星座图鉴和星座展厅是同一个东西 → STORY-00292: rename menu button "星座展厅"→"星座图鉴". (4.1) 星座展厅图标太大 → STORY-00292: gallery COLS 3→4. (5) 女角色很丑 → STORY-00293: character v5 with hair highlights, ribbon bow, hat band, rim light. (6) 星星没有闪烁感 → STORY-00294: star speed 0.4-1.0 → 1.5-3.9, deeper alpha swing, pulsing sparkle arms. (7) 手机实机打开黑屏 → STORY-00290: same fix (tickFade missing from intro.js). (8) 参考html效果 → covered across all 5 stories. (9) 明显存在偷懒行为 → All issues traced to root cause and fully fixed, not patched.
 
+## CR-112 (mini): 用户验收反馈 — 9项真机发现问题修复 (Sprint 30-mini approved 2026-04-19)
+User real-device verification submitted 2026-04-19. Issues:
+(1) 扫码后黑屏 → STORY-00301: 调查最新黑屏根因（canvas尺寸0、auth延迟、RAF启动时序），确认并修复
+(2) 女角色很丑 → STORY-00306: 对标Web版SVG角色形象进行大幅度重绘，头部比例/五官/头发/裙子全面升级
+(3) 道具选择界面很丑 → STORY-00307: 重设计item selection overlay：更大卡片、更清晰图标、更好间距
+(4) 关卡完成星亮后再连线 → STORY-00303: 对标web complete.js动画逻辑：星星dim→bright reveal，然后连线延伸
+(5) 关卡完成界面超出边界 → STORY-00304: 修复结算卡高度clamp逻辑，确保全部内容在屏幕内显示
+(6) 通关界面按钮太多冗余 → STORY-00304: 合并到同一Story，精简为3按钮（下一关/重玩/选关），去掉商店/展厅次级行
+(7) 展厅看展厅后女孩+展厅无限闪烁 BUG → STORY-00302: game.js RAF在fadeNavigate期间仍在运行，需在navigate时立即停止game RAF
+(8) 展厅细节不是手机大小/图片不显示 → STORY-00305: gallery detail layout全面重设计；修复photo加载路径
+(9) 展厅返回到关卡 → STORY-00302: gallery.js:620 `_navigate('levels')` → `_navigate('menu')`
+

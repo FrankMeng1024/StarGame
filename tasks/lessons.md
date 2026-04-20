@@ -1,6 +1,20 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
-## Sprint 25-mini — 2026-04-17 (mini branch, 9 user-reported quality fixes) — RETROSPECTIVE COMPLETE
+## Sprint 29-mini — 2026-04-19 (text parity: gallery header + victory/fail headlines)
+
+Sprint 29-mini: clean Sprint, no retrospective actions.
+- QA PASS (HIGH confidence, code-path verification), Arch PASS (pure string literal substitutions), UX no Blockers.
+- Zero bugs found. No Integration restart loops. No Spec Drift.
+- [pending] VU re-evaluation: Sprint 29-mini fixes text mismatches found by VU in Sprint 28-mini (gallery header "星座展厅"→"星座图鉴"). Team should evaluate whether VU needs to re-run or if prior 9.5/10 ACCEPTED score still holds given the backlog item (gallery header) was the only open issue. QA/UX both PASS with no new issues. Recommendation: proceed to VU re-evaluation to confirm score holds.
+- [archived: docs/qa/knowledge.md §Sprint29] Text parity pattern: when mini and web differ only in string literals (not logic), code-path verification is HIGH confidence (single unambiguous fillText call). No need to navigate to the screen to verify the text.
+
+## Sprint 28-mini — 2026-04-19 (web-vs-mini parity + real screenshot verification)
+
+- [archived: docs/qa/knowledge.md §Sprint28] Arch review caught 4 real issues via diff analysis: space_bomb was wiping all debris (not single-target), _updateMagnet dead code, time_ext no cap, star_magnet→star_map migration missing. Code review is essential even when devs think changes are simple substitutions.
+- [pending] QA confidence remains MEDIUM for shop bottom-half: shop screenshot only captured top 4 items. Root cause: cannot scroll shop UI via Win32 mouse_event in WeChat DevTools simulator. Recommendation: in future mini sprints, capture full-page shop by modifying mss_navigate.py to include a shop navigation step via URL/deeplink if available.
+- [pending] VU should be triggered after Sprint 28-mini since: (a) all 4 stories are Done, (b) QA PASS + UX no Blockers, (c) sprint goal was web parity — the product is now at peak quality. Previous VU score was 9.7/10 before parity fixes. Expectation: same or higher score.
+
+ (mini branch, 9 user-reported quality fixes) — RETROSPECTIVE COMPLETE
 
 - [archived: canvas-utils.js resetFade pattern] Stale fade state causes black screen: any screen that can be reached via `fadeNavigate()` must call `resetFade()` in its show function as a defensive guard. Root cause: `fadeNavigate` sets `_fadeAlpha=1` before calling its callback; if the destination screen's RAF starts with `_fadeDir=0` (before the fade direction flips to -1), the screen renders black for an indefinite number of frames. Pattern documented in qa/knowledge.md.
 - [archived: debounce reset on screen entry] Tap-after-navigation deadlock: any screen with immediate-tap UX (e.g., level select where player just arrived from game) must reset `_lastNavTime = 0` on entry. The debounce was introduced to prevent double-tap, but it inadvertently blocked the first intentional tap after the navigation that set the timestamp. Pattern: debounce timestamps are set at call time, so screen-entry resets are needed when the debounce source and the blocked action are on different screens.

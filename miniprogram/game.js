@@ -85,15 +85,26 @@ async function boot() {
   // STORY-00276: always play intro on fresh launch — no storage gate
   const startScreen = 'intro';
 
-  // 确保 canvas 尺寸已生效再开始渲染：延迟一帧，防止扫码冷启动黑屏 (STORY-00271)
-  requestAnimationFrame(() => {
-    // 再次校验 canvas 尺寸（防止极端情况下仍为0）
+  // 确保 canvas 尺寸已生效再开始渲染：延迟多帧，防止扫码冷启动黑屏 (STORY-00271, STORY-00301)
+  // Some devices need 2-3 frames after QR scan cold boot before canvas size is reliable
+  let _bootAttempts = 0;
+  function _tryNavigate() {
+    _bootAttempts++;
+    if ((canvas.width === 0 || canvas.height === 0) && _bootAttempts < 5) {
+      canvas.width  = screenW;
+      canvas.height = screenH;
+      requestAnimationFrame(_tryNavigate);
+      return;
+    }
+    // Final fallback: force dimensions from sysInfo
     if (canvas.width === 0 || canvas.height === 0) {
       canvas.width  = screenW;
       canvas.height = screenH;
     }
+    console.log('[boot] canvas size:', canvas.width, 'x', canvas.height, 'attempt:', _bootAttempts);
     navigate(startScreen);
-  });
+  }
+  requestAnimationFrame(_tryNavigate);
 
   // 开发后门：挂到 wx 命名空间，DevTools console 可调用 wx.__navigate('levels')
   wx.__navigate = navigate;

@@ -306,7 +306,7 @@ function _drawItemOverlay(ctx, W, H) {
   const cardW = Math.min(W - 40, 340);
   const rowH  = 60;
   const HEADER_H = 70;   // title + subtitle area
-  const FOOTER_H = 60;   // bottom buttons area
+  const FOOTER_H = 64;   // bottom buttons area (44px button + 10px top + 10px bottom)
   const naturalContentH = HEADER_H + ownedItems.length * rowH + FOOTER_H;
   // Clamp card height to available screen (safe margins)
   const maxCardH = H - G.SAFE_TOP - G.SAFE_BOTTOM - 16;
@@ -324,22 +324,24 @@ function _drawItemOverlay(ctx, W, H) {
   ctx.stroke();
   ctx.restore();
 
-  // Title
+  // Title — STORY-00307: bold 18px
   ctx.save();
-  ctx.font         = 'bold 17px sans-serif';
+  ctx.font         = 'bold 18px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = COLORS.text;
+  ctx.shadowColor  = 'rgba(150,120,255,0.6)';
+  ctx.shadowBlur   = 8;
   ctx.fillText('选择使用道具', W / 2, cardY + 30);
   ctx.restore();
 
-  // Sub-title
+  // Sub-title — STORY-00307: 12px
   ctx.save();
   ctx.font         = '12px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = COLORS.text2;
-  ctx.fillText('（本关结束后自动消耗）', W / 2, cardY + 54);
+  ctx.fillText('本关结束后自动消耗，可多选', W / 2, cardY + 54);
   ctx.restore();
 
   // Scrollable rows area — clipped between header and footer
@@ -376,12 +378,12 @@ function _drawItemOverlay(ctx, W, H) {
     }
     ctx.restore();
 
-    // Icon + name + desc
+    // Icon + name + desc — STORY-00307: 24px icon, bold 14px name, 13px desc
     ctx.save();
-    ctx.font         = '22px sans-serif';
+    ctx.font         = '24px sans-serif';
     ctx.textAlign    = 'left';
     ctx.textBaseline = 'middle';
-    ctx.fillText(it.icon, cardX + 18, rowY + rowH * 0.5 - 4);
+    ctx.fillText(it.icon, cardX + 14, rowY + rowH * 0.5 - 3);
     ctx.restore();
 
     ctx.save();
@@ -389,26 +391,26 @@ function _drawItemOverlay(ctx, W, H) {
     ctx.textAlign    = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle    = COLORS.text;
-    ctx.fillText(it.nameZh + '  ×' + qty, cardX + 50, rowY + 8);
+    ctx.fillText(it.nameZh + '  ×' + qty, cardX + 48, rowY + 8);
     ctx.restore();
 
     ctx.save();
-    ctx.font         = '12px sans-serif';
+    ctx.font         = '13px sans-serif';
     ctx.textAlign    = 'left';
     ctx.textBaseline = 'top';
     ctx.fillStyle    = COLORS.text2;
-    ctx.fillText(it.desc, cardX + 50, rowY + 28);
+    ctx.fillText(it.desc, cardX + 48, rowY + 28);
     ctx.restore();
 
-    // Toggle button — record in content-space (before scroll offset removed)
-    const btnW = 58, btnH = 30;
+    // Toggle button — STORY-00307: 62×32px per AC spec
+    const btnW = 62, btnH = 32;
     const btnX = cardX + cardW - 18 - btnW;
     const btnY = rowY + (rowH - 5 - btnH) / 2;
     const btn = drawButton(ctx, btnX, btnY, btnW, btnH, toggled ? '✓ 已选' : '使用', {
       fontSize: 12,
       radius: 8,
-      color0: toggled ? 'rgba(30,140,70,0.85)' : 'rgba(60,90,160,0.85)',
-      color1: toggled ? 'rgba(20,180,80,0.85)' : 'rgba(50,110,200,0.85)',
+      color0: toggled ? 'rgba(30,140,70,0.9)' : 'rgba(80,60,160,0.85)',
+      color1: toggled ? 'rgba(20,180,80,0.9)' : 'rgba(60,90,200,0.85)',
     });
     // Store btn in content-space y (caller adjusts for scroll)
     _overlayBtnRects.push({ id: it.id, rect: btn });
@@ -416,16 +418,16 @@ function _drawItemOverlay(ctx, W, H) {
 
   ctx.restore();
 
-  // Bottom buttons: 跳过 + 确定出发 (outside clip, always visible)
-  const btnY2  = cardY + cardH - 52;
+  // Bottom buttons: 跳过 + 确定出发 — STORY-00307: 44px height, full-width
+  const btnY2  = cardY + cardH - 54;
   const btnW2  = (cardW - 36) / 2;
-  _overlaySkip    = drawButton(ctx, cardX + 10,               btnY2, btnW2, 40, '跳过', {
-    fontSize: 14, radius: 10,
-    color0: 'rgba(60,60,100,0.75)', color1: 'rgba(80,80,130,0.75)',
+  _overlaySkip    = drawButton(ctx, cardX + 10,               btnY2, btnW2, 44, '跳过', {
+    fontSize: 15, radius: 10,
+    color0: 'rgba(60,60,100,0.80)', color1: 'rgba(80,80,140,0.80)',
   });
-  _overlayConfirm = drawButton(ctx, cardX + cardW - 10 - btnW2, btnY2, btnW2, 40, '确定出发 →', {
-    fontSize: 14, radius: 10,
-    color0: 'rgba(30,130,60,0.85)', color1: 'rgba(20,180,80,0.85)',
+  _overlayConfirm = drawButton(ctx, cardX + cardW - 10 - btnW2, btnY2, btnW2, 44, '确定出发 →', {
+    fontSize: 15, radius: 10,
+    color0: 'rgba(30,130,60,0.90)', color1: 'rgba(20,180,80,0.90)',
   });
 }
 

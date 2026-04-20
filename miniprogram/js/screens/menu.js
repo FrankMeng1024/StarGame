@@ -126,10 +126,11 @@ export function showMenu(navigate) {
   _navigate = navigate;
   _cleanup();
 
+  console.log('[menu] showMenu W=' + G.SCREEN_W + ' H=' + G.SCREEN_H + ' isLandscape=' + (G.SCREEN_W > G.SCREEN_H));
   initBgStars(G.SCREEN_W, G.SCREEN_H, 80);
   _buildConLayout();
 
-  G.CANVAS.addEventListener('touchstart', _onTouch);
+  G.CANVAS.addEventListener('touchend', _onTouch);
 
   // Start BGM (idempotent — safe to call every time; checks mute state internally)
   AudioAdapter.playBGM(BGM_SRC);
@@ -147,7 +148,7 @@ function _cleanup() {
     cancelAnimationFrame(_rafId);
     _rafId = null;
   }
-  G.CANVAS.removeEventListener('touchstart', _onTouch);
+  G.CANVAS.removeEventListener('touchend', _onTouch);
   _buttons  = [];
   _conStars = [];
   _conLines = [];
@@ -441,6 +442,7 @@ function _onTouch(e) {
   if (!touch) return;
   const tx = touch.clientX;  // fixed: revert incorrect DPR (STORY-00269)
   const ty = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
+  console.log('[menu] touchend tx=' + tx.toFixed(1) + ' ty=' + ty.toFixed(1) + ' btns=' + _buttons.length);
 
   // Mute button tap
   if (_muteBtn && hitTest(_muteBtn, tx, ty)) {
@@ -449,7 +451,9 @@ function _onTouch(e) {
   }
 
   for (const btn of _buttons) {
-    if (hitTest(btn, tx, ty)) {
+    const hit = hitTest(btn, tx, ty);
+    console.log('[menu] btn=' + btn.key + ' x=' + btn.x.toFixed(0) + ' y=' + btn.y.toFixed(0) + ' w=' + btn.w.toFixed(0) + ' h=' + btn.h.toFixed(0) + ' hit=' + hit);
+    if (hit) {
       console.log('navigate:' + btn.key);
       if (_navigate) _navigate(btn.key);
       return;

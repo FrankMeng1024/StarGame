@@ -290,9 +290,9 @@ function _drawDetail(ctx, W, H, t) {
   const cardW = W - 28;
   const unlocked = state.isUnlocked(_detailIdx);
 
-  // ── Icon (large) ──
+  // ── Icon (large) — STORY-00305: reduced from 52px to 36px to save space
   ctx.save();
-  ctx.font = '52px sans-serif';
+  ctx.font = '36px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.globalAlpha = unlocked ? 0.9 : 0.3;
@@ -343,9 +343,9 @@ function _drawDetail(ctx, W, H, t) {
     }
     oy += 10;
 
-    // ── Star chart (STORY-00251) ─────────────────────────────
+    // ── Star chart (STORY-00251) — STORY-00305: reduce chart size to 55% card width max 170px
     if (c.stars && c.stars.length > 0) {
-      const CHART_SIZE = Math.min(cardW - 24, 200);
+      const CHART_SIZE = Math.min(cardW * 0.55, 170);
       const chartX = cardX + (cardW - CHART_SIZE) / 2;
       const chartY = oy;
       const PAD = 18;
@@ -435,11 +435,15 @@ function _drawDetail(ctx, W, H, t) {
     if (slot.loaded && slot.img) {
       ctx.drawImage(slot.img, photoX, oy, photoW, PHOTO_H);
     } else if (slot.error) {
-      ctx.font = '13px sans-serif';
+      // STORY-00305: photo failed to load — show constellation icon + name as placeholder
+      ctx.font = '36px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(200,190,255,0.6)';
+      ctx.fillText(c.icon || '★', photoX + photoW / 2, oy + PHOTO_H / 2 - 14);
+      ctx.font = '13px sans-serif';
       ctx.fillStyle = 'rgba(160,150,200,0.7)';
-      ctx.fillText('暂无图片', photoX + photoW / 2, oy + PHOTO_H / 2);
+      ctx.fillText(c.nameZh || '', photoX + photoW / 2, oy + PHOTO_H / 2 + 20);
     } else {
       ctx.font = '13px sans-serif';
       ctx.textAlign = 'center';
@@ -536,12 +540,20 @@ function _loadPhotoAtPos(url, pos, constellationIdx) {
   _carouselImgs[pos] = { img: null, loaded: false, error: false };
   try {
     const img = wx.createImage();
+    // STORY-00305: timeout — if image hasn't loaded in 8s, mark as error so we don't show "加载中..." forever
+    const timer = setTimeout(() => {
+      if (_carouselImgs[pos] && !_carouselImgs[pos].loaded) {
+        _carouselImgs[pos] = { img: null, loaded: false, error: true };
+      }
+    }, 8000);
     img.onload  = () => {
+      clearTimeout(timer);
       if (_carouselForIdx === constellationIdx) {
         _carouselImgs[pos] = { img, loaded: true, error: false };
       }
     };
     img.onerror = () => {
+      clearTimeout(timer);
       if (_carouselForIdx === constellationIdx) {
         _carouselImgs[pos] = { img: null, loaded: false, error: true };
       }
@@ -617,7 +629,7 @@ function _onTouchEnd(e) {
     if (_isDragging) { _isDragging = false; return; }
 
     if (_backRect && hitTest(_backRect, tx, ty)) {
-      if (_navigate) _navigate('levels');
+      if (_navigate) _navigate('menu');  // STORY-00302: was 'levels' — gallery back should go to menu
       return;
     }
     const ayy = ty + _scrollY;

@@ -110,6 +110,7 @@ let _victoryPhotoFor  = -1;    // levelIdx the photo is for
 let _celebrateTimer = 0;  // seconds remaining in celebrate phase
 let _lineDrawProgress = 0; // float: how many lines have been drawn so far
 let _lingerTimer = 0;     // seconds remaining in linger phase (STORY-00274)
+let _revealedStarSet = new Set(); // STORY-00303: stars lit up by linedraw — indices into _conDef.lines
 
 // Tutorial hint
 let _hintTimer  = 0;      // seconds remaining for hint display
@@ -307,6 +308,7 @@ function _initStars(W, H) {
       phase: (i * 1.618) % TWO_PI,
       speed: 1.5 + (i % 5) * 0.6,  // STORY-00294: was 0.4+(i%5)*0.15 — wider range for visible twinkling
       caught: false,
+      idx:   i,  // STORY-00303: star index for reveal tracking
     });
   });
   _caught = 0;
@@ -375,6 +377,7 @@ function _cleanup() {
   _passiveCoins = false;
   _celebrateTimer = 0;
   _lineDrawProgress = 0;
+  _revealedStarSet.clear(); // STORY-00303: reset star reveal tracking
   // Destroy cached line-draw SFX context to prevent cross-game leak (Arch review fix)
   if (_lineDrawSfxCtx) {
     try { _lineDrawSfxCtx.destroy(); } catch (e) {}
@@ -758,6 +761,11 @@ function _updateLineDrawProgress(dt) {
       _lineDrawSfxCtx.stop();
       _lineDrawSfxCtx.play();
     } catch (e) {}
+    // STORY-00303: mark stars revealed as each line completes
+    for (let li = prevDrawn; li < newDrawn && li < totalLines; li++) {
+      _revealedStarSet.add(_conDef.lines[li][0]);
+      _revealedStarSet.add(_conDef.lines[li][1]);
+    }
   }
   if (_lineDrawProgress >= totalLines) {
     _lineDrawProgress = totalLines;
@@ -815,6 +823,8 @@ function _drawLingerFlash(ctx, t) {
 
 // ── Draw: stars (STORY-00260 sparkle upgrade) ────────────────
 function _drawStars(ctx, t) {
+  // STORY-00303: in linedraw/linger phase, dim unrevealed stars; brighten revealed ones (web parity)
+  const inRevealPhase = (_phase === 'linedraw' || _phase === 'linger');
   for (const s of _stars) {
     if (s.caught) {
       // Caught stars: dim, small, grey
@@ -827,7 +837,10 @@ function _drawStars(ctx, t) {
       ctx.restore();
       continue;
     }
-    const alpha = 0.35 + 0.65 * Math.abs(Math.sin(t * s.speed + s.phase));  // STORY-00294: was 0.50+0.50 — deeper swing
+    // STORY-00303: during linedraw/linger, unrevealed stars are dim (alpha 0.3 base), revealed are full bright
+    const revealed = !inRevealPhase || _revealedStarSet.has(s.idx);
+    const alphaBase = revealed ? (0.35 + 0.65 * Math.abs(Math.sin(t * s.speed + s.phase))) : 0.3;
+    const alpha = alphaBase;
 
     // Glow halo
     const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 4.5);
@@ -845,7 +858,8 @@ function _drawStars(ctx, t) {
     ctx.globalAlpha = alpha;
     ctx.fillStyle   = s.color;
     ctx.shadowColor = s.color;
-    ctx.shadowBlur  = s.r * 2.5;
+    // STORY-00303: revealed stars get 3× glow (web parity)
+    ctx.shadowBlur  = revealed ? s.r * 7.5 : s.r * 2.5;
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
     ctx.fill();
@@ -1078,6 +1092,18 @@ function _drawGirl(ctx) {
     ctx.beginPath(); ctx.arc(sx, sy, 1.5, 0, TWO_PI); ctx.fill();
   }
   ctx.restore();
+  // STORY-00306: dress hem lace scallops
+  ctx.save();
+  ctx.strokeStyle = '#f0c8f0';
+  ctx.lineWidth = 1.2;
+  ctx.globalAlpha = 0.6;
+  const hemY = 7;
+  for (let hx = -28; hx < 28; hx += 7) {
+    ctx.beginPath();
+    ctx.arc(hx + 3.5, hemY, 3.5, Math.PI, TWO_PI);
+    ctx.stroke();
+  }
+  ctx.restore();
 
   // ── Waist ribbon (STORY-00293: v5) ────────────────────────────
   ctx.save();
@@ -1153,31 +1179,68 @@ function _drawGirl(ctx) {
   ctx.fillStyle = '#f0f0ff';
   ctx.beginPath(); ctx.ellipse(-6, -67, 4, 5, 0, 0, TWO_PI); ctx.fill();
   ctx.beginPath(); ctx.ellipse(6, -67, 4, 5, 0, 0, TWO_PI); ctx.fill();
-  // Colored iris
-  ctx.fillStyle = '#5533cc';
+  // Colored iris — STORY-00306: radial gradient for depth
+  const irisGrd1 = ctx.createRadialGradient(-6, -68, 0.5, -6, -67, 3);
+  irisGrd1.addColorStop(0, '#8866ff');
+  irisGrd1.addColorStop(0.5, '#5533cc');
+  irisGrd1.addColorStop(1, '#2211aa');
+  ctx.fillStyle = irisGrd1;
   ctx.beginPath(); ctx.arc(-6, -67, 3, 0, TWO_PI); ctx.fill();
+  const irisGrd2 = ctx.createRadialGradient(6, -68, 0.5, 6, -67, 3);
+  irisGrd2.addColorStop(0, '#8866ff');
+  irisGrd2.addColorStop(0.5, '#5533cc');
+  irisGrd2.addColorStop(1, '#2211aa');
+  ctx.fillStyle = irisGrd2;
   ctx.beginPath(); ctx.arc(6, -67, 3, 0, TWO_PI); ctx.fill();
   // Pupils
   ctx.fillStyle = '#1a0a2a';
   ctx.beginPath(); ctx.arc(-6, -67, 1.8, 0, TWO_PI); ctx.fill();
   ctx.beginPath(); ctx.arc(6, -67, 1.8, 0, TWO_PI); ctx.fill();
-  // Eye shine (STORY-00285: larger dot)
+  // Eye shine (STORY-00285: larger dot) + secondary lower shine (STORY-00306)
   ctx.fillStyle = '#ffffff';
   ctx.beginPath(); ctx.arc(-4.5, -69, 1.5, 0, TWO_PI); ctx.fill();
   ctx.beginPath(); ctx.arc(7.5, -69, 1.5, 0, TWO_PI); ctx.fill();
+  ctx.save(); ctx.globalAlpha = 0.6;
+  ctx.beginPath(); ctx.arc(-7, -65, 0.8, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(5, -65, 0.8, 0, TWO_PI); ctx.fill();
+  ctx.restore();
+  // Eyelashes — STORY-00306: short strokes on top of eyes
+  ctx.save();
+  ctx.strokeStyle = '#221133';
+  ctx.lineWidth = 1.2;
+  ctx.lineCap = 'round';
+  for (const [ex, ew, edir] of [[-8, 3, -0.3], [-5, 3, 0], [-2, 2, 0.3], [4, 3, -0.3], [7, 3, 0], [10, 2, 0.3]]) {
+    const eyeCx = ex < 0 ? -6 : 6;
+    ctx.beginPath();
+    ctx.moveTo(eyeCx + ew / 2 * Math.cos(edir - Math.PI / 2 + 0.1), -72 + 0.5 * Math.sin(edir - Math.PI / 2 + 0.1));
+    ctx.lineTo(eyeCx + ew / 2 * Math.cos(edir - Math.PI / 2 + 0.1), -72 - 2 + 0.5 * Math.sin(edir));
+    ctx.stroke();
+  }
+  ctx.restore();
   // Eyebrows (STORY-00285: more pronounced, 2.5px, arched)
   ctx.strokeStyle = '#331122';
   ctx.lineWidth   = 2.5;
   ctx.lineCap     = 'round';
   ctx.beginPath(); ctx.moveTo(-10, -74); ctx.quadraticCurveTo(-6, -77, -2, -74); ctx.stroke();
   ctx.beginPath(); ctx.moveTo(2, -74); ctx.quadraticCurveTo(6, -77, 10, -74); ctx.stroke();
-  // Smile
-  ctx.strokeStyle = '#cc6644';
-  ctx.lineWidth   = 1.8;
+  // Smile — STORY-00306: lips with color
+  ctx.save();
+  ctx.strokeStyle = '#e05060';
+  ctx.lineWidth   = 2.2;
+  ctx.lineCap     = 'round';
   ctx.beginPath(); ctx.arc(0, -62, 5, 0.3, Math.PI - 0.3); ctx.stroke();
+  // Lip fill
+  ctx.fillStyle = 'rgba(220, 80, 100, 0.35)';
+  ctx.beginPath(); ctx.arc(0, -62, 5, 0.3, Math.PI - 0.3); ctx.closePath(); ctx.fill();
+  ctx.restore();
 
-  // ── Hair ──────────────────────────────────────────────────────
-  ctx.fillStyle = '#1a0a0a';
+  // ── Hair — STORY-00306: dark brown gradient + multi-layer highlights ────────────
+  // Base hair color — dark brown gradient
+  const hairGrd = ctx.createLinearGradient(-14, -86, 14, -10);
+  hairGrd.addColorStop(0, '#3d1a0a');
+  hairGrd.addColorStop(0.4, '#2a0f05');
+  hairGrd.addColorStop(1, '#1a0808');
+  ctx.fillStyle = hairGrd;
   // Back hair layers (twin tails sweep out)
   ctx.beginPath();
   ctx.moveTo(-14, -53);
@@ -1219,6 +1282,22 @@ function _drawGirl(ctx) {
   ctx.globalAlpha = 0.55;
   ctx.lineCap     = 'round';
   ctx.beginPath(); ctx.moveTo(-6, -80); ctx.bezierCurveTo(-3, -83, 3, -83, 8, -79); ctx.stroke();
+  ctx.restore();
+  // STORY-00306: second highlight streak — warm bronze tone
+  ctx.save();
+  ctx.strokeStyle = '#cc9955';
+  ctx.lineWidth   = 1.2;
+  ctx.globalAlpha = 0.35;
+  ctx.lineCap     = 'round';
+  ctx.beginPath(); ctx.moveTo(-8, -78); ctx.bezierCurveTo(-6, -81, -1, -82, 4, -78); ctx.stroke();
+  ctx.restore();
+  // STORY-00306: hair edge highlight on twin-tail right edge
+  ctx.save();
+  ctx.strokeStyle = '#664422';
+  ctx.lineWidth   = 1.5;
+  ctx.globalAlpha = 0.5;
+  ctx.lineCap     = 'round';
+  ctx.beginPath(); ctx.moveTo(22, -45); ctx.bezierCurveTo(26, -32, 26, -16, 22, -5); ctx.stroke();
   ctx.restore();
   // Star hair clips (twin tail ties)
   ctx.fillStyle = '#ffdd55';
@@ -1680,11 +1759,11 @@ function _drawResultOverlay(ctx, W, H) {
   ctx.fillRect(0, 0, W, H);
   ctx.restore();
 
-  // Card — clamp to screen height with 20px margin so it fits landscape (H≈390)
+  // Card — STORY-00304: clamp to screen height with safe margins, no overflow
   const cardW = Math.min(W - 40, 340);
-  const cardH = Math.min(r.victory ? 460 : 340, H - 20);
+  const cardH = Math.min(r.victory ? 420 : 300, H - 20);
   const cardX = (W - cardW) / 2;
-  const cardY = (H - cardH) / 2;
+  const cardY = Math.max(10, (H - cardH) / 2);
 
   // Card background
   ctx.save();
@@ -1747,8 +1826,8 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.restore();
     cy += 28;
 
-    // Constellation photo (STORY-00246)
-    const photoH = 70;
+    // Constellation photo (STORY-00246) — STORY-00304: smaller in landscape
+    const photoH = Math.min(70, H < 450 ? 50 : 70);
     const photoW = cardW - 16;
     const photoX = cardX + 8;
     ctx.save();
@@ -1817,8 +1896,8 @@ function _drawResultOverlay(ctx, W, H) {
     // Buttons (3 buttons: 下一关/全部通关, 重玩, 选关)
     const btnW3 = (cardW - 20) / 3;
     const btnH = 40;
-    // Position buttons after content (cy), but no higher than cardH-112 from top
-    const bY   = Math.max(cy + 8, cardY + cardH - 112);
+    // STORY-00304: buttons always within card — anchored to bottom of card
+    const bY   = cardY + cardH - btnH - 10;
     const isLastLevel = _levelIdx >= 29;
 
     if (isLastLevel) {
@@ -1835,18 +1914,9 @@ function _drawResultOverlay(ctx, W, H) {
       fontSize: 14, color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
     });
     _btnRetry  = null;
-
-    // Secondary row: 去商店 + 看展厅
-    const sec2W = (cardW - 24) / 2;
-    const secY  = bY + btnH + 10;
-    _btnShop = drawButton(ctx, cardX + 10, secY, sec2W, 32, '🛒 去商店', {
-      fontSize: 12, radius: 8,
-      color0: 'rgba(40,60,100,0.75)', color1: 'rgba(30,80,140,0.75)',
-    });
-    _btnGallery = drawButton(ctx, cardX + 10 + sec2W + 4, secY, sec2W, 32, '🔭 看展厅', {
-      fontSize: 12, radius: 8,
-      color0: 'rgba(40,60,100,0.75)', color1: 'rgba(30,80,140,0.75)',
-    });
+    // STORY-00304: removed secondary 去商店 + 看展厅 buttons (too many buttons, web version only has 3)
+    _btnShop    = null;
+    _btnGallery = null;
 
   } else {
     // ── Failure card ────────────────────────────────────────
@@ -2074,7 +2144,10 @@ function _onTouch(e) {
       return;
     }
     if (_btnGallery && hitTest(_btnGallery, tx, ty)) {
-      if (_navigate) fadeNavigate(() => _navigate('gallery'));
+      if (_navigate) {
+        _cleanup();  // STORY-00302: stop game RAF immediately before fade — prevents girl/gallery flicker
+        fadeNavigate(() => _navigate('gallery'));
+      }
       return;
     }
   }
