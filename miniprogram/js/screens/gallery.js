@@ -198,16 +198,27 @@ function _drawGalleryCard(ctx, cr, t) {
     ctx.fillText('？', x + w / 2, y + h * 0.48);
     ctx.restore();
   } else {
-    // STORY-00318 (CR-115): show 2-char name large (no emoji icon — inconsistent rendering)
+    // STORY-00330 (CR-127): show emoji icon above 2-char name
+    // Emoji icon at upper portion of card
+    const iconSize = Math.min(18, Math.round(w * 0.30));
+    ctx.save();
+    ctx.font = `${iconSize}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(c.icon || '', x + w / 2, y + h * 0.35);
+    ctx.restore();
+
+    // 2-char name below emoji
     const shortName = (c.nameZh || '').slice(0, 2);
     ctx.save();
-    ctx.font = `bold ${Math.round(w * 0.32)}px sans-serif`;
+    ctx.font = `bold ${Math.round(w * 0.26)}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#c8b8ff';
     ctx.shadowColor = 'rgba(180,140,255,0.5)';
     ctx.shadowBlur = 4;
-    ctx.fillText(shortName, x + w / 2, y + h * 0.38);
+    ctx.fillText(shortName, x + w / 2, y + h * 0.65);
     ctx.restore();
 
     // Star rating at bottom
@@ -396,18 +407,84 @@ function _drawDetail(ctx, W, H, t) {
         ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
         ctx.fill();
       }
+
+      // STORY-00331 (CR-128): Star name labels for bright stars (mag≤2.5)
+      const chartCx = chartX + CHART_SIZE / 2;
+      const chartCy = chartY + CHART_SIZE / 2;
+      // Sort by magnitude (brightest first), take up to 5
+      const brightStars = c.stars
+        .map((s, i) => ({ ...s, mapped: mappedStars[i] }))
+        .filter(s => s.mag <= 2.5 && s.mapped)
+        .sort((a, b) => a.mag - b.mag)
+        .slice(0, 5);
+
+      const labelPositions = []; // for anti-overlap
+      ctx.save();
+      ctx.font = '9px sans-serif';
+      ctx.fillStyle = 'rgba(255,255,255,0.75)';
+      ctx.strokeStyle = 'rgba(255,255,255,0.50)';
+      ctx.lineWidth = 0.8;
+      ctx.setLineDash([2, 2]);
+
+      for (const bs of brightStars) {
+        const mx = bs.mapped.x;
+        const my = bs.mapped.y;
+        // Direction: angle from chart center to star + 45° offset
+        const baseAngle = Math.atan2(my - chartCy, mx - chartCx);
+        const labelAngle = baseAngle + Math.PI / 4;
+        const lineLen = 8;
+        const lx = mx + Math.cos(labelAngle) * lineLen;
+        const ly = my + Math.sin(labelAngle) * lineLen;
+
+        // Anti-overlap: check against already placed labels
+        let finalLy = ly;
+        for (const pos of labelPositions) {
+          if (Math.abs(lx - pos.x) < 28 && Math.abs(finalLy - pos.y) < 12) {
+            finalLy -= 10;
+          }
+        }
+        labelPositions.push({ x: lx, y: finalLy });
+
+        // Draw dashed pointer line
+        ctx.beginPath();
+        ctx.moveTo(mx, my);
+        ctx.lineTo(lx, finalLy);
+        ctx.stroke();
+
+        // Draw label text
+        ctx.textAlign = lx >= chartCx ? 'left' : 'right';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(bs.name, lx + (lx >= chartCx ? 2 : -2), finalLy);
+      }
+      ctx.setLineDash([]);
+      ctx.restore();
+
       ctx.restore();
 
       oy += CHART_SIZE + 12;
     }
 
     // ── Photo carousel — STORY-00319 (CR-116): height 180px, fallback "📷 暂无图片" ──
+    // STORY-00332 (CR-129): section header + wx.downloadFile loading
     const photos = c.photos || (c.photo ? [c.photo] : []);
     if (_carouselForIdx !== _detailIdx) {
       _carouselForIdx = _detailIdx;
       _carouselImgs = [];
       photos.forEach((url, i) => _loadPhotoAtPos(url, i, _detailIdx));
     }
+
+    // Section header "天文摄影 · ASTROPHOTOGRAPHY"
+    if (photos.length > 0) {
+      ctx.save();
+      ctx.font = 'bold 11px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#ffd700';
+      ctx.fillText('天文摄影 · ASTROPHOTOGRAPHY', cardX, oy + 8);
+      ctx.restore();
+      oy += 22;
+    }
+
     const PHOTO_H = 180;  // STORY-00319: was 160 — taller for better photo framing
     const photoX = cardX;
     const photoW = cardW;
@@ -530,6 +607,10 @@ function _drawDetail(ctx, W, H, t) {
 }
 
 // ── Photo loader ──────────────────────────────────────────────
+// STORY-00332 (CR-129): Use wx.downloadFile() then wx.createImage() with local path.
+// wx.createImage() with direct external URLs requires the domain in the "download domain"
+// whitelist (WeChat developer console). wx.downloadFile() is the correct pattern for
+// loading external images in mini games.
 function _loadPhotoAtPos(url, pos, constellationIdx) {
   if (!url) {
     _carouselImgs[pos] = { img: null, loaded: false, error: true };
@@ -537,14 +618,59 @@ function _loadPhotoAtPos(url, pos, constellationIdx) {
   }
   _carouselImgs[pos] = { img: null, loaded: false, error: false };
   try {
+    // First attempt: wx.downloadFile to get a local temp file path
+    wx.downloadFile({
+      url,
+      success(res) {
+        if (_carouselForIdx !== constellationIdx) return;
+        if (res.statusCode === 200) {
+          const img = wx.createImage();
+          const timer = setTimeout(() => {
+            if (_carouselImgs[pos] && !_carouselImgs[pos].loaded) {
+              _carouselImgs[pos] = { img: null, loaded: false, error: true };
+            }
+          }, 5000);
+          img.onload = () => {
+            clearTimeout(timer);
+            if (_carouselForIdx === constellationIdx) {
+              _carouselImgs[pos] = { img, loaded: true, error: false };
+            }
+          };
+          img.onerror = () => {
+            clearTimeout(timer);
+            console.warn('[gallery] img.onerror for local path:', res.tempFilePath);
+            if (_carouselForIdx === constellationIdx) {
+              _carouselImgs[pos] = { img: null, loaded: false, error: true };
+            }
+          };
+          img.src = res.tempFilePath;
+        } else {
+          console.warn('[gallery] downloadFile bad status:', res.statusCode, url);
+          if (_carouselForIdx === constellationIdx) {
+            _carouselImgs[pos] = { img: null, loaded: false, error: true };
+          }
+        }
+      },
+      fail(err) {
+        console.warn('[gallery] downloadFile fail:', err.errMsg, url);
+        // Fallback: try direct wx.createImage() with original URL
+        _loadPhotoFallback(url, pos, constellationIdx);
+      },
+    });
+  } catch (e) {
+    _loadPhotoFallback(url, pos, constellationIdx);
+  }
+}
+
+function _loadPhotoFallback(url, pos, constellationIdx) {
+  try {
     const img = wx.createImage();
-    // STORY-00305: timeout — if image hasn't loaded in 8s, mark as error so we don't show "加载中..." forever
     const timer = setTimeout(() => {
       if (_carouselImgs[pos] && !_carouselImgs[pos].loaded) {
         _carouselImgs[pos] = { img: null, loaded: false, error: true };
       }
     }, 8000);
-    img.onload  = () => {
+    img.onload = () => {
       clearTimeout(timer);
       if (_carouselForIdx === constellationIdx) {
         _carouselImgs[pos] = { img, loaded: true, error: false };
@@ -552,13 +678,16 @@ function _loadPhotoAtPos(url, pos, constellationIdx) {
     };
     img.onerror = () => {
       clearTimeout(timer);
+      console.warn('[gallery] fallback onerror:', url);
       if (_carouselForIdx === constellationIdx) {
         _carouselImgs[pos] = { img: null, loaded: false, error: true };
       }
     };
     img.src = url;
   } catch (e) {
-    _carouselImgs[pos] = { img: null, loaded: false, error: true };
+    if (_carouselForIdx === constellationIdx) {
+      _carouselImgs[pos] = { img: null, loaded: false, error: true };
+    }
   }
 }
 

@@ -35,7 +35,7 @@ let _totalH      = 0;
 let _feedback    = null; // { msg, until } — brief purchase feedback
 
 // Layout — 2-column grid (STORY-00309: web parity)
-const CARD_H    = 100;
+const CARD_H    = 116;  // STORY-00329: was 100 — +16 for description line
 const CARD_GAP  = 8;
 const PAD_X     = 10;
 const COLS      = 2;
@@ -194,8 +194,28 @@ function _drawItemCard(ctx, W, item, idx, cardX, cardY, cardW) {
   ctx.fillText(item.nameZh, cx, cardY + 42);
   ctx.restore();
 
+  // Description (STORY-00329: CR-126)
+  if (item.desc) {
+    ctx.save();
+    ctx.font = '10px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'top';
+    ctx.fillStyle = 'rgba(255,255,255,0.60)';
+    // Truncate to card width
+    let descText = item.desc;
+    const maxW = cardW - 16;
+    if (ctx.measureText(descText).width > maxW) {
+      while (descText.length > 0 && ctx.measureText(descText + '…').width > maxW) {
+        descText = descText.slice(0, -1);
+      }
+      descText += '…';
+    }
+    ctx.fillText(descText, cx, cardY + 57);
+    ctx.restore();
+  }
+
   // 主动/被动 badge (outline style) + duration badge (STORY-00320)
-  const badgeY = cardY + 57;
+  const badgeY = cardY + 74;
   _drawOutlineBadge(ctx, cx - 22, badgeY, item.type, item.type === '主动' ? '#b088ff' : '#88aaff');
   _drawOutlineBadge(ctx, cx + 18, badgeY, item.duration, '#8899bb');
 

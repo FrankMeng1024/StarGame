@@ -2,6 +2,38 @@
 
 ---
 
+## Sprint 39-mini Updates (2026-04-20)
+
+### Sprint 39-mini — PASS (HIGH confidence, code-path verification)
+
+#### Shop card descriptions (STORY-00329)
+- shop.js CARD_H now 116 (was 100). Layout order: icon(cardY+22) → name(cardY+42) → desc(cardY+57) → badges(cardY+74) → button(cardY+CARD_H-btnH2-6)
+- item.desc rendered at 10px rgba(255,255,255,0.60), truncated with "…" via measureText when wider than cardW-16
+- badgeY moved from cardY+57 to cardY+74 to make room for desc line
+- All 8 ITEMS have desc field populated — no data change was needed
+
+#### Gallery card emoji icons (STORY-00330)
+- gallery.js _drawGalleryCard: unlocked cards show c.icon emoji at y+h*0.35 (font min(18,w*0.30)px) + 2-char nameZh at y+h*0.65 (font w*0.26)
+- Locked cards unchanged (still show "？")
+- WeChat Canvas emoji rendering: if device doesn't support, c.icon||'' renders as empty — name still visible
+
+#### Gallery detail star name labels (STORY-00331)
+- gallery.js _drawDetail: after star drawing, bright stars (mag≤2.5) mapped to chart coordinates
+- Max 5 labels (sorted by mag ascending), dashed pointer lines (setLineDash([2,2])), 9px text rgba(255,255,255,0.75)
+- Anti-overlap: if new label within 28px x + 12px y of existing, shift y by -10
+- setLineDash([]) reset after all labels — no dash bleed
+- Labels inside existing ctx.clip() scope — no overflow outside chart circle
+
+#### Gallery detail photo loading (STORY-00332)
+- gallery.js _loadPhotoAtPos: wx.downloadFile primary → res.tempFilePath → wx.createImage(tempFilePath)
+- _loadPhotoFallback: wx.createImage(url) direct if downloadFile fails
+- Stale guard: if _carouselForIdx !== constellationIdx, result is discarded
+- All code paths have clearTimeout(timer) — no timer leaks
+- "天文摄影 · ASTROPHOTOGRAPHY" section header shown when constellation has photos (gold #ffd700, 11px)
+- Error state: "📷 暂无图片" placeholder when all photos fail to load
+
+---
+
 ## Sprint 38-mini Updates (2026-04-21)
 
 ### Sprint 38-mini — PASS (MEDIUM-HIGH confidence)
