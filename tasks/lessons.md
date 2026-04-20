@@ -1,5 +1,13 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 33-mini — 2026-04-20 (shop grid + fail stats + game HUD web parity)
+
+Sprint 33-mini: clean Sprint, no retrospective actions.
+- QA PASS (HIGH confidence, real screenshots), Arch PASS (2 Medium only), UX HIGH confidence, no Blockers.
+- Zero bugs found during Integration. No Integration restart loops. No Spec Drift.
+- [archived: docs/arch/sprint33-mini-review.md] NaN fallback pattern: `Math.max(0, Math.floor(x || 0))` — always use `|| 0` when the input could be undefined (e.g. r.timeLeft on first render). Caught by Arch review; fixed before commit.
+- [archived: docs/qa/knowledge.md §Sprint33-mini] WeChat capsule (···) covers the pause/mute region. Do not add custom HUD icons in the top-right corner. Platform convention: WeChat capsule serves as the system menu. This is intentional design, not a gap.
+
 ## Sprint 30/31/32-mini — 2026-04-20 (visual quality full upgrade, 8 Stories)
 
 Sprint 30/31/32-mini: QA PASS (code-path), Arch PASS, UX no Blockers. DevTools offline for real screenshots.

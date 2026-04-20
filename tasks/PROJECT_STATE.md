@@ -1,10 +1,10 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: Sprint 32-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE.
-**Current Sprint**: Sprint 32-mini
+**Status**: Sprint 33-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE.
+**Current Sprint**: Sprint 33-mini
 **Last Updated**: 2026-04-20
 
-> **Mini branch current**: Sprint 32-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE. All 8 Stories STORY-00301~00308 Done. Visual quality full upgrade: black screen fix, gallery flicker fix, star animation, victory card, gallery detail redesign, girl redesign, item overlay redesign, web parity verification. Full real-screenshot VU acceptance passed.
+> **Mini branch current**: Sprint 33-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE. 3 Stories STORY-00309~00311 Done. Web vs Mini cross-platform parity: shop 2-column grid, fail screen stats row + flavor text, game HUD web-aligned. Full real-screenshot VU acceptance passed.
 
 ## Mini branch 微信小游戏分支（mini branch）
 
@@ -61,6 +61,7 @@
 | Sprint 30-mini | COMPLETE | 修复3个Blocker级真机bug: 黑屏/展厅闪烁/星连线动画 (STORY-00301~00303) — QA PASS (code-path) |
 | Sprint 31-mini | COMPLETE | 通关界面修复: 结算卡不超边界+3按钮/展厅详情重设计 (STORY-00304~00305) — QA PASS (code-path) |
 | Sprint 32-mini | COMPLETE | 视觉品质全面升级: 女角角色/道具覆盖层/全流程Web对标 (STORY-00306~00308) — VU ACCEPTED 9.6/10 — PROJECT COMPLETE |
+| Sprint 33-mini | COMPLETE | Web跨平台对标: 商店网格/失败统计行/游戏HUD (STORY-00309~00311) — VU ACCEPTED 9.6/10 — PROJECT COMPLETE |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -98,6 +99,7 @@
 | Sprint 11-mini | 9.0/10 | NOT ACCEPTED | F-007 gallery carousel missing — only 1 static photo per constellation |
 | Sprint 12-mini | 9.5/10 | ACCEPTED | 展厅多图轮播 — carousel implemented, 3 photos per constellation — PROJECT COMPLETE |
 | Sprint 32-mini | 9.6/10 | ACCEPTED | 视觉品质全面升级: 女角色/道具覆盖层/全流程Web对标 + 全8个PRD特性真实截图验收 — PROJECT COMPLETE |
+| Sprint 33-mini | 9.6/10 | ACCEPTED | Web跨平台对标: 商店2列网格/失败统计行+鼓励语/游戏HUD位置对齐 — PROJECT COMPLETE |
 | Sprint 13-mini | 9.5/10 | ACCEPTED | 展厅5张图片达PRD最低要求 + lore完成按钮确认 — PROJECT COMPLETE |
 | Sprint 17-mini | 9.5/10 | ACCEPTED | 全功能验收 — F-001~F-008全部通过 + 开场动画/星图/HUD槽/横屏/SFX等CRs — PROJECT COMPLETE (final) |
 
