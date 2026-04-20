@@ -1,5 +1,12 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 37-mini — 2026-04-20 (胜利星星顺序闪烁 + 选关闪烁修复) — VU ACCEPTED 9.6/10
+
+Sprint 37-mini: clean Sprint, no retrospective actions needed. VU ACCEPTED 9.6/10. PROJECT COMPLETE (all 11 user-reported issues CR-113~CR-121 resolved).
+- QA PASS (STORY-00323 LOW confidence due to miniprogram-only Canvas animation; STORY-00324 HIGH confidence). Arch PASS (no issues). UX no Blockers, HIGH confidence.
+- [archived: docs/qa/sprint37-mini-verdict.md] STORY-00323 star flash animation is miniprogram Canvas-only. Future QA for miniprogram animation phases requires PrintWindow/WeChat DevTools capture, not Playwright against localhost:8080. Visual ACs of this type should be treated as code-path ACs with Arch review as the verification gate.
+- [archived: game.js pattern] All result-screen navigation buttons must call _cleanup() before fadeNavigate. Pattern: _cleanup() stops RAF immediately → fadeNavigate() then fires after fade-out. Established by STORY-00302 (gallery) and generalized by STORY-00324 (all paths). Any future button added to the result screen must follow this pattern.
+
 ## Sprint 36-mini — 2026-04-20 (道具商店视觉升级 + 女角色重绘 + 胜利界面重设计)
 
 Sprint 36-mini: clean Sprint overall. Arch found 2 real bugs in code review; both fixed before QA. QA PASS HIGH confidence. UX no Blockers. VU pending.
