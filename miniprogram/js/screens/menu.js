@@ -289,12 +289,11 @@ function _loop(now) {
     drawSubtitle(ctx, '探索88星座的奇妙旅程', midX, H * 0.14 + 26, 12);
 
     const BW  = rightW;
-    const BH  = Math.max(26, Math.min(30, (H - G.SAFE_TOP - G.SAFE_BOTTOM - 110) / 3));  // STORY-00287: was max(30,min(36,...))
-    const GAP = 8;
-    // Stack 3 buttons vertically in right pane — center in available height
+    const BH  = Math.max(34, Math.min(40, (H - (G.SAFE_TOP || 0) - (G.SAFE_BOTTOM || 0) - 80) / 3));  // STORY-00317: was max(26,min(30,...)) — taller buttons
+    const GAP = 14;  // STORY-00317: was 8 — more breathing room
+    // Stack 3 buttons vertically — start lower, away from title
     const totalBtnsH = 3 * BH + 2 * GAP;
-    const usableH = H - G.SAFE_TOP - G.SAFE_BOTTOM;
-    const startY = G.SAFE_TOP + usableH * 0.42 - totalBtnsH / 2;
+    const btnStartY = H * 0.38;  // STORY-00317: was usableH*0.42 — explicitly lower to separate from title
 
     const defs = [
       { key: 'levels',  label: '挑战关卡', icon: '★' },
@@ -302,9 +301,9 @@ function _loop(now) {
       { key: 'shop',    label: '道具商店', icon: '◈' },
     ];
     defs.forEach((d, i) => {
-      const by = startY + i * (BH + GAP);
+      const by = btnStartY + i * (BH + GAP);
       const rect = _drawMenuButton(ctx, rightX, by, BW, BH, d.label, {
-        icon: d.icon, primary: i === 0, fontSize: 13,  // STORY-00287: was 14
+        icon: d.icon, primary: i === 0, fontSize: 14,  // STORY-00317: was 13 — slightly larger with taller buttons
       });
       _buttons.push({ ...rect, key: d.key });
     });
@@ -316,9 +315,9 @@ function _loop(now) {
     drawSubtitle(ctx, '探索88星座的奇妙旅程', W / 2, H * 0.72 + 38, 14);
 
     const BW = W * 0.60;
-    const BH = 36;   // STORY-00287: was 40
+    const BH = Math.max(44, Math.min(52, (H - (G.SAFE_BOTTOM || 0) - 180) / 3));  // STORY-00317: was 36 — taller portrait buttons
     const BX = (W - BW) / 2;
-    const GAP = 10;  // STORY-00280: was 14
+    const GAP = 16;  // STORY-00317: was 10 — more breathing room in portrait
     const startY = H - G.SAFE_BOTTOM - 160;
 
     const defs = [

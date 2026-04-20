@@ -42,11 +42,12 @@ let _carouselForIdx = -1;    // which constellation this carousel is for
 let _carouselImgs   = [];    // array of { img, loaded, error } per photo slot
 let _carouselPrevRect = null;
 let _carouselNextRect = null;
+let _detailBottomBackRect = null;  // STORY-00319: scrollable bottom return button
 
 // Layout
-const COLS    = 4;  // STORY-00292: was 3 — 4 cols makes cards smaller, less dominant
+const COLS    = 5;  // STORY-00318 (CR-115): was 4 — 5 cols in landscape for more cards per row
 const PAD_X   = 12;
-const GAP     = 8;
+const GAP     = 6;  // STORY-00318: was 8
 
 // ── Public API ────────────────────────────────────────────────
 export function showGallery(navigate) {
@@ -81,6 +82,7 @@ function _cleanup() {
   _detailScrollY = _detailScrollTarget = 0;
   _carouselPos = 0; _carouselForIdx = -1; _carouselImgs = [];
   _carouselPrevRect = null; _carouselNextRect = null;
+  _detailBottomBackRect = null;
 }
 
 function _computeLayout() {
@@ -90,7 +92,7 @@ function _computeLayout() {
   const PAD_TOP = G.SAFE_TOP + 76;  // below back button + notch
   _cardRects = [];
   const CARD_W = Math.floor((usableW - GAP * (COLS - 1)) / COLS);
-  const CARD_H = CARD_W + 24;
+  const CARD_H = CARD_W + 16;  // STORY-00318: was +24 — more square/compact
   const rows   = Math.ceil(CONSTELLATIONS.length / COLS);
   _totalH      = PAD_TOP + rows * (CARD_H + GAP) + 24 + G.SAFE_BOTTOM;
 
@@ -178,52 +180,47 @@ function _drawGalleryCard(ctx, cr, t) {
   ctx.save();
   ctx.globalAlpha = unlocked ? 0.88 : 0.40;
   ctx.fillStyle   = unlocked ? 'rgba(20,24,60,0.9)' : 'rgba(15,15,35,0.7)';
-  _roundRect(ctx, x, y, w, h, 10);
+  _roundRect(ctx, x, y, w, h, 10);  // STORY-00318: radius 10 (was 8)
   ctx.fill();
   ctx.strokeStyle = unlocked ? 'rgba(120,100,220,0.7)' : 'rgba(60,60,100,0.3)';
   ctx.lineWidth   = 1.5;
   ctx.stroke();
   ctx.restore();
 
-  // Icon
-  ctx.save();
-  ctx.globalAlpha = unlocked ? 0.9 : 0.25;
-  ctx.font = `${Math.round(w * 0.38)}px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(c.icon || '✨', x + w / 2, y + h * 0.40);
-  ctx.restore();
-
-  // Name
-  ctx.save();
-  ctx.font = `bold ${w > 90 ? 13 : 11}px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = unlocked ? '#e0d8ff' : 'rgba(100,100,140,0.5)';
-  ctx.fillText(c.nameZh, x + w / 2, y + h * 0.72);
-  ctx.restore();
-
-  // Locked indicator
   if (!unlocked) {
+    // Locked: show "？" centered
     ctx.save();
-    ctx.font = '18px sans-serif';
+    ctx.font = `bold ${Math.round(w * 0.35)}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.globalAlpha = 0.4;
-    ctx.fillText('🔒', x + w / 2, y + h * 0.88);
+    ctx.globalAlpha = 0.3;
+    ctx.fillStyle = '#8888aa';
+    ctx.fillText('？', x + w / 2, y + h * 0.48);
     ctx.restore();
   } else {
-    // Stars
+    // STORY-00318 (CR-115): show 2-char name large (no emoji icon — inconsistent rendering)
+    const shortName = (c.nameZh || '').slice(0, 2);
+    ctx.save();
+    ctx.font = `bold ${Math.round(w * 0.32)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#c8b8ff';
+    ctx.shadowColor = 'rgba(180,140,255,0.5)';
+    ctx.shadowBlur = 4;
+    ctx.fillText(shortName, x + w / 2, y + h * 0.38);
+    ctx.restore();
+
+    // Star rating at bottom
     const score = state.getScore(idx);
     ctx.save();
-    ctx.font = '11px sans-serif';
+    ctx.font = `${w > 80 ? 11 : 9}px sans-serif`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = COLORS.starGold;
     const stars = score && score.stars > 0
       ? '★'.repeat(score.stars) + '☆'.repeat(3 - score.stars)
       : '☆☆☆';
-    ctx.fillText(stars, x + w / 2, y + h * 0.88);
+    ctx.fillText(stars, x + w / 2, y + h * 0.80);
     ctx.restore();
   }
 }
@@ -243,24 +240,26 @@ function _drawDetail(ctx, W, H, t) {
   _detailScrollY += (_detailScrollTarget - _detailScrollY) * 0.18;
 
   const c = CONSTELLATIONS[_detailIdx];
+  const SL = (G.SAFE_LEFT  || 0) + 12;  // STORY-00319 (CR-116): safe area left margin
+  const SR = (G.SAFE_RIGHT || 0) + 12;  // STORY-00319: safe area right margin
 
-  // Fixed top bar
-  _detailBackRect = drawButton(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 10, 88, 38, '← 返回', {
+  // Fixed top bar — STORY-00319: use SAFE_LEFT/SAFE_TOP/SAFE_RIGHT for notch safety
+  _detailBackRect = drawButton(ctx, (G.SAFE_LEFT || 0) + 12, (G.SAFE_TOP || 0) + 10, 88, 38, '← 返回', {
     fontSize: 14, radius: 10,
     color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
   });
   // Show prev only if there's a previous unlocked constellation
   const hasPrev = Array.from({ length: _detailIdx }, (_, i) => i).some(i => state.isUnlocked(i));
   _detailPrevRect = hasPrev
-    ? drawButton(ctx, W / 2 - 120, G.SAFE_TOP + 14, 50, 34, '上一个', {
+    ? drawButton(ctx, W / 2 - 120, (G.SAFE_TOP || 0) + 14, 50, 34, '上一个', {
         fontSize: 11, radius: 8,
         color0: 'rgba(40,60,120,0.7)', color1: 'rgba(30,80,160,0.7)',
       })
     : null;
-  // Show next only if there's a next unlocked constellation
+  // Show next only if there's a next unlocked constellation — STORY-00319: right-align using SAFE_RIGHT
   const hasNext = Array.from({ length: CONSTELLATIONS.length - _detailIdx - 1 }, (_, i) => _detailIdx + 1 + i).some(i => state.isUnlocked(i));
   _detailNextRect = hasNext
-    ? drawButton(ctx, W / 2 + 70, G.SAFE_TOP + 14, 50, 34, '下一个', {
+    ? drawButton(ctx, W - (G.SAFE_RIGHT || 0) - 62, (G.SAFE_TOP || 0) + 14, 50, 34, '下一个', {
         fontSize: 11, radius: 8,
         color0: 'rgba(40,60,120,0.7)', color1: 'rgba(30,80,160,0.7)',
       })
@@ -272,47 +271,37 @@ function _drawDetail(ctx, W, H, t) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(180,170,220,0.9)';
-  ctx.fillText((_detailIdx + 1) + ' / ' + CONSTELLATIONS.length, W / 2, G.SAFE_TOP + 31);
+  ctx.fillText((_detailIdx + 1) + ' / ' + CONSTELLATIONS.length, W / 2, (G.SAFE_TOP || 0) + 31);
   ctx.restore();
 
-  // Scrollable content area
-  const CLIP_TOP = G.SAFE_TOP + 58;
+  // Scrollable content area — STORY-00319: clip within safe area
+  const CLIP_TOP = (G.SAFE_TOP || 0) + 58;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, CLIP_TOP, W, H - CLIP_TOP);
+  ctx.rect(SL - 12, CLIP_TOP, W - SL + 12 - SR + 12, H - CLIP_TOP);
   ctx.clip();
   ctx.translate(0, -_detailScrollY + CLIP_TOP);
 
   let oy = 14; // offset y (within scrollable area, relative to CLIP_TOP)
 
-  // Card background
-  const cardX = 14;
-  const cardW = W - 28;
+  // Card geometry — STORY-00319: use safe area margins
+  const cardX = SL;
+  const cardW = W - SL - SR;
   const unlocked = state.isUnlocked(_detailIdx);
 
-  // ── Icon (large) — STORY-00305: reduced from 52px to 36px to save space
-  ctx.save();
-  ctx.font = '36px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.globalAlpha = unlocked ? 0.9 : 0.3;
-  ctx.fillText(c.icon || '✨', W / 2, oy + 34);
-  ctx.restore();
-  oy += 78;
-
-  // ── Name ──
+  // ── Name + Icon row (compact) — STORY-00319: icon inline with name, no large separate block
   ctx.save();
   ctx.font = 'bold 22px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = unlocked ? '#f0eaff' : 'rgba(150,140,180,0.6)';
-  ctx.fillText(c.nameZh, W / 2, oy);
-  oy += 28;
+  ctx.fillText(c.nameZh, W / 2, oy + 14);
+  oy += 30;
 
-  ctx.font = '14px sans-serif';
+  ctx.font = '13px sans-serif';
   ctx.fillStyle = 'rgba(160,150,200,0.8)';
   ctx.fillText(c.nameEn, W / 2, oy);
-  oy += 28;
+  oy += 24;
   ctx.restore();
 
   if (!unlocked) {
@@ -337,13 +326,13 @@ function _drawDetail(ctx, W, H, t) {
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = 'rgba(200,195,240,0.85)';
-      ctx.fillText(info.label + ' ' + info.value, cardX + 8, oy);
+      ctx.fillText(info.label + ' ' + info.value, cardX, oy);
       oy += 22;
       ctx.restore();
     }
-    oy += 10;
+    oy += 8;
 
-    // ── Star chart (STORY-00251) — STORY-00305: reduce chart size to 55% card width max 170px
+    // ── Star chart — STORY-00319: kept, 55% card width max 170px
     if (c.stars && c.stars.length > 0) {
       const CHART_SIZE = Math.min(cardW * 0.55, 170);
       const chartX = cardX + (cardW - CHART_SIZE) / 2;
@@ -412,16 +401,16 @@ function _drawDetail(ctx, W, H, t) {
       oy += CHART_SIZE + 12;
     }
 
-    // ── Photo carousel ──
+    // ── Photo carousel — STORY-00319 (CR-116): height 180px, fallback "📷 暂无图片" ──
     const photos = c.photos || (c.photo ? [c.photo] : []);
     if (_carouselForIdx !== _detailIdx) {
       _carouselForIdx = _detailIdx;
       _carouselImgs = [];
       photos.forEach((url, i) => _loadPhotoAtPos(url, i, _detailIdx));
     }
-    const PHOTO_H = 160;
-    const photoX = cardX + 8;
-    const photoW = cardW - 16;
+    const PHOTO_H = 180;  // STORY-00319: was 160 — taller for better photo framing
+    const photoX = cardX;
+    const photoW = cardW;
     const slot = _carouselImgs[_carouselPos] || { img: null, loaded: false, error: false };
 
     ctx.save();
@@ -434,16 +423,16 @@ function _drawDetail(ctx, W, H, t) {
     ctx.clip();
     if (slot.loaded && slot.img) {
       ctx.drawImage(slot.img, photoX, oy, photoW, PHOTO_H);
-    } else if (slot.error) {
-      // STORY-00305: photo failed to load — show constellation icon + name as placeholder
-      ctx.font = '36px sans-serif';
+    } else if (slot.error || photos.length === 0) {
+      // STORY-00319: no photos or failed load — "📷 暂无图片" placeholder
+      ctx.font = '28px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
-      ctx.fillStyle = 'rgba(200,190,255,0.6)';
-      ctx.fillText(c.icon || '★', photoX + photoW / 2, oy + PHOTO_H / 2 - 14);
+      ctx.fillStyle = 'rgba(180,170,220,0.5)';
+      ctx.fillText('📷', photoX + photoW / 2, oy + PHOTO_H / 2 - 16);
       ctx.font = '13px sans-serif';
-      ctx.fillStyle = 'rgba(160,150,200,0.7)';
-      ctx.fillText(c.nameZh || '', photoX + photoW / 2, oy + PHOTO_H / 2 + 20);
+      ctx.fillStyle = 'rgba(160,150,200,0.65)';
+      ctx.fillText('暂无图片', photoX + photoW / 2, oy + PHOTO_H / 2 + 14);
     } else {
       ctx.font = '13px sans-serif';
       ctx.textAlign = 'center';
@@ -505,8 +494,8 @@ function _drawDetail(ctx, W, H, t) {
     ctx.strokeStyle = 'rgba(120,100,200,0.3)';
     ctx.lineWidth = 1;
     ctx.beginPath();
-    ctx.moveTo(cardX + 8, oy);
-    ctx.lineTo(cardX + cardW - 8, oy);
+    ctx.moveTo(cardX, oy);
+    ctx.lineTo(cardX + cardW, oy);
     ctx.stroke();
     ctx.restore();
     oy += 14;
@@ -517,14 +506,23 @@ function _drawDetail(ctx, W, H, t) {
     ctx.fillStyle = 'rgba(210,205,240,0.9)';
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    const lines = _wrapText(ctx, c.lore || '', cardW - 16);
+    const lines = _wrapText(ctx, c.lore || '', cardW);
     for (const line of lines) {
-      ctx.fillText(line, cardX + 8, oy);
+      ctx.fillText(line, cardX, oy);
       oy += 18;
     }
     ctx.restore();
-    oy += 24;
+    oy += 20;
   }
+
+  // ── Bottom return button — STORY-00319: always at bottom, above SAFE_BOTTOM ──
+  const btnH = 38;
+  _detailBottomBackRect = { x: cardX + cardW / 2 - 60, y: oy, w: 120, h: btnH };
+  drawButton(ctx, cardX + cardW / 2 - 60, oy, 120, btnH, '← 返回列表', {
+    fontSize: 13, radius: 10,
+    color0: 'rgba(60,50,120,0.85)', color1: 'rgba(40,35,90,0.85)',
+  });
+  oy += btnH + (G.SAFE_BOTTOM || 0) + 20;
 
   _detailTotalH = oy;
 
@@ -678,7 +676,8 @@ function _onTouchEnd(e) {
       return;
     }
     // Carousel navigation (adjust for scroll offset)
-    const scrolledTY = ty + _detailScrollY - (G.SAFE_TOP + 58);
+    const CLIP_TOP = (G.SAFE_TOP || 0) + 58;
+    const scrolledTY = ty + _detailScrollY - CLIP_TOP;
     if (_carouselPrevRect && hitTest({ x: _carouselPrevRect.x, y: _carouselPrevRect.y, w: _carouselPrevRect.w, h: _carouselPrevRect.h }, tx, scrolledTY)) {
       const c = CONSTELLATIONS[_detailIdx];
       const photos = c.photos || (c.photo ? [c.photo] : []);
@@ -689,6 +688,11 @@ function _onTouchEnd(e) {
       const c = CONSTELLATIONS[_detailIdx];
       const photos = c.photos || (c.photo ? [c.photo] : []);
       if (_carouselPos < photos.length - 1) { _carouselPos++; }
+      return;
+    }
+    // Bottom return button (STORY-00319: scroll-adjusted hit test)
+    if (_detailBottomBackRect && hitTest({ x: _detailBottomBackRect.x, y: _detailBottomBackRect.y, w: _detailBottomBackRect.w, h: _detailBottomBackRect.h }, tx, scrolledTY)) {
+      _view = 'list';
       return;
     }
   }

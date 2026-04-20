@@ -468,3 +468,47 @@ User real-device verification submitted 2026-04-19. Issues:
 (8) 展厅细节不是手机大小/图片不显示 → STORY-00305: gallery detail layout全面重设计；修复photo加载路径
 (9) 展厅返回到关卡 → STORY-00302: gallery.js:620 `_navigate('levels')` → `_navigate('menu')`
 
+## CR-113 (mini): 开局动画星座固定为猎户座 + 星星大小视觉修复 (Sprint 35-mini approved 2026-04-20)
+当前 intro.js 每次随机选取星座（`Math.random() * CONSTELLATIONS.length`），导致星星排列每次不同、视觉混乱。部分用户反映"星星排列非常差，不如之前版本"。
+修复：(1) 固定使用猎户座（Orion，CONSTELLATIONS[0]）作为开局动画星座，与HTML版保持一致。(2) 星星尺寸范围改为 `Math.max(3, Math.min(8, 10 - (s.mag || 3)))` — 更大的基准尺寸，突出大小对比感。(3) SIZE从 `Math.min(W,H)*0.50` 改为 `Math.min(W,H)*0.65`，让星座更大更壮观。(4) 星座居中微调：cy = H * 0.32（稍低一点，给流星区让出更多空间）。
+
+## CR-114 (mini): 封面按钮布局优化 — 消除拥挤感，增加呼吸空间 (Sprint 35-mini approved 2026-04-20)
+用户反馈主菜单"太拥挤，有的地方又很空"。当前landscape模式按钮区域占右侧60%+，按钮高度26-30px间距8px，导致3个按钮堆在一起。
+修复：(1) Landscape模式：右侧按钮区改为 rightX = W * 0.60（星座占左侧60%），rightW自适应，BH = max(34, min(40, (H - safe - 80) / 3))（更高的按钮），GAP从8→14。(2) 按钮与标题间距增加：btnStartY = H * 0.38（下移，远离标题）。(3) 星座信息面板（constellation info panel）与按钮分区更清晰：面板固定在星座左下角，不与按钮列重叠。(4) Portrait模式：BH = max(44, min(52, ...))，GAP = 16，更贴近HTML版效果。
+
+## CR-115 (mini): 星座图鉴列表 — 更小卡片，5列布局，emoji图标替换 (Sprint 35-mini approved 2026-04-20)
+用户反馈"一排只能看3个，很丑"。当前COLS=4，卡片仍然偏大。
+修复：(1) COLS从4改为5（landscape模式）— 与HTML版的密集网格感对齐。Portrait模式：COLS=4。(2) 卡片高度从 CARD_W+24 改为 CARD_W+16（更方形，更紧凑）。(3) GAP从8→6。(4) 已解锁星座：卡片内只显示2字中文名（从完整nameZh取前2字）+ 星评，不显示emoji图标（emoji在不同设备渲染差异大）。(5) 未解锁：纯深色 + "？"字样。(6) 卡片圆角从8→10px，更精致。
+
+## CR-116 (mini): 星座图鉴详情页 — 全面重排，刘海安全区修复，图片加载修复 (Sprint 35-mini approved 2026-04-20)
+用户反馈"文字图片布局糟糕，有些被刘海挡住，图片展示不出来"。
+修复：(1) 顶部导航栏（返回+上一个/下一个）严格使用 SAFE_LEFT/SAFE_TOP/SAFE_RIGHT 定位，所有按钮不侵入安全区。(2) 内容区域左右边距：SL = SAFE_LEFT + 12, SR = SAFE_RIGHT + 12。(3) 图片加载：检查 `_photoUrls` 来源 — 若当前图片URL为空或加载失败，显示constellation icon + "暂无图片"占位符（已有逻辑，但需验证URL数组不为空）。确认 CONSTELLATION_PHOTOS[c.key] 中的URL是否可访问，若全部失败需fallback到constellation SVG star chart。(4) 布局顺序：上部固定导航 → 星座名+图标 → 基本信息(3行) → 图片轮播区（固定高度180px）→ 神话故事文本（可滚动）→ 底部返回按钮（SAFE_BOTTOM上方）。(5) 字体大小：名称22px，英文16px，信息14px，故事13px。
+
+## CR-117 (mini): 道具商店视觉全面升级 — 星空主题高端配色 (Sprint 36-mini approved 2026-04-20)
+用户反馈"道具列表颜色图案非常幼稚，和整体高端体系不搭"。当前emoji图标 + 彩色badge的风格过于卡通。
+修复：(1) 卡片背景改为深蓝紫渐变（`rgba(12,8,40,0.92)` → `rgba(20,14,60,0.85)`），边框为微光金线（`rgba(180,140,255,0.35)`）。(2) 图标区：用Canvas绘制各道具的几何图形替代emoji——网兜加速=闪电光束；磁力=磁场弧线；炸弹=爆炸星形；时间延长=沙漏轮廓；缩小垃圾=压缩箭头；星图揭示=星座线图；手套=盾形；双倍金币=双层六角星。图标颜色：主色调金色/紫色，背景圆形渐变光晕。(3) 主动/被动类型badge：改为细线描边风格（不用填充色块），更精致。(4) 价格：金色数字，前置🪙符号，字号16px。(5) 已拥有数量badge：右上角小圆点，深紫+金色数字。(6) 购买按钮：gradient从 `#5533aa` → `#8855ee`，hover状态有glow效果。
+
+## CR-118 (mini): 游戏女角色深度重绘 — 对标HTML SVG版本 (Sprint 36-mini approved 2026-04-20)
+用户反馈"游戏界面女巫很丑"。当前Canvas绘制的角色头部偏小、服装细节少、整体比例不协调。
+修复：参考HTML版 girl.svg 的视觉标准重绘：(1) 头部放大：head radius 28（当前约20），头身比接近1:3。(2) 眼睛：白色巩膜r=5，紫色虹膜r=4，黑色瞳孔r=2，白色反光点r=1.8。(3) 腮红：粉色半透明圆形 r=6，眼部下方。(4) 头发：深棕黑色bezier后发（延伸至肩膀），刘海弧线，双马尾（用bezier绘制），紫色蝴蝶结发夹。(5) 裙子：梯形渐变 #6633aa→#cc44aa，裙摆宽度±40px（当前±32），裙边白色花边（半圆弧5px间隔）。(6) 帽子：witch hat，帽檐 rx=34 ry=5，帽筒高38px微弯，金色帽带，顶端★装饰16px。(7) 手臂：右臂上举持杆（角度-55°），左臂平衡（角度15°），手掌圆形r=5。(8) 鞋子：深紫尖头鞋，bezier绘制。(9) 全身光晕：紫色radial gradient，半径80px，强度0.15。GIRL_W=90, GIRL_H=145（适当放大）。
+
+## CR-119 (mini): 胜利界面全面重设计 — 去冗余、修按钮重叠、优化排版 (Sprint 36-mini approved 2026-04-20)
+用户反馈"胜利界面非常冗余、按钮重叠、文字展示效果糟糕、排版很差"。
+修复：(1) 卡片高度重计算：cardH = min(H - 20, 360)，cardY = (H - cardH) / 2。不再根据victory/fail区分高度（统一，避免fail卡过小）。(2) 标题区（卡顶32px）：一行显示"✦ 关卡完成！"（胜利）或"⏰ 时间到了！"（失败），字号22px，不显示constellation icon（节省空间）。(3) 统计行（28px）：星评 ★★★ | +X金币 | 剩余Ys — 三段水平居中，字号13px，各段有颜色区分。(4) 照片区（胜利时仅，120px高）：居中，圆角12px，左右边距16px。若无照片则隐藏该区域（不留空白）。(5) 故事区：最大高度 = cardH - 顶部区域 - 按钮区域 - 40，overflow用Canvas clip截断，底部渐隐效果（gradient from transparent to card-bg）表示还有更多内容。(6) 按钮区（底部52px）：3个按钮均匀分布在卡片底部，每个宽度=(cardW-40)/3，高度36px，间距10px。失败界面只有2个按钮（重试+选关）居中。(7) 所有按钮文字：14px，不能超出按钮边界。
+
+## CR-120 (mini): 胜利瞬间星星按顺序闪烁，对标HTML (Sprint 37-mini approved 2026-04-20)
+用户反馈"游戏胜利那一刻星星没有按照顺序闪烁，目前只是连线，效果和html不一致"。
+HTML版 complete.js 行为：抓完最后一颗星后 → (1) 所有星星先变暗 (2) 按照constellation.lines顺序，每条线的两端星星先依次"点亮闪烁"（逐个reveal，200ms间隔）(3) 点亮的星星闪烁3次（scale 1→1.8→1，发光） (4) 然后金线从点亮的星到下一颗星延伸。
+当前Mini版只有 _revealedStarSet 在linedraw阶段标记，但没有逐星闪烁动画（只是alpha变化）。
+修复：(1) 在 celebrate阶段结束、linedraw开始时，增加 "star flash sequence"：遍历constellation lines，按顺序每隔150ms将该条线两端星标记为 _flashingStars，每颗星flash动画=3帧×scale脉冲（1.0→2.0→1.0，配合shadowBlur 0→20→0）。(2) linedraw阶段：只有 _flashingStars 集合中的星才开始连线（不是时间驱动，而是flash完成驱动）。(3) 保留现有 _revealedStarSet 机制，_flashingStars 是其前置动画层。
+
+## CR-121 (mini): 胜利后点击选关不闪烁 — 修复女巫与list并行出现 (Sprint 37-mini approved 2026-04-20)
+用户反馈"胜利后点击选关，会出现闪烁，女巫和list并行出现"。
+根因分析：`btnLevels` 点击时调用 `fadeNavigate(() => _navigate('levels'))`，但 `_cleanup()` 未在此路径调用（只在 gallery 路径调用了 _cleanup）。导致 game.js 的 RAF 在 levels 屏渲染时仍在运行，两个画面叠加产生闪烁。
+修复：在 game.js 的 btnLevels 点击处理中，与 gallery 路径相同，先调用 `_cleanup()` 再调用 `fadeNavigate()`：
+```
+_cleanup();
+fadeNavigate(() => _navigate('levels'));
+```
+同样检查 btnNext（下一关）路径是否也有类似问题——若 _phase 不是 play，也需要先 _cleanup() 再 navigate。
+

@@ -41,8 +41,8 @@ export function showIntro(navigate) {
   // (root cause of black screen on real device: _fadeAlpha=1 from prior fadeNavigate call)
   resetFade();
 
-  // Pick a random unlocked-like constellation (just use a random one)
-  _conDef = CONSTELLATIONS[Math.floor(Math.random() * CONSTELLATIONS.length)];
+  // STORY-00316 (CR-113): Fixed Orion — consistent with HTML version, best shape for intro
+  _conDef = CONSTELLATIONS[0]; // 猎户座 (Orion)
   _buildConStars();
 
   // Spawn initial meteors — 4 with born=0 for immediate visibility (STORY-00283)
@@ -90,16 +90,16 @@ function _buildConStars() {
   const H = G.SCREEN_H;
   // STORY-00290: Constellation in upper 35% of screen — better visual proportion
   // Portrait: cx=center, cy=28% down; Landscape: similar upper placement
-  const SIZE = Math.min(W, H) * 0.50;
+  const SIZE = Math.min(W, H) * 0.65;  // STORY-00316: was 0.50 — larger, more impressive
   const cx = W / 2;
-  const cy = H * 0.28;  // was H*0.42 — moved to upper area for breathing room with title
+  const cy = H * 0.32;  // STORY-00316: was 0.28 — slightly lower for balance with meteors
   const PAD = 18;
   const AREA = SIZE - PAD * 2;
 
   _mappedStars = _conDef.stars.map(s => ({
     x: cx - SIZE / 2 + PAD + s.x * AREA,
     y: cy - SIZE / 2 + PAD + s.y * AREA,
-    r: Math.max(2, Math.min(6, 8 - (s.mag || 3))),
+    r: Math.max(3, Math.min(8, 10 - (s.mag || 3))),  // STORY-00316: was max(2,min(6,...)) — larger range, stronger size contrast
   }));
   _mappedLines = _conDef.lines || [];
 }
