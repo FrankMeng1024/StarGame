@@ -1,5 +1,16 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 30/31/32-mini — 2026-04-20 (visual quality full upgrade, 8 Stories)
+
+Sprint 30/31/32-mini: QA PASS (code-path), Arch PASS, UX no Blockers. DevTools offline for real screenshots.
+- All 8 Stories STORY-00301~00308 coded and committed. Zero bugs found during code-path verification.
+- [pending] DevTools login session expired during Sprint (QR code required). Code-path verification floor: HIGH confidence for pure logic/numeric ACs, MEDIUM for visual ACs. Visual ACs for STORY-00301 (black screen) and STORY-00306 (girl appearance) remain MEDIUM. To upgrade to HIGH: user must scan WeChat QR code in DevTools, then re-run mss_check.py + mss_navigate.py.
+- [pending] VU real-screenshot acceptance blocked by same DevTools login. Once DevTools is online, trigger VU evaluation for Sprint 30/31/32-mini (8 Stories done, all CR-112 items delivered).
+- [archived: docs/qa/knowledge.md §Sprint30-mini] _cleanup() must be called BEFORE fadeNavigate() not inside the callback — game RAF must stop immediately so canvas is clean when gallery renders. Pattern: game teardown is synchronous, fade is async; sync teardown always comes first.
+- [archived: docs/qa/knowledge.md §Sprint30-mini] _revealedStarSet: stars dim until their line is drawn. Set cleared in _cleanup(). Stars get idx property in _initStars matching the array index used in constellation line definitions. Lines[i][0] and [i][1] are star indices.
+- [archived: docs/qa/knowledge.md §Sprint31-mini] Victory card boundary formula: cardH = Math.min(r.victory ? 420 : 300, H-20); cardY = Math.max(10, (H-cardH)/2). Buttons always at bY = cardY+cardH-btnH-10. Removed btnShop and btnGallery secondary row (set to null) to prevent overflow.
+- [archived: docs/qa/knowledge.md §Sprint31-mini] Gallery detail: icon 36px (was 52), CHART_SIZE = Math.min(cardW*0.55, 170), 8s photo load timeout with error placeholder.
+
 ## Sprint 29-mini — 2026-04-19 (text parity: gallery header + victory/fail headlines)
 
 Sprint 29-mini: clean Sprint, no retrospective actions.

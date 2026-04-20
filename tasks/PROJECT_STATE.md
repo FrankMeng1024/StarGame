@@ -1,14 +1,14 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: Sprint 29-mini COMPLETE — VU ACCEPTED 9.6/10 (2026-04-19). Gallery header "星座图鉴" + victory "关卡完成！" + fail "⏰ 时间到了！" all verified with real screenshots. PROJECT COMPLETE.
-**Current Sprint**: Sprint 29-mini
-**Last Updated**: 2026-04-19
+**Status**: Sprint 32-mini COMPLETE — Arch PASS + QA PASS (code-path, DevTools offline) + UX no Blockers. 8 Stories STORY-00301~00308 Done. VU check pending (DevTools login needed for real screenshot acceptance).
+**Current Sprint**: Sprint 32-mini
+**Last Updated**: 2026-04-20
 
-> **Mini branch current**: Sprint 29-mini COMPLETE — STORY-00299 (画廊标题) + STORY-00300 (胜利/失败文字Web对齐) verified. VU ACCEPTED 9.6/10. No open backlog.
+> **Mini branch current**: Sprint 32-mini COMPLETE — STORY-00301~00308 all Done. Visual quality full upgrade: black screen fix, gallery flicker fix, star animation, victory card, gallery detail redesign, girl redesign, item overlay redesign, web parity verification. QA PASS (code-path). VU pending real screenshots (DevTools login required).
 
 ## Mini branch 微信小游戏分支（mini branch）
 
-**Status**: COMPLETE — VU ACCEPTED 9.6/10 (2026-04-19). Sprint 29-mini verified: 画廊标题"星座图鉴"/胜利"关卡完成！"/失败"⏰ 时间到了！". All PRD+CR features Done. PROJECT COMPLETE.
+**Status**: Sprint 32-mini COMPLETE — Arch PASS + QA PASS (code-path) + UX no Blockers. All 8 Stories STORY-00301~00308 Done. VU real-screenshot acceptance pending DevTools re-login.
 
 ## Sprint History
 | Sprint | Status | Goal |
@@ -58,6 +58,9 @@
 | Sprint 27-mini | COMPLETE | SPIKE-002 全屏幕导航管道验证 — mss_navigate.py exit 0 |
 | Sprint 28-mini | COMPLETE | 去成就按钮/商店Web对齐/时间延长+20s/星座信息面板 (STORY-00295~00298) — VU ACCEPTED 9.5/10 |
 | Sprint 29-mini | COMPLETE | 画廊标题"星座图鉴" + 胜利/失败文字Web对齐 (STORY-00299~00300) — VU ACCEPTED 9.6/10 |
+| Sprint 30-mini | COMPLETE | 修复3个Blocker级真机bug: 黑屏/展厅闪烁/星连线动画 (STORY-00301~00303) — QA PASS (code-path) |
+| Sprint 31-mini | COMPLETE | 通关界面修复: 结算卡不超边界+3按钮/展厅详情重设计 (STORY-00304~00305) — QA PASS (code-path) |
+| Sprint 32-mini | COMPLETE | 视觉品质全面升级: 女角角色/道具覆盖层/全流程Web对标 (STORY-00306~00308) — QA PASS (code-path) |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
