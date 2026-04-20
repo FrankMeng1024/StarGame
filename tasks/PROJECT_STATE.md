@@ -1,10 +1,10 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: Sprint 34-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE.
-**Current Sprint**: Sprint 34-mini
+**Status**: Sprint 36-mini COMPLETE — VU pending.
+**Current Sprint**: Sprint 36-mini → Sprint 37-mini planning
 **Last Updated**: 2026-04-20
 
-> **Mini branch current**: Sprint 34-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE. 3 Stories STORY-00313~00315 Done. Menu dark pill buttons (STORY-00313), fail/game real screenshots (STORY-00314), gallery detail screenshot (STORY-00315). Full real-screenshot VU acceptance passed.
+> **Sprint 36-mini COMPLETE**: 3 Stories STORY-00320~00322 Done. Shop canvas icons + deep blue-purple gradient cards (STORY-00320). Girl character anime redraw GIRL_W=90 GIRL_H=145 (STORY-00321). Victory/fail screen redesign compact card+non-overlapping buttons (STORY-00322). Arch PASS (rope origin bug fixed). QA PASS + UX no Blockers. VU evaluation pending.
 
 ## Mini branch 微信小游戏分支（mini branch）
 
@@ -63,6 +63,8 @@
 | Sprint 32-mini | COMPLETE | 视觉品质全面升级: 女角角色/道具覆盖层/全流程Web对标 (STORY-00306~00308) — VU ACCEPTED 9.6/10 — PROJECT COMPLETE |
 | Sprint 33-mini | COMPLETE | Web跨平台对标: 商店网格/失败统计行/游戏HUD (STORY-00309~00311) — VU ACCEPTED 9.6/10 — PROJECT COMPLETE |
 | Sprint 34-mini | COMPLETE | 证据缺口补全+菜单深色按钮: 深色药丸按钮/失败+游戏实时截图/画廊详情截图 (STORY-00313~00315) — VU ACCEPTED 9.6/10 — PROJECT COMPLETE |
+| Sprint 35-mini | COMPLETE | 视觉品质修复: 开场动画星星大小/封面按钮布局/图鉴5列网格/安全区域适配 (STORY-00316~00319) — QA PASS + UX no Blockers |
+| Sprint 36-mini | COMPLETE | 道具商店视觉升级+女角色重绘+胜利界面重设计 (STORY-00320~00322) — Arch PASS + QA PASS + UX no Blockers |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |

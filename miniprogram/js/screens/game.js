@@ -24,8 +24,8 @@ const SWING_SPEED   = Math.PI * 2 / (3.5 * 60);   // 3.5s per full cycle
 const SWING_AMP     = (80 * Math.PI) / 180;         // ±80° in radians
 const NET_SPEED     = 4;                             // px per frame — STORY-00286: reduced from 5 (web parity ~240px/s at 60fps)
 const NET_MAX_LEN   = 0;                             // computed at showGame time (55% H)
-const GIRL_W        = 80;
-const GIRL_H        = 130;
+const GIRL_W        = 90;
+const GIRL_H        = 145;
 
 // ── 游戏状态机 ────────────────────────────────────────────────
 let _navigate   = null;
@@ -628,9 +628,9 @@ function _updateNet(dt) {
 }
 
 function _updateNetHead() {
-  // Rope origin = girl's right hand position (STORY-00278: updated for 130px character)
-  const ropeOriX = _poleX + 14;
-  const ropeOriY = _poleY - 62;
+  // Rope origin = girl's right hand position (STORY-00321: updated for 145px character v6)
+  const ropeOriX = _poleX + 18;
+  const ropeOriY = _poleY - 75;
   _netHeadX = ropeOriX + Math.sin(_netAngle) * _netLen;
   _netHeadY = ropeOriY - Math.cos(_netAngle) * _netLen;
 }
@@ -1018,8 +1018,9 @@ function _drawParticles(ctx) {
   }
 }
 
-// ── Draw: girl character (STORY-00293) ───────────────────────
-// v5: rim light + hair shine streak + waist ribbon + richer hat band
+// ── Draw: girl character (STORY-00321) ───────────────────────
+// v6: GIRL_W=90 GIRL_H=145, head r=28, expressive anime eyes,
+//     flowing bezier hair, flared dress ±40px, lace hem, arms per spec.
 // Origin: center bottom at (_poleX, _poleY). All coords relative to that.
 function _drawGirl(ctx) {
   const x = _poleX;
@@ -1028,319 +1029,296 @@ function _drawGirl(ctx) {
   ctx.save();
   ctx.translate(x, y);
 
-  // ── Body aura (magical glow behind whole character) ──────────
-  const auraGrd = ctx.createRadialGradient(0, -55, 5, 0, -55, 70);
-  auraGrd.addColorStop(0, 'rgba(120,60,200,0.15)');
-  auraGrd.addColorStop(1, 'rgba(120,60,200,0)');
+  // ── Body aura ────────────────────────────────────────────────
+  const auraGrd = ctx.createRadialGradient(0, -70, 8, 0, -70, 80);
+  auraGrd.addColorStop(0, 'rgba(140,80,220,0.18)');
+  auraGrd.addColorStop(1, 'rgba(100,40,180,0)');
   ctx.fillStyle = auraGrd;
-  ctx.beginPath(); ctx.arc(0, -55, 70, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -70, 80, 0, TWO_PI); ctx.fill();
 
-  // ── Shoes (pointed, dark purple) ─────────────────────────────
+  // ── Shoes (dark purple bezier pointed tips) ──────────────────
   ctx.fillStyle = '#2a0d40';
   ctx.beginPath();
-  ctx.moveTo(-12, 12); ctx.bezierCurveTo(-15, 12, -20, 16, -18, 19);
-  ctx.bezierCurveTo(-16, 22, -9, 22, -7, 19); ctx.lineTo(-9, 12); ctx.closePath(); ctx.fill();
+  ctx.moveTo(-13, 14); ctx.bezierCurveTo(-16, 14, -22, 18, -20, 21);
+  ctx.bezierCurveTo(-18, 24, -10, 24, -8, 21); ctx.lineTo(-10, 14); ctx.closePath(); ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(12, 12); ctx.bezierCurveTo(15, 12, 20, 16, 18, 19);
-  ctx.bezierCurveTo(16, 22, 9, 22, 7, 19); ctx.lineTo(9, 12); ctx.closePath(); ctx.fill();
+  ctx.moveTo(13, 14); ctx.bezierCurveTo(16, 14, 22, 18, 20, 21);
+  ctx.bezierCurveTo(18, 24, 10, 24, 8, 21); ctx.lineTo(10, 14); ctx.closePath(); ctx.fill();
 
   // ── Legs ──────────────────────────────────────────────────────
   ctx.strokeStyle = '#e8b89a';
-  ctx.lineWidth   = 5;
+  ctx.lineWidth   = 6;
   ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.moveTo(-6, 4); ctx.lineTo(-10, 14); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(6, 4);  ctx.lineTo(10, 14); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(-7, 5); ctx.lineTo(-11, 16); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(7, 5);  ctx.lineTo(11, 16);  ctx.stroke();
 
-  // ── White petticoat (below dress hem) ────────────────────────
+  // ── White petticoat ──────────────────────────────────────────
   ctx.save();
-  ctx.globalAlpha = 0.55;
+  ctx.globalAlpha = 0.50;
   ctx.fillStyle   = '#f0eaff';
   ctx.beginPath();
-  ctx.moveTo(-28, 2); ctx.quadraticCurveTo(-22, 12, -16, 10);
-  ctx.quadraticCurveTo(-5, 14, 0, 14);
-  ctx.quadraticCurveTo(5, 14, 16, 10);
-  ctx.quadraticCurveTo(22, 12, 28, 2);
-  ctx.lineTo(20, 2); ctx.lineTo(-20, 2); ctx.closePath(); ctx.fill();
+  ctx.moveTo(-32, 3); ctx.quadraticCurveTo(-24, 14, -18, 12);
+  ctx.quadraticCurveTo(-5, 16, 0, 16);
+  ctx.quadraticCurveTo(5, 16, 18, 12);
+  ctx.quadraticCurveTo(24, 14, 32, 3);
+  ctx.lineTo(24, 3); ctx.lineTo(-24, 3); ctx.closePath(); ctx.fill();
   ctx.restore();
 
-  // ── Dress ────────────────────────────────────────────────────
-  const dressGrd = ctx.createLinearGradient(-32, -42, 32, 8);
-  dressGrd.addColorStop(0, '#6633aa');
-  dressGrd.addColorStop(0.5, '#9944cc');
-  dressGrd.addColorStop(1, '#cc44aa');
+  // ── Dress body ───────────────────────────────────────────────
+  const dressGrd = ctx.createLinearGradient(-40, -50, 40, 10);
+  dressGrd.addColorStop(0, '#5522aa');
+  dressGrd.addColorStop(0.45, '#8833cc');
+  dressGrd.addColorStop(1, '#bb33aa');
   ctx.fillStyle = dressGrd;
   ctx.beginPath();
-  ctx.moveTo(-12, -42);
-  ctx.lineTo(-32, 4);          // STORY-00285: was -26
-  ctx.quadraticCurveTo(-24, 12, -16, 10);
-  ctx.quadraticCurveTo(-5, 14, 0, 14);
-  ctx.quadraticCurveTo(5, 14, 16, 10);
-  ctx.quadraticCurveTo(24, 12, 32, 4);  // STORY-00285: was 26
-  ctx.lineTo(12, -42);
+  ctx.moveTo(-14, -50);
+  ctx.lineTo(-40, 5);
+  ctx.quadraticCurveTo(-28, 14, -18, 12);
+  ctx.quadraticCurveTo(-5, 16, 0, 16);
+  ctx.quadraticCurveTo(5, 16, 18, 12);
+  ctx.quadraticCurveTo(28, 14, 40, 5);
+  ctx.lineTo(14, -50);
   ctx.closePath(); ctx.fill();
-  // Dress shimmer
-  ctx.save();
-  ctx.globalAlpha = 0.14;
-  const shimGrd = ctx.createLinearGradient(-5, -42, 2, 10);
+  // Dress shimmer streak
+  ctx.save(); ctx.globalAlpha = 0.13;
+  const shimGrd = ctx.createLinearGradient(-4, -50, 2, 12);
   shimGrd.addColorStop(0, '#ffffff'); shimGrd.addColorStop(1, 'rgba(255,255,255,0)');
   ctx.fillStyle = shimGrd;
-  ctx.beginPath(); ctx.moveTo(-4, -42); ctx.lineTo(-6, 8); ctx.lineTo(5, 8); ctx.lineTo(6, -42); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-4, -50); ctx.lineTo(-6, 10); ctx.lineTo(5, 10); ctx.lineTo(6, -50); ctx.closePath(); ctx.fill();
   ctx.restore();
   // Bodice sparkles
   ctx.save(); ctx.globalAlpha = 0.65; ctx.fillStyle = '#ffffff';
-  for (const [sx, sy] of [[-5, -32], [4, -24], [-2, -18], [6, -35]]) {
-    ctx.beginPath(); ctx.arc(sx, sy, 1.5, 0, TWO_PI); ctx.fill();
+  for (const [sx, sy] of [[-6, -38], [5, -30], [-3, -22], [7, -43]]) {
+    ctx.beginPath(); ctx.arc(sx, sy, 1.8, 0, TWO_PI); ctx.fill();
   }
   ctx.restore();
-  // STORY-00306: dress hem lace scallops
+  // Lace hem scallops — white half-circles along dress bottom edge (STORY-00321)
   ctx.save();
-  ctx.strokeStyle = '#f0c8f0';
-  ctx.lineWidth = 1.2;
-  ctx.globalAlpha = 0.6;
-  const hemY = 7;
-  for (let hx = -28; hx < 28; hx += 7) {
+  ctx.strokeStyle = '#f4d0f4';
+  ctx.lineWidth = 1.5;
+  ctx.globalAlpha = 0.65;
+  for (let hx = -36; hx < 36; hx += 5) {
     ctx.beginPath();
-    ctx.arc(hx + 3.5, hemY, 3.5, Math.PI, TWO_PI);
+    ctx.arc(hx + 2.5, 9, 2.5, Math.PI, TWO_PI);
     ctx.stroke();
   }
   ctx.restore();
 
-  // ── Waist ribbon (STORY-00293: v5) ────────────────────────────
+  // ── Waist bow ────────────────────────────────────────────────
   ctx.save();
-  // Bow center knot
   ctx.fillStyle = '#ff88bb';
-  ctx.shadowColor = '#ff44aa'; ctx.shadowBlur = 4;
-  ctx.beginPath(); ctx.ellipse(0, -42, 4, 3, 0, 0, TWO_PI); ctx.fill();
-  // Left bow petal
+  ctx.shadowColor = '#ff44aa'; ctx.shadowBlur = 5;
+  // Bow center knot
+  ctx.beginPath(); ctx.ellipse(0, -50, 4.5, 3.5, 0, 0, TWO_PI); ctx.fill();
+  // Left petal
   ctx.beginPath();
-  ctx.moveTo(-2, -42);
-  ctx.bezierCurveTo(-10, -47, -14, -46, -12, -41);
-  ctx.bezierCurveTo(-10, -37, -5, -39, -2, -42);
-  ctx.fill();
-  // Right bow petal
+  ctx.moveTo(-2, -50); ctx.bezierCurveTo(-11, -56, -16, -54, -13, -48);
+  ctx.bezierCurveTo(-11, -43, -5, -46, -2, -50); ctx.fill();
+  // Right petal
   ctx.beginPath();
-  ctx.moveTo(2, -42);
-  ctx.bezierCurveTo(10, -47, 14, -46, 12, -41);
-  ctx.bezierCurveTo(10, -37, 5, -39, 2, -42);
-  ctx.fill();
+  ctx.moveTo(2, -50); ctx.bezierCurveTo(11, -56, 16, -54, 13, -48);
+  ctx.bezierCurveTo(11, -43, 5, -46, 2, -50); ctx.fill();
   ctx.shadowBlur = 0;
   ctx.restore();
 
-  // ── Left arm (balance, 15° outward) ──────────────────────────
+  // ── Left arm — angle 15° outward for balance ─────────────────
   ctx.strokeStyle = '#f5c090';
-  ctx.lineWidth   = 4.5;
+  ctx.lineWidth   = 5;
   ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(-12, -36);
-  ctx.bezierCurveTo(-24, -33, -28, -20, -24, -12);
+  ctx.moveTo(-14, -44);
+  ctx.bezierCurveTo(-27, -40, -32, -26, -28, -16);
   ctx.stroke();
-  // Left hand
   ctx.fillStyle = '#f5c090';
-  ctx.beginPath(); ctx.arc(-24, -11, 4, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(-28, -15, 5, 0, TWO_PI); ctx.fill();
 
-  // ── Right arm (raised 45°, holding pole) ─────────────────────
+  // ── Right arm — angle -55° raised, holding pole ──────────────
   ctx.strokeStyle = '#f5c090';
-  ctx.lineWidth   = 4.5;
+  ctx.lineWidth   = 5;
   ctx.lineCap     = 'round';
   ctx.beginPath();
-  ctx.moveTo(12, -36);
-  ctx.bezierCurveTo(20, -42, 20, -54, 14, -62);
+  ctx.moveTo(14, -44);
+  ctx.bezierCurveTo(22, -52, 24, -65, 18, -75);
   ctx.stroke();
-  // Right hand
   ctx.fillStyle = '#f5c090';
-  ctx.beginPath(); ctx.arc(14, -62, 4, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(18, -75, 5, 0, TWO_PI); ctx.fill();
 
-  // ── Neck ──────────────────────────────────────────────────────
+  // ── Neck ─────────────────────────────────────────────────────
   ctx.fillStyle = '#f8d5b0';
   ctx.beginPath();
-  ctx.moveTo(-4, -42); ctx.lineTo(-3, -50); ctx.lineTo(3, -50); ctx.lineTo(4, -42);
+  ctx.moveTo(-5, -50); ctx.lineTo(-4, -60); ctx.lineTo(4, -60); ctx.lineTo(5, -50);
   ctx.closePath(); ctx.fill();
 
-  // ── Head (anime round, larger) ────────────────────────────
+  // ── Head (r=28) ──────────────────────────────────────────────
   ctx.fillStyle = '#f8d5b0';
-  ctx.beginPath(); ctx.arc(0, -66, 20, 0, TWO_PI); ctx.fill();  // STORY-00285: r=20 (was 16)
-  // Rim light outline — cool purple edge (STORY-00293: v5)
+  ctx.beginPath(); ctx.arc(0, -88, 28, 0, TWO_PI); ctx.fill();
+  // Rim light
   ctx.save();
-  ctx.strokeStyle = '#b080ff';
-  ctx.lineWidth   = 1.2;
-  ctx.globalAlpha = 0.5;
-  ctx.beginPath(); ctx.arc(0, -66, 21, 0, TWO_PI); ctx.stroke();
+  ctx.strokeStyle = '#b088ff';
+  ctx.lineWidth   = 1.5;
+  ctx.globalAlpha = 0.45;
+  ctx.beginPath(); ctx.arc(0, -88, 29, 0, TWO_PI); ctx.stroke();
   ctx.restore();
   // Ears
   ctx.fillStyle = '#f0c090';
-  ctx.beginPath(); ctx.arc(-20, -66, 4.5, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(20, -66, 4.5, 0, TWO_PI); ctx.fill();
-  // Cheek blush
-  ctx.save(); ctx.globalAlpha = 0.40; ctx.fillStyle = '#ff8899';
-  ctx.beginPath(); ctx.ellipse(-9, -61, 6, 4, 0, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(9, -61, 6, 4, 0, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(-28, -88, 5.5, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(28, -88, 5.5, 0, TWO_PI); ctx.fill();
+
+  // Cheek blush (r=6 per spec)
+  ctx.save(); ctx.globalAlpha = 0.38; ctx.fillStyle = '#ff8899';
+  ctx.beginPath(); ctx.ellipse(-12, -82, 6, 4.5, 0, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(12, -82, 6, 4.5, 0, 0, TWO_PI); ctx.fill();
   ctx.restore();
-  // Eyes — white sclera (STORY-00285: larger, more detailed)
+
+  // Eyes: white sclera r=5, purple iris r=4, black pupil r=2, white shine r=1.8
   ctx.fillStyle = '#f0f0ff';
-  ctx.beginPath(); ctx.ellipse(-6, -67, 4, 5, 0, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(6, -67, 4, 5, 0, 0, TWO_PI); ctx.fill();
-  // Colored iris — STORY-00306: radial gradient for depth
-  const irisGrd1 = ctx.createRadialGradient(-6, -68, 0.5, -6, -67, 3);
-  irisGrd1.addColorStop(0, '#8866ff');
-  irisGrd1.addColorStop(0.5, '#5533cc');
-  irisGrd1.addColorStop(1, '#2211aa');
-  ctx.fillStyle = irisGrd1;
-  ctx.beginPath(); ctx.arc(-6, -67, 3, 0, TWO_PI); ctx.fill();
-  const irisGrd2 = ctx.createRadialGradient(6, -68, 0.5, 6, -67, 3);
-  irisGrd2.addColorStop(0, '#8866ff');
-  irisGrd2.addColorStop(0.5, '#5533cc');
-  irisGrd2.addColorStop(1, '#2211aa');
-  ctx.fillStyle = irisGrd2;
-  ctx.beginPath(); ctx.arc(6, -67, 3, 0, TWO_PI); ctx.fill();
-  // Pupils
+  ctx.beginPath(); ctx.ellipse(-8, -90, 5, 6, 0, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(8, -90, 5, 6, 0, 0, TWO_PI); ctx.fill();
+  // Iris with radial gradient
+  const irisG1 = ctx.createRadialGradient(-8, -91, 0.5, -8, -90, 4);
+  irisG1.addColorStop(0, '#9977ff'); irisG1.addColorStop(0.5, '#6644cc'); irisG1.addColorStop(1, '#2211aa');
+  ctx.fillStyle = irisG1;
+  ctx.beginPath(); ctx.arc(-8, -90, 4, 0, TWO_PI); ctx.fill();
+  const irisG2 = ctx.createRadialGradient(8, -91, 0.5, 8, -90, 4);
+  irisG2.addColorStop(0, '#9977ff'); irisG2.addColorStop(0.5, '#6644cc'); irisG2.addColorStop(1, '#2211aa');
+  ctx.fillStyle = irisG2;
+  ctx.beginPath(); ctx.arc(8, -90, 4, 0, TWO_PI); ctx.fill();
+  // Pupils (r=2)
   ctx.fillStyle = '#1a0a2a';
-  ctx.beginPath(); ctx.arc(-6, -67, 1.8, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(6, -67, 1.8, 0, TWO_PI); ctx.fill();
-  // Eye shine (STORY-00285: larger dot) + secondary lower shine (STORY-00306)
+  ctx.beginPath(); ctx.arc(-8, -90, 2, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(8, -90, 2, 0, TWO_PI); ctx.fill();
+  // Eye shine r=1.8
   ctx.fillStyle = '#ffffff';
-  ctx.beginPath(); ctx.arc(-4.5, -69, 1.5, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(7.5, -69, 1.5, 0, TWO_PI); ctx.fill();
-  ctx.save(); ctx.globalAlpha = 0.6;
-  ctx.beginPath(); ctx.arc(-7, -65, 0.8, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(5, -65, 0.8, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(-6, -93, 1.8, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(10, -93, 1.8, 0, TWO_PI); ctx.fill();
+  ctx.save(); ctx.globalAlpha = 0.55;
+  ctx.beginPath(); ctx.arc(-9, -87, 1, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(6.5, -87, 1, 0, TWO_PI); ctx.fill();
   ctx.restore();
-  // Eyelashes — STORY-00306: short strokes on top of eyes
+  // Eyelashes
   ctx.save();
   ctx.strokeStyle = '#221133';
-  ctx.lineWidth = 1.2;
+  ctx.lineWidth = 1.4;
   ctx.lineCap = 'round';
-  for (const [ex, ew, edir] of [[-8, 3, -0.3], [-5, 3, 0], [-2, 2, 0.3], [4, 3, -0.3], [7, 3, 0], [10, 2, 0.3]]) {
-    const eyeCx = ex < 0 ? -6 : 6;
+  for (const [ex, eAngle] of [[-11, -0.3], [-7, 0], [-3, 0.3], [5, -0.3], [9, 0], [13, 0.3]]) {
+    const baseY = -95;
+    const eyeCx = ex < 0 ? -8 : 8;
+    const dx = (ex - eyeCx) * 0.5;
     ctx.beginPath();
-    ctx.moveTo(eyeCx + ew / 2 * Math.cos(edir - Math.PI / 2 + 0.1), -72 + 0.5 * Math.sin(edir - Math.PI / 2 + 0.1));
-    ctx.lineTo(eyeCx + ew / 2 * Math.cos(edir - Math.PI / 2 + 0.1), -72 - 2 + 0.5 * Math.sin(edir));
+    ctx.moveTo(eyeCx + dx, baseY);
+    ctx.lineTo(eyeCx + dx + Math.sin(eAngle) * 2, baseY - 3);
     ctx.stroke();
   }
   ctx.restore();
-  // Eyebrows (STORY-00285: more pronounced, 2.5px, arched)
+  // Eyebrows
   ctx.strokeStyle = '#331122';
-  ctx.lineWidth   = 2.5;
+  ctx.lineWidth   = 2.8;
   ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.moveTo(-10, -74); ctx.quadraticCurveTo(-6, -77, -2, -74); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(2, -74); ctx.quadraticCurveTo(6, -77, 10, -74); ctx.stroke();
-  // Smile — STORY-00306: lips with color
+  ctx.beginPath(); ctx.moveTo(-14, -97); ctx.quadraticCurveTo(-8, -101, -2, -97); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(2, -97); ctx.quadraticCurveTo(8, -101, 14, -97); ctx.stroke();
+  // Smile + lips
   ctx.save();
   ctx.strokeStyle = '#e05060';
-  ctx.lineWidth   = 2.2;
+  ctx.lineWidth   = 2.5;
   ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.arc(0, -62, 5, 0.3, Math.PI - 0.3); ctx.stroke();
-  // Lip fill
-  ctx.fillStyle = 'rgba(220, 80, 100, 0.35)';
-  ctx.beginPath(); ctx.arc(0, -62, 5, 0.3, Math.PI - 0.3); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -80, 6, 0.25, Math.PI - 0.25); ctx.stroke();
+  ctx.fillStyle = 'rgba(220,80,100,0.32)';
+  ctx.beginPath(); ctx.arc(0, -80, 6, 0.25, Math.PI - 0.25); ctx.closePath(); ctx.fill();
   ctx.restore();
 
-  // ── Hair — STORY-00306: dark brown gradient + multi-layer highlights ────────────
-  // Base hair color — dark brown gradient
-  const hairGrd = ctx.createLinearGradient(-14, -86, 14, -10);
+  // ── Hair ─────────────────────────────────────────────────────
+  const hairGrd = ctx.createLinearGradient(-18, -120, 18, -20);
   hairGrd.addColorStop(0, '#3d1a0a');
   hairGrd.addColorStop(0.4, '#2a0f05');
   hairGrd.addColorStop(1, '#1a0808');
   ctx.fillStyle = hairGrd;
-  // Back hair layers (twin tails sweep out)
+  // Back twin tails
   ctx.beginPath();
-  ctx.moveTo(-14, -53);
-  ctx.bezierCurveTo(-24, -40, -28, -24, -22, -10);
-  ctx.bezierCurveTo(-18, -2, -12, 2, -8, 4);
-  ctx.lineTo(-8, -10);
-  ctx.bezierCurveTo(-12, -24, -12, -42, -8, -56);
+  ctx.moveTo(-18, -66);
+  ctx.bezierCurveTo(-32, -52, -36, -32, -28, -14);
+  ctx.bezierCurveTo(-24, -4, -16, 2, -10, 4);
+  ctx.lineTo(-10, -14);
+  ctx.bezierCurveTo(-16, -32, -16, -56, -10, -70);
   ctx.closePath(); ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(14, -53);
-  ctx.bezierCurveTo(24, -40, 28, -24, 22, -10);
-  ctx.bezierCurveTo(18, -2, 12, 2, 8, 4);
-  ctx.lineTo(8, -10);
-  ctx.bezierCurveTo(12, -24, 12, -42, 8, -56);
+  ctx.moveTo(18, -66);
+  ctx.bezierCurveTo(32, -52, 36, -32, 28, -14);
+  ctx.bezierCurveTo(24, -4, 16, 2, 10, 4);
+  ctx.lineTo(10, -14);
+  ctx.bezierCurveTo(16, -32, 16, -56, 10, -70);
   ctx.closePath(); ctx.fill();
-  // Top hair cap
-  ctx.beginPath(); ctx.arc(0, -72, 18, Math.PI + 0.2, TWO_PI - 0.2); ctx.fill();
+  // Hair cap over head
+  ctx.beginPath(); ctx.arc(0, -95, 26, Math.PI + 0.15, TWO_PI - 0.15); ctx.fill();
   // Side tufts
-  ctx.beginPath(); ctx.ellipse(-18, -66, 6, 10, -0.28, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(18, -66, 6, 10, 0.28, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-24, -88, 7, 12, -0.3, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(24, -88, 7, 12, 0.3, 0, TWO_PI); ctx.fill();
   // Fringe
   ctx.beginPath();
-  ctx.moveTo(-18, -78);
-  ctx.bezierCurveTo(-12, -70, -4, -68, 0, -64);
-  ctx.bezierCurveTo(4, -68, 12, -70, 18, -78);
+  ctx.moveTo(-23, -102);
+  ctx.bezierCurveTo(-14, -93, -5, -88, 0, -84);
+  ctx.bezierCurveTo(5, -88, 14, -93, 23, -102);
   ctx.closePath(); ctx.fill();
-  // Hair highlight arc — purple shine (STORY-00285)
-  ctx.save();
-  ctx.strokeStyle = '#553399';
-  ctx.lineWidth   = 2.5;
-  ctx.globalAlpha = 0.45;
-  ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.arc(0, -76, 12, Math.PI + 0.4, TWO_PI - 0.4); ctx.stroke();
-  ctx.restore();
-  // Hair shine streak — bright diagonal highlight (STORY-00293: v5)
-  ctx.save();
-  ctx.strokeStyle = '#ccaaff';
-  ctx.lineWidth   = 1.5;
-  ctx.globalAlpha = 0.55;
-  ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.moveTo(-6, -80); ctx.bezierCurveTo(-3, -83, 3, -83, 8, -79); ctx.stroke();
-  ctx.restore();
-  // STORY-00306: second highlight streak — warm bronze tone
-  ctx.save();
-  ctx.strokeStyle = '#cc9955';
-  ctx.lineWidth   = 1.2;
-  ctx.globalAlpha = 0.35;
-  ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.moveTo(-8, -78); ctx.bezierCurveTo(-6, -81, -1, -82, 4, -78); ctx.stroke();
-  ctx.restore();
-  // STORY-00306: hair edge highlight on twin-tail right edge
+  // Hair highlight arc
   ctx.save();
   ctx.strokeStyle = '#664422';
-  ctx.lineWidth   = 1.5;
-  ctx.globalAlpha = 0.5;
-  ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.moveTo(22, -45); ctx.bezierCurveTo(26, -32, 26, -16, 22, -5); ctx.stroke();
+  ctx.lineWidth = 2;
+  ctx.globalAlpha = 0.4;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(0, -100, 16, Math.PI + 0.35, TWO_PI - 0.35); ctx.stroke();
   ctx.restore();
-  // Star hair clips (twin tail ties)
-  ctx.fillStyle = '#ffdd55';
-  ctx.shadowColor = '#ffd700'; ctx.shadowBlur = 4;
-  ctx.font = '10px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-  ctx.fillText('★', -20, -10);
-  ctx.fillText('★', 20, -10);
+  // Purple hair shine streak
+  ctx.save();
+  ctx.strokeStyle = '#ccaaff';
+  ctx.lineWidth = 1.8;
+  ctx.globalAlpha = 0.5;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-8, -104); ctx.bezierCurveTo(-4, -107, 4, -107, 10, -103); ctx.stroke();
+  ctx.restore();
+  // Purple butterfly hair clip on twin tails
+  ctx.fillStyle = '#9944ee';
+  ctx.shadowColor = '#cc66ff'; ctx.shadowBlur = 4;
+  // Left clip
+  ctx.beginPath(); ctx.ellipse(-24, -14, 5, 3, -0.4, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(-22, -16, 3, 2, 0.8, 0, TWO_PI); ctx.fill();
+  // Right clip
+  ctx.beginPath(); ctx.ellipse(24, -14, 5, 3, 0.4, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(22, -16, 3, 2, -0.8, 0, TWO_PI); ctx.fill();
   ctx.shadowBlur = 0;
 
-  // ── Witch hat (STORY-00285: wider brim, taller crown, polygon star) ────────────
-  const hatGrd = ctx.createLinearGradient(-26, -82, 26, -76);
-  hatGrd.addColorStop(0, '#4411aa');
-  hatGrd.addColorStop(1, '#7722cc');
+  // ── Witch hat (brim rx=34, crown height 38px, gold band, ★16px) ──
+  const hatGrd = ctx.createLinearGradient(-30, -108, 30, -102);
+  hatGrd.addColorStop(0, '#3a0e9a');
+  hatGrd.addColorStop(1, '#6622cc');
   ctx.fillStyle = hatGrd;
-  // Brim (wider: rx=26 was 22)
-  ctx.beginPath(); ctx.ellipse(0, -80, 26, 5.5, 0, 0, TWO_PI); ctx.fill();
-  // Crown (taller: crown to -114 was -108)
+  // Brim rx=34
+  ctx.beginPath(); ctx.ellipse(0, -106, 34, 6.5, 0, 0, TWO_PI); ctx.fill();
+  // Crown height 38px (from brim at y=-106 to tip at y=-144)
   ctx.beginPath();
-  ctx.moveTo(-13, -80);
-  ctx.bezierCurveTo(-15, -100, -7, -110, 0, -114);
-  ctx.bezierCurveTo(7, -110, 15, -100, 13, -80);
+  ctx.moveTo(-15, -106);
+  ctx.bezierCurveTo(-18, -128, -8, -140, 0, -144);
+  ctx.bezierCurveTo(8, -140, 18, -128, 15, -106);
   ctx.closePath(); ctx.fill();
-  // Gold band
-  ctx.save(); ctx.globalAlpha = 0.90;
-  const bandGrd = ctx.createLinearGradient(-13, -88, 13, -84);
+  // Gold hat band
+  ctx.save(); ctx.globalAlpha = 0.92;
+  const bandGrd = ctx.createLinearGradient(-15, -114, 15, -110);
   bandGrd.addColorStop(0, '#aa7700'); bandGrd.addColorStop(0.5, '#ffdd44'); bandGrd.addColorStop(1, '#aa7700');
   ctx.fillStyle = bandGrd;
-  ctx.fillRect(-13, -88, 26, 4);
+  ctx.fillRect(-15, -114, 30, 4.5);
   ctx.restore();
-  // Hat star — 5-point polygon (STORY-00285: not emoji text)
+  // Hat star ★ 16px (5-point polygon)
   ctx.save();
   ctx.fillStyle   = '#ffee88';
   ctx.shadowColor = '#ffd700';
-  ctx.shadowBlur  = 8;
+  ctx.shadowBlur  = 10;
   ctx.globalAlpha = 0.95;
-  ctx.translate(2, -105);
+  ctx.translate(2, -132);
   ctx.beginPath();
   for (let sp = 0; sp < 5; sp++) {
-    const outerA = (sp * 2 * Math.PI / 5) - Math.PI / 2;
+    const outerA = (sp * TWO_PI / 5) - Math.PI / 2;
     const innerA = outerA + Math.PI / 5;
-    if (sp === 0) ctx.moveTo(Math.cos(outerA) * 7, Math.sin(outerA) * 7);
-    else          ctx.lineTo(Math.cos(outerA) * 7, Math.sin(outerA) * 7);
-    ctx.lineTo(Math.cos(innerA) * 3, Math.sin(innerA) * 3);
+    if (sp === 0) ctx.moveTo(Math.cos(outerA) * 8, Math.sin(outerA) * 8);
+    else          ctx.lineTo(Math.cos(outerA) * 8, Math.sin(outerA) * 8);
+    ctx.lineTo(Math.cos(innerA) * 3.5, Math.sin(innerA) * 3.5);
   }
   ctx.closePath(); ctx.fill();
   ctx.shadowBlur = 0;
@@ -1355,9 +1333,9 @@ function _drawNet(ctx) {
   const showLen = isExtended ? _netLen : 20;
   const angle   = _netAngle;
 
-  // Rope origin — from girl's right hand position (STORY-00278: updated for 130px character)
-  const ropeOriX = _poleX + 14;
-  const ropeOriY = _poleY - 62;
+  // Rope origin — from girl's right hand position (STORY-00321: updated for 145px character v6)
+  const ropeOriX = _poleX + 18;
+  const ropeOriY = _poleY - 75;
 
   // Net head (mouth ring center)
   const headX = ropeOriX + Math.sin(angle) * showLen;
@@ -1748,7 +1726,7 @@ function _triggerResult(victory) {
   }
 }
 
-// ── Draw: result overlay ──────────────────────────────────────
+// ── Draw: result overlay (STORY-00322) ───────────────────────
 function _drawResultOverlay(ctx, W, H) {
   const r = _result;
   if (!r) return;
@@ -1759,11 +1737,11 @@ function _drawResultOverlay(ctx, W, H) {
   ctx.fillRect(0, 0, W, H);
   ctx.restore();
 
-  // Card — STORY-00304: clamp to screen height with safe margins, no overflow
-  const cardW = Math.min(W - 40, 340);
-  const cardH = Math.min(r.victory ? 420 : 300, H - 20);
+  // Card: compact, centered, no overflow (STORY-00322)
+  const cardW = Math.min(W - 32, 340);
+  const cardH = Math.min(H - 20, 360);
   const cardX = (W - cardW) / 2;
-  const cardY = Math.max(10, (H - cardH) / 2);
+  const cardY = (H - cardH) / 2;
 
   // Card background
   ctx.save();
@@ -1776,83 +1754,64 @@ function _drawResultOverlay(ctx, W, H) {
   ctx.restore();
 
   const cx  = W / 2;
-  let   cy  = cardY + 36;
+  // Title area (32px)
+  const titleY = cardY + 16 + 11; // top padding + half-height
+  ctx.save();
+  ctx.font         = 'bold 22px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = r.victory ? '#ffd700' : '#ff5555';
+  ctx.shadowColor  = r.victory ? '#ffd700' : '#ff3333';
+  ctx.shadowBlur   = 10;
+  ctx.fillText(r.victory ? '✦ 关卡完成！' : '⏰ 时间到了！', cx, titleY);
+  ctx.restore();
+
+  // Stats row (28px below title): ★★★ | +X金币 | 剩余Ys (STORY-00322)
+  const statsY = titleY + 16 + 14; // 16 margin + 14 half-height
+  const starStr = r.victory
+    ? ('★'.repeat(r.stars) + '☆'.repeat(3 - r.stars))
+    : ('★'.repeat(r.stars) + '☆'.repeat(3 - r.stars));
+  const statsStr = starStr + '  |  +' + r.coins + '金币  |  剩余' + Math.floor(Math.max(0, r.timeLeft)) + 's';
+  ctx.save();
+  ctx.font         = '13px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = r.victory ? COLORS.starGold : '#cc8888';
+  ctx.fillText(statsStr, cx, statsY);
+  ctx.restore();
+
+  // Content area: between stats row and button area
+  // Buttons occupy bottom 52px of card
+  const btnAreaH  = 52;
+  const btnAreaY  = cardY + cardH - btnAreaH;
+  const contentY  = statsY + 14 + 8; // bottom of stats + gap
+  const contentH  = btnAreaY - contentY - 4;
 
   if (r.victory) {
-    // ── Victory card ────────────────────────────────────────
-    // Headline
-    ctx.save();
-    ctx.font         = 'bold 26px sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = '#ffd700';
-    ctx.shadowColor  = '#ffd700';
-    ctx.shadowBlur   = 14;
-    ctx.fillText('关卡完成！', cx, cy);
-    ctx.restore();
-    cy += 38;
-
-    // Constellation icon + name
-    ctx.save();
-    ctx.font         = '20px sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = COLORS.text;
-    ctx.fillText((_conDef.icon || '★') + '  ' + _conDef.nameZh, cx, cy);
-    ctx.restore();
-    cy += 32;
-
-    // Star rating
-    const starStr = '★'.repeat(r.stars) + '☆'.repeat(3 - r.stars);
-    ctx.save();
-    ctx.font         = '22px sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = COLORS.starGold;
-    ctx.fillText(starStr, cx, cy);
-    ctx.restore();
-    cy += 30;
-
-    // Coins + time
-    ctx.save();
-    ctx.font         = '14px sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = '#aaffaa';
-    const coinsText = _coinsMult > 1
-      ? '+' + r.coins + '金币  🪙×2  剩余' + Math.floor(r.timeLeft) + '秒'
-      : '+' + r.coins + '金币   剩余' + Math.floor(r.timeLeft) + '秒';
-    ctx.fillText(coinsText, cx, cy);
-    ctx.restore();
-    cy += 28;
-
-    // Constellation photo (STORY-00246) — STORY-00304: smaller in landscape
-    const photoH = Math.min(70, H < 450 ? 50 : 70);
+    // Photo area: 120px if photo exists, 0 if no photo
+    let photoBottom = contentY;
+    const photoH = 120;
     const photoW = cardW - 16;
     const photoX = cardX + 8;
-    ctx.save();
-    ctx.beginPath();
-    _roundRect(ctx, photoX, cy, photoW, photoH, 6);
-    ctx.clip();
-    if (_victoryPhotoLoaded && _victoryPhoto) {
-      ctx.drawImage(_victoryPhoto, photoX, cy, photoW, photoH);
-    } else {
-      ctx.fillStyle = 'rgba(30,40,80,0.6)';
-      ctx.fillRect(photoX, cy, photoW, photoH);
-      ctx.font = '12px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = COLORS.text2;
-      ctx.fillText('★ ' + (_conDef.nameZh || ''), cx, cy + photoH / 2);
-    }
-    ctx.restore();
-    cy += photoH + 8;
 
-    // Lore text — paginated (STORY-00238)
-    if (_conDef.lore && !_loreDismissed) {
-      // Build pages on first render (when _lorePages is empty for this result)
+    if (_victoryPhotoLoaded && _victoryPhoto) {
+      ctx.save();
+      ctx.beginPath();
+      _roundRect(ctx, photoX, contentY, photoW, photoH, 8);
+      ctx.clip();
+      ctx.drawImage(_victoryPhoto, photoX, contentY, photoW, photoH);
+      ctx.restore();
+      photoBottom = contentY + photoH + 6;
+    } else {
+      // No photo placeholder — zero height
+      photoBottom = contentY;
+    }
+
+    // Story text area — height self-adapts (clip to remaining space)
+    const storyH = btnAreaY - photoBottom - 8;
+    if (_conDef.lore && storyH > 20 && !_loreDismissed) {
       if (_lorePages.length === 0) {
-        _lorePages = _splitLorePages(_conDef.lore, 80);
+        _lorePages = _splitLorePages(_conDef.lore, 60);
         _lorePage = 0;
       }
       const page = _lorePages[_lorePage] || '';
@@ -1860,116 +1819,83 @@ function _drawResultOverlay(ctx, W, H) {
 
       ctx.save();
       ctx.beginPath();
-      ctx.rect(cardX + 8, cy - 6, cardW - 16, 80);
+      ctx.rect(cardX + 8, photoBottom, cardW - 16, storyH);
       ctx.clip();
       ctx.font         = '12px sans-serif';
       ctx.textAlign    = 'center';
-      ctx.textBaseline = 'middle';
+      ctx.textBaseline = 'top';
       ctx.fillStyle    = COLORS.text2;
-      _drawWrappedText(ctx, page, cx, cy, cardW - 32, 16);
+      _drawWrappedText(ctx, page, cx, photoBottom + 4, cardW - 32, 16);
       ctx.restore();
-      cy += 80;
 
-      // Page nav button + indicator
+      // Bottom fade gradient on story text
+      ctx.save();
+      const fadeGrd = ctx.createLinearGradient(0, btnAreaY - 20, 0, btnAreaY - 2);
+      fadeGrd.addColorStop(0, 'rgba(20,25,60,0)');
+      fadeGrd.addColorStop(1, 'rgba(20,25,60,0.95)');
+      ctx.fillStyle = fadeGrd;
+      ctx.fillRect(cardX + 8, btnAreaY - 20, cardW - 16, 20);
+      ctx.restore();
+
+      // Page nav
       if (totalPages > 1) {
         const isLast = _lorePage >= totalPages - 1;
-        const pgLabel = isLast ? '完成 ✓' : '下一段 ›';
-        _btnLoreNext = drawButton(ctx, cardX + cardW - 90, cy - 2, 80, 26, pgLabel, {
-          fontSize: 11, radius: 8,
+        _btnLoreNext = drawButton(ctx, cardX + cardW - 82, btnAreaY - 28, 72, 22, isLast ? '完成 ✓' : '下一段 ›', {
+          fontSize: 10, radius: 6,
           color0: 'rgba(80,60,140,0.75)', color1: 'rgba(60,90,180,0.75)',
-          alpha: isLast ? 0.6 : 1.0,
         });
-        ctx.save();
-        ctx.font      = '10px sans-serif';
-        ctx.fillStyle = COLORS.text2;
-        ctx.textAlign = 'left';
-        ctx.textBaseline = 'middle';
-        ctx.fillText((_lorePage + 1) + '/' + totalPages, cardX + 14, cy + 10);
-        ctx.restore();
-        cy += 34;
       } else {
         _btnLoreNext = null;
-        cy += 4;
       }
+    } else {
+      _btnLoreNext = null;
     }
 
-    // Buttons (3 buttons: 下一关/全部通关, 重玩, 选关)
-    const btnW3 = (cardW - 20) / 3;
-    const btnH = 40;
-    // STORY-00304: buttons always within card — anchored to bottom of card
-    const bY   = cardY + cardH - btnH - 10;
+    // 3 buttons: 下一关 / 重玩 / 选关 — uniformly distributed, height 36px (STORY-00322)
+    const btnH   = 36;
+    const btnGap = 6;
+    const totalBtnW = cardW - 24;
+    const btnW3  = (totalBtnW - btnGap * 2) / 3;
+    const bY     = btnAreaY + (btnAreaH - btnH) / 2;
     const isLastLevel = _levelIdx >= 29;
 
     if (isLastLevel) {
-      _btnNext = drawButton(ctx, cardX + 10, bY, btnW3, btnH, '🏆 图鉴', {
-        fontSize: 12, color0: 'rgba(60,50,10,0.85)', color1: 'rgba(100,80,10,0.85)',
+      _btnNext = drawButton(ctx, cardX + 12, bY, btnW3, btnH, '🏆 图鉴', {
+        fontSize: 13, color0: 'rgba(60,50,10,0.85)', color1: 'rgba(100,80,10,0.85)',
       });
     } else {
-      _btnNext = drawButton(ctx, cardX + 10, bY, btnW3, btnH, '下一关', { fontSize: 14 });
+      _btnNext = drawButton(ctx, cardX + 12, bY, btnW3, btnH, '下一关', { fontSize: 14 });
     }
-    _btnReplay = drawButton(ctx, cardX + 10 + btnW3 + 5, bY, btnW3 - 10, btnH, '重玩', {
+    _btnReplay = drawButton(ctx, cardX + 12 + btnW3 + btnGap, bY, btnW3, btnH, '重玩', {
       fontSize: 14, color0: 'rgba(40,80,60,0.85)', color1: 'rgba(20,120,80,0.85)',
     });
-    _btnLevels = drawButton(ctx, cardX + cardW - btnW3 - 10, bY, btnW3, btnH, '选关', {
+    _btnLevels = drawButton(ctx, cardX + 12 + (btnW3 + btnGap) * 2, bY, btnW3, btnH, '选关', {
       fontSize: 14, color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
     });
     _btnRetry  = null;
-    // STORY-00304: removed secondary 去商店 + 看展厅 buttons (too many buttons, web version only has 3)
-    _btnShop    = null;
+    _btnShop   = null;
     _btnGallery = null;
 
   } else {
-    // ── Failure card ────────────────────────────────────────
-    ctx.save();
-    ctx.font         = 'bold 26px sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = '#ff5555';
-    ctx.shadowColor  = '#ff3333';
-    ctx.shadowBlur   = 12;
-    ctx.fillText('⏰ 时间到了！', cx, cy);
-    ctx.restore();
-    cy += 40;
+    // Fail card: stats already shown; show constellation silhouette + encouragement
+    const failContentH = btnAreaY - contentY - 4;
 
-    ctx.save();
-    ctx.font         = '16px sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = COLORS.text;
-    ctx.fillText('还差 ' + r.uncaught + ' 颗星', cx, cy);
-    ctx.restore();
-    cy += 28;
-
-    // Stats row — STORY-00310: web parity (X/Y已抓 · Z秒剩余 · W金币)
-    ctx.save();
-    ctx.font         = '12px sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = 'rgba(200,195,240,0.75)';
-    const caught  = r.caught != null ? r.caught : (_total - r.uncaught);
-    const total   = r.total  != null ? r.total  : _total;
-    const secsLeft = Math.max(0, Math.floor(r.timeLeft || 0));
-    ctx.fillText(caught + '/' + total + '已抓 · ' + secsLeft + '秒剩余 · ' + r.coins + '金币', cx, cy);
-    ctx.restore();
-    cy += 22;
-
-    // Personalized encouragement (STORY-00237 / STORY-00310)
+    // Personalized encouragement
+    const conName = _conDef ? _conDef.nameZh : '星星';
     ctx.save();
     ctx.font         = '13px sans-serif';
     ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.textBaseline = 'top';
     ctx.fillStyle    = COLORS.text2;
-    const conName = _conDef ? _conDef.nameZh : '星星';
-    ctx.fillText(conName + '跑得太快了，再来一次！✨', cx, cy);
+    ctx.fillText(conName + '跑得太快了，再来一次！✨', cx, contentY);
     ctx.restore();
-    cy += 20;
 
-    // Constellation silhouette (STORY-00237)
+    // Constellation silhouette (compact)
     if (_conDef.stars && _conDef.lines) {
-      const silW = 110, silH = 80;
+      const silH = Math.min(70, failContentH - 22);
+      const silW = silH * 1.3;
       const silX0 = cx - silW / 2;
-      const silY0 = cy + 4;
-      // compute bounding box of star positions (normalized 0-1)
+      const silY0 = contentY + 22;
       let minX = 1, maxX = 0, minY = 1, maxY = 0;
       for (const s of _conDef.stars) {
         if (s.x < minX) minX = s.x; if (s.x > maxX) maxX = s.x;
@@ -1979,41 +1905,36 @@ function _drawResultOverlay(ctx, W, H) {
       const rangeY = Math.max(maxY - minY, 0.1);
       const toSilX = (nx) => silX0 + ((nx - minX) / rangeX) * silW;
       const toSilY = (ny) => silY0 + ((ny - minY) / rangeY) * silH;
-
       ctx.save();
-      ctx.strokeStyle = 'rgba(180,180,220,0.28)';
+      ctx.strokeStyle = 'rgba(180,180,220,0.25)';
       ctx.lineWidth   = 1;
       for (const [ai, bi] of _conDef.lines) {
         const a = _conDef.stars[ai], b = _conDef.stars[bi];
         if (!a || !b) continue;
-        ctx.beginPath();
-        ctx.moveTo(toSilX(a.x), toSilY(a.y));
-        ctx.lineTo(toSilX(b.x), toSilY(b.y));
-        ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(toSilX(a.x), toSilY(a.y));
+        ctx.lineTo(toSilX(b.x), toSilY(b.y)); ctx.stroke();
       }
       for (const s of _conDef.stars) {
-        ctx.beginPath();
-        ctx.arc(toSilX(s.x), toSilY(s.y), 2.5, 0, TWO_PI);
-        ctx.fillStyle = 'rgba(200,200,240,0.35)';
-        ctx.fill();
+        ctx.fillStyle = 'rgba(200,200,240,0.3)';
+        ctx.beginPath(); ctx.arc(toSilX(s.x), toSilY(s.y), 2.5, 0, TWO_PI); ctx.fill();
       }
       ctx.restore();
-      cy += silH + 14;
-    } else {
-      cy += 44;
     }
 
-    const btnW = cardW * 0.44;
-    const btnH = 40;
-    const bY   = cardY + cardH - 52;
+    // 2 buttons: 重试 / 选关 (height 36px, STORY-00322)
+    const btnH   = 36;
+    const totalBtnW = cardW - 24;
+    const btnW2  = (totalBtnW - 8) / 2;
+    const bY     = btnAreaY + (btnAreaH - btnH) / 2;
 
-    _btnRetry  = drawButton(ctx, cardX + 10,               bY, btnW, btnH, '重试', { fontSize: 14 });
-    _btnLevels = drawButton(ctx, cardX + cardW - btnW - 10, bY, btnW, btnH, '选关', {
+    _btnRetry  = drawButton(ctx, cardX + 12, bY, btnW2, btnH, '重试', { fontSize: 14 });
+    _btnLevels = drawButton(ctx, cardX + 12 + btnW2 + 8, bY, btnW2, btnH, '选关', {
       fontSize: 14, color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
     });
-    _btnNext   = null;
+    _btnNext = null;
   }
 }
+
 
 // ── Pause overlay (STORY-00236) ───────────────────────────────
 function _drawPauseOverlay(ctx, W, H) {

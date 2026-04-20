@@ -8,6 +8,8 @@ import {
 } from '../engine/canvas-utils.js';
 import state from '../engine/state.js';
 
+const TWO_PI = Math.PI * 2;
+
 // ── Item definitions — STORY-00296: aligned to web version prices + star_map replaces star_magnet ──
 export const ITEMS = [
   { id: 'net_speed',     icon: '⚡', nameZh: '网兜加速',   desc: '激活后15秒网兜速度+50%',       type: '主动', duration: '15秒', cost: 50 },
@@ -163,26 +165,25 @@ function _drawItemCard(ctx, W, item, idx, cardX, cardY, cardW) {
   const owned  = state.getItemQty(item.id);
   const canBuy = state.coins >= item.cost;
 
-  // Card bg
+  // Card bg — deep blue-purple gradient (STORY-00320)
   ctx.save();
-  ctx.globalAlpha = 0.90;
-  ctx.fillStyle = 'rgba(18,18,50,0.92)';
+  const bgGrd = ctx.createLinearGradient(cardX, cardY, cardX, cardY + CARD_H);
+  bgGrd.addColorStop(0, 'rgba(12,8,40,0.92)');
+  bgGrd.addColorStop(1, 'rgba(20,14,60,0.85)');
+  ctx.fillStyle = bgGrd;
   _roundRect(ctx, cardX, cardY, cardW, CARD_H, 12);
   ctx.fill();
-  ctx.strokeStyle = 'rgba(100,80,200,0.5)';
+  ctx.strokeStyle = 'rgba(180,140,255,0.35)';
   ctx.lineWidth = 1.5;
   ctx.stroke();
   ctx.restore();
 
   const cx = cardX + cardW / 2;
+  const iconCx = cx;
+  const iconCy = cardY + 22;
 
-  // Icon — large, centered top area
-  ctx.save();
-  ctx.font = '28px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillText(item.icon, cx, cardY + 22);
-  ctx.restore();
+  // Canvas-drawn icon (STORY-00320: no emoji)
+  _drawItemIcon(ctx, item.id, iconCx, iconCy, 16);
 
   // Name
   ctx.save();
@@ -193,51 +194,202 @@ function _drawItemCard(ctx, W, item, idx, cardX, cardY, cardW) {
   ctx.fillText(item.nameZh, cx, cardY + 42);
   ctx.restore();
 
-  // 主动/被动 badge + duration badge
-  const badgeY = cardY + 58;
-  const typeBadgeColor = item.type === '主动' ? 'rgba(100,60,200,0.85)' : 'rgba(40,100,180,0.85)';
-  _drawBadge(ctx, cx - 22, badgeY, item.type, typeBadgeColor);
-  _drawBadge(ctx, cx + 18, badgeY, item.duration, 'rgba(40,60,100,0.75)');
+  // 主动/被动 badge (outline style) + duration badge (STORY-00320)
+  const badgeY = cardY + 57;
+  _drawOutlineBadge(ctx, cx - 22, badgeY, item.type, item.type === '主动' ? '#b088ff' : '#88aaff');
+  _drawOutlineBadge(ctx, cx + 18, badgeY, item.duration, '#8899bb');
 
   // Price + buy button
-  const btnW = cardW - 16;
+  const btnH2 = 22;
   const btnX = cardX + 8;
-  const btnY = cardY + CARD_H - 26;
+  const btnY = cardY + CARD_H - btnH2 - 6;
+  const priceW = 28;
 
+  // Price with coin symbol
   ctx.save();
   ctx.font = 'bold 11px sans-serif';
-  ctx.textAlign = 'left';
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = '#ffd700';
-  ctx.fillText('🪙' + item.cost, btnX + 2, btnY + 8);
+  ctx.fillText('🪙' + item.cost, btnX + priceW / 2, btnY + btnH2 / 2);
   ctx.restore();
 
-  const btnRect = drawButton(ctx, btnX + 32, btnY, btnW - 40, 20, '购买', {
+  // Buy button — gradient #5533aa → #8855ee (STORY-00320)
+  const buyBtnX = btnX + priceW + 4;
+  const buyBtnW = cardW - 16 - priceW - 4;
+  const btnRect = drawButton(ctx, buyBtnX, btnY, buyBtnW, btnH2, '购买', {
     fontSize: 11, radius: 6,
-    color0: canBuy ? 'rgba(60,160,80,0.85)' : 'rgba(60,60,80,0.6)',
-    color1: canBuy ? 'rgba(40,200,100,0.85)' : 'rgba(40,40,60,0.6)',
+    color0: canBuy ? '#5533aa' : 'rgba(60,60,80,0.6)',
+    color1: canBuy ? '#8855ee' : 'rgba(40,40,60,0.6)',
   });
   _buyRects.push({ rect: btnRect, itemIdx: idx });
+
+  // Owned badge — top-right corner dot (STORY-00320)
+  if (owned > 0) {
+    const bx = cardX + cardW - 16;
+    const by = cardY + 8;
+    ctx.save();
+    ctx.fillStyle = '#2a1a5e';
+    ctx.beginPath(); ctx.arc(bx, by, 9, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = '#b088ff';
+    ctx.lineWidth = 1;
+    ctx.stroke();
+    ctx.font = 'bold 9px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = '#ffd700';
+    ctx.fillText(owned, bx, by);
+    ctx.restore();
+  }
 }
 
-// Draw a small pill badge with text
-function _drawBadge(ctx, cx, y, text, bgColor) {
+// Draw canvas icon for each item type (STORY-00320: no emoji)
+function _drawItemIcon(ctx, itemId, cx, cy, r) {
+  ctx.save();
+  // Circular glow background
+  const glowGrd = ctx.createRadialGradient(cx, cy, 0, cx, cy, r + 4);
+  glowGrd.addColorStop(0, 'rgba(160,100,255,0.25)');
+  glowGrd.addColorStop(1, 'rgba(80,40,180,0)');
+  ctx.fillStyle = glowGrd;
+  ctx.beginPath(); ctx.arc(cx, cy, r + 4, 0, Math.PI * 2); ctx.fill();
+
+  // Background circle
+  ctx.fillStyle = 'rgba(60,30,120,0.7)';
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, Math.PI * 2); ctx.fill();
+  ctx.strokeStyle = 'rgba(180,140,255,0.5)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  ctx.strokeStyle = '#d4b8ff';
+  ctx.fillStyle   = '#ffd700';
+  ctx.lineWidth   = 1.5;
+  ctx.lineCap     = 'round';
+  ctx.lineJoin    = 'round';
+
+  const s = r * 0.55; // icon scale within circle
+
+  if (itemId === 'net_speed') {
+    // Lightning bolt
+    ctx.beginPath();
+    ctx.moveTo(cx + s * 0.2, cy - s);
+    ctx.lineTo(cx - s * 0.2, cy + s * 0.1);
+    ctx.lineTo(cx + s * 0.1, cy + s * 0.1);
+    ctx.lineTo(cx - s * 0.2, cy + s);
+    ctx.strokeStyle = '#ffdd44';
+    ctx.stroke();
+  } else if (itemId === 'net_enlarge') {
+    // Expanding net diamond
+    ctx.strokeStyle = '#88ccff';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s); ctx.lineTo(cx + s, cy);
+    ctx.lineTo(cx, cy + s); ctx.lineTo(cx - s, cy); ctx.closePath();
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - s * 0.5); ctx.lineTo(cx + s * 0.5, cy);
+    ctx.lineTo(cx, cy + s * 0.5); ctx.lineTo(cx - s * 0.5, cy); ctx.closePath();
+    ctx.stroke();
+  } else if (itemId === 'space_bomb') {
+    // Circle with X
+    ctx.strokeStyle = '#ff6644';
+    ctx.beginPath(); ctx.arc(cx, cy, s * 0.8, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - s * 0.45, cy - s * 0.45);
+    ctx.lineTo(cx + s * 0.45, cy + s * 0.45); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + s * 0.45, cy - s * 0.45);
+    ctx.lineTo(cx - s * 0.45, cy + s * 0.45); ctx.stroke();
+    // Fuse dot
+    ctx.fillStyle = '#ff6644';
+    ctx.beginPath(); ctx.arc(cx, cy - s * 0.8, s * 0.2, 0, Math.PI * 2); ctx.fill();
+  } else if (itemId === 'time_ext') {
+    // Clock
+    ctx.strokeStyle = '#88ffcc';
+    ctx.beginPath(); ctx.arc(cx, cy, s * 0.85, 0, Math.PI * 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx, cy - s * 0.55); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + s * 0.4, cy + s * 0.2); ctx.stroke();
+  } else if (itemId === 'shrink_debris') {
+    // Shrink arrows inward
+    ctx.strokeStyle = '#aaddff';
+    const d = s * 0.7;
+    ctx.beginPath();
+    ctx.moveTo(cx - d, cy - d); ctx.lineTo(cx - d * 0.3, cy - d * 0.3); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + d, cy - d); ctx.lineTo(cx + d * 0.3, cy - d * 0.3); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx - d, cy + d); ctx.lineTo(cx - d * 0.3, cy + d * 0.3); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(cx + d, cy + d); ctx.lineTo(cx + d * 0.3, cy + d * 0.3); ctx.stroke();
+    // Center dot
+    ctx.fillStyle = '#aaddff';
+    ctx.beginPath(); ctx.arc(cx, cy, s * 0.2, 0, Math.PI * 2); ctx.fill();
+  } else if (itemId === 'star_map') {
+    // Star pattern — 4 connected dots
+    ctx.strokeStyle = '#ffeeaa';
+    const pts = [
+      [cx, cy - s * 0.8], [cx + s * 0.7, cy - s * 0.2],
+      [cx + s * 0.4, cy + s * 0.6], [cx - s * 0.4, cy + s * 0.6],
+      [cx - s * 0.7, cy - s * 0.2],
+    ];
+    for (const [px, py] of pts) {
+      ctx.fillStyle = '#ffdd88';
+      ctx.beginPath(); ctx.arc(px, py, 1.5, 0, Math.PI * 2); ctx.fill();
+    }
+    ctx.beginPath();
+    ctx.moveTo(pts[0][0], pts[0][1]);
+    for (const [px, py] of pts.slice(1)) ctx.lineTo(px, py);
+    ctx.closePath();
+    ctx.strokeStyle = 'rgba(255,220,100,0.4)';
+    ctx.lineWidth = 0.8;
+    ctx.stroke();
+  } else if (itemId === 'glove') {
+    // Glove shape — simplified hand outline
+    ctx.strokeStyle = '#ccddff';
+    ctx.beginPath();
+    ctx.arc(cx, cy + s * 0.1, s * 0.7, Math.PI * 0.05, Math.PI * 0.95); ctx.stroke();
+    // Fingers (3 bumps on top)
+    for (let fi = -1; fi <= 1; fi++) {
+      ctx.beginPath();
+      ctx.arc(cx + fi * s * 0.3, cy - s * 0.55, s * 0.22, Math.PI, TWO_PI); ctx.stroke();
+    }
+    ctx.beginPath();
+    ctx.arc(cx + s * 0.75, cy - s * 0.1, s * 0.2, Math.PI * 1.1, Math.PI * 1.9); ctx.stroke();
+  } else if (itemId === 'double_coins') {
+    // Two overlapping coin circles
+    ctx.fillStyle = 'rgba(255,215,0,0.15)';
+    ctx.strokeStyle = '#ffd700';
+    ctx.beginPath(); ctx.arc(cx - s * 0.25, cy, s * 0.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = 'rgba(255,215,0,0.2)';
+    ctx.beginPath(); ctx.arc(cx + s * 0.25, cy, s * 0.6, 0, Math.PI * 2); ctx.fill(); ctx.stroke();
+    // ×2 text
+    ctx.font = `bold ${Math.round(s * 0.7)}px sans-serif`;
+    ctx.fillStyle = '#ffd700';
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('×2', cx, cy);
+  }
+  ctx.restore();
+}
+
+// Draw outline-style pill badge (STORY-00320)
+function _drawOutlineBadge(ctx, cx, y, text, strokeColor) {
   if (!text) return;
   ctx.save();
   ctx.font = '9px sans-serif';
   const tw = ctx.measureText(text).width;
   const bw = tw + 8;
-  const bh = 14;
+  const bh = 13;
   const bx = cx - bw / 2;
-  ctx.fillStyle = bgColor;
+  ctx.strokeStyle = strokeColor;
+  ctx.lineWidth = 0.8;
   _roundRect(ctx, bx, y, bw, bh, 4);
-  ctx.fill();
+  ctx.stroke();
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = '#ffffff';
+  ctx.fillStyle = strokeColor;
   ctx.fillText(text, cx, y + bh / 2);
   ctx.restore();
 }
+
 
 // ── Touch handling ────────────────────────────────────────────
 function _onTouchStart(e) {
