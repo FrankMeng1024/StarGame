@@ -219,29 +219,29 @@ function _drawCard(ctx, cr, t) {
   ctx.stroke();
   ctx.restore();
 
-  // Constellation abbreviation (STORY-00288: first 2 chars of nameZh — more reliable than emoji)
-  const conAbbr = (c.nameZh || c.name || '').substring(0, 2);
-  if (unlocked && conAbbr) {
+  // Constellation icon / abbreviation (STORY-00327: try emoji first, reliable 2-char fallback)
+  if (unlocked) {
+    const icon = c.icon || '';
+    const conAbbr = (c.nameZh || c.name || '').substring(0, 2);
     ctx.save();
-    ctx.font         = `${Math.round(w * 0.18)}px sans-serif`;
+    ctx.font         = `${Math.round(w * 0.26)}px sans-serif`;  // STORY-00327: larger icon
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.globalAlpha  = 0.70;
-    ctx.fillStyle    = 'rgba(200,180,255,1)';
-    ctx.fillText(conAbbr, x + w / 2, y + h * 0.24);
+    ctx.globalAlpha  = 0.90;
+    ctx.fillStyle    = 'rgba(220,200,255,1)';
+    ctx.fillText(icon || conAbbr, x + w / 2, y + h * 0.26);
     ctx.restore();
   }
 
-  // Level number — smaller (STORY-00281: 0.40 → 0.28) or lock icon
+  // Level number — smaller (STORY-00327: 0.28 → 0.22) or lock icon
   ctx.save();
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   if (unlocked) {
-    ctx.font      = `bold ${Math.round(w * 0.28)}px sans-serif`;
+    ctx.font      = `bold ${Math.round(w * 0.22)}px sans-serif`;  // STORY-00327: was 0.28 — less dominant
     ctx.fillStyle = COLORS.starGold;
     ctx.globalAlpha = 0.95;
-    // STORY-00288: adjusted y positions; Arch review: corrected to spec (h*0.45/0.40)
-    ctx.fillText(String(idx + 1), x + w / 2, y + h * (conAbbr ? 0.45 : 0.40));
+    ctx.fillText(String(idx + 1), x + w / 2, y + h * 0.52);  // STORY-00327: moved down from 0.45
   } else {
     ctx.font      = `${Math.round(w * 0.38)}px sans-serif`;
     ctx.globalAlpha = 0.35;
@@ -259,34 +259,48 @@ function _drawCard(ctx, cr, t) {
   ctx.fillText(c.nameZh || c.name, x + w / 2, y + h * 0.70);  // STORY-00288: was h*0.72
   ctx.restore();
 
-  // Difficulty dots — smaller max radius (STORY-00281: max 2.5 was 3)
+  // Difficulty color bar — STORY-00327: replaces dots with bottom color strip
   const diff   = Math.max(1, Math.min(5, c.difficulty || 1));
-  const dotR   = Math.max(2, Math.min(2.5, w * 0.03));
-  const dotGap = dotR * 2.6;
-  const dotY   = y + h * 0.87;
-  const dotStartX = x + w / 2 - (4 * dotGap) / 2;
-  for (let di = 0; di < 5; di++) {
+  const diffColors = ['#4caf50', '#4caf50', '#ffc107', '#ff9800', '#f44336']; // 1-5
+  const barH   = 4;
+  const barY   = y + h - barH;
+  const barRadius = 5;  // match card corner radius
+  ctx.save();
+  ctx.globalAlpha = unlocked ? 0.85 : 0.30;
+  ctx.fillStyle   = diffColors[diff - 1];
+  // Draw bottom bar with rounded bottom corners only
+  ctx.beginPath();
+  ctx.moveTo(x, barY);
+  ctx.lineTo(x + w, barY);
+  ctx.lineTo(x + w, barY + barH - barRadius);
+  ctx.arcTo(x + w, barY + barH, x + w - barRadius, barY + barH, barRadius);
+  ctx.lineTo(x + barRadius, barY + barH);
+  ctx.arcTo(x, barY + barH, x, barY + barH - barRadius, barRadius);
+  ctx.lineTo(x, barY);
+  ctx.fill();
+  ctx.restore();
+
+  // Best time — STORY-00327: shown below name when score exists
+  const scoreData = score && score.time > 0 ? score : null;
+  if (unlocked && scoreData) {
     ctx.save();
-    ctx.beginPath();
-    ctx.arc(dotStartX + di * dotGap, dotY, dotR, 0, Math.PI * 2);
-    if (di < diff) {
-      ctx.fillStyle = unlocked ? '#ffd700' : 'rgba(200,170,0,0.45)';
-    } else {
-      ctx.fillStyle = unlocked ? 'rgba(180,180,220,0.25)' : 'rgba(100,100,140,0.2)';
-    }
-    ctx.fill();
+    ctx.font         = `${Math.max(7, Math.round(w * 0.11))}px sans-serif`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = 'rgba(255,255,255,0.62)';
+    ctx.fillText('⏱ ' + Math.floor(scoreData.time) + 's', x + w / 2, y + h * 0.84);
     ctx.restore();
   }
 
   // Score stars — bottom-right corner badge (STORY-00281: was center-bottom row)
   if (unlocked && score && score.stars > 0) {
     ctx.save();
-    ctx.font        = `${Math.max(8, Math.round(w * 0.12))}px sans-serif`;
+    ctx.font        = `${Math.max(7, Math.round(w * 0.12))}px sans-serif`;
     ctx.textAlign   = 'right';
     ctx.textBaseline = 'bottom';
     ctx.fillStyle   = COLORS.starGold;
     const stars = '★'.repeat(score.stars);
-    ctx.fillText(stars, x + w - 3, y + h - 2);
+    ctx.fillText(stars, x + w - 3, y + h - barH - 2);  // STORY-00327: above the color bar
     ctx.restore();
   }
 }

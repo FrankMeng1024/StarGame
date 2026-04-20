@@ -1636,26 +1636,49 @@ function _drawHUD(ctx, W) {
   ctx.fillText(levelLabel, G.SAFE_LEFT + 14, ST + 26);
   ctx.restore();
 
-  // Timer (center top) — STORY-00289/00311: centered, web parity
-  const mins    = Math.floor(_timeLeft / 60);
-  const secs    = Math.floor(_timeLeft % 60);
-  const timerStr = mins + ':' + String(secs).padStart(2, '0');
-  const timerFlashing = _timerFlash > 0 || _timeLeft <= 15;
-  const timerUrgent   = _timeLeft <= 10;
+  // Timer ring (center top) — STORY-00325 (CR-123): circular countdown ring matching web version
+  {
+    const t2 = Date.now() * 0.001;
+    const timerUrgent = _timeLeft <= 10;
+    const timerFlashing = _timerFlash > 0 || _timeLeft <= 15;
+    const ringCX = W / 2;
+    const ringCY = ST + 26;
+    const baseR  = 18;
+    // Pulse ring radius when urgent (2Hz)
+    const ringR  = timerUrgent ? (baseR - 1 + 2 * Math.abs(Math.sin(t2 * Math.PI * 2))) : baseR;
+    // Ratio of time remaining
+    const ratio  = _levelInitTime > 0 ? Math.max(0, Math.min(1, _timeLeft / _levelInitTime)) : 1;
+    const arcColor = (timerUrgent || timerFlashing) ? '#ff5252' : '#4fc3f7';
 
-  ctx.save();
-  const t2 = Date.now() * 0.001;
-  const pulsedSize = timerUrgent ? Math.round(18 + 3 * Math.abs(Math.sin(t2 * Math.PI * 2))) : 18;
-  ctx.font         = `bold ${pulsedSize}px sans-serif`;
-  ctx.textAlign    = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle    = timerFlashing ? '#ff4444' : COLORS.text;
-  if (timerFlashing) {
-    ctx.shadowColor = '#ff2222';
-    ctx.shadowBlur  = timerUrgent ? 14 : 8;
+    ctx.save();
+    // Background ring
+    ctx.beginPath();
+    ctx.arc(ringCX, ringCY, ringR, 0, Math.PI * 2);
+    ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+    ctx.lineWidth   = 4;
+    ctx.stroke();
+    // Progress arc (clockwise from top)
+    if (ratio > 0) {
+      ctx.beginPath();
+      ctx.arc(ringCX, ringCY, ringR, -Math.PI / 2, -Math.PI / 2 + Math.PI * 2 * ratio);
+      ctx.strokeStyle = arcColor;
+      ctx.lineWidth   = 4;
+      if (timerUrgent) { ctx.shadowColor = arcColor; ctx.shadowBlur = 8; }
+      ctx.stroke();
+    }
+    // Timer number inside ring
+    const secsTotal = Math.ceil(_timeLeft);
+    const mins = Math.floor(secsTotal / 60);
+    const secs = secsTotal % 60;
+    const timerStr = mins > 0 ? (mins + ':' + String(secs).padStart(2, '0')) : String(secs);
+    ctx.font         = `bold 13px sans-serif`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = timerUrgent ? arcColor : '#ffffff';
+    ctx.shadowBlur   = 0;
+    ctx.fillText(timerStr, ringCX, ringCY);
+    ctx.restore();
   }
-  ctx.fillText(timerStr, W / 2, ST + 26);
-  ctx.restore();
 
   // Star count (top-right) — STORY-00311: moved from left to right for web parity
   ctx.save();
@@ -1843,8 +1866,8 @@ function _drawResultOverlay(ctx, W, H) {
   ctx.fillStyle = 'rgba(20,25,60,0.95)';
   _roundRect(ctx, cardX, cardY, cardW, cardH, 16);
   ctx.fill();
-  ctx.strokeStyle = r.victory ? 'rgba(255,215,0,0.50)' : 'rgba(200,50,50,0.50)';
-  ctx.lineWidth   = 1.5;
+  ctx.strokeStyle = r.victory ? 'rgba(255,215,0,0.50)' : 'rgba(255,255,255,0.15)';  // STORY-00328: fail border changed from red to subtle white
+  ctx.lineWidth   = r.victory ? 1.5 : 1;  // STORY-00328: fail border thinner
   ctx.stroke();
   ctx.restore();
 
@@ -1855,8 +1878,8 @@ function _drawResultOverlay(ctx, W, H) {
   ctx.font         = 'bold 22px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle    = r.victory ? '#ffd700' : '#ff5555';
-  ctx.shadowColor  = r.victory ? '#ffd700' : '#ff3333';
+  ctx.fillStyle    = r.victory ? '#ffd700' : '#ff8a65';  // STORY-00328: fail title warm orange-red (was #ff5555)
+  ctx.shadowColor  = r.victory ? '#ffd700' : '#ff6b35';  // STORY-00328: matching shadow
   ctx.shadowBlur   = 10;
   ctx.fillText(r.victory ? '✦ 关卡完成！' : '⏰ 时间到了！', cx, titleY);
   ctx.restore();
@@ -1871,7 +1894,7 @@ function _drawResultOverlay(ctx, W, H) {
   ctx.font         = '13px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle    = r.victory ? COLORS.starGold : '#cc8888';
+  ctx.fillStyle    = r.victory ? COLORS.starGold : 'rgba(255,255,255,0.80)';  // STORY-00328: fail stats lighter
   ctx.fillText(statsStr, cx, statsY);
   ctx.restore();
 

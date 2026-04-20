@@ -1,5 +1,26 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 38-mini Updates (2026-04-21)
+
+### Sprint 38-mini Visual Upgrades — Significant Quality Lift
+- Circular timer ring replaces plain text — communicates urgency visually without reading number
+- Emoji level cards (icon + difficulty bar + best time) create high information density without clutter
+- Fail screen dark-glass style matches app aesthetic — professional, non-punishing
+- Intro meteor animation creates strong "polished game" first impression
+
+### Ongoing Medium Friction (backlog candidates)
+- Menu title right-aligned instead of centered — asymmetric layout vs constellation art on left
+- Info panel at menu bottom truncated — text cut off, unclear if content is scrollable
+- Locked level cards give no unlock hint ("complete level N to unlock")
+
+### Confirmed: "大能座" in fail screen is rendering artifact
+- Code correctly uses `_conDef.nameZh` (e.g. "大熊座"). Canvas small-font rendering makes "熊" look like "能" at screenshot resolution. Not a bug.
+
+### Untested UX flows (future coverage needed)
+- Victory screen, 星座图鉴 (Encyclopedia), 道具商店 (Shop)
+- Difficulty 4-5 level card colors (orange/red) — no unlocked levels at those difficulties
+- Transition animations between screens
+
 ## Sprint 33-mini Updates (2026-04-20)
 
 ### Shop Grid — 2-Column Layout Now Standard

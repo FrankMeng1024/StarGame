@@ -107,15 +107,15 @@ function _buildConStars() {
 function _spawnMeteor(delayMs) {
   const W = G.SCREEN_W;
   const H = G.SCREEN_H;
-  const speed = 600 + Math.random() * 400; // px/s
+  const speed = 380 + Math.random() * 80; // px/s — STORY-00326: was 600-1000, reduced for slower/longer-visible streaks
   const angle = Math.PI * 0.32; // ~58° diagonal
   _meteors.push({
     x: Math.random() * W * 1.5 - W * 0.25,
     y: -20 - Math.random() * H * 0.3,
     vx: Math.cos(angle) * speed,
     vy: Math.sin(angle) * speed,
-    len: 60 + Math.random() * 80,
-    alpha: 0.85 + Math.random() * 0.15,  // STORY-00283: min 0.85 for visibility
+    len: 80 + Math.random() * 100,  // STORY-00326: was 60-140, longer trails
+    alpha: 0.92 + Math.random() * 0.08,  // STORY-00326: was 0.85-1.0, higher minimum
     born: delayMs, // ms since intro start
     dead: false,
   });
@@ -170,7 +170,7 @@ function _loop(now) {
       m.y += m.vy * dt;
       if (m.y > H + 50 || m.x > W + 50) { m.dead = true; continue; }
       // Trail: draw line from current pos back along velocity — longer trail (STORY-00277)
-      const trailFactor = 0.28; // STORY-00283: was 0.22 — even longer, more dramatic trails
+      const trailFactor = 0.45; // STORY-00326: was 0.28 — much longer, more dramatic trails (60% increase)
       const tx0 = m.x - m.vx * trailFactor;
       const ty0 = m.y - m.vy * trailFactor;
       const fadeA = m.alpha * Math.max(0, 1 - age * 0.25);
@@ -179,7 +179,7 @@ function _loop(now) {
       grd.addColorStop(0, `rgba(255,215,0,${fadeA.toFixed(2)})`);
       grd.addColorStop(1, 'rgba(255,215,0,0)');
       ctx.strokeStyle = grd;
-      ctx.lineWidth = 2;
+      ctx.lineWidth = 2.5;  // STORY-00326: was 2 — thicker streaks
       ctx.beginPath();
       ctx.moveTo(m.x, m.y);
       ctx.lineTo(tx0, ty0);
@@ -203,10 +203,10 @@ function _loop(now) {
     ctx.globalAlpha = phaseAlpha;
 
     // Lines
-    ctx.strokeStyle = 'rgba(255,215,0,0.5)';
-    ctx.lineWidth = 1.2;
-    ctx.shadowColor = 'rgba(255,215,0,0.4)';
-    ctx.shadowBlur = 4;
+    ctx.strokeStyle = 'rgba(255,215,0,0.75)';  // STORY-00326: was 0.5 — more visible gold lines
+    ctx.lineWidth = 2.5;  // STORY-00326: was 1.2
+    ctx.shadowColor = 'rgba(255,215,0,0.6)';
+    ctx.shadowBlur = 10;  // STORY-00326: was 4
     for (let li = 0; li < linesToShow; li++) {
       const [a, b] = _mappedLines[li];
       if (!_mappedStars[a] || !_mappedStars[b]) continue;
@@ -220,12 +220,12 @@ function _loop(now) {
     // Stars
     for (let si = 0; si < starsToShow; si++) {
       const s = _mappedStars[si];
-      // Sparkle burst trigger — once per star reveal (STORY-00277)
+      // Sparkle burst trigger — once per star reveal (STORY-00277, enhanced STORY-00326)
       if (!_sparkleTriggered.has(si)) {
         _sparkleTriggered.add(si);
-        for (let k = 0; k < 6; k++) {
-          const angle = (k * Math.PI * 2) / 6;
-          _sparkles.push({ x: s.x, y: s.y, vx: Math.cos(angle) * 60, vy: Math.sin(angle) * 60, life: 20, maxLife: 20 });
+        for (let k = 0; k < 8; k++) {  // STORY-00326: was 6 particles → 8
+          const angle = (k * Math.PI * 2) / 8;
+          _sparkles.push({ x: s.x, y: s.y, vx: Math.cos(angle) * 80, vy: Math.sin(angle) * 80, life: 28, maxLife: 28 });  // STORY-00326: faster+longer
         }
       }
       // Glow
@@ -401,10 +401,10 @@ function _loop(now) {
       sp.life--;
       if (sp.life <= 0) { _sparkles.splice(si, 1); continue; }
       const a = sp.life / sp.maxLife;
-      ctx.globalAlpha = a * 0.85;
+      ctx.globalAlpha = a * 0.90;
       ctx.fillStyle = '#ffd700';
       ctx.beginPath();
-      ctx.arc(sp.x, sp.y, 2, 0, TWO_PI);
+      ctx.arc(sp.x, sp.y, 3, 0, TWO_PI);  // STORY-00326: was 2px — larger sparkles
       ctx.fill();
     }
     ctx.restore();

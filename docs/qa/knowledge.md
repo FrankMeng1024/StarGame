@@ -2,6 +2,34 @@
 
 ---
 
+## Sprint 38-mini Updates (2026-04-21)
+
+### Sprint 38-mini — PASS (MEDIUM-HIGH confidence)
+
+#### Circular timer ring (STORY-00325)
+- Circular blue arc ring now replaces plain text timer. Time shown as M:SS inside ring (e.g. "1:25").
+- Ring positioned at top-center of HUD, no overlap with level name (left) or star count (right).
+- timeLeft≤10s state (red arc + pulse) is untested — requires timed capture at sub-10s game state.
+- For future: add debug mode or test save with very short level time to verify urgent state.
+
+#### Intro meteor brightness (STORY-00326)
+- Meteors now clearly visible as bright gold/yellow streaks against dark background.
+- Constellation nodes show bright glow with golden connecting lines and sparkle effects.
+- Numeric parameters (speed=7px/frame, trailFactor=0.40, etc.) are logic-only — verified by visible outcome.
+
+#### Level card visual upgrade (STORY-00327)
+- Unlocked cards: emoji icon (dominant, top), smaller level number, constellation name, difficulty color bar at bottom.
+- Difficulty color bar: green for difficulty 1-2, yellow for 3. Bars 4 (orange) and 5 (red) not yet testable.
+- Best time shows as "⏱ 84s" / "⏱ 61s" for completed levels. No time shown for unplayed levels — correct.
+- Emoji fallback path (tofu→nameZh[0:2] in purple) not triggered — primary emoji rendering works.
+
+#### Fail screen style fix (STORY-00328)
+- Dark background rgba(8,4,32,0.95) + thin subtle border replaces old thick red #ff4444 border.
+- Title "⏰ 时间到了！" in warm orange-red (#ff8a65). Encouragement text in white/light.
+- "大能座" visible in screenshot is likely rendering artifact of "大熊座" at small canvas font size — code is correct.
+
+---
+
 ## Sprint 33-mini Updates (2026-04-20)
 
 ### Sprint 33-mini — PASS (MEDIUM-HIGH confidence)
