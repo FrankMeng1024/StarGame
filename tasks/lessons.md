@@ -1,5 +1,12 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
+## Sprint 36-mini — 2026-04-20 (道具商店视觉升级 + 女角色重绘 + 胜利界面重设计)
+
+Sprint 36-mini: clean Sprint overall. Arch found 2 real bugs in code review; both fixed before QA. QA PASS HIGH confidence. UX no Blockers. VU pending.
+- [archived: docs/qa/sprint36-mini-verdict.md] Rope origin must be updated in BOTH _drawNet() AND _updateNetHead() when character dimensions change. Sprint 36-mini missed this — _updateNetHead still used old (+14,-62) offsets after STORY-00321 redrew the character at (+18,-75). Arch subagent caught this via diff review. Rule: any character redraw must audit all physics origins that reference character anchors.
+- [archived: docs/qa/sprint36-mini-verdict.md] web version complete.js != miniprogram game.js. Web version victory screen has 2 buttons; miniprogram has 3. These are separate implementations. QA must distinguish "miniprogram AC" from "web version behavior" when comparing screenshots from web localhost:8080.
+- [pending] Sprint 36-mini [pending] entry from Sprint 33-mini: "跨Sprint截图复用违规" — Sprint 34-mini resolved this with fresh screenshots. Marking resolved: see Sprint 34-mini entry above.
+
 ## Sprint 34-mini — 2026-04-20 (证据缺口补全 + 菜单深色按钮)
 
 Sprint 34-mini: clean Sprint, no retrospective actions needed.

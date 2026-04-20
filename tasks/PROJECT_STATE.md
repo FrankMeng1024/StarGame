@@ -1,10 +1,10 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: Sprint 36-mini COMPLETE — VU pending.
-**Current Sprint**: Sprint 36-mini → Sprint 37-mini planning
+**Status**: Sprint 37-mini COMPLETE — VU pending.
+**Current Sprint**: Sprint 37-mini → Sprint 38-mini planning
 **Last Updated**: 2026-04-20
 
-> **Sprint 36-mini COMPLETE**: 3 Stories STORY-00320~00322 Done. Shop canvas icons + deep blue-purple gradient cards (STORY-00320). Girl character anime redraw GIRL_W=90 GIRL_H=145 (STORY-00321). Victory/fail screen redesign compact card+non-overlapping buttons (STORY-00322). Arch PASS (rope origin bug fixed). QA PASS + UX no Blockers. VU evaluation pending.
+> **Sprint 37-mini COMPLETE**: 2 Stories STORY-00323~00324 Done. Star flash sequence before linedraw (STORY-00323): new 'starflash' phase, 150ms intervals, scale 1→2→1. Victory→levels flicker fix (STORY-00324): _cleanup() before all result navigation buttons. Arch PASS. QA PASS (STORY-00323 LOW confidence — miniprogram Canvas only). UX no Blockers. VU evaluation pending.
 
 ## Mini branch 微信小游戏分支（mini branch）
 
@@ -65,6 +65,7 @@
 | Sprint 34-mini | COMPLETE | 证据缺口补全+菜单深色按钮: 深色药丸按钮/失败+游戏实时截图/画廊详情截图 (STORY-00313~00315) — VU ACCEPTED 9.6/10 — PROJECT COMPLETE |
 | Sprint 35-mini | COMPLETE | 视觉品质修复: 开场动画星星大小/封面按钮布局/图鉴5列网格/安全区域适配 (STORY-00316~00319) — QA PASS + UX no Blockers |
 | Sprint 36-mini | COMPLETE | 道具商店视觉升级+女角色重绘+胜利界面重设计 (STORY-00320~00322) — Arch PASS + QA PASS + UX no Blockers |
+| Sprint 37-mini | COMPLETE | 胜利星星闪烁顺序+选关闪烁修复 (STORY-00323~00324) — Arch PASS + QA PASS + UX no Blockers |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |

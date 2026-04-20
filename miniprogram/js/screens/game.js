@@ -111,6 +111,10 @@ let _celebrateTimer = 0;  // seconds remaining in celebrate phase
 let _lineDrawProgress = 0; // float: how many lines have been drawn so far
 let _lingerTimer = 0;     // seconds remaining in linger phase (STORY-00274)
 let _revealedStarSet = new Set(); // STORY-00303: stars lit up by linedraw — indices into _conDef.lines
+// STORY-00323: star flash sequence between celebrate and linedraw
+let _flashPhaseTimer = 0;    // elapsed time in starflash phase
+let _flashedStarSet  = new Set(); // star indices that have been revealed in flash phase
+let _flashingStars   = [];   // [{idx, startT}] — stars currently mid-flash animation
 
 // Tutorial hint
 let _hintTimer  = 0;      // seconds remaining for hint display
@@ -177,6 +181,9 @@ export function showGame(navigate) {
   _celebrateTimer = 0;
   _lineDrawProgress = 0;
   _lingerTimer = 0;
+  _flashPhaseTimer = 0; // STORY-00323
+  _flashedStarSet.clear();
+  _flashingStars = [];
   _caughtDebris = null;
 
   // Timer
@@ -378,6 +385,9 @@ function _cleanup() {
   _celebrateTimer = 0;
   _lineDrawProgress = 0;
   _revealedStarSet.clear(); // STORY-00303: reset star reveal tracking
+  _flashPhaseTimer = 0;    // STORY-00323: reset star flash state
+  _flashedStarSet.clear();
+  _flashingStars = [];
   // Destroy cached line-draw SFX context to prevent cross-game leak (Arch review fix)
   if (_lineDrawSfxCtx) {
     try { _lineDrawSfxCtx.destroy(); } catch (e) {}
@@ -450,12 +460,23 @@ function _loop(now) {
     _updateParticles(dt);
     _celebrateTimer -= dt;
     if (_celebrateTimer <= 0) {
-      _phase = 'linedraw';
-      _lineDrawProgress = 0;
+      _phase = 'starflash'; // STORY-00323: star flash sequence before linedraw
+      _flashPhaseTimer = 0;
+      _flashedStarSet.clear();
+      _flashingStars = [];
     }
     _drawConLines(ctx);
     _drawStars(ctx, t);
     _drawParticles(ctx);
+    _drawGirl(ctx);
+  } else if (_phase === 'starflash') {
+    // STORY-00323: sequential star flash — each constellation-line star flashes before lines appear
+    _flashPhaseTimer += dt;
+    _updateStarFlash(dt, t);
+    _drawConLines(ctx);
+    _drawStars(ctx, t);
+    _drawParticles(ctx);
+    _drawStarFlash(ctx, t);
     _drawGirl(ctx);
   } else if (_phase === 'linedraw') {
     _updateLineDrawProgress(dt);
@@ -799,6 +820,77 @@ function _drawAnimatedConLines(ctx) {
   ctx.restore();
 }
 
+// ── Victory star flash sequence (STORY-00323) ────────────────
+// Sequential: each pair of stars in constellation.lines flashes 150ms apart
+// Flash animation: scale 1→2→1 over FLASH_DUR seconds, with shadowBlur glow
+const FLASH_INTERVAL = 0.15; // seconds between each star reveal
+const FLASH_DUR      = 0.35; // seconds per star flash animation
+
+function _updateStarFlash(dt, t) {
+  if (!_conDef.lines || _conDef.lines.length === 0) {
+    // No lines — skip directly to linedraw
+    _phase = 'linedraw';
+    _lineDrawProgress = 0;
+    return;
+  }
+  // Determine which stars should be revealed based on elapsed time
+  const totalStarSlots = _conDef.lines.length * 2; // both endpoints per line
+  const revealIdx = Math.floor(_flashPhaseTimer / FLASH_INTERVAL);
+
+  // Add newly revealed stars
+  let slot = 0;
+  for (let li = 0; li < _conDef.lines.length; li++) {
+    const [ai, bi] = _conDef.lines[li];
+    for (const starIdx of [ai, bi]) {
+      if (slot <= revealIdx && !_flashedStarSet.has(starIdx)) {
+        _flashedStarSet.add(starIdx);
+        _flashingStars.push({ idx: starIdx, startT: t });
+        // Also add to revealedStarSet so linedraw knows which to reveal
+        _revealedStarSet.add(starIdx);
+      }
+      slot++;
+    }
+  }
+
+  // Check if all stars have been flashed and their animations are complete
+  const allRevealed = _flashedStarSet.size >= totalStarSlots || revealIdx >= totalStarSlots;
+  if (allRevealed) {
+    const oldestFlash = _flashingStars[0];
+    const flashAge = oldestFlash ? (t - oldestFlash.startT) : FLASH_DUR;
+    if (flashAge >= FLASH_DUR) {
+      // All stars flashed — transition to linedraw
+      _phase = 'linedraw';
+      _lineDrawProgress = 0;
+    }
+  }
+}
+
+function _drawStarFlash(ctx, t) {
+  if (!_flashingStars.length) return;
+  ctx.save();
+  for (const entry of _flashingStars) {
+    const s = _stars[entry.idx];
+    if (!s) continue;
+    const age = t - entry.startT;
+    if (age > FLASH_DUR) continue; // animation complete
+    // Scale pulse: 1 → 2 → 1 over FLASH_DUR
+    const progress = age / FLASH_DUR;
+    const scale = 1 + Math.sin(progress * Math.PI) * 1.0; // peak scale = 2.0
+    const glow  = Math.sin(progress * Math.PI) * 20;      // peak shadowBlur = 20
+
+    ctx.save();
+    ctx.globalAlpha = 0.85 + Math.sin(progress * Math.PI) * 0.15;
+    ctx.shadowColor = '#ffe566';
+    ctx.shadowBlur  = glow;
+    ctx.fillStyle   = '#ffe566';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r * scale, 0, TWO_PI);
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
 // ── Victory linger: stars pulse bright (STORY-00274) ─────────
 function _drawLingerFlash(ctx, t) {
   if (!_conDef.lines || !_stars) return;
@@ -824,7 +916,8 @@ function _drawLingerFlash(ctx, t) {
 // ── Draw: stars (STORY-00260 sparkle upgrade) ────────────────
 function _drawStars(ctx, t) {
   // STORY-00303: in linedraw/linger phase, dim unrevealed stars; brighten revealed ones (web parity)
-  const inRevealPhase = (_phase === 'linedraw' || _phase === 'linger');
+  // STORY-00323: also dim stars during starflash — only _flashedStarSet members are bright
+  const inRevealPhase = (_phase === 'starflash' || _phase === 'linedraw' || _phase === 'linger');
   for (const s of _stars) {
     if (s.caught) {
       // Caught stars: dim, small, grey
@@ -838,7 +931,9 @@ function _drawStars(ctx, t) {
       continue;
     }
     // STORY-00303: during linedraw/linger, unrevealed stars are dim (alpha 0.3 base), revealed are full bright
-    const revealed = !inRevealPhase || _revealedStarSet.has(s.idx);
+    // STORY-00323: during starflash, use _flashedStarSet (not _revealedStarSet)
+    const flashRevealSet = _phase === 'starflash' ? _flashedStarSet : _revealedStarSet;
+    const revealed = !inRevealPhase || flashRevealSet.has(s.idx);
     const alphaBase = revealed ? (0.35 + 0.65 * Math.abs(Math.sin(t * s.speed + s.phase))) : 0.3;
     const alpha = alphaBase;
 
@@ -2031,8 +2126,8 @@ function _onTouch(e) {
     return;
   }
 
-  // Tap during celebrate/linedraw/linger: skip to result
-  if (_phase === 'celebrate' || _phase === 'linedraw' || _phase === 'linger') {
+  // Tap during celebrate/starflash/linedraw/linger: skip to result
+  if (_phase === 'celebrate' || _phase === 'starflash' || _phase === 'linedraw' || _phase === 'linger') {
     _phase = 'result';
     return;
   }
@@ -2052,6 +2147,7 @@ function _onTouch(e) {
       return;
     }
     if (_btnNext && hitTest(_btnNext, tx, ty)) {
+      _cleanup(); // STORY-00324: stop RAF before any navigation — prevents girl/list flicker
       if (_levelIdx >= 29) {
         // Last level completed → go to achievement screen
         if (_navigate) fadeNavigate(() => _navigate('achievement'));
@@ -2063,18 +2159,22 @@ function _onTouch(e) {
       return;
     }
     if (_btnRetry && hitTest(_btnRetry, tx, ty)) {
+      _cleanup(); // STORY-00324
       if (_navigate) fadeNavigate(() => _navigate('game'));
       return;
     }
     if (_btnReplay && hitTest(_btnReplay, tx, ty)) {
+      _cleanup(); // STORY-00324
       if (_navigate) fadeNavigate(() => _navigate('game'));
       return;
     }
     if (_btnLevels && hitTest(_btnLevels, tx, ty)) {
+      _cleanup(); // STORY-00324: stop RAF before levels nav — prevents girl/list flicker
       if (_navigate) fadeNavigate(() => _navigate('levels'));
       return;
     }
     if (_btnShop && hitTest(_btnShop, tx, ty)) {
+      _cleanup(); // STORY-00324
       if (_navigate) fadeNavigate(() => _navigate('shop'));
       return;
     }
