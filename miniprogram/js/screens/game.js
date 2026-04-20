@@ -1553,26 +1553,17 @@ function _drawHUD(ctx, W) {
   ctx.fillRect(0, 0, W, ST + 52);
   ctx.restore();
 
-  // Level name (top-left after star count) — drawn below the notch
+  // Level name (top-left) — STORY-00311: web parity layout
   ctx.save();
-  ctx.font         = 'bold 11px sans-serif';
+  ctx.font         = 'bold 12px sans-serif';
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle    = 'rgba(200,185,255,0.85)';
-  const levelLabel = (_conDef.icon || '★') + ' ' + _conDef.nameZh;
-  ctx.fillText(levelLabel, G.SAFE_LEFT + 14, ST + 38);  // STORY-00289: moved below star count
+  ctx.fillStyle    = 'rgba(220,200,255,0.90)';
+  const levelLabel = _conDef.nameZh + ' · 第' + (_levelIdx + 1) + '关';
+  ctx.fillText(levelLabel, G.SAFE_LEFT + 14, ST + 26);
   ctx.restore();
 
-  // Caught count (top-left) — primary info
-  ctx.save();
-  ctx.font         = 'bold 14px sans-serif';
-  ctx.textAlign    = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle    = COLORS.starGold;
-  ctx.fillText('✦ ' + _caught + ' / ' + _total, G.SAFE_LEFT + 14, ST + 22);
-  ctx.restore();
-
-  // Timer (center top) — STORY-00289: web version puts timer center
+  // Timer (center top) — STORY-00289/00311: centered, web parity
   const mins    = Math.floor(_timeLeft / 60);
   const secs    = Math.floor(_timeLeft % 60);
   const timerStr = mins + ':' + String(secs).padStart(2, '0');
@@ -1590,7 +1581,16 @@ function _drawHUD(ctx, W) {
     ctx.shadowColor = '#ff2222';
     ctx.shadowBlur  = timerUrgent ? 14 : 8;
   }
-  ctx.fillText(timerStr, W / 2, ST + 26);  // STORY-00289: centered
+  ctx.fillText(timerStr, W / 2, ST + 26);
+  ctx.restore();
+
+  // Star count (top-right) — STORY-00311: moved from left to right for web parity
+  ctx.save();
+  ctx.font         = 'bold 14px sans-serif';
+  ctx.textAlign    = 'right';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = COLORS.starGold;
+  ctx.fillText('★ ' + _caught + '/' + _total, W - G.SAFE_RIGHT - 50, ST + 26);
   ctx.restore();
 
   // Bomb button (legacy — kept for backward compat; slot system handles space_bomb now)
@@ -1695,7 +1695,7 @@ function _drawHUD(ctx, W) {
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = '#e8e8f0';
-  ctx.fillText(_paused ? '▶' : '⏸', pauseX + 18, pauseY + 18);
+  ctx.fillText(_paused ? '▶' : '⚙', pauseX + 18, pauseY + 18);
   ctx.restore();
 }
 
@@ -1708,7 +1708,7 @@ function _triggerResult(victory) {
   const stars3  = coins >= 300 ? 3 : coins >= 100 ? 2 : 1;
   const uncaught = _total - _caught;
 
-  _result = { victory, timeLeft: _timeLeft, coins, stars: stars3, uncaught };
+  _result = { victory, timeLeft: _timeLeft, coins, stars: stars3, uncaught, caught: _caught, total: _total };
   _lorePage  = 0;
   _lorePages = []; // will be built on first result overlay render
   _loreDismissed = false;
@@ -1940,13 +1940,27 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.restore();
     cy += 28;
 
-    // Personalized encouragement (STORY-00237)
+    // Stats row — STORY-00310: web parity (X/Y已抓 · Z秒剩余 · W金币)
+    ctx.save();
+    ctx.font         = '12px sans-serif';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = 'rgba(200,195,240,0.75)';
+    const caught  = r.caught != null ? r.caught : (_total - r.uncaught);
+    const total   = r.total  != null ? r.total  : _total;
+    const secsLeft = Math.max(0, Math.floor(r.timeLeft));
+    ctx.fillText(caught + '/' + total + '已抓 · ' + secsLeft + '秒剩余 · ' + r.coins + '金币', cx, cy);
+    ctx.restore();
+    cy += 22;
+
+    // Personalized encouragement (STORY-00237 / STORY-00310)
     ctx.save();
     ctx.font         = '13px sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle    = COLORS.text2;
-    ctx.fillText((_conDef.nameZh || '星星') + '还在等你！', cx, cy);
+    const conName = _conDef ? _conDef.nameZh : '星星';
+    ctx.fillText(conName + '跑得太快了，再来一次！✨', cx, cy);
     ctx.restore();
     cy += 20;
 

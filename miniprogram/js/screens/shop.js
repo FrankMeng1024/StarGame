@@ -32,10 +32,11 @@ let _isDragging  = false;
 let _totalH      = 0;
 let _feedback    = null; // { msg, until } — brief purchase feedback
 
-// Layout
-const CARD_H    = 90;
+// Layout — 2-column grid (STORY-00309: web parity)
+const CARD_H    = 100;
 const CARD_GAP  = 8;
-const PAD_X     = 14;
+const PAD_X     = 10;
+const COLS      = 2;
 
 // ── Public API ────────────────────────────────────────────────
 export function showShop(navigate) {
@@ -71,7 +72,8 @@ function _cleanup() {
 
 function _computeLayout() {
   const padTop = G.SAFE_TOP + 70;  // below back button + notch
-  _totalH = padTop + ITEMS.length * (CARD_H + CARD_GAP) + 24 + G.SAFE_BOTTOM;
+  const rows = Math.ceil(ITEMS.length / COLS);
+  _totalH = padTop + rows * (CARD_H + CARD_GAP) + 24 + G.SAFE_BOTTOM;
 }
 
 // ── RAF loop ──────────────────────────────────────────────────
@@ -109,7 +111,7 @@ function _loop(now) {
   ctx.fillText('🪙 ' + state.coins, W - G.SAFE_RIGHT - 12, G.SAFE_TOP + 29);
   ctx.restore();
 
-  // ── Scrollable item list ──
+  // ── Scrollable item grid ──
   _buyRects = [];
 
   const padTop = G.SAFE_TOP + 60;
@@ -119,9 +121,17 @@ function _loop(now) {
   ctx.clip();
   ctx.translate(0, -_scrollY);
 
+  const safeL = G.SAFE_LEFT || 0;
+  const safeR = G.SAFE_RIGHT || 0;
+  const gridW = W - safeL - safeR - PAD_X * 2;
+  const colW  = (gridW - CARD_GAP) / COLS;
+
   ITEMS.forEach((item, i) => {
-    const cardY = padTop + i * (CARD_H + CARD_GAP);
-    _drawItemCard(ctx, W, item, i, cardY, now);
+    const col  = i % COLS;
+    const row  = Math.floor(i / COLS);
+    const cardX = safeL + PAD_X + col * (colW + CARD_GAP);
+    const cardY = padTop + row * (CARD_H + CARD_GAP);
+    _drawItemCard(ctx, W, item, i, cardX, cardY, colW);
   });
 
   ctx.restore();
@@ -149,17 +159,13 @@ function _loop(now) {
   _rafId = requestAnimationFrame(_loop);
 }
 
-function _drawItemCard(ctx, W, item, idx, cardY, now) {
-  const safeL  = G.SAFE_LEFT || 0;
-  const safeR  = G.SAFE_RIGHT || 0;
-  const cardX  = safeL + PAD_X;
-  const cardW  = W - safeL - safeR - PAD_X * 2;
+function _drawItemCard(ctx, W, item, idx, cardX, cardY, cardW) {
   const owned  = state.getItemQty(item.id);
   const canBuy = state.coins >= item.cost;
 
   // Card bg
   ctx.save();
-  ctx.globalAlpha = 0.88;
+  ctx.globalAlpha = 0.90;
   ctx.fillStyle = 'rgba(18,18,50,0.92)';
   _roundRect(ctx, cardX, cardY, cardW, CARD_H, 12);
   ctx.fill();
@@ -168,60 +174,69 @@ function _drawItemCard(ctx, W, item, idx, cardY, now) {
   ctx.stroke();
   ctx.restore();
 
-  // Icon
+  const cx = cardX + cardW / 2;
+
+  // Icon — large, centered top area
   ctx.save();
-  ctx.font = '32px sans-serif';
+  ctx.font = '28px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillText(item.icon, cardX + 42, cardY + CARD_H / 2);
+  ctx.fillText(item.icon, cx, cardY + 22);
   ctx.restore();
 
   // Name
   ctx.save();
-  ctx.font = 'bold 15px sans-serif';
-  ctx.textAlign = 'left';
+  ctx.font = 'bold 11px sans-serif';
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillStyle = '#e8e0ff';
-  ctx.fillText(item.nameZh, cardX + 78, cardY + 16);
+  ctx.fillText(item.nameZh, cx, cardY + 42);
   ctx.restore();
 
-  // Desc
+  // 主动/被动 badge + duration badge
+  const badgeY = cardY + 58;
+  const typeBadgeColor = item.type === '主动' ? 'rgba(100,60,200,0.85)' : 'rgba(40,100,180,0.85)';
+  _drawBadge(ctx, cx - 22, badgeY, item.type, typeBadgeColor);
+  _drawBadge(ctx, cx + 18, badgeY, item.duration, 'rgba(40,60,100,0.75)');
+
+  // Price + buy button
+  const btnW = cardW - 16;
+  const btnX = cardX + 8;
+  const btnY = cardY + CARD_H - 26;
+
   ctx.save();
-  ctx.font = '12px sans-serif';
+  ctx.font = 'bold 11px sans-serif';
   ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle = 'rgba(180,170,220,0.8)';
-  ctx.fillText(item.desc, cardX + 78, cardY + 38);
-  ctx.restore();
-
-  // Owned badge
-  ctx.save();
-  ctx.font = '11px sans-serif';
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle = owned > 0 ? '#a0ffa0' : 'rgba(160,150,200,0.5)';
-  ctx.fillText('已持有 ' + owned, cardX + 78, cardY + 58);
-  ctx.restore();
-
-  // Cost + buy button
-  const btnW = 72;
-  const btnX = cardX + cardW - btnW - 8;
-  const btnY = cardY + CARD_H / 2 - 18;
-
-  ctx.save();
-  ctx.font = 'bold 13px sans-serif';
-  ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle = COLORS.starGold;
-  ctx.fillText('🪙 ' + item.cost, btnX - 6, cardY + CARD_H / 2 - 10);
+  ctx.fillStyle = '#ffd700';
+  ctx.fillText('🪙' + item.cost, btnX + 2, btnY + 8);
   ctx.restore();
 
-  const btnRect = drawButton(ctx, btnX, btnY + 14, btnW, 30, '购买', {
-    fontSize: 13, radius: 8,
+  const btnRect = drawButton(ctx, btnX + 32, btnY, btnW - 40, 20, '购买', {
+    fontSize: 11, radius: 6,
     color0: canBuy ? 'rgba(60,160,80,0.85)' : 'rgba(60,60,80,0.6)',
     color1: canBuy ? 'rgba(40,200,100,0.85)' : 'rgba(40,40,60,0.6)',
   });
   _buyRects.push({ rect: btnRect, itemIdx: idx });
+}
+
+// Draw a small pill badge with text
+function _drawBadge(ctx, cx, y, text, bgColor) {
+  if (!text) return;
+  ctx.save();
+  ctx.font = '9px sans-serif';
+  const tw = ctx.measureText(text).width;
+  const bw = tw + 8;
+  const bh = 14;
+  const bx = cx - bw / 2;
+  ctx.fillStyle = bgColor;
+  _roundRect(ctx, bx, y, bw, bh, 4);
+  ctx.fill();
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#ffffff';
+  ctx.fillText(text, cx, y + bh / 2);
+  ctx.restore();
 }
 
 // ── Touch handling ────────────────────────────────────────────
