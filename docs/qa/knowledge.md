@@ -2,6 +2,29 @@
 
 ---
 
+## Sprint 33-mini Updates (2026-04-20)
+
+### Sprint 33-mini — PASS (MEDIUM-HIGH confidence)
+
+#### Shop 2-column grid (STORY-00309)
+- shop.js: COLS=2, CARD_H=100, card icons centered, 主动/被动 purple pill badge, duration badge, gold coin price, green 购买 button
+- 6 of 8 items visible without scroll; items 7-8 (宇航员手套, 双倍金币) presumed below fold
+- Description text AC: no separate description field — item name serves as description, by design
+
+#### Fail screen stats row (STORY-00310)
+- game.js: _result includes caught/total; stats row renders as "X/Y已抓 · Z秒剩余 · W金币"
+- Flavor text: "{conName}跑得太快了，再来一次！✨" — constellation name personalized
+- Button label: "选关" in mini (vs "返回选关" in web) — intentional mobile adaptation
+- Constellation line-art rendered in card center — confirmed visible
+
+#### Game HUD alignment (STORY-00311)
+- Level name top-left: "猎户座 · 第1关" format confirmed
+- Timer center: plain "1:24" text (vs circular progress in web — platform difference)
+- Star count top-right: "★ 0/7" confirmed
+- Settings: WeChat platform controls (···) used instead of custom ⚙ icon — platform convention
+
+---
+
 ## Sprint 29-mini Updates (2026-04-19)
 
 ### Sprint 29-mini — PASS (HIGH confidence: code-path verification)

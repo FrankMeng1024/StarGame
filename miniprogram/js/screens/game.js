@@ -1948,7 +1948,7 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.fillStyle    = 'rgba(200,195,240,0.75)';
     const caught  = r.caught != null ? r.caught : (_total - r.uncaught);
     const total   = r.total  != null ? r.total  : _total;
-    const secsLeft = Math.max(0, Math.floor(r.timeLeft));
+    const secsLeft = Math.max(0, Math.floor(r.timeLeft || 0));
     ctx.fillText(caught + '/' + total + '已抓 · ' + secsLeft + '秒剩余 · ' + r.coins + '金币', cx, cy);
     ctx.restore();
     cy += 22;

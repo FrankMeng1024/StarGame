@@ -1,5 +1,25 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 33-mini Updates (2026-04-20)
+
+### Shop Grid — 2-Column Layout Now Standard
+- Shop uses 2-column grid (3 rows visible per screen, 6 items per view). Items 7-8 require scroll — no visible scroll indicator.
+- Each card: large centered icon, item name, 主动/被动 badge (purple pill), duration badge, coin price left, green "购买" button spanning card width.
+- Coin balance shown in top-right header (small — could be missed by new users).
+- Cross-platform parity HIGH with web shop intent.
+
+### Fail Screen — Full Web Parity Achieved
+- Modal card: alarm icon "时间到了！" → "还差N颗星" → "X/Y已抓 · Z秒剩余 · W金币" → constellation silhouette → personalized encouragement ("猎户座跑得太快了，再来一次！✨") → 重试 + 选关 buttons.
+- Information hierarchy matches web version exactly.
+- First-time users: clear fail reason, stats, and emotional motivation to retry.
+
+### Game HUD — Core Elements Match Web
+- Level name top-left (猎户座 · 第1关), timer center (plain text), star counter top-right (★ 0/7).
+- Web version has gear+speaker icons top-right; mini version uses WeChat capsule instead — platform convention.
+- Play area fully unobstructed. Star targets bright and visible against dark sky background.
+
+---
+
 ## Sprint 29-mini Updates (2026-04-19)
 
 ### Label Consistency — Gallery Header and Menu Button Now Unified
