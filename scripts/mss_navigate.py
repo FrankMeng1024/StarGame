@@ -6,23 +6,39 @@ mss_navigate.py — 微信小游戏全屏幕导航 + 截图脚本
 
 功能:
   1. 动态发现 wechatdevtools.exe 窗口句柄
-  2. 确保 DevTools 在前台（"Move Simulator Left" 模式已激活）
+  2. 确保 DevTools 在前台
   3. 截取并保存各屏幕截图：menu, level_select, game, fail
   4. 每张截图用 GLM-4V 验证 screen_type
   5. 全部通过 → exit(0)，任意失败 → exit(1)
 
-前置条件（必须手动完成一次，之后持久生效）:
-  - WeChat DevTools 已打开 Star 项目
-  - 在模拟器区域右键 → "Move Simulator Left"（模拟器移到左侧才能完整显示）
-  - DPI 缩放 150%（本机固定，script 内 SCALE=1.5）
+坐标系说明 (DPI 150%):
+  - 脚本启动时设置 Per-Monitor DPI Aware (SetProcessDpiAwareness=2)
+  - 所有坐标均为物理像素 (1920×1200)
+  - GetWindowRect, SetCursorPos, SendInput 均使用物理坐标
+  - mss 捕获物理像素截图 (1920×1200)
 
-坐标系说明:
-  - mss 使用「物理像素」坐标（GetWindowRect 返回值）
-  - SetCursorPos / mouse_event 使用「逻辑像素」坐标 (physical / SCALE)
-  - 窗口：1280×800 物理，"Move Simulator Left" 后游戏画布在 physical x=22..987, y=143..583
+物理坐标（右侧面板打开时，模拟器在左侧 x=0..988）:
+  - 游戏画布: physical (14, 138, 974, 434) — left=14, top=138, w=974, h=434
+  - 挑战关卡 button: ratio(0.750, 0.299) → physical(745, 268)
+  - 星座图鉴 button: ratio(0.750, 0.408) → physical(745, 315)
+  - 道具商店 button: ratio(0.750, 0.495) → physical(745, 353)
+  - Level 1 猎户座 card: ratio(0.114, 0.147) → physical(125, 202)
+  - 跳过 overlay skip button: ratio(0.360, 0.490) → physical(365, 351)
+  - focus safe area: ratio(0.513, 0.184) → physical(514, 218) — center-right, below subtitle
+  - Toolbar 重新加载 ↺ button: window-relative physical (484, 42)
 """
 import sys, os, time, subprocess, json, argparse, base64
 import ctypes, ctypes.wintypes
+
+# Set DPI awareness BEFORE any windowing API calls
+# This makes GetWindowRect, SetCursorPos, GetSystemMetrics return physical pixels
+try:
+    ctypes.windll.shcore.SetProcessDpiAwareness(2)  # PROCESS_PER_MONITOR_DPI_AWARE
+except Exception:
+    try:
+        ctypes.windll.user32.SetProcessDPIAware()
+    except Exception:
+        pass
 
 sys.stdout.reconfigure(encoding='utf-8', errors='replace')
 
@@ -51,7 +67,6 @@ OUT_DIR = args.out or f"docs/qa/sprint{args.sprint}-evidence"
 os.makedirs(OUT_DIR, exist_ok=True)
 
 STORY = args.story
-SCALE = 1.0  # mss and GetWindowRect both use the same logical coordinate space on this system
 
 user32 = ctypes.windll.user32
 SW_RESTORE = 9
@@ -116,14 +131,12 @@ def glm_screen_type(img_path, canvas=None):
 # ─── 游戏画布检测 ──────────────────────────────────
 def find_canvas_bounds(hwnd):
     """
-    截取 hwnd，在截图中定位游戏画布（landscape phone frame）区域。
-    返回 (canvas_x, canvas_y, canvas_w, canvas_h) in PHYSICAL pixels (relative to window top-left),
-    或 None（检测失败时）。
+    定位游戏画布（phone simulator内的游戏区域）。
+    返回 (canvas_x, canvas_y, canvas_w, canvas_h) in window-relative PHYSICAL pixels。
 
-    策略：
-    - 游戏画布是一个深蓝/紫色填充的横向矩形，位于 DevTools 的模拟器面板内
-    - 搜索截图中 y>88（跳过 DevTools toolbar）区域内，最大的彩色连通矩形
-    - 用于计算 "Move Simulator Left" 和 "右侧面板" 两种布局下的画布位置
+    策略：利用 B channel 区分游戏画布 (B≈78, 深蓝色) 与 DevTools 灰色面板 (B≈40)。
+    - 垂直范围：扫描中心列 x=260，找 B>60 的起止行
+    - 水平范围：扫描中心行，找 B>60 的起止列
     """
     r = ctypes.wintypes.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(r))
@@ -135,57 +148,66 @@ def find_canvas_bounds(hwnd):
         img = sct.grab(monitor)
         arr = np.array(img)[:, :, :3][..., ::-1]  # RGB
 
-    # Strategy: find canvas by brightness transition.
-    # DevTools UI panels are medium gray (brightness ~40-60).
-    # Game canvas is dark navy (brightness <35) surrounded by that gray.
-    # Scan the center column (x = win_w//2) for the vertical extent,
-    # then scan the center row for the horizontal extent.
-    DEVTOOLS_GRAY_LOW = 35   # below this = canvas or black border
-    DEVTOOLS_GRAY_HIGH = 80  # above this = definitely DevTools UI
+    # B channel threshold: game canvas has B≈59-112 (navy blue);
+    # DevTools toolbar/gray panels have B≈40-56; DevTools right panel has B≈170.
+    # Use B > 56 to detect game canvas, scan at x=260 (middle of simulator).
+    B_GAME = 56  # B > 56 = game canvas
 
-    # Strategy: brightness-transition detection.
-    # Scan a column at x≈150 (far left of simulator, avoids phone-frame elements).
-    # DevTools toolbar: brightness ~47-56. Game canvas: dark navy, brightness <35.
-    # Top: where brightness drops below 35. Bottom: where it rises above 55.
-    # Horizontal bounds: use saturation on a row in the lower half of the canvas.
-    DARK_THRESH = 35    # canvas interior (dark navy)
-    GRAY_THRESH = 55    # DevTools gray panel
-
-    scan_x = min(150, win_w // 9)
-    col = arr[:, scan_x, :].mean(axis=1)
+    # ── Vertical extent: scan B channel at x=260 (center of simulator) ──
+    scan_x = min(260, win_w // 4)
+    col_B = arr[:, scan_x, 2].astype(int)
 
     cy_top = None
-    for y in range(90, win_h):
-        if col[y] < DARK_THRESH:
-            cy_top = y; break
+    for y in range(55, win_h):  # skip toolbar (y<55)
+        if col_B[y] > B_GAME:
+            cy_top = y
+            break
     if cy_top is None:
         return None
 
     cy_bottom = cy_top + 100
-    for y in range(cy_top + 100, win_h):
-        if col[y] > GRAY_THRESH:
-            cy_bottom = y - 1; break
+    last_blue_y = cy_top
+    for y in range(cy_top, min(cy_top + 600, win_h)):
+        if col_B[y] > B_GAME:
+            last_blue_y = y
+        elif y > last_blue_y + 15:
+            break
+    cy_bottom = last_blue_y
 
     ch = cy_bottom - cy_top
     if ch < 100:
         return None
 
-    # Horizontal bounds: in "Move Simulator Left" layout, the simulator
-    # occupies ~77% of the DevTools window width. The game canvas has a small
-    # phone frame border (~13px). Cap right at 78% to exclude the DevTools panel.
-    # Both canvas and DevTools right panel are dark — can't distinguish by brightness.
-    cx_left = 13
-    cx_right = int(win_w * 0.772)  # ~988 for 1280px window
+    # ── Horizontal extent: scan B channel at center row ──
+    scan_row_y = cy_top + ch // 2
+    row_B = arr[scan_row_y, :, 2].astype(int)
+
+    cx_left = 0
+    for x in range(0, min(200, win_w)):
+        if row_B[x] > B_GAME:
+            cx_left = x
+            break
+
+    cx_right = cx_left + 100
+    last_blue_x = cx_left
+    for x in range(cx_left, min(win_w - 5, 700)):
+        if row_B[x] > B_GAME:
+            last_blue_x = x
+        elif x > last_blue_x + 20:
+            break
+    cx_right = last_blue_x
 
     cx = cx_left
     cy = cy_top
     cw = cx_right - cx_left
     ch = cy_bottom - cy_top
 
-    if cw < 200 or ch < 100:
+    if cw < 100 or ch < 100:
         return None
 
     return (cx, cy, cw, ch)
+
+
 
 
 def find_render_widget(hwnd):
@@ -211,24 +233,19 @@ def find_render_widget(hwnd):
 def canvas_click(hwnd, canvas, rx, ry, label=""):
     """
     click at canvas-relative ratio position (rx, ry).
-    canvas = (cx, cy, cw, ch) in physical pixels (relative to window).
+    canvas = (cx, cy, cw, ch) in PHYSICAL pixels (absolute screen coords).
+    Uses SendInput with MOUSEEVENTF_ABSOLUTE for reliable Chromium click.
+    Note: does NOT call SetForegroundWindow before each click — caller is responsible
+    for ensuring the window is in foreground before the first click.
     """
-    r = ctypes.wintypes.RECT()
-    user32.GetWindowRect(hwnd, ctypes.byref(r))
+    screen_w = user32.GetSystemMetrics(0)
+    screen_h = user32.GetSystemMetrics(1)
     # Physical absolute position
-    phys_x = r.left + canvas[0] + int(canvas[2] * rx)
-    phys_y = r.top + canvas[1] + int(canvas[3] * ry)
-    # Logical (for mouse_event)
-    lx = int(phys_x / SCALE)
-    ly = int(phys_y / SCALE)
-    # Move cursor and click using mouse_event (relative, after SetCursorPos)
-    user32.SetCursorPos(lx, ly)
-    time.sleep(0.15)
-    user32.mouse_event(0x0002, 0, 0, 0, 0)
-    time.sleep(0.05)
-    user32.mouse_event(0x0004, 0, 0, 0, 0)
+    phys_x = canvas[0] + int(canvas[2] * rx)
+    phys_y = canvas[1] + int(canvas[3] * ry)
+    _sendinput_phys(phys_x, phys_y, screen_w, screen_h)
     if label:
-        print(f"  🖱  Click {label} @ ratio({rx:.3f},{ry:.3f}) phys({phys_x},{phys_y}) log({lx},{ly})")
+        print(f"  🖱  Click {label} @ ratio({rx:.3f},{ry:.3f}) log({phys_x},{phys_y})")
 
 
 # ─── hwnd 发现 ────────────────────────────────────
@@ -263,8 +280,10 @@ def capture(hwnd, filename, step_label=""):
     """截取 hwnd 全窗口，保存到 OUT_DIR/filename，返回亮度"""
     # SW_SHOW (5) to show without changing size; bring to foreground
     user32.ShowWindow(hwnd, 5)
-    user32.SetForegroundWindow(hwnd)
-    time.sleep(1.2)
+    # NOTE: do NOT call SetForegroundWindow here — it refocuses DevTools terminal
+    # panel and causes subsequent canvas_clicks to miss the simulator.
+    # Window was brought to foreground at script start; keep it there.
+    time.sleep(0.8)
     r = ctypes.wintypes.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(r))
     with mss.mss() as sct:
@@ -279,12 +298,25 @@ def capture(hwnd, filename, step_label=""):
     return brightness, path
 
 def send_input_click(lx, ly, label=""):
-    """Use SendInput (more reliable than mouse_event for Chromium apps)."""
-    # Convert logical coords to normalized (0-65535) screen coordinates
+    """Use SendInput with physical coords (DPI-aware process)."""
     screen_w = user32.GetSystemMetrics(0)
     screen_h = user32.GetSystemMetrics(1)
-    norm_x = int(lx * 65535 / screen_w)
-    norm_y = int(ly * 65535 / screen_h)
+    _sendinput_phys(lx, ly, screen_w, screen_h)
+    if label:
+        print(f"  🖱  SendInput {label} @ physical({lx},{ly})")
+
+
+def _sendinput_phys(phys_x, phys_y, screen_w, screen_h):
+    """Core SendInput using MOUSEEVENTF_ABSOLUTE with physical screen coords.
+    Multi-monitor: use virtual screen dimensions (SM_CXVIRTUALSCREEN/SM_CYVIRTUALSCREEN)
+    so clicks on secondary monitors don't overflow the [0,65535] range.
+    """
+    vx_origin = user32.GetSystemMetrics(76)   # SM_XVIRTUALSCREEN
+    vy_origin = user32.GetSystemMetrics(77)   # SM_YVIRTUALSCREEN
+    vw        = user32.GetSystemMetrics(78)   # SM_CXVIRTUALSCREEN (full virtual width)
+    vh        = user32.GetSystemMetrics(79)   # SM_CYVIRTUALSCREEN (full virtual height)
+    norm_x = int((phys_x - vx_origin) * 65535 / vw)
+    norm_y = int((phys_y - vy_origin) * 65535 / vh)
 
     class MOUSEINPUT(ctypes.Structure):
         _fields_ = [('dx', ctypes.c_long), ('dy', ctypes.c_long),
@@ -297,44 +329,39 @@ def send_input_click(lx, ly, label=""):
         _anonymous_ = ('_input',)
         _fields_ = [('type', ctypes.c_ulong), ('_input', _INPUT)]
 
-    MOUSEEVENTF_MOVE = 0x0001
-    MOUSEEVENTF_LEFTDOWN = 0x0002
-    MOUSEEVENTF_LEFTUP   = 0x0004
-    MOUSEEVENTF_ABSOLUTE = 0x8000
+    MOUSEEVENTF_MOVE        = 0x0001
+    MOUSEEVENTF_LEFTDOWN    = 0x0002
+    MOUSEEVENTF_LEFTUP      = 0x0004
+    MOUSEEVENTF_ABSOLUTE    = 0x8000
+    MOUSEEVENTF_VIRTUALDESK = 0x4000  # Required for multi-monitor: maps [0,65535] to virtual desktop
     INPUT_MOUSE = 0
 
     move = INPUT(type=INPUT_MOUSE)
     move.mi.dx = norm_x; move.mi.dy = norm_y
-    move.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE
+    move.mi.dwFlags = MOUSEEVENTF_MOVE | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK
     ctypes.windll.user32.SendInput(1, ctypes.byref(move), ctypes.sizeof(INPUT))
     time.sleep(0.1)
 
     down = INPUT(type=INPUT_MOUSE)
     down.mi.dx = norm_x; down.mi.dy = norm_y
-    down.mi.dwFlags = MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_ABSOLUTE
+    down.mi.dwFlags = MOUSEEVENTF_LEFTDOWN | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK
     ctypes.windll.user32.SendInput(1, ctypes.byref(down), ctypes.sizeof(INPUT))
     time.sleep(0.05)
 
     up = INPUT(type=INPUT_MOUSE)
     up.mi.dx = norm_x; up.mi.dy = norm_y
-    up.mi.dwFlags = MOUSEEVENTF_LEFTUP | MOUSEEVENTF_ABSOLUTE
+    up.mi.dwFlags = MOUSEEVENTF_LEFTUP | MOUSEEVENTF_ABSOLUTE | MOUSEEVENTF_VIRTUALDESK
     ctypes.windll.user32.SendInput(1, ctypes.byref(up), ctypes.sizeof(INPUT))
-    if label:
-        print(f"  🖱  SendInput {label} @ logical({lx},{ly}) norm({norm_x},{norm_y})")
 
 
 def click_logical(lx, ly, label=""):
-    """在逻辑坐标点击"""
-    user32.SetCursorPos(int(lx), int(ly))
-    time.sleep(0.2)
-    user32.mouse_event(0x0002, 0, 0, 0, 0)  # left down
-    user32.mouse_event(0x0004, 0, 0, 0, 0)  # left up
-    if label:
-        print(f"  🖱  Click {label} @ logical({lx},{ly})")
+    """在物理坐标点击（DPI-aware 模式下 logical=physical）"""
+    send_input_click(lx, ly, label)
+
 
 def phys_to_log(px, py):
-    """物理坐标转逻辑坐标"""
-    return int(px / SCALE), int(py / SCALE)
+    """物理坐标转逻辑坐标（DPI-aware 模式下相同）"""
+    return px, py
 
 # ─── 主流程 ───────────────────────────────────────
 def main():
@@ -348,21 +375,54 @@ def main():
         sys.exit(1)
     print(f"✓ hwnd={hwnd}")
 
-    # 2. Ensure window is visible without changing its size/layout
+    # 2. Ensure window is visible and in foreground
     user32.ShowWindow(hwnd, 5)  # SW_SHOW — show without resize
     user32.SetForegroundWindow(hwnd)
     time.sleep(1.5)
+    # Click simulator area once to ensure game canvas has input focus
+    # (not the DevTools terminal panel)
+    screen_w = user32.GetSystemMetrics(0)
+    screen_h = user32.GetSystemMetrics(1)
+    # Initial focus click — safe placeholder (will be updated after canvas detection)
+    # Just bring window to foreground; real focus click uses detected canvas coords
+    time.sleep(0.3)
 
-    # 3. Detect game canvas bounds dynamically
-    # Fallback: hardcoded for 1280x800 "Move Simulator Left" layout
-    CANVAS_FALLBACK = (13, 137, 975, 450)  # calibrated on 1280x800
-    canvas = find_canvas_bounds(hwnd)
-    if canvas is None or canvas[2] >= 1100:
-        canvas = CANVAS_FALLBACK
-        print(f"✓ Canvas fallback: physical ({canvas[0]},{canvas[1]}) {canvas[2]}x{canvas[3]}")
-    else:
-        print(f"✓ Canvas detected: physical ({canvas[0]},{canvas[1]}) {canvas[2]}x{canvas[3]}")
-    cx, cy, cw, ch = canvas
+    # 3. Dynamically detect canvas bounds via find_canvas_bounds()
+    win_bounds = find_canvas_bounds(hwnd)
+    if win_bounds is None:
+        # Fallback: use known bounds calibrated from diag-full.png (1918x1200 window)
+        # Game canvas occupies left panel: win-relative x=14..700, y=138..597
+        r_fb = ctypes.wintypes.RECT()
+        user32.GetWindowRect(hwnd, ctypes.byref(r_fb))
+        fb_ww = r_fb.right - r_fb.left
+        fb_wh = r_fb.bottom - r_fb.top
+        # Scale fallback bounds proportionally if window size differs from calibration
+        scale_x = fb_ww / 1918.0
+        scale_y = fb_wh / 1200.0
+        fb_cx = int(14 * scale_x)
+        fb_cy = int(138 * scale_y)
+        fb_cw = int(686 * scale_x)
+        fb_ch = int(459 * scale_y)
+        win_bounds = (fb_cx, fb_cy, fb_cw, fb_ch)
+        print(f"⚠ Canvas detection failed — using scaled fallback: win({fb_cx},{fb_cy}) {fb_cw}x{fb_ch} (window {fb_ww}x{fb_wh})")
+    cx_win, cy_win, cw, ch = win_bounds
+
+    # Convert window-relative bounds to absolute physical screen coordinates
+    r_win2 = ctypes.wintypes.RECT()
+    user32.GetWindowRect(hwnd, ctypes.byref(r_win2))
+    abs_left = r_win2.left + cx_win
+    abs_top  = r_win2.top  + cy_win
+
+    CANVAS_PHYSICAL = (abs_left, abs_top, cw, ch)
+    canvas = CANVAS_PHYSICAL
+    cx, cy = abs_left, abs_top
+    print(f"✓ Canvas (dynamic, DPI=150%): win({cx_win},{cy_win}) {cw}x{ch} → abs({abs_left},{abs_top})")
+
+    # Initial focus click in the center of the detected canvas (safe area)
+    focus_phys_x = abs_left + cw // 2
+    focus_phys_y = abs_top  + ch // 3
+    _sendinput_phys(focus_phys_x, focus_phys_y, screen_w, screen_h)
+    time.sleep(0.5)
 
     results = {}
     errors = []
@@ -383,19 +443,20 @@ def main():
     print("\n[1/5] Menu screen (reload → wait for intro → menu)")
     r_win = ctypes.wintypes.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(r_win))
-    # The ↺ reload button is in toolbar row 2 ("Ordinary Compilation ▾ ↺")
-    # at x=921, y=70 (1280x800 window). Calibrated from debug-toolbar.png.
-    reload_px = r_win.left + 921
-    reload_py = r_win.top + 70
+    # The ↺ reload button is in the "Ordinary Compilation ↺" toolbar row
+    # at window-relative physical (~484, 42) in DPI-aware physical coords.
+    # This is the miniprogram recompile/reload button (restarts the game from scratch).
+    reload_px = r_win.left + 484
+    reload_py = r_win.top + 42
     click_logical(reload_px, reload_py, "↺ reload")
     time.sleep(20)  # Wait for intro animation to finish → lands on menu
 
-    # Re-detect canvas after reload; only update if result is sane (cw < 1100)
-    new_canvas = find_canvas_bounds(hwnd)
-    if new_canvas is not None and new_canvas[2] < 1100:
-        canvas = new_canvas
-        cx, cy, cw, ch = canvas
-        print(f"  Canvas after reload: ({cx},{cy}) {cw}x{ch}")
+    # After reload, DevTools may show debug panel. Click simulator canvas to focus it.
+    # Safe area: center-right of canvas, below subtitle, above buttons.
+    # canvas(500,80) → ratio(0.513,0.184) — avoids all buttons and title
+    print("  Focusing simulator to close debug panel...")
+    canvas_click(hwnd, canvas, 0.513, 0.184, "focus-simulator")
+    time.sleep(1.5)  # Wait for layout to stabilize
 
     brightness, path = capture(hwnd, f"{STORY}-01-menu.png", "menu")
     if brightness < 10:
@@ -405,17 +466,27 @@ def main():
 
     # ── Step 2: Level Select ────────────────────────
     print("\n[2/5] Level Select (click 挑战关卡)")
-    # 挑战关卡 button on right side of menu canvas
-    canvas_click(hwnd, canvas, 0.775, 0.289, "挑战关卡")
-    time.sleep(2.5)
+    # After capture(), re-focus the simulator canvas by clicking a safe neutral area first.
+    # Safe area: center-right of canvas, below subtitle, above buttons.
+    _sendinput_phys(canvas[0] + int(canvas[2] * 0.513), canvas[1] + int(canvas[3] * 0.184), screen_w, screen_h)
+    time.sleep(0.4)
+    # 挑战关卡 button: canvas(730,130) → ratio(0.750,0.299)
+    canvas_click(hwnd, canvas, 0.750, 0.299, "挑战关卡")
+    time.sleep(3.0)
     _, path = capture(hwnd, f"{STORY}-02-level-select.png", "level_select")
     verify(path, ['level_select'], 'level_select')
 
     # ── Step 3: Game screen ─────────────────────────
     print("\n[3/5] Game screen (click Level 1 猎户座)")
-    # Level 1 猎户座 card at rx=0.130, ry=0.277 in canvas
-    canvas_click(hwnd, canvas, 0.130, 0.277, "Level 1 猎户座")
-    time.sleep(3)
+    # Re-focus simulator canvas after capture()
+    _sendinput_phys(canvas[0] + int(canvas[2] * 0.513), canvas[1] + int(canvas[3] * 0.184), screen_w, screen_h)
+    time.sleep(0.4)
+    # Level 1 card: canvas(90,48) → ratio(0.092,0.110) — top-left card "猎户座"
+    canvas_click(hwnd, canvas, 0.092, 0.110, "Level 1 猎户座")
+    time.sleep(2)
+    # Dismiss item-selection overlay: 跳过 button ratio(0.349,0.490)
+    canvas_click(hwnd, canvas, 0.349, 0.490, "跳过 overlay")
+    time.sleep(2)
     _, path = capture(hwnd, f"{STORY}-03-game.png", "game")
     verify(path, ['game', 'pre_level'], 'game')
 
@@ -436,16 +507,15 @@ def main():
     print("\n[5/5] Menu screen via reload (game fail screen → reload → menu)")
     r_s5 = ctypes.wintypes.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(r_s5))
-    # Click ↺ reload button at (921, 70) — same as step 1
-    reload2_px = r_s5.left + 921
-    reload2_py = r_s5.top + 70
+    # Click ↺ reload button at window-relative physical (484, 42) — same as step 1
+    reload2_px = r_s5.left + 484
+    reload2_py = r_s5.top + 42
     click_logical(reload2_px, reload2_py, "↺ reload (step 5)")
     time.sleep(20)  # Wait for intro → menu
-    # Re-detect canvas after reload
-    new_canvas5 = find_canvas_bounds(hwnd)
-    if new_canvas5 is not None and new_canvas5[2] < 1100:
-        canvas = new_canvas5
-        cx, cy, cw, ch = canvas
+    # Focus simulator to close debug panel (same as step 1)
+    print("  Focusing simulator to close debug panel...")
+    canvas_click(hwnd, canvas, 0.513, 0.184, "focus-simulator-s5")
+    time.sleep(1.5)
     _, path = capture(hwnd, f"{STORY}-05-back-to-levels.png", "menu after reload")
     verify(path, ['menu', 'intro', 'level_select'], 'back_to_levels')
     _, path = capture(hwnd, f"{STORY}-05-back-to-levels.png", "level_select again")

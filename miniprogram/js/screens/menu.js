@@ -28,19 +28,19 @@ function _drawMenuButton(ctx, x, y, w, h, label, opts = {}) {
   ctx.save();
 
   // Drop shadow for depth
-  ctx.shadowColor = primary ? 'rgba(120,40,220,0.55)' : 'rgba(60,20,140,0.40)';
+  ctx.shadowColor = primary ? 'rgba(80,30,180,0.45)' : 'rgba(20,10,60,0.50)';
   ctx.shadowBlur  = primary ? 14 : 10;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 3;
 
-  // Solid gradient fill — web version style (STORY-00289: replaces ghost/transparent)
+  // Dark pill fill — web version style (STORY-00313: matches web dark semi-transparent pills)
   const fillGrd = ctx.createLinearGradient(x, y, x, y + h);
   if (primary) {
-    fillGrd.addColorStop(0, 'rgba(122,68,214,0.88)');
-    fillGrd.addColorStop(1, 'rgba(74,28,150,0.88)');
+    fillGrd.addColorStop(0, 'rgba(88,54,180,0.82)');
+    fillGrd.addColorStop(1, 'rgba(54,28,120,0.82)');
   } else {
-    fillGrd.addColorStop(0, 'rgba(61,40,117,0.80)');
-    fillGrd.addColorStop(1, 'rgba(30,16,69,0.80)');
+    fillGrd.addColorStop(0, 'rgba(18,12,48,0.78)');
+    fillGrd.addColorStop(1, 'rgba(10,6,30,0.78)');
   }
   ctx.fillStyle = fillGrd;
 
@@ -63,8 +63,8 @@ function _drawMenuButton(ctx, x, y, w, h, label, opts = {}) {
   ctx.shadowBlur  = 0;
   ctx.shadowOffsetY = 0;
 
-  // Border — brightened for solid button style (STORY-00289)
-  ctx.strokeStyle = primary ? 'rgba(210,120,255,0.65)' : 'rgba(140,90,220,0.45)';
+  // Border — subtle for dark pill style (STORY-00313)
+  ctx.strokeStyle = primary ? 'rgba(160,100,255,0.55)' : 'rgba(80,50,160,0.35)';
   ctx.lineWidth   = primary ? 1.5 : 1.0;
   ctx.beginPath();
   ctx.moveTo(x + radius, y);

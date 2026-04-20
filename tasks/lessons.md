@@ -1,12 +1,23 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
-## Sprint 33-mini — 2026-04-20 (shop grid + fail stats + game HUD web parity)
+## Sprint 34-mini — 2026-04-20 (证据缺口补全 + 菜单深色按钮)
+
+Sprint 34-mini: clean Sprint, no retrospective actions needed.
+- QA PASS (HIGH confidence, real screenshots all 3 stories), Arch PASS, UX no Blockers, VU ACCEPTED 9.6/10.
+- Zero bugs found during Integration. No Integration restart loops. No Spec Drift.
+- [archived: pending→resolved] 跨Sprint截图复用违规 resolved: Sprint 34-mini captured all evidence freshly — STORY-00313 menu, STORY-00314 fail/game, STORY-00315 gallery detail. All brightness confirmed > 10. VU accepted with real evidence.
+- [archived: docs/qa/knowledge.md] mss_check.py correct game simulator region: sim_x = wx + ww*0.014, sim_y = wy + wh*0.058, sim_w = ww*0.306, sim_h = wh*0.275. Previous formula (ww*0.71) pointed at code editor panel. Always validate with devtools-full.png pixel analysis before Sprint evidence capture.
+- [archived: docs/qa/knowledge.md] DevTools "Ord/Add/Quic" quick-access overlay appears when accidental click hits DevTools chrome. Press Escape to dismiss before capturing game screenshots.
+- [archived: docs/qa/knowledge.md] Fail screen capture: do not wait full timer duration. Start game, let timer run out organically during navigation setup. Faster than scripted waits.
+
+
 
 Sprint 33-mini: clean Sprint, no retrospective actions.
 - QA PASS (HIGH confidence, real screenshots), Arch PASS (2 Medium only), UX HIGH confidence, no Blockers.
 - Zero bugs found during Integration. No Integration restart loops. No Spec Drift.
 - [archived: docs/arch/sprint33-mini-review.md] NaN fallback pattern: `Math.max(0, Math.floor(x || 0))` — always use `|| 0` when the input could be undefined (e.g. r.timeLeft on first render). Caught by Arch review; fixed before commit.
 - [archived: docs/qa/knowledge.md §Sprint33-mini] WeChat capsule (···) covers the pause/mute region. Do not add custom HUD icons in the top-right corner. Platform convention: WeChat capsule serves as the system menu. This is intentional design, not a gap.
+- [pending] **跨Sprint截图复用违规**：Sprint 33-mini VU flipbook 中 flow-06-victory.png 复用了 Sprint 32-mini 的旧截图。代码改动后旧截图不再代表当前产品状态。规则：QA/UX/VU 所有证据截图必须在本 Sprint 实时运行中重新抓取，**禁止**从历史 sprint flow 目录复制。下次 VU 评估前必须现场抓取 victory 截图。
 
 ## Sprint 30/31/32-mini — 2026-04-20 (visual quality full upgrade, 8 Stories)
 

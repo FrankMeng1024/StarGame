@@ -1,10 +1,10 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: Sprint 33-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE.
-**Current Sprint**: Sprint 33-mini
+**Status**: Sprint 34-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE.
+**Current Sprint**: Sprint 34-mini
 **Last Updated**: 2026-04-20
 
-> **Mini branch current**: Sprint 33-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE. 3 Stories STORY-00309~00311 Done. Web vs Mini cross-platform parity: shop 2-column grid, fail screen stats row + flavor text, game HUD web-aligned. Full real-screenshot VU acceptance passed.
+> **Mini branch current**: Sprint 34-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE. 3 Stories STORY-00313~00315 Done. Menu dark pill buttons (STORY-00313), fail/game real screenshots (STORY-00314), gallery detail screenshot (STORY-00315). Full real-screenshot VU acceptance passed.
 
 ## Mini branch 微信小游戏分支（mini branch）
 
@@ -62,6 +62,7 @@
 | Sprint 31-mini | COMPLETE | 通关界面修复: 结算卡不超边界+3按钮/展厅详情重设计 (STORY-00304~00305) — QA PASS (code-path) |
 | Sprint 32-mini | COMPLETE | 视觉品质全面升级: 女角角色/道具覆盖层/全流程Web对标 (STORY-00306~00308) — VU ACCEPTED 9.6/10 — PROJECT COMPLETE |
 | Sprint 33-mini | COMPLETE | Web跨平台对标: 商店网格/失败统计行/游戏HUD (STORY-00309~00311) — VU ACCEPTED 9.6/10 — PROJECT COMPLETE |
+| Sprint 34-mini | COMPLETE | 证据缺口补全+菜单深色按钮: 深色药丸按钮/失败+游戏实时截图/画廊详情截图 (STORY-00313~00315) — VU ACCEPTED 9.6/10 — PROJECT COMPLETE |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |
@@ -94,6 +95,7 @@
 | Sprint 26-mini | 9.7/10 | ACCEPTED | 7 user-reported bug fixes verified — achievement标题/HUD抖动/胜利按钮/成就标签/商店Toast/流星帧率/叠加层裁剪 — PROJECT COMPLETE |
 | Sprint 28-mini | 9.5/10 | ACCEPTED | 4 Stories: 去成就按钮/商店Web对齐/时间延长+20s/星座信息面板 — PROJECT COMPLETE. |
 | Sprint 29-mini | 9.6/10 | ACCEPTED | 2 Stories: 画廊标题"星座图鉴"/胜利"关卡完成！"/失败"⏰ 时间到了！" — PROJECT COMPLETE. |
+| Sprint 34-mini | 9.6/10 | ACCEPTED | 3 Stories: 菜单深色药丸按钮/失败+游戏实时截图/画廊详情截图 — PROJECT COMPLETE. |
 | Sprint 24-mini | 9.5/10 | ACCEPTED | 8 user-reported fixes verified — 登录界面+动画/女角色/网兜物理/碎片碰撞/按钮尺寸/关卡图标/Web视觉对齐 — PROJECT COMPLETE |
 | Sprint 21-mini | 9.7/10 | ACCEPTED | 3 real-device Blockers fixed: 按钮无法点击(DPR revert)/黑屏扫码/首页按钮视觉 — PROJECT COMPLETE |
 | Sprint 11-mini | 9.0/10 | NOT ACCEPTED | F-007 gallery carousel missing — only 1 static photo per constellation |
