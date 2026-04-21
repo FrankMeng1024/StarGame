@@ -73,6 +73,10 @@ async function boot() {
   gameState = state;
 
   wx.__navigate = navigate;  // DevTools 控制台后门
+  wx.__state    = state;      // DevTools 进度操作后门（如：wx.__state.resetProgress()）
+
+  // DEV MOCK: 解锁全部30关用于图鉴测试 — TODO: 上线前删除
+  for (let i = 0; i < 30; i++) state.unlockedLevels.add(i);
 
   // 确保 canvas 尺寸就绪 — 扫码冷启动时需更多帧（最多等 30 帧 ≈ 500ms）
   // STORY-00347: 从5帧扩展到30帧，覆盖低端机扫码慢启动场景

@@ -763,7 +763,15 @@ function _drawDrawer(ctx, W, H, t) {
   _roundRect(ctx, SL, oy, CW, PHOTO_H, 8);
   ctx.clip();
   if (slot.loaded && slot.img) {
-    ctx.drawImage(slot.img, SL, oy, CW, PHOTO_H);
+    // object-fit:contain — 保持图片宽高比居中显示
+    const iw = slot.img.width  || CW;
+    const ih = slot.img.height || PHOTO_H;
+    const scale = Math.min(CW / iw, PHOTO_H / ih);
+    const dw = iw * scale;
+    const dh = ih * scale;
+    const dx = SL + (CW - dw) / 2;
+    const dy = oy + (PHOTO_H - dh) / 2;
+    ctx.drawImage(slot.img, dx, dy, dw, dh);
   } else if (slot.error || photos.length === 0) {
     ctx.font = '26px sans-serif';
     ctx.textAlign = 'center';
@@ -880,45 +888,17 @@ function _arrowBtn(ctx, x, y, w, h, label, enabled) {
 }
 
 // ── 照片加载 ──────────────────────────────────────────────────
+// STORY-00351: 直接用 img.src 赋值，不走 wx.downloadFile（需要域名白名单）
+// img.src 赋值在开发模式关闭域名校验后即可访问任意 HTTPS URL
 function _loadPhoto(url, pos, conIdx) {
   if (!url) { _carouselImgs[pos] = { img: null, loaded: false, error: true }; return; }
   _carouselImgs[pos] = { img: null, loaded: false, error: false };
-  try {
-    wx.downloadFile({
-      url,
-      success(res) {
-        if (_carouselForIdx !== conIdx) return;
-        if (res.statusCode === 200) {
-          const img = wx.createImage();
-          const timer = setTimeout(() => {
-            if (_carouselImgs[pos] && !_carouselImgs[pos].loaded)
-              _carouselImgs[pos] = { img: null, loaded: false, error: true };
-          }, 5000);
-          img.onload = () => {
-            clearTimeout(timer);
-            if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img, loaded: true, error: false };
-          };
-          img.onerror = () => {
-            clearTimeout(timer);
-            if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img: null, loaded: false, error: true };
-          };
-          img.src = res.tempFilePath;
-        } else {
-          _loadPhotoFallback(url, pos, conIdx);
-        }
-      },
-      fail() { _loadPhotoFallback(url, pos, conIdx); },
-    });
-  } catch (e) { _loadPhotoFallback(url, pos, conIdx); }
-}
-
-function _loadPhotoFallback(url, pos, conIdx) {
   try {
     const img   = wx.createImage();
     const timer = setTimeout(() => {
       if (_carouselImgs[pos] && !_carouselImgs[pos].loaded)
         _carouselImgs[pos] = { img: null, loaded: false, error: true };
-    }, 8000);
+    }, 10000);
     img.onload  = () => { clearTimeout(timer); if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img, loaded: true, error: false }; };
     img.onerror = () => { clearTimeout(timer); if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img: null, loaded: false, error: true }; };
     img.src = url;

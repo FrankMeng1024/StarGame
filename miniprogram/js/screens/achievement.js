@@ -19,6 +19,7 @@ let _scrollTarget = 0;
 let _lastTouchY = 0;
 let _isDragging = false;
 let _totalH     = 0;
+let _maShanZhengLoaded = false; // SPRINT-55
 
 // ── Public API ────────────────────────────────────────────────
 export function showAchievement(navigate) {
@@ -28,6 +29,22 @@ export function showAchievement(navigate) {
   const H = G.SCREEN_H;
   initBgStars(W, H, 50);
   _buildLayout(W, H);
+
+  // SPRINT-55: load Ma Shan Zheng for title
+  if (!_maShanZhengLoaded) {
+    try {
+      if (typeof wx !== 'undefined' && typeof wx.loadFontFace === 'function') {
+        wx.loadFontFace({
+          family: 'Ma Shan Zheng',
+          source: "url('https://fonts.gstatic.com/s/mashanzheng/v10/NaPecZTRCLxvwo41b4gvzkXaRMTsDIRSfr0.woff2')",
+          scopes: ['webgl', '2d'],
+          success: () => { _maShanZhengLoaded = true; },
+          fail: () => {},
+        });
+      }
+    } catch (e) {}
+  }
+
   G.CANVAS.addEventListener('touchstart', _onTouchStart);
   G.CANVAS.addEventListener('touchmove',  _onTouchMove);
   G.CANVAS.addEventListener('touchend',   _onTouchEnd);
@@ -79,7 +96,7 @@ function _loop(now) {
 
   // Fixed header (outside scroll block)
   ctx.save();
-  ctx.font         = `bold 18px sans-serif`;
+  ctx.font         = `bold 20px ${_maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif'}`;
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = COLORS.starGold;

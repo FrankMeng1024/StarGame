@@ -95,6 +95,9 @@ let _btnResume  = null;
 let _btnPauseRetry  = null;
 let _btnPauseLevels = null;
 
+// SPRINT-55: Ma Shan Zheng font for title-level text
+let _maShanZhengLoaded = false;
+
 // Lore pagination (victory screen)
 let _lorePage   = 0;
 let _lorePages  = [];     // string[] — lore split into pages
@@ -186,10 +189,13 @@ export function showGame(navigate) {
   _flashingStars = [];
   _caughtDebris = null;
 
-  // Timer
+  // Timer — STORY-00353: base time by difficulty, +5s per star beyond 7 (ensures fairness for large constellations)
   const diffMap = [90, 80, 70, 60, 50];
   const diff    = (_conDef.difficulty || 1) - 1;
-  _timeLeft     = diffMap[Math.max(0, Math.min(4, diff))];
+  const baseTime = diffMap[Math.max(0, Math.min(4, diff))];
+  const starCount = (_conDef.stars || []).length;
+  const bonus   = Math.max(0, (starCount - 7) * 5);  // +5s per extra star beyond 7
+  _timeLeft     = baseTime + bonus;
   _levelInitTime = _timeLeft;  // Arch fix: store for time_ext cap
 
   // Set up item slots (STORY-00252) — effects activate on tap, not at level start
@@ -258,6 +264,21 @@ export function showGame(navigate) {
     _hintTimer = HINT_DURATION;
   }
 
+  // SPRINT-55: load Ma Shan Zheng for result/pause title text
+  if (!_maShanZhengLoaded) {
+    try {
+      if (typeof wx !== 'undefined' && typeof wx.loadFontFace === 'function') {
+        wx.loadFontFace({
+          family: 'Ma Shan Zheng',
+          source: "url('https://fonts.gstatic.com/s/mashanzheng/v10/NaPecZTRCLxvwo41b4gvzkXaRMTsDIRSfr0.woff2')",
+          scopes: ['webgl', '2d'],
+          success: () => { _maShanZhengLoaded = true; },
+          fail: () => {},
+        });
+      }
+    } catch (e) {}
+  }
+
   G.CANVAS.addEventListener('touchstart', _onTouch);
   _lastNow = 0;
   _rafId = requestAnimationFrame(_loop);
@@ -283,13 +304,24 @@ function _initStars(W, H) {
   const skyX0 = 16, skyX1 = W - 16;
   const skyY0 = G.SAFE_TOP + 60, skyY1 = H * 0.62;
 
-  _conDef.stars.forEach((s, i) => {
+  // STORY-00353: center constellation — compute centroid of normalized coords,
+  // then shift all stars so centroid maps to sky center (0.5, 0.5).
+  const rawStars = _conDef.stars;
+  const cx0 = rawStars.reduce((s, st) => s + st.x, 0) / rawStars.length;
+  const cy0 = rawStars.reduce((s, st) => s + st.y, 0) / rawStars.length;
+  const shiftX = 0.5 - cx0;
+  const shiftY = 0.5 - cy0;
+
+  rawStars.forEach((s, i) => {
     // All stars warm white/gold (STORY-00235 — removes confusing multi-color system)
     const warmPalette = ['#fff8e0', '#ffd700', '#fffbe8', '#ffec6e'];
     const starColor = warmPalette[i % warmPalette.length];
     const r = Math.max(3, Math.min(8, magToRadius(s.mag) * 1.4));  // STORY-00273: max 8 (was 10)
-    let cx = skyX0 + s.x * (skyX1 - skyX0);
-    let cy = skyY0 + s.y * (skyY1 - skyY0);
+    // Apply centering shift, clamp to [0.05, 0.95] so no star goes off screen
+    const nx = Math.max(0.05, Math.min(0.95, s.x + shiftX));
+    const ny = Math.max(0.05, Math.min(0.95, s.y + shiftY));
+    let cx = skyX0 + nx * (skyX1 - skyX0);
+    let cy = skyY0 + ny * (skyY1 - skyY0);
 
     // Minimum separation check — nudge position if too close to existing star (STORY-00273)
     for (let attempt = 0; attempt < 10; attempt++) {
@@ -303,8 +335,8 @@ function _initStars(W, H) {
       }
       if (!tooClose) break;
       // Nudge: offset by a fraction of the sky area
-      cx = skyX0 + ((s.x + (attempt + 1) * 0.07) % 1.0) * (skyX1 - skyX0);
-      cy = skyY0 + ((s.y + (attempt + 1) * 0.06) % 1.0) * (skyY1 - skyY0);
+      cx = skyX0 + ((nx + (attempt + 1) * 0.07) % 1.0) * (skyX1 - skyX0);
+      cy = skyY0 + ((ny + (attempt + 1) * 0.06) % 1.0) * (skyY1 - skyY0);
     }
 
     _stars.push({
@@ -1126,19 +1158,24 @@ function _drawGirl(ctx) {
 
   // ── Body aura ────────────────────────────────────────────────
   const auraGrd = ctx.createRadialGradient(0, -70, 8, 0, -70, 80);
-  auraGrd.addColorStop(0, 'rgba(140,80,220,0.18)');
-  auraGrd.addColorStop(1, 'rgba(100,40,180,0)');
+  auraGrd.addColorStop(0, 'rgba(255,160,200,0.18)');
+  auraGrd.addColorStop(1, 'rgba(255,200,220,0)');
   ctx.fillStyle = auraGrd;
   ctx.beginPath(); ctx.arc(0, -70, 80, 0, TWO_PI); ctx.fill();
 
-  // ── Shoes (dark purple bezier pointed tips) ──────────────────
-  ctx.fillStyle = '#2a0d40';
+  // ── Shoes (round-toed, bright coral-red) ─────────────────────
+  ctx.fillStyle = '#e84466';
   ctx.beginPath();
-  ctx.moveTo(-13, 14); ctx.bezierCurveTo(-16, 14, -22, 18, -20, 21);
-  ctx.bezierCurveTo(-18, 24, -10, 24, -8, 21); ctx.lineTo(-10, 14); ctx.closePath(); ctx.fill();
+  ctx.moveTo(-13, 14); ctx.bezierCurveTo(-16, 14, -21, 16, -20, 20);
+  ctx.bezierCurveTo(-19, 24, -10, 24, -8, 21); ctx.lineTo(-10, 14); ctx.closePath(); ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(13, 14); ctx.bezierCurveTo(16, 14, 22, 18, 20, 21);
-  ctx.bezierCurveTo(18, 24, 10, 24, 8, 21); ctx.lineTo(10, 14); ctx.closePath(); ctx.fill();
+  ctx.moveTo(13, 14); ctx.bezierCurveTo(16, 14, 21, 16, 20, 20);
+  ctx.bezierCurveTo(19, 24, 10, 24, 8, 21); ctx.lineTo(10, 14); ctx.closePath(); ctx.fill();
+  // Shoe strap shine
+  ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#ffffff';
+  ctx.beginPath(); ctx.ellipse(-16, 17, 4, 1.5, 0.2, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(16, 17, 4, 1.5, -0.2, 0, TWO_PI); ctx.fill();
+  ctx.restore();
 
   // ── Legs ──────────────────────────────────────────────────────
   ctx.strokeStyle = '#e8b89a';
@@ -1159,11 +1196,11 @@ function _drawGirl(ctx) {
   ctx.lineTo(24, 3); ctx.lineTo(-24, 3); ctx.closePath(); ctx.fill();
   ctx.restore();
 
-  // ── Dress body ───────────────────────────────────────────────
+  // ── Dress body (sky-blue + soft pink flare) ──────────────────
   const dressGrd = ctx.createLinearGradient(-40, -50, 40, 10);
-  dressGrd.addColorStop(0, '#5522aa');
-  dressGrd.addColorStop(0.45, '#8833cc');
-  dressGrd.addColorStop(1, '#bb33aa');
+  dressGrd.addColorStop(0, '#44aaee');
+  dressGrd.addColorStop(0.45, '#66ccff');
+  dressGrd.addColorStop(1, '#ff99cc');
   ctx.fillStyle = dressGrd;
   ctx.beginPath();
   ctx.moveTo(-14, -50);
@@ -1189,9 +1226,9 @@ function _drawGirl(ctx) {
   ctx.restore();
   // Lace hem scallops — white half-circles along dress bottom edge (STORY-00321)
   ctx.save();
-  ctx.strokeStyle = '#f4d0f4';
+  ctx.strokeStyle = '#ffffff';
   ctx.lineWidth = 1.5;
-  ctx.globalAlpha = 0.65;
+  ctx.globalAlpha = 0.70;
   for (let hx = -36; hx < 36; hx += 5) {
     ctx.beginPath();
     ctx.arc(hx + 2.5, 9, 2.5, Math.PI, TWO_PI);
@@ -1370,8 +1407,8 @@ function _drawGirl(ctx) {
   ctx.beginPath(); ctx.moveTo(-8, -104); ctx.bezierCurveTo(-4, -107, 4, -107, 10, -103); ctx.stroke();
   ctx.restore();
   // Purple butterfly hair clip on twin tails
-  ctx.fillStyle = '#9944ee';
-  ctx.shadowColor = '#cc66ff'; ctx.shadowBlur = 4;
+  ctx.fillStyle = '#ff55bb';
+  ctx.shadowColor = '#ff88dd'; ctx.shadowBlur = 4;
   // Left clip
   ctx.beginPath(); ctx.ellipse(-24, -14, 5, 3, -0.4, 0, TWO_PI); ctx.fill();
   ctx.beginPath(); ctx.ellipse(-22, -16, 3, 2, 0.8, 0, TWO_PI); ctx.fill();
@@ -1380,43 +1417,33 @@ function _drawGirl(ctx) {
   ctx.beginPath(); ctx.ellipse(22, -16, 3, 2, -0.8, 0, TWO_PI); ctx.fill();
   ctx.shadowBlur = 0;
 
-  // ── Witch hat (brim rx=34, crown height 38px, gold band, ★16px) ──
-  const hatGrd = ctx.createLinearGradient(-30, -108, 30, -102);
-  hatGrd.addColorStop(0, '#3a0e9a');
-  hatGrd.addColorStop(1, '#6622cc');
-  ctx.fillStyle = hatGrd;
-  // Brim rx=34
-  ctx.beginPath(); ctx.ellipse(0, -106, 34, 6.5, 0, 0, TWO_PI); ctx.fill();
-  // Crown height 38px (from brim at y=-106 to tip at y=-144)
-  ctx.beginPath();
-  ctx.moveTo(-15, -106);
-  ctx.bezierCurveTo(-18, -128, -8, -140, 0, -144);
-  ctx.bezierCurveTo(8, -140, 18, -128, 15, -106);
-  ctx.closePath(); ctx.fill();
-  // Gold hat band
-  ctx.save(); ctx.globalAlpha = 0.92;
-  const bandGrd = ctx.createLinearGradient(-15, -114, 15, -110);
-  bandGrd.addColorStop(0, '#aa7700'); bandGrd.addColorStop(0.5, '#ffdd44'); bandGrd.addColorStop(1, '#aa7700');
-  ctx.fillStyle = bandGrd;
-  ctx.fillRect(-15, -114, 30, 4.5);
-  ctx.restore();
-  // Hat star ★ 16px (5-point polygon)
+  // ── Star hairpin on top of head ───────────────────────────────
+  // Pin stick
   ctx.save();
-  ctx.fillStyle   = '#ffee88';
-  ctx.shadowColor = '#ffd700';
-  ctx.shadowBlur  = 10;
-  ctx.globalAlpha = 0.95;
-  ctx.translate(2, -132);
+  ctx.strokeStyle = '#ffaacc';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(-2, -116); ctx.lineTo(2, -108); ctx.stroke();
+  // 5-point star badge (r_outer=11, r_inner=5)
+  ctx.fillStyle   = '#ffee44';
+  ctx.shadowColor = '#ffcc00';
+  ctx.shadowBlur  = 12;
+  ctx.globalAlpha = 0.97;
+  ctx.translate(0, -120);
   ctx.beginPath();
   for (let sp = 0; sp < 5; sp++) {
     const outerA = (sp * TWO_PI / 5) - Math.PI / 2;
     const innerA = outerA + Math.PI / 5;
-    if (sp === 0) ctx.moveTo(Math.cos(outerA) * 8, Math.sin(outerA) * 8);
-    else          ctx.lineTo(Math.cos(outerA) * 8, Math.sin(outerA) * 8);
-    ctx.lineTo(Math.cos(innerA) * 3.5, Math.sin(innerA) * 3.5);
+    if (sp === 0) ctx.moveTo(Math.cos(outerA) * 11, Math.sin(outerA) * 11);
+    else          ctx.lineTo(Math.cos(outerA) * 11, Math.sin(outerA) * 11);
+    ctx.lineTo(Math.cos(innerA) * 5, Math.sin(innerA) * 5);
   }
   ctx.closePath(); ctx.fill();
+  // Star center sparkle dot
+  ctx.fillStyle = '#ffffff';
+  ctx.globalAlpha = 0.75;
   ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, TWO_PI); ctx.fill();
   ctx.restore();
 
   ctx.restore();
@@ -1801,7 +1828,10 @@ function _triggerResult(victory) {
   _netState = 'swing';
 
   const coins   = victory ? Math.floor(_timeLeft) * 10 * _coinsMult : 0;
-  const stars3  = coins >= 300 ? 3 : coins >= 100 ? 2 : 1;
+  // STORY-00344: star rating based on catch rate, not time left
+  // 3★ = caught ≥90% of stars | 2★ = ≥60% | 1★ = <60% (but still victory)
+  const catchRate = _total > 0 ? _caught / _total : 0;
+  const stars3  = catchRate >= 0.90 ? 3 : catchRate >= 0.60 ? 2 : 1;
   const uncaught = _total - _caught;
 
   _result = { victory, timeLeft: _timeLeft, coins, stars: stars3, uncaught, caught: _caught, total: _total };
@@ -1875,7 +1905,8 @@ function _drawResultOverlay(ctx, W, H) {
   // Title area (32px)
   const titleY = cardY + 16 + 11; // top padding + half-height
   ctx.save();
-  ctx.font         = 'bold 22px sans-serif';
+  const _titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
+  ctx.font         = `bold 22px ${_titleFont}`;
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = r.victory ? '#ffd700' : '#ff8a65';  // STORY-00328: fail title warm orange-red (was #ff5555)
@@ -2077,7 +2108,7 @@ function _drawPauseOverlay(ctx, W, H) {
   ctx.restore();
 
   ctx.save();
-  ctx.font         = 'bold 22px sans-serif';
+  ctx.font         = `bold 22px ${_maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif'}`;
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = '#e8e8f0';

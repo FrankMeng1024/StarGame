@@ -33,6 +33,7 @@ let _lastTouchY  = 0;
 let _isDragging  = false;
 let _totalH      = 0;
 let _feedback    = null; // { msg, until } — brief purchase feedback
+let _maShanZhengLoaded = false; // SPRINT-51: font load flag
 
 // Layout — 2-column grid (STORY-00309: web parity)
 const CARD_H    = 116;  // STORY-00329: was 100 — +16 for description line
@@ -46,6 +47,21 @@ export function showShop(navigate) {
   _cleanup();
   initBgStars(G.SCREEN_W, G.SCREEN_H, 50);
   _computeLayout();
+
+  // SPRINT-51: load Ma Shan Zheng font (match levels/gallery standard)
+  if (!_maShanZhengLoaded) {
+    try {
+      if (typeof wx !== 'undefined' && typeof wx.loadFontFace === 'function') {
+        wx.loadFontFace({
+          family: 'Ma Shan Zheng',
+          source: "url('https://fonts.gstatic.com/s/mashanzheng/v10/NaPecZTRCLxvwo41b4gvzkXaRMTsDIRSfr0.woff2')",
+          scopes: ['webgl', '2d'],
+          success: () => { _maShanZhengLoaded = true; },
+          fail: () => {},
+        });
+      }
+    } catch (e) {}
+  }
 
   G.CANVAS.addEventListener('touchstart', _onTouchStart);
   G.CANVAS.addEventListener('touchmove',  _onTouchMove);
@@ -97,10 +113,13 @@ function _loop(now) {
   });
 
   ctx.save();
-  ctx.font = 'bold 18px sans-serif';
+  const titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
+  ctx.font = `bold 22px ${titleFont}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = COLORS.text;
+  ctx.shadowColor = 'rgba(160,120,255,0.6)';
+  ctx.shadowBlur = 8;
   ctx.fillText('道具商店', W / 2, G.SAFE_TOP + 31);
   ctx.restore();
 
