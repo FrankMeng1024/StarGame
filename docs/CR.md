@@ -512,3 +512,62 @@ fadeNavigate(() => _navigate('levels'));
 ```
 同样检查 btnNext（下一关）路径是否也有类似问题——若 _phase 不是 play，也需要先 _cleanup() 再 navigate。
 
+---
+
+## CR-122 (mini): 开场动画全面对标HTML版 — 流星+星座+标题三幕演出 (Sprint 38-mini approved 2026-04-20)
+用户反馈"几个版本前已经修好的开局动画现在那么挫，你没有审美么？根html完全不一样"。
+当前状态：Mini intro 显示一片暗星空，视觉冲击力近乎为零（截图 mini-01-intro.png 亮度74，几乎是一张黑图）。
+HTML版参考 (js/intro.js)：Phase 1 = 9颗流星从右上角斜落，有渐变尾迹（头部rgba(255,215,0,0.9)→尾部透明），约持续4s；Phase 2 = 猎户座星座节点逐个出现（每250ms一颗），每颗出现时有6粒子爆发+shadowBlur光晕，然后金线从头到尾依次延伸；Phase 3 = 标题"追星少女"从上方浮入（y从H*0.3→H*0.28, alpha 0→1），副标题淡入，底部显示"轻触屏幕开始"。整体观感：华丽、有层次感、每个阶段都有视觉高潮。
+Mini目标：(1) 流星参数：count=9，角度30°斜落，速度=8px/f，trailFactor=0.30（让尾迹更长），头部alpha=0.92，颜色#ffd700。预生成4颗born=0立即出现，不等第1帧。(2) 星座：固定猎户座（已有CR-113），SIZE提升至min(W,H)*0.70，cy=H*0.30，节点出现间隔200ms（当前250ms，加快节奏）。每个节点出现时：spawn 8粒子（角度随机，速度2-4，半径4-2，生命20帧），shadowBlur=16。(3) 金线延伸：lineDrawSpeed从当前值提升50%，让连线更流畅有力。线宽2.5px（当前可能1.5px），shadowBlur=10，color=#ffd700。(4) 标题：字号bold 40px（landscape）/ bold 34px（portrait），从y=H*0.32浮入H*0.28，duration 1.0s，加入letter-spacing模拟（间隔用空格："追  星  少  女"）。(5) 跳过提示：从第1帧开始显示"轻触跳过"（右下角，alpha 0.55），而不是等到最后。
+
+## CR-123 (mini): 游戏计时器改为圆形倒计时环 (Sprint 38-mini approved 2026-04-20)
+当前状态：游戏HUD显示纯文本"0:56"。
+HTML版参考：计时器是一个圆形SVG进度环（蓝色描边圆），时间数字显示在圆心内，剩余时间越少环越短并变红。
+Mini修复：用Canvas绘制圆形计时器：(1) 圆心位置：W/2, G.SAFE_TOP + 22，半径18px。(2) 背景圆环：strokeStyle rgba(255,255,255,0.2)，lineWidth=4，完整圆。(3) 进度弧：从-π/2开始，顺时针画 ratio=timeLeft/totalTime 比例的弧，color=#4fc3f7（蓝色），lineWidth=4。当timeLeft≤10s时color变#ff5252（红色）。(4) 时间文字：圆心内显示整数秒数，font bold 14px，fillStyle=#ffffff，textAlign center。(5) 紧急脉冲：timeLeft≤10s时圆环半径在17-19px之间以2Hz频率脉冲（已有CR-094定义，此CR补充圆环实现细节）。
+
+## CR-124 (mini): 关卡卡片视觉升级 — emoji图标+难度色条+最佳时间 (Sprint 38-mini approved 2026-04-20)
+当前状态：关卡卡片显示大数字+星座名+星评，缺少emoji图标和难度可视化。
+HTML版参考：每张卡片有 constellation emoji（🏹/🐻/🦂等）+ 关卡号 + 星座名 + 难度色条 + 最佳时间。
+Mini修复：(1) Emoji图标：在卡片上方1/4处，绘制c.icon（从constellations.js取），font size = min(16, w*0.22)。注意：微信小游戏Canvas drawText支持emoji，但需确认字体设置。若emoji渲染异常，改用前2字中文字符（已有CR-107 fallback）。(2) 难度色条：卡片底部4px高色条，根据c.difficulty着色：1=绿#4caf50, 2=绿, 3=黄#ffc107, 4=橙#ff9800, 5=红#f44336。宽度填满卡片底部（圆角下边缘）。(3) 最佳时间：若有bestScore，在星评下方显示"⏱ 12.3s"，font 8px，color rgba(255,255,255,0.7)。(4) 整体卡片padding内缩2px以适配新增元素。
+
+## CR-125 (mini): 失败界面风格对标HTML — 去除红色边框，深色简洁卡片 (Sprint 38-mini approved 2026-04-20)
+当前状态：失败界面显示红色边框modal卡片（截图 mini-08-fail.png），与游戏整体深空风格不符。
+HTML版参考：失败界面是简洁深色卡片（#0d0d2b背景，rgba(255,255,255,0.05)卡片），无红色边框，只有微弱的白色或金色描边。标题"⏰ 时间到了！"用橙红色文字表达失败感，不靠边框颜色。
+Mini修复：(1) 失败卡片边框：从 strokeStyle='#ff4444' lineWidth=3 改为 strokeStyle=rgba(255,255,255,0.15) lineWidth=1，与胜利卡片风格统一。(2) 失败标题颜色：#ff6b35（橙红）或#ff8a65，字号22px。(3) 鼓励文字（constellation-specific）：color=rgba(255,255,255,0.8)，字号13px。(4) 卡片背景：rgba(8,4,32,0.95)，与胜利卡片一致的深色调。(5) 按钮：2个按钮（🔄 重试 + 返回选关），尺寸统一，样式与胜利卡片按钮一致。
+
+## CR-126 (mini): 道具商店卡片补全描述文字 (Sprint 38-mini approved 2026-04-20)
+当前状态：商店卡片只有道具名+类型badge+价格，无描述文字（截图 mini-05-shop.png）。
+HTML版参考：每张卡片有完整描述（如"激活后15秒内网兜速度+50%"）和明确的效果说明。
+Mini修复：(1) 在卡片名称下方添加描述文字行，从items数据的desc字段读取（确认miniprogram/js/data/items.js有desc字段）。若无desc字段，手动补充8个道具的描述。(2) 描述字号11px，color=rgba(255,255,255,0.65)，maxWidth=卡片宽-16px，如文字太长则截断显示首行。(3) 卡片高度动态增加：ITEM_H += 18（当前高度+描述行高度）。(4) 确保增高后布局不超出屏幕边界。
+
+## CR-127 (mini): 星座图鉴卡片添加emoji图标 (Sprint 38-mini approved 2026-04-20)
+当前状态：图鉴卡片只显示中文名，无emoji（截图 mini-06-gallery.png）。
+HTML版参考：每张卡片有constellation.icon emoji + 星座名。
+Mini修复：(1) 已解锁卡片：在中文名上方显示c.icon emoji，font size = min(18, w*0.30)。(2) 保持现有COLS=5布局。(3) 若emoji渲染有问题（某些Android机型），fallback到constellation的前2字。(4) 调整卡片高度：CARD_H = CARD_W + 20（增加2px容纳emoji）。注意：此CR与CR-115有overlap，CR-115取消了emoji显示，此CR恢复之。以此CR为准（CR-127取代CR-115关于emoji的决策）。
+
+## CR-128 (mini): 星座详情页星图标注星名 (Sprint 38-mini approved 2026-04-20)
+当前状态：详情页星图只有点和线，无星名标注（截图 mini-07-gallery-detail.png）。
+HTML版参考：星图有带虚线的星名标注（参宿四、参宿七等），每颗主星旁有名字label。
+Mini修复：(1) 在星图绘制完成后，遍历constellation.stars，对mag≤2.5的亮星（主星）添加标注：(a) 从star坐标向外画一条短虚线（6px，方向：角度=star坐标相对中心的方向，偏转+45°），(b) 在虚线末端绘制star.name（中文名，font 9px，color rgba(255,255,255,0.75)）。(2) 标注位置防重叠：若两个标注距离<20px，其中一个偏移y-10px。(3) 标注数量上限：最多标注5颗（按mag排序取最亮的）。
+
+## CR-130 (mini): 开场动画重设计 — 真实星空+自然流星+无名称星座连线 (Sprint 40-mini approved 2026-04-21)
+用户反馈：开场动画背景星星全是一个大小，流星僵硬地一起下落，星座展示要去掉星座名称，改成真正的"一颗颗星星闪烁连成星座"效果。
+修复：(1) 背景星空改为三档尺寸（tiny ~0.6px, medium ~1.2px, large ~2px），数量120颗，各自有独立的闪烁节奏和相位；(2) 流星参数独立随机化：每颗流星的角度从195°-225°随机取，速度从350-600px/s随机取，出现时间完全错开（stagger=0-9s），不再用统一角度；(3) 删除星座名称显示（当前第251-262行）；(4) 连线动画改为逐线生长（从A点向B点扩展，duration 0.5s/条），而非瞬间出现；(5) 仍显示标题"追星少女"。
+
+## CR-129 (mini): 星座详情页显示天文摄影图片 (Sprint 38-mini approved 2026-04-20)
+当前状态：详情页截图（mini-07-gallery-detail.png）未见天文摄影图片，图片区可能存在加载失败问题（CR-116已尝试修复但截图中仍未可见）。
+HTML版参考：详情页有"天文摄影 · ASTROPHOTOGRAPHY"章节，显示1-3张真实星云/星座照片（图片来自NASA APOD或维基共享资源）。
+Mini修复：(1) 调查miniprogram/js/screens/gallery.js中图片加载逻辑：检查CONSTELLATION_PHOTOS数组是否有有效URL，确认wx.createImage()加载是否成功，添加加载失败时的fallback处理。(2) 若URL已失效：用WebSearch重新找每个星座的可访问天文摄影URL（NASA APOD、ESA、Wikimedia Commons），更新CONSTELLATION_PHOTOS数据。(3) 图片区域：高度固定150px，object-fit=contain，圆角8px，有加载中的placeholder动画（旋转星形）。(4) 若图片加载成功：在图片下方显示"天文摄影 · ASTROPHOTOGRAPHY"标题（11px，金色）。
+
+
+## CR-131 (mini): 主菜单标题字体对标intro — Ma Shan Zheng书法字体+浅紫色 (Sprint 44-mini approved 2026-04-21)
+用户反馈"确保字体一致"。当前主菜单标题"追  星  少  女"用`drawTitle()`渲染为`bold Npx sans-serif`+金色渐变，与开场动画Phase 3的Ma Shan Zheng书法字体+`#e8d5ff`浅紫色风格完全不同，造成进入主菜单后的视觉割裂感。
+修复：(1) 在`showMenu()`中加载Ma Shan Zheng字体（与intro.js相同的`wx.loadFontFace`调用，复用`_maShanZhengLoaded`模块变量或在menu.js中独立维护）。(2) 将主菜单的`drawTitle(ctx, '追  星  少  女', ...)`替换为与intro Phase 3相同的渲染逻辑：`font=bold ${size}px 'Ma Shan Zheng',serif`，`fillStyle='#e8d5ff'`，`shadowColor='#b090ff'`，`shadowBlur=18`，不用字间空格（紧排"追星少女"，与intro一致）。(3) 副标题"探索88星座的奇妙旅程"保持`sans-serif`不变（这是功能说明文字，不是calligraphy标题，无需更改字体）。(4) 字号自适应：portrait=`H*0.045`，landscape=`H*0.052`。注意：wx.loadFontFace在DevTools sandbox中需try/catch保护，fallback到serif。
+
+## CR-132 (mini): 主菜单星座真随机化+节点reveal动画 (Sprint 44-mini approved 2026-04-21)
+用户反馈"确保每次登录星图展示都不一样，有随机性"。当前`_pickCon()`使用`dayOfYear % CONSTELLATIONS.length`，同一天内无论进出多少次主菜单都显示同一星座，缺乏新鲜感。
+修复：(1) 将`_pickCon()`改为`Math.floor(Math.random() * CONSTELLATIONS.length)`真随机选择，每次`showMenu()`都选不同星座（保留避免连续重复的逻辑：维护`_lastConIdx`，若随机结果与上次相同则+1取模）。(2) 添加星座节点reveal动画：`_buildConLayout()`结束后，每颗星的`revealTime = i * 0.12`（12颗星约1.4s全部出现），在`_drawConBg(t)`中根据`elapsed >= star.revealTime`决定是否绘制该星，刚出现时有0.3s的scale 1→1+0.4→1脉冲（参考intro.js的star reveal逻辑）。(3) 连线仅在两端星都已reveal后才显示（与intro Phase 2逻辑对齐）。(4) reveal计时器在`_loop()`中用`(now - _menuStartTime) * 0.001`计算elapsed。
+
+## CR-133 (mini): 主菜单背景星空增强 — 3档168颗sin-hash (Sprint 44-mini approved 2026-04-21)
+当前`initBgStars()`使用`Math.random()`生成86颗（80+6），只有2个功能档（bright/not bright），数量和密度远不及开场动画的168颗3档sin-hash散列星空。主菜单作为玩家每次开局都会见到的界面，视觉质量应与开场动画对标。
+修复：(1) 在`canvas-utils.js`的`initBgStars()`中，改用与`intro.js`相同的sin-hash函数`_h(n)=Math.abs((Math.sin(n*127.1+311.7)*43758.5453)%1)`生成x/y坐标，确保无对角线伪影。(2) 星星数量提升至168颗（105 tiny r=0.4-0.7 + 45 medium r=1.0-1.5 + 18 large r=1.8-2.6），每档独立种子偏移（与intro.js完全一致的3档参数，复用相同的生成公式）。(3) 保留6颗bright stars的soft glow逻辑（已有），可合并进large tier。(4) 每次`initBgStars()`使用新的hash seed（加入当前时间戳作为种子基数），让每次进入主菜单的星空也略有不同。

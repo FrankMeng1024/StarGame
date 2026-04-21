@@ -30,29 +30,47 @@ export function drawSkyBg(ctx, w, h, sky0 = COLORS.skyDeep, sky1 = COLORS.skyMid
 }
 
 // ─── 星点背景 ─────────────────────────────────────────────────
+// Sin-based hash: eliminates diagonal aliasing from linear sequences (STORY-00340)
+function _bgHash(n) { return Math.abs((Math.sin(n * 127.1 + 311.7) * 43758.5453) % 1); }
+
 const _bgStars = [];
-export function initBgStars(w, h, count = 80) {
+// seed: use Date.now()%100000 for session-unique layout (STORY-00340)
+export function initBgStars(w, h, seed = 0) {
   _bgStars.length = 0;
-  for (let i = 0; i < count; i++) {
+  const s = seed % 100000;
+  // Tiny stars (105): r=0.4-0.7, dim independent twinkle
+  for (let i = 0; i < 105; i++) {
     _bgStars.push({
-      x:    Math.random() * w,
-      y:    Math.random() * h,
-      r:    Math.random() < 0.1 ? 1.4 : Math.random() < 0.3 ? 1.0 : 0.6,
-      ph:   Math.random() * TWO_PI,
-      spd:  0.3 + Math.random() * 0.8,
-      base: 0.2 + Math.random() * 0.5,
+      x:    _bgHash(i + s)        * w,
+      y:    _bgHash(i + 1000 + s) * h,
+      r:    0.4 + _bgHash(i + 2000 + s) * 0.3,
+      base: 0.10 + _bgHash(i + 3000 + s) * 0.22,
+      ph:   _bgHash(i + 4000 + s) * TWO_PI,
+      spd:  0.4 + _bgHash(i + 5000 + s) * 0.8,
       bright: false,
     });
   }
-  // Add 6 bright background stars (STORY-00260) — larger with soft glow
-  for (let i = 0; i < 6; i++) {
+  // Medium stars (45): r=1.0-1.5
+  for (let i = 0; i < 45; i++) {
     _bgStars.push({
-      x:     Math.random() * w,
-      y:     Math.random() * h * 0.6,  // only in upper sky area
-      r:     2.0 + Math.random() * 0.8,
-      ph:    Math.random() * TWO_PI,
-      spd:   0.2 + Math.random() * 0.4,
-      base:  0.5 + Math.random() * 0.3,
+      x:    _bgHash(i + 200 + s)  * w,
+      y:    _bgHash(i + 1200 + s) * h,
+      r:    1.0 + _bgHash(i + 2200 + s) * 0.5,
+      base: 0.20 + _bgHash(i + 3200 + s) * 0.28,
+      ph:   _bgHash(i + 4200 + s) * TWO_PI,
+      spd:  0.5 + _bgHash(i + 5200 + s) * 0.7,
+      bright: false,
+    });
+  }
+  // Large/bright stars (18): r=1.8-2.6, soft glow (STORY-00260 + STORY-00340)
+  for (let i = 0; i < 18; i++) {
+    _bgStars.push({
+      x:    _bgHash(i + 400 + s)  * w,
+      y:    _bgHash(i + 1400 + s) * h * 0.8,  // bias toward upper sky
+      r:    1.8 + _bgHash(i + 2400 + s) * 0.8,
+      base: 0.48 + _bgHash(i + 3400 + s) * 0.30,
+      ph:   _bgHash(i + 4400 + s) * TWO_PI,
+      spd:  0.3 + _bgHash(i + 5400 + s) * 0.5,
       bright: true,
     });
   }

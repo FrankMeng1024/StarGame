@@ -118,6 +118,15 @@ let _conStars = [];
 let _conLines = [];
 let _conDef   = null; // current constellation definition (STORY-00298)
 
+// STORY-00338: Ma Shan Zheng font loading (same approach as intro.js)
+let _maShanZhengLoaded = false;
+
+// STORY-00339: random constellation + reveal animation
+let _lastConIdx    = -1;       // avoid consecutive duplicate
+let _menuStartTime = 0;        // set on first _loop frame
+let _starRevealT   = [];       // elapsed-seconds when each star was revealed
+let _lineRevealT   = [];       // elapsed-seconds when each line starts drawing
+
 // ── Public API ────────────────────────────────────────────────
 /**
  * @param {function} navigate  — navigate(key) → 'levels' | 'gallery' | 'shop'
@@ -127,7 +136,30 @@ export function showMenu(navigate) {
   _cleanup();
 
   console.log('[menu] showMenu W=' + G.SCREEN_W + ' H=' + G.SCREEN_H + ' isLandscape=' + (G.SCREEN_W > G.SCREEN_H));
-  initBgStars(G.SCREEN_W, G.SCREEN_H, 80);
+
+  // STORY-00340: session-unique sin-hash starfield seed
+  initBgStars(G.SCREEN_W, G.SCREEN_H, Date.now() % 100000);
+
+  // STORY-00338: load Ma Shan Zheng calligraphy font (same as intro.js)
+  if (!_maShanZhengLoaded) {
+    try {
+      if (typeof wx !== 'undefined' && typeof wx.loadFontFace === 'function') {
+        wx.loadFontFace({
+          family: 'Ma Shan Zheng',
+          source: "url('https://fonts.gstatic.com/s/mashanzheng/v10/NaPecZTRCLxvwo41b4gvzkXaRMTsDIRSfr0.woff2')",
+          scopes: ['webgl', '2d'],
+          success: () => { _maShanZhengLoaded = true; },
+          fail: () => { /* fallback to serif */ },
+        });
+      }
+    } catch (e) { /* ignore — title renders in fallback serif */ }
+  }
+
+  // STORY-00339: reset reveal timers
+  _menuStartTime = 0;
+  _starRevealT   = [];
+  _lineRevealT   = [];
+
   _buildConLayout();
 
   G.CANVAS.addEventListener('touchend', _onTouch);
@@ -153,12 +185,19 @@ function _cleanup() {
   _conStars = [];
   _conLines = [];
   _conDef   = null;
+  _menuStartTime = 0;
+  _starRevealT   = [];
+  _lineRevealT   = [];
 }
 
-// Pick a featured constellation (index cycles by day to feel alive)
+// STORY-00339: true random pick, avoid consecutive duplicate
 function _pickCon() {
-  const dayOfYear = Math.floor(Date.now() / 86400000) % CONSTELLATIONS.length;
-  return CONSTELLATIONS[dayOfYear];
+  let idx = Math.floor(Math.random() * CONSTELLATIONS.length);
+  if (idx === _lastConIdx) {
+    idx = (idx + 1) % CONSTELLATIONS.length;
+  }
+  _lastConIdx = idx;
+  return CONSTELLATIONS[idx];
 }
 
 function _buildConLayout() {
@@ -177,14 +216,16 @@ function _buildConLayout() {
   const cy = isLandscape ? H * 0.45 : H * 0.32;
   const BOX = isLandscape ? Math.min(H * 0.80, (W * 0.60 - safeL) * 0.88) : Math.min(H * 0.60, W * 0.80);
 
-  // Raw positions
+  // Raw positions — assign revealTime stagger (STORY-00339: 0.12s per star)
   const raw = conDef.stars.map((s, si) => ({
-    cx:    cx + (s.x - 0.5) * BOX,
-    cy:    cy + (s.y - 0.5) * BOX,
-    r:     Math.max(3, Math.min(11, magToRadius(s.mag) * 1.4)),
-    color: typeToColor(s.type),
-    phase: (si * 1.618) % TWO_PI,
-    speed: 0.4 + (si % 5) * 0.15,
+    cx:         cx + (s.x - 0.5) * BOX,
+    cy:         cy + (s.y - 0.5) * BOX,
+    r:          Math.max(3, Math.min(11, magToRadius(s.mag) * 1.4)),
+    color:      typeToColor(s.type),
+    phase:      (si * 1.618) % TWO_PI,
+    speed:      0.4 + (si % 5) * 0.15,
+    revealTime: si * 0.12,  // STORY-00339: staggered reveal
+    revealIdx:  si,
   }));
 
   // Auto-center bounding box
@@ -215,32 +256,57 @@ function _buildConLayout() {
   _conLines = (conDef.lines || []).map(([ai, bi]) => {
     const a = raw[ai], b = raw[bi];
     if (!a || !b) return null;
-    return { x1: a.cx, y1: a.cy, x2: b.cx, y2: b.cy };
+    return { x1: a.cx, y1: a.cy, x2: b.cx, y2: b.cy, ai, bi };
   }).filter(Boolean);
 }
 
-function _drawConBg(t) {
+function _drawConBg(t, elapsed) {
   const ctx = G.CTX;
 
-  // Lines
+  // STORY-00339: gate line drawing on both endpoint stars being revealed
+  // Schedule line reveal times lazily (same pattern as intro.js)
+  for (let li = 0; li < _conLines.length; li++) {
+    if (_lineRevealT[li] !== undefined) continue;
+    const ln = _conLines[li];
+    const revA = _conStars[ln.ai] ? _conStars[ln.ai].revealTime : 0;
+    const revB = _conStars[ln.bi] ? _conStars[ln.bi].revealTime : 0;
+    if (elapsed >= revA && elapsed >= revB) {
+      _lineRevealT[li] = Math.max(revA, revB) + 0.10;
+    }
+  }
+
+  // Lines — only draw when scheduled and both stars visible
   ctx.save();
-  ctx.strokeStyle = 'rgba(200,185,130,0.38)';
-  ctx.lineWidth   = 1.2;
-  for (const ln of _conLines) {
+  for (let li = 0; li < _conLines.length; li++) {
+    if (_lineRevealT[li] === undefined || elapsed < _lineRevealT[li]) continue;
+    const ln = _conLines[li];
+    const prog = Math.min(1, (elapsed - _lineRevealT[li]) / 0.45);
+    const sa = _conStars[ln.ai], sb = _conStars[ln.bi];
+    if (!sa || !sb) continue;
+    const ex = sa.cx + (sb.cx - sa.cx) * prog;
+    const ey = sa.cy + (sb.cy - sa.cy) * prog;
+    ctx.strokeStyle = 'rgba(200,185,130,0.38)';
+    ctx.lineWidth   = 1.2;
     ctx.beginPath();
-    ctx.moveTo(ln.x1, ln.y1);
-    ctx.lineTo(ln.x2, ln.y2);
+    ctx.moveTo(sa.cx, sa.cy);
+    ctx.lineTo(ex, ey);
     ctx.stroke();
   }
   ctx.restore();
 
-  // Stars with glow
+  // Stars — staggered reveal with pulse (STORY-00339)
   for (const s of _conStars) {
-    const alpha = 0.50 + 0.50 * Math.abs(Math.sin(t * s.speed + s.phase));
+    if (elapsed < s.revealTime) continue;  // not yet revealed
 
-    // Soft glow halo — convert hex #rrggbb to rgba()
+    const age   = elapsed - s.revealTime;
+    const alpha = 0.50 + 0.50 * Math.abs(Math.sin(t * s.speed + s.phase));
+    // Pulse on reveal: scale 1.0→1.4→1.0 over 0.3s
+    const scale = age < 0.3 ? (1.0 + 0.4 * Math.sin(age / 0.3 * Math.PI)) : 1.0;
+    const pulse = age < 0.4 ? (age / 0.4) : 1.0;
+
+    // Soft glow halo
     const grd = ctx.createRadialGradient(s.cx, s.cy, 0, s.cx, s.cy, s.r * 5);
-    const inner = _hexToRgba(s.color, alpha * 0.40);;
+    const inner = _hexToRgba(s.color, alpha * 0.40 * pulse);
     grd.addColorStop(0, inner);
     grd.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.save();
@@ -252,12 +318,12 @@ function _drawConBg(t) {
 
     // Core dot
     ctx.save();
-    ctx.globalAlpha = alpha;
+    ctx.globalAlpha = alpha * pulse;
     ctx.fillStyle   = s.color;
     ctx.shadowColor = s.color;
     ctx.shadowBlur  = s.r * 3;
     ctx.beginPath();
-    ctx.arc(s.cx, s.cy, s.r, 0, TWO_PI);
+    ctx.arc(s.cx, s.cy, s.r * scale, 0, TWO_PI);
     ctx.fill();
     ctx.restore();
   }
@@ -270,12 +336,19 @@ function _loop(now) {
   const t   = now * 0.001;
   const isLandscape = W > H;
 
+  // STORY-00339: track elapsed time from menu open
+  if (_menuStartTime === 0) _menuStartTime = now;
+  const elapsed = (now - _menuStartTime) * 0.001;
+
   // Background
   drawSkyBg(ctx, W, H);
   drawBgStars(ctx, t);
-  _drawConBg(t);
+  _drawConBg(t, elapsed);
 
   _buttons = [];
+
+  // STORY-00338: Ma Shan Zheng calligraphy font (same as intro.js Phase 3)
+  const titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
 
   if (isLandscape) {
     // ── Landscape layout ─────────────────────────────────────
@@ -284,15 +357,35 @@ function _loop(now) {
     const rightW  = W - rightX - (G.SAFE_RIGHT || 0) - 16;  // STORY-00287: was -20
     const midX    = rightX + rightW / 2;
 
-    // STORY-00280: title moved up to prevent overlap with tall constellation
-    drawTitle(ctx, '追  星  少  女', midX, H * 0.14, 30);  // STORY-00289: spaced title, slightly smaller for wider layout
-    drawSubtitle(ctx, '探索88星座的奇妙旅程', midX, H * 0.14 + 26, 12);
+    // STORY-00338: calligraphy title — Ma Shan Zheng, #e8d5ff, matches intro Phase 3
+    const titleSize = Math.round(H * 0.052);
+    // Outer glow halo
+    ctx.save();
+    ctx.globalAlpha = 0.38;
+    ctx.font        = `bold ${titleSize}px ${titleFont}`;
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#b090ff';
+    ctx.shadowBlur  = 36;
+    ctx.fillStyle   = '#e8d5ff';
+    ctx.fillText('追星少女', midX, H * 0.14);
+    ctx.restore();
+    // Title fill
+    ctx.save();
+    ctx.font        = `bold ${titleSize}px ${titleFont}`;
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#b090ff';
+    ctx.shadowBlur  = 18;
+    ctx.fillStyle   = '#e8d5ff';
+    ctx.fillText('追星少女', midX, H * 0.14);
+    ctx.restore();
+    drawSubtitle(ctx, '探索88星座的奇妙旅程', midX, H * 0.14 + titleSize * 0.8, 12);
 
     const BW  = rightW;
     const BH  = Math.max(34, Math.min(40, (H - (G.SAFE_TOP || 0) - (G.SAFE_BOTTOM || 0) - 80) / 3));  // STORY-00317: was max(26,min(30,...)) — taller buttons
     const GAP = 14;  // STORY-00317: was 8 — more breathing room
     // Stack 3 buttons vertically — start lower, away from title
-    const totalBtnsH = 3 * BH + 2 * GAP;
     const btnStartY = H * 0.38;  // STORY-00317: was usableH*0.42 — explicitly lower to separate from title
 
     const defs = [
@@ -311,8 +404,30 @@ function _loop(now) {
     // Achievement button removed — STORY-00295 (CR-080 parity: web removed it in Sprint 27)
   } else {
     // ── Portrait layout ───────────────────────────────────────
-    drawTitle(ctx, '追  星  少  女', W / 2, H * 0.72, 38);  // Arch review: portrait also uses double-space per STORY-00289
-    drawSubtitle(ctx, '探索88星座的奇妙旅程', W / 2, H * 0.72 + 38, 14);
+    // STORY-00338: calligraphy title in portrait
+    const titleSize = Math.round(H * 0.045);
+    // Outer glow halo
+    ctx.save();
+    ctx.globalAlpha = 0.38;
+    ctx.font        = `bold ${titleSize}px ${titleFont}`;
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#b090ff';
+    ctx.shadowBlur  = 36;
+    ctx.fillStyle   = '#e8d5ff';
+    ctx.fillText('追星少女', W / 2, H * 0.72);
+    ctx.restore();
+    // Title fill
+    ctx.save();
+    ctx.font        = `bold ${titleSize}px ${titleFont}`;
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor = '#b090ff';
+    ctx.shadowBlur  = 18;
+    ctx.fillStyle   = '#e8d5ff';
+    ctx.fillText('追星少女', W / 2, H * 0.72);
+    ctx.restore();
+    drawSubtitle(ctx, '探索88星座的奇妙旅程', W / 2, H * 0.72 + titleSize * 0.8, 14);
 
     const BW = W * 0.60;
     const BH = Math.max(44, Math.min(52, (H - (G.SAFE_BOTTOM || 0) - 180) / 3));  // STORY-00317: was 36 — taller portrait buttons
