@@ -352,88 +352,116 @@ function _loop(now) {
 
   if (isLandscape) {
     // ── Landscape layout ─────────────────────────────────────
-    // Constellation fills left 60%; title + buttons in right 36% (STORY-00289: was 52%/44%)
+    // STORY-00341: balanced vertical distribution — no hardcoded y positions
     const rightX  = W * 0.62 + (G.SAFE_LEFT || 0) * 0.2;
-    const rightW  = W - rightX - (G.SAFE_RIGHT || 0) - 16;  // STORY-00287: was -20
+    const rightW  = W - rightX - (G.SAFE_RIGHT || 0) - 16;
     const midX    = rightX + rightW / 2;
 
-    // STORY-00338: calligraphy title — Ma Shan Zheng, #e8d5ff, matches intro Phase 3
-    const titleSize = Math.round(H * 0.052);
-    // Outer glow halo
-    ctx.save();
-    ctx.globalAlpha = 0.38;
-    ctx.font        = `bold ${titleSize}px ${titleFont}`;
-    ctx.textAlign   = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = '#b090ff';
-    ctx.shadowBlur  = 36;
-    ctx.fillStyle   = '#e8d5ff';
-    ctx.fillText('追星少女', midX, H * 0.14);
-    ctx.restore();
-    // Title fill
-    ctx.save();
-    ctx.font        = `bold ${titleSize}px ${titleFont}`;
-    ctx.textAlign   = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = '#b090ff';
-    ctx.shadowBlur  = 18;
-    ctx.fillStyle   = '#e8d5ff';
-    ctx.fillText('追星少女', midX, H * 0.14);
-    ctx.restore();
-    drawSubtitle(ctx, '探索88星座的奇妙旅程', midX, H * 0.14 + titleSize * 0.8, 12);
+    // Usable area: between safe top and info panel bottom
+    const safeT   = G.SAFE_TOP    || 0;
+    const safeB   = G.SAFE_BOTTOM || 0;
+    const INFO_RESERVED = 58;  // info panel height + gap
+    const usableTop = safeT + 8;
+    const usableBot = H - safeB - INFO_RESERVED;
+    const usableH   = usableBot - usableTop;
 
-    const BW  = rightW;
-    const BH  = Math.max(34, Math.min(40, (H - (G.SAFE_TOP || 0) - (G.SAFE_BOTTOM || 0) - 80) / 3));  // STORY-00317: was max(26,min(30,...)) — taller buttons
-    const GAP = 14;  // STORY-00317: was 8 — more breathing room
-    // Stack 3 buttons vertically — start lower, away from title
-    const btnStartY = H * 0.38;  // STORY-00317: was usableH*0.42 — explicitly lower to separate from title
+    // Responsive sizing
+    const titleSize   = Math.round(Math.min(32, Math.max(22, usableH * 0.13)));
+    const subtitleFS  = Math.max(10, Math.round(titleSize * 0.46));
+    const titleBlockH = titleSize + 4 + subtitleFS;
+    const BH          = Math.round(Math.min(44, Math.max(32, usableH * 0.115)));
+    const GAP         = Math.round(Math.max(10, usableH * 0.038));
+    const TITLE_GAP   = Math.round(Math.max(16, usableH * 0.075));
+    const btnGroupH   = 3 * BH + 2 * GAP;
+    const totalH      = titleBlockH + TITLE_GAP + btnGroupH;
 
+    // Vertically center the whole content block in usable area
+    const contentTop  = usableTop + Math.round((usableH - totalH) / 2);
+    const titleY      = contentTop + titleSize / 2;
+    const btnStartY   = contentTop + titleBlockH + TITLE_GAP;
+
+    // STORY-00338: calligraphy title
+    ctx.save();
+    ctx.globalAlpha  = 0.38;
+    ctx.font         = `bold ${titleSize}px ${titleFont}`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor  = '#b090ff';
+    ctx.shadowBlur   = 36;
+    ctx.fillStyle    = '#e8d5ff';
+    ctx.fillText('追星少女', midX, titleY);
+    ctx.restore();
+    ctx.save();
+    ctx.font         = `bold ${titleSize}px ${titleFont}`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor  = '#b090ff';
+    ctx.shadowBlur   = 18;
+    ctx.fillStyle    = '#e8d5ff';
+    ctx.fillText('追星少女', midX, titleY);
+    ctx.restore();
+    drawSubtitle(ctx, '探索88星座的奇妙旅程', midX, titleY + titleSize * 0.62 + subtitleFS * 0.5, subtitleFS);
+
+    const BW = rightW;
     const defs = [
       { key: 'levels',  label: '挑战关卡', icon: '★' },
       { key: 'gallery', label: '星座图鉴', icon: '◉' },
       { key: 'shop',    label: '道具商店', icon: '◈' },
     ];
     defs.forEach((d, i) => {
-      const by = btnStartY + i * (BH + GAP);
+      const by   = btnStartY + i * (BH + GAP);
       const rect = _drawMenuButton(ctx, rightX, by, BW, BH, d.label, {
-        icon: d.icon, primary: i === 0, fontSize: 14,  // STORY-00317: was 13 — slightly larger with taller buttons
+        icon: d.icon, primary: i === 0, fontSize: Math.max(12, Math.round(BH * 0.36)),
       });
       _buttons.push({ ...rect, key: d.key });
     });
 
-    // Achievement button removed — STORY-00295 (CR-080 parity: web removed it in Sprint 27)
+    // Achievement button removed — STORY-00295
   } else {
     // ── Portrait layout ───────────────────────────────────────
-    // STORY-00338: calligraphy title in portrait
-    const titleSize = Math.round(H * 0.045);
-    // Outer glow halo
-    ctx.save();
-    ctx.globalAlpha = 0.38;
-    ctx.font        = `bold ${titleSize}px ${titleFont}`;
-    ctx.textAlign   = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = '#b090ff';
-    ctx.shadowBlur  = 36;
-    ctx.fillStyle   = '#e8d5ff';
-    ctx.fillText('追星少女', W / 2, H * 0.72);
-    ctx.restore();
-    // Title fill
-    ctx.save();
-    ctx.font        = `bold ${titleSize}px ${titleFont}`;
-    ctx.textAlign   = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.shadowColor = '#b090ff';
-    ctx.shadowBlur  = 18;
-    ctx.fillStyle   = '#e8d5ff';
-    ctx.fillText('追星少女', W / 2, H * 0.72);
-    ctx.restore();
-    drawSubtitle(ctx, '探索88星座的奇妙旅程', W / 2, H * 0.72 + titleSize * 0.8, 14);
+    // STORY-00341: UI area starts below constellation (H*0.60), content centered within it
+    const safeB  = G.SAFE_BOTTOM || 0;
+    const uiTop  = H * 0.60;
+    const uiBot  = H - safeB - 8;
+    const uiH    = uiBot - uiTop;
 
-    const BW = W * 0.60;
-    const BH = Math.max(44, Math.min(52, (H - (G.SAFE_BOTTOM || 0) - 180) / 3));  // STORY-00317: was 36 — taller portrait buttons
-    const BX = (W - BW) / 2;
-    const GAP = 16;  // STORY-00317: was 10 — more breathing room in portrait
-    const startY = H - G.SAFE_BOTTOM - 160;
+    const titleSize   = Math.round(Math.min(36, Math.max(24, uiH * 0.165)));
+    const subtitleFS  = Math.max(11, Math.round(titleSize * 0.46));
+    const titleBlockH = titleSize + 4 + subtitleFS;
+    const BW          = W * 0.72;  // wider than before (was 0.60)
+    const BH          = Math.round(Math.min(54, Math.max(40, uiH * 0.175)));
+    const GAP         = Math.round(Math.max(10, uiH * 0.048));
+    const TITLE_GAP   = Math.round(Math.max(12, uiH * 0.065));
+    const btnGroupH   = 3 * BH + 2 * GAP;
+    const totalH      = titleBlockH + TITLE_GAP + btnGroupH;
+
+    // Vertically center content block in UI area
+    const contentTop  = uiTop + Math.round((uiH - totalH) / 2);
+    const titleY      = contentTop + titleSize / 2;
+    const btnStartY   = contentTop + titleBlockH + TITLE_GAP;
+    const BX          = (W - BW) / 2;
+
+    // STORY-00338: calligraphy title
+    ctx.save();
+    ctx.globalAlpha  = 0.38;
+    ctx.font         = `bold ${titleSize}px ${titleFont}`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor  = '#b090ff';
+    ctx.shadowBlur   = 36;
+    ctx.fillStyle    = '#e8d5ff';
+    ctx.fillText('追星少女', W / 2, titleY);
+    ctx.restore();
+    ctx.save();
+    ctx.font         = `bold ${titleSize}px ${titleFont}`;
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.shadowColor  = '#b090ff';
+    ctx.shadowBlur   = 18;
+    ctx.fillStyle    = '#e8d5ff';
+    ctx.fillText('追星少女', W / 2, titleY);
+    ctx.restore();
+    drawSubtitle(ctx, '探索88星座的奇妙旅程', W / 2, titleY + titleSize * 0.62 + subtitleFS * 0.5, subtitleFS);
 
     const defs = [
       { key: 'levels',  label: '挑战关卡', icon: '★' },
@@ -441,14 +469,14 @@ function _loop(now) {
       { key: 'shop',    label: '道具商店', icon: '◈' },
     ];
     defs.forEach((d, i) => {
-      const by = startY + i * (BH + GAP);
+      const by   = btnStartY + i * (BH + GAP);
       const rect = _drawMenuButton(ctx, BX, by, BW, BH, d.label, {
-        icon: d.icon, primary: i === 0, fontSize: 15,  // STORY-00287: was 16
+        icon: d.icon, primary: i === 0, fontSize: Math.max(13, Math.round(BH * 0.36)),
       });
       _buttons.push({ ...rect, key: d.key });
     });
 
-    // Achievement button removed — STORY-00295 (CR-080 parity)
+    // Achievement button removed — STORY-00295
   }
 
   // ── Constellation info panel (STORY-00298) ──
