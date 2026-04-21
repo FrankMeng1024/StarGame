@@ -3,20 +3,40 @@
 
 import { G } from '../engine/globals.js';
 import {
-  COLORS, drawSkyBg, initBgStars, drawBgStars,
-  drawButton, drawTitle, drawCard, hitTest, drawFadeOverlay, tickFade,
+  COLORS,
+  drawButton, hitTest, drawFadeOverlay, tickFade,
 } from '../engine/canvas-utils.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
-import { SCENE_PALETTES } from '../data/scenes.js';
 import { ITEMS } from './shop.js';
 import state from '../engine/state.js';
 
 const TWO_PI = Math.PI * 2;
 
+// ── STORY-00345: Orbital level select — 5 concentric elliptical rings ────────
+// Orbit ring definitions: rx = half-width, speed = rad/s, offset = initial angle
+const _RINGS = [
+  { rx:  62, speed: 0.020, offset: Math.PI * 0.1 },
+  { rx: 104, speed: 0.014, offset: Math.PI * 0.4 },
+  { rx: 147, speed: 0.009, offset: Math.PI * 0.7 },
+  { rx: 190, speed: 0.006, offset: Math.PI * 1.1 },
+  { rx: 233, speed: 0.004, offset: Math.PI * 1.5 },
+];
+const _ELLIPSE_RATIO = 0.55;  // ry = rx * ratio (3D depth feel)
+const _NODE_R = [22, 20, 18, 16, 14];  // node radius per ring (outer = smaller)
+const _RING_LABELS = ['入门', '基础', '进阶', '挑战', '传奇'];
+const _RING_LABEL_COLORS = ['#80c080', '#90b0e0', '#c0a0ff', '#ff9060', '#ff6060'];
+
+// Orbital background nebulae (anti-claustrophobia: very faint, not pure black)
+const _NEBULAE = [
+  { xRatio: 0.22, yRatio: 0.28, rx: 120, ry: 70,  r: '100,70,255', a: 0.055 },
+  { xRatio: 0.78, yRatio: 0.58, rx: 100, ry: 60,  r: '40,180,200', a: 0.045 },
+  { xRatio: 0.50, yRatio: 0.85, rx: 130, ry: 75,  r: '200,80,150', a: 0.040 },
+];
+
 // ── Module state ──────────────────────────────────────────────
 let _navigate     = null;
 let _rafId        = null;
-let _cardRects    = [];   // [{x,y,w,h,idx}]
+let _nodeRects    = [];   // [{cx,cy,r,idx}] — replaces _cardRects
 let _backRect     = null;
 let _shopRect     = null;  // STORY-00282: shop shortcut
 let _scrollY      = 0;
@@ -26,10 +46,13 @@ let _isDragging   = false;
 let _totalH       = 0;
 let _scrollVelocity = 0;  // for momentum scrolling
 let _lastTouchTime  = 0;
+let _orbitCX      = 0;   // orbital center x (computed at layout)
+let _orbitCY      = 0;   // orbital center y (computed at layout)
+let _bgStars      = [];  // background star field
 
-// Layout constants (computed at showLevels time, not module load)
-const PAD_X   = 12;
-const GAP     = 8;
+// STORY-00342: Ma Shan Zheng font loading (same pattern as menu.js + intro.js)
+// ⛔ 禁止修改：字体风格已定稿，与开场动画/主菜单一致，保持全游戏字体统一
+let _maShanZhengLoaded = false;
 
 // ── Item selection overlay state ───────────────────────────────
 let _overlayActive      = false;
@@ -48,8 +71,23 @@ export function showLevels(navigate) {
   _navigate = navigate;
   _cleanup();
 
-  initBgStars(G.SCREEN_W, G.SCREEN_H, 60);
+  _bgStars = [];  // reset so _computeLayout regenerates
   _computeLayout();
+
+  // STORY-00342: load Ma Shan Zheng for title consistency (same as menu.js/intro.js)
+  if (!_maShanZhengLoaded) {
+    try {
+      if (typeof wx !== 'undefined' && typeof wx.loadFontFace === 'function') {
+        wx.loadFontFace({
+          family: 'Ma Shan Zheng',
+          source: "url('https://fonts.gstatic.com/s/mashanzheng/v10/NaPecZTRCLxvwo41b4gvzkXaRMTsDIRSfr0.woff2')",
+          scopes: ['webgl', '2d'],
+          success: () => { _maShanZhengLoaded = true; },
+          fail: () => { /* fallback to serif */ },
+        });
+      }
+    } catch (e) { /* ignore */ }
+  }
 
   G.CANVAS.addEventListener('touchstart',  _onTouchStart);
   G.CANVAS.addEventListener('touchmove',   _onTouchMove);
@@ -73,7 +111,8 @@ function _cleanup() {
     G.CANVAS.removeEventListener('touchmove',   _onTouchMove);
     G.CANVAS.removeEventListener('touchend',    _onTouchEnd);
   }
-  _cardRects = [];
+  _nodeRects = [];
+  _bgStars   = [];
   _backRect  = null;
   _shopRect  = null;
   _scrollY   = 0;
@@ -89,33 +128,36 @@ function _cleanup() {
 }
 
 function _computeLayout() {
-  const isLandscape = G.SCREEN_W > G.SCREEN_H;
-  const COLS   = isLandscape ? 6 : 5;  // STORY-00288: landscape 5→6 (reverts STORY-00281 change, user wants smaller cards)
-  const SL     = G.SAFE_LEFT  + PAD_X;  // safe left inset
-  const SR     = G.SAFE_RIGHT + PAD_X;  // safe right inset
-  const usableW = G.SCREEN_W - SL - SR;
-  const PAD_TOP = G.SAFE_TOP + 56;  // below back button + notch
-  _cardRects = [];
-  const CARD_W = Math.floor((usableW - (COLS - 1) * GAP) / COLS);
-  const CARD_H = CARD_W;  // square cards
-  const rows = Math.ceil(CONSTELLATIONS.length / COLS);
-  _totalH = PAD_TOP + rows * (CARD_H + GAP) + 16 + G.SAFE_BOTTOM;
+  const W = G.SCREEN_W;
+  const H = G.SCREEN_H;
+  // Orbital center: horizontally centered, vertically at ~42% of screen
+  _orbitCX = W / 2;
+  _orbitCY = G.SAFE_TOP + 56 + (H - G.SAFE_TOP - 56) * 0.42;
+  // Total scrollable height: enough to reveal outermost ring fully
+  const outerRx = _RINGS[4].rx;
+  _totalH = _orbitCY + outerRx + 80 + G.SAFE_BOTTOM;
 
-  CONSTELLATIONS.forEach((c, idx) => {
-    const col = idx % COLS;
-    const row = Math.floor(idx / COLS);
-    const x   = SL + col * (CARD_W + GAP);
-    const y   = PAD_TOP + row * (CARD_H + GAP);
-    _cardRects.push({ x, y, w: CARD_W, h: CARD_H, idx });
+  // Pre-compute static node positions for hit testing (using t=0)
+  // Actual positions are re-computed each frame in _getNodeXY
+  _nodeRects = CONSTELLATIONS.map((_, idx) => {
+    const ring = Math.floor(idx / 6);
+    const slot = idx % 6;
+    return { ring, slot, r: _NODE_R[ring], idx };
   });
+
+  // Background stars (generated once)
+  if (_bgStars.length === 0) {
+    _bgStars = Array.from({ length: 160 }, () => ({
+      x: Math.random() * W,
+      y: Math.random() * (_totalH * 1.1),
+      r: Math.random() * 0.8 + 0.2,
+      a: Math.random() * 0.5 + 0.15,
+      phase: Math.random() * Math.PI * 2,
+      speed: Math.random() * 1.8 + 1.0,
+    }));
+  }
 }
 
-function _getSceneBg() {
-  const maxIdx = state.unlockedLevels.size > 0
-    ? Math.max(...Array.from(state.unlockedLevels)) : 0;
-  const si    = Math.min(Math.floor(maxIdx / 5), SCENE_PALETTES.length - 1);
-  return SCENE_PALETTES[si];
-}
 
 function _loop(now) {
   const ctx = G.CTX;
@@ -132,10 +174,25 @@ function _loop(now) {
   }
   _scrollY += (_scrollTarget - _scrollY) * 0.22;
 
-  // Background
-  const scene = _getSceneBg();
-  drawSkyBg(ctx, W, H, scene.sky0, scene.sky1, scene.sky2);
-  drawBgStars(ctx, t);
+  // Background: deep space (not pure black — anti-claustrophobia)
+  ctx.fillStyle = '#06091e';
+  ctx.fillRect(0, 0, W, H);
+
+  // Nebula halos (subtle color, parallax)
+  _drawNebulaBg(ctx, W, H);
+
+  // Background stars (parallax 0.15x)
+  for (const s of _bgStars) {
+    const sy = s.y - _scrollY * 0.15;
+    if (sy < -4 || sy > H + 4) continue;
+    const tw = 0.5 + 0.5 * Math.sin(t * s.speed + s.phase);
+    ctx.globalAlpha = s.a * tw;
+    ctx.fillStyle = '#d4e4ff';
+    ctx.beginPath();
+    ctx.arc(s.x, sy, s.r, 0, TWO_PI);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
 
   // ── Back button (fixed, above scroll area) ────────────────
   _backRect = drawButton(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 10, 88, 38, '← 返回', {
@@ -153,25 +210,44 @@ function _loop(now) {
     color1:   'rgba(60,90,180,0.85)',
   });
 
-  // Title
+  // Title — STORY-00342: Ma Shan Zheng calligraphy font, gold + glow (matches menu.js style)
+  const titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
   ctx.save();
-  ctx.font        = 'bold 18px sans-serif';
-  ctx.textAlign   = 'center';
+  ctx.font         = `bold 22px ${titleFont}`;
+  ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle   = COLORS.text;
-  ctx.fillText('选择关卡', W / 2, G.SAFE_TOP + 29);
+  ctx.fillStyle    = COLORS.starGold;
+  ctx.shadowColor  = 'rgba(255,200,80,0.55)';
+  ctx.shadowBlur   = 10;
+  ctx.fillText('选择关卡', W / 2, G.SAFE_TOP + 30);
   ctx.restore();
 
-  // ── Scrollable card area ──────────────────────────────────
+  // ── Orbital system (scrollable) ───────────────────────────
   const padTop = G.SAFE_TOP + 56;
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, padTop, W, H - padTop);
   ctx.clip();
-  ctx.translate(0, -_scrollY);
 
-  for (const cr of _cardRects) {
-    _drawCard(ctx, cr, t);
+  // Orbital center shifts up with scroll (parallax 0.6x — objects follow scroll but slower)
+  const orbitCY = _orbitCY - _scrollY * 0.6;
+
+  // Orbit rings
+  _drawOrbits(ctx, orbitCY);
+
+  // Sun at center
+  _drawSun(ctx, _orbitCX, orbitCY, t);
+
+  // Nodes: draw outer rings first (z-order: ring 4 behind ring 0)
+  for (let ring = 4; ring >= 0; ring--) {
+    for (let slot = 0; slot < 6; slot++) {
+      const idx = ring * 6 + slot;
+      if (idx >= CONSTELLATIONS.length) continue;
+      const { x: nx, y: ny } = _getNodeXY(ring, slot, t, orbitCY);
+      // Skip off-screen nodes
+      if (ny + _NODE_R[ring] * 3 < padTop || ny - _NODE_R[ring] * 3 > H) continue;
+      _drawNode(ctx, idx, nx, ny, _NODE_R[ring], t);
+    }
   }
 
   ctx.restore();
@@ -188,122 +264,222 @@ function _loop(now) {
   _rafId = requestAnimationFrame(_loop);
 }
 
-function _drawCard(ctx, cr, t) {
-  const { x, y, w, h, idx } = cr;
-  const c        = CONSTELLATIONS[idx];
-  const unlocked = state.isUnlocked(idx);
-  const score    = state.getScore(idx);
+// ── STORY-00345: Orbital rendering helpers ────────────────────
 
-  // Card background
-  const bgAlpha = unlocked ? 0.88 : 0.45;
-  ctx.save();
-  ctx.globalAlpha = bgAlpha;
-  ctx.fillStyle   = unlocked ? COLORS.cardBg : 'rgba(20,20,40,0.7)';
-  _roundRect(ctx, x, y, w, h, 10);
-  ctx.fill();
-  ctx.restore();
+// Get node screen position for given ring/slot at animation time t
+function _getNodeXY(ring, slot, t, orbitCY) {
+  const r = _RINGS[ring];
+  const a = r.offset + slot * (TWO_PI / 6) + r.speed * t;
+  return {
+    x: _orbitCX + Math.cos(a) * r.rx,
+    y: orbitCY  + Math.sin(a) * r.rx * _ELLIPSE_RATIO,
+  };
+}
 
-  // Border: gradient for unlocked (gold→purple), flat for locked (STORY-00281)
-  ctx.save();
-  if (unlocked) {
-    const borderGrd = ctx.createLinearGradient(x, y, x, y + h);
-    borderGrd.addColorStop(0, 'rgba(255,200,50,0.70)');
-    borderGrd.addColorStop(1, 'rgba(120,50,200,0.50)');
-    ctx.strokeStyle = borderGrd;
-    ctx.lineWidth   = 1.2;
-  } else {
-    ctx.strokeStyle = 'rgba(80,80,120,0.3)';
-    ctx.lineWidth   = 1;
-  }
-  _roundRect(ctx, x, y, w, h, 10);
-  ctx.stroke();
-  ctx.restore();
-
-  // Constellation icon / abbreviation (STORY-00327: try emoji first, reliable 2-char fallback)
-  if (unlocked) {
-    const icon = c.icon || '';
-    const conAbbr = (c.nameZh || c.name || '').substring(0, 2);
+// Nebula background halos
+function _drawNebulaBg(ctx, W, H) {
+  for (const n of _NEBULAE) {
+    const nx = n.xRatio * W;
+    const ny = n.yRatio * H - _scrollY * 0.25;
     ctx.save();
-    ctx.font         = `${Math.round(w * 0.26)}px sans-serif`;  // STORY-00327: larger icon
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.globalAlpha  = 0.90;
-    ctx.fillStyle    = 'rgba(220,200,255,1)';
-    ctx.fillText(icon || conAbbr, x + w / 2, y + h * 0.26);
-    ctx.restore();
-  }
-
-  // Level number — smaller (STORY-00327: 0.28 → 0.22) or lock icon
-  ctx.save();
-  ctx.textAlign    = 'center';
-  ctx.textBaseline = 'middle';
-  if (unlocked) {
-    ctx.font      = `bold ${Math.round(w * 0.22)}px sans-serif`;  // STORY-00327: was 0.28 — less dominant
-    ctx.fillStyle = COLORS.starGold;
-    ctx.globalAlpha = 0.95;
-    ctx.fillText(String(idx + 1), x + w / 2, y + h * 0.52);  // STORY-00327: moved down from 0.45
-  } else {
-    ctx.font      = `${Math.round(w * 0.38)}px sans-serif`;
-    ctx.globalAlpha = 0.35;
-    ctx.fillText('🔒', x + w / 2, y + h * 0.42);
-  }
-  ctx.restore();
-
-  // Name
-  const nameFontSize = Math.max(7, Math.min(9, Math.round(w * 0.14)));  // STORY-00288: smaller (was max(8,min(10,w*0.16)))
-  ctx.save();
-  ctx.font         = `bold ${nameFontSize}px sans-serif`;
-  ctx.textAlign    = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle    = unlocked ? COLORS.text : 'rgba(120,120,160,0.5)';
-  ctx.fillText(c.nameZh || c.name, x + w / 2, y + h * 0.70);  // STORY-00288: was h*0.72
-  ctx.restore();
-
-  // Difficulty color bar — STORY-00327: replaces dots with bottom color strip
-  const diff   = Math.max(1, Math.min(5, c.difficulty || 1));
-  const diffColors = ['#4caf50', '#4caf50', '#ffc107', '#ff9800', '#f44336']; // 1-5
-  const barH   = 4;
-  const barY   = y + h - barH;
-  const barRadius = 5;  // match card corner radius
-  ctx.save();
-  ctx.globalAlpha = unlocked ? 0.85 : 0.30;
-  ctx.fillStyle   = diffColors[diff - 1];
-  // Draw bottom bar with rounded bottom corners only
-  ctx.beginPath();
-  ctx.moveTo(x, barY);
-  ctx.lineTo(x + w, barY);
-  ctx.lineTo(x + w, barY + barH - barRadius);
-  ctx.arcTo(x + w, barY + barH, x + w - barRadius, barY + barH, barRadius);
-  ctx.lineTo(x + barRadius, barY + barH);
-  ctx.arcTo(x, barY + barH, x, barY + barH - barRadius, barRadius);
-  ctx.lineTo(x, barY);
-  ctx.fill();
-  ctx.restore();
-
-  // Best time — STORY-00327: shown below name when score exists
-  const scoreData = score && score.time > 0 ? score : null;
-  if (unlocked && scoreData) {
-    ctx.save();
-    ctx.font         = `${Math.max(7, Math.round(w * 0.11))}px sans-serif`;
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = 'rgba(255,255,255,0.62)';
-    ctx.fillText('⏱ ' + Math.floor(scoreData.time) + 's', x + w / 2, y + h * 0.84);
-    ctx.restore();
-  }
-
-  // Score stars — bottom-right corner badge (STORY-00281: was center-bottom row)
-  if (unlocked && score && score.stars > 0) {
-    ctx.save();
-    ctx.font        = `${Math.max(7, Math.round(w * 0.12))}px sans-serif`;
-    ctx.textAlign   = 'right';
-    ctx.textBaseline = 'bottom';
-    ctx.fillStyle   = COLORS.starGold;
-    const stars = '★'.repeat(score.stars);
-    ctx.fillText(stars, x + w - 3, y + h - barH - 2);  // STORY-00327: above the color bar
+    ctx.scale(1, n.ry / n.rx);
+    const g = ctx.createRadialGradient(nx, ny * (n.rx / n.ry), 0, nx, ny * (n.rx / n.ry), n.rx);
+    g.addColorStop(0, `rgba(${n.r},${n.a})`);
+    g.addColorStop(1, `rgba(${n.r},0)`);
+    ctx.beginPath();
+    ctx.arc(nx, ny * (n.rx / n.ry), n.rx, 0, TWO_PI);
+    ctx.fillStyle = g;
+    ctx.fill();
     ctx.restore();
   }
 }
+
+// Orbit ring ellipses
+function _drawOrbits(ctx, orbitCY) {
+  ctx.save();
+  for (let i = 0; i < _RINGS.length; i++) {
+    const ring = _RINGS[i];
+    ctx.save();
+    ctx.scale(1, _ELLIPSE_RATIO);
+    ctx.beginPath();
+    ctx.arc(_orbitCX, orbitCY / _ELLIPSE_RATIO, ring.rx, 0, TWO_PI);
+    ctx.strokeStyle = `rgba(100,130,200,${0.09 + i * 0.012})`;
+    ctx.lineWidth = 0.6;
+    ctx.setLineDash([3, 5]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+    // Difficulty label at right of ring
+    ctx.save();
+    ctx.globalAlpha = 0.35;
+    ctx.font = '9px sans-serif';
+    ctx.fillStyle = _RING_LABEL_COLORS[i];
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(_RING_LABELS[i], _orbitCX + ring.rx + 5, orbitCY);
+    ctx.restore();
+  }
+  ctx.restore();
+}
+
+// Central sun
+function _drawSun(ctx, cx, cy, t) {
+  const pulse = 1 + Math.sin(t * 0.7) * 0.03;
+  const sr = 22 * pulse;
+  // Very gentle halo (anti-megalophobia: sr≤28, soft alpha)
+  const halo = ctx.createRadialGradient(cx, cy, sr, cx, cy, sr * 4);
+  halo.addColorStop(0, 'rgba(255,200,100,0.07)');
+  halo.addColorStop(1, 'rgba(255,160,40,0)');
+  ctx.beginPath();
+  ctx.arc(cx, cy, sr * 4, 0, TWO_PI);
+  ctx.fillStyle = halo;
+  ctx.fill();
+  const glow = ctx.createRadialGradient(cx, cy, sr * 0.3, cx, cy, sr * 2);
+  glow.addColorStop(0, 'rgba(255,220,130,0.22)');
+  glow.addColorStop(1, 'rgba(255,160,40,0)');
+  ctx.beginPath();
+  ctx.arc(cx, cy, sr * 2, 0, TWO_PI);
+  ctx.fillStyle = glow;
+  ctx.fill();
+  const sunG = ctx.createRadialGradient(cx - sr * 0.3, cy - sr * 0.3, sr * 0.05, cx, cy, sr);
+  sunG.addColorStop(0, '#fffaee');
+  sunG.addColorStop(0.3, '#ffd870');
+  sunG.addColorStop(0.75, '#e88820');
+  sunG.addColorStop(1, '#b05010');
+  ctx.beginPath();
+  ctx.arc(cx, cy, sr, 0, TWO_PI);
+  ctx.fillStyle = sunG;
+  ctx.fill();
+  ctx.save();
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * TWO_PI + t * 0.08;
+    ctx.globalAlpha = 0.05 + Math.sin(t * 0.5 + i) * 0.02;
+    ctx.strokeStyle = '#ffd870';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath();
+    ctx.moveTo(cx + Math.cos(a) * (sr + 1), cy + Math.sin(a) * (sr + 1));
+    ctx.lineTo(cx + Math.cos(a) * (sr + 12), cy + Math.sin(a) * (sr + 12));
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// Mini constellation line drawing inside a node
+function _drawMiniConstellation(ctx, c, cx, cy, r, alpha) {
+  const size = r * 1.65;
+  const pts = c.stars.map(s => ({
+    x: cx + (s.x - 0.5) * size,
+    y: cy + (s.y - 0.5) * size,
+  }));
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.60;
+  ctx.strokeStyle = '#b8d0ff';
+  ctx.lineWidth = 0.65;
+  ctx.lineCap = 'round';
+  for (const [a, b] of c.lines) {
+    ctx.beginPath();
+    ctx.moveTo(pts[a].x, pts[a].y);
+    ctx.lineTo(pts[b].x, pts[b].y);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = alpha * 0.85;
+  ctx.fillStyle = '#ddeeff';
+  for (let i = 0; i < pts.length; i++) {
+    const sr = (i === 0 && pts.length > 4) ? 1.8 : 1.1;
+    ctx.beginPath();
+    ctx.arc(pts[i].x, pts[i].y, sr, 0, TWO_PI);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// Draw a single orbital node
+function _drawNode(ctx, idx, x, y, r, t) {
+  const c        = CONSTELLATIONS[idx];
+  const unlocked = state.isUnlocked(idx);
+  const score    = state.getScore(idx);
+  const alpha    = unlocked ? 1.0 : 0.30;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Outer glow for unlocked nodes
+  if (unlocked) {
+    const glowA = 0.10 + Math.sin(t * 1.2 + idx * 0.5) * 0.04;
+    const g = ctx.createRadialGradient(x, y, r * 0.4, x, y, r * 2.8);
+    g.addColorStop(0, `rgba(140,160,255,${glowA})`);
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.arc(x, y, r * 2.8, 0, TWO_PI);
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+
+  // Node body gradient
+  const grad = ctx.createRadialGradient(x - r * 0.2, y - r * 0.2, r * 0.05, x, y, r);
+  if (unlocked) {
+    grad.addColorStop(0, 'rgba(40,55,130,0.97)');
+    grad.addColorStop(0.6, 'rgba(20,30,90,0.95)');
+    grad.addColorStop(1, 'rgba(8,12,40,0.92)');
+  } else {
+    grad.addColorStop(0, 'rgba(22,24,48,0.75)');
+    grad.addColorStop(1, 'rgba(10,12,28,0.65)');
+  }
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, TWO_PI);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // Border
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, TWO_PI);
+  if (unlocked) {
+    const ba = 0.45 + Math.sin(t * 0.9 + idx * 0.4) * 0.1;
+    ctx.strokeStyle = `rgba(140,170,255,${ba})`;
+    ctx.lineWidth = 0.8;
+  } else {
+    ctx.strokeStyle = 'rgba(50,55,90,0.3)';
+    ctx.lineWidth = 0.5;
+  }
+  ctx.stroke();
+
+  // Constellation drawing (clipped to circle)
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(x, y, r - 0.5, 0, TWO_PI);
+  ctx.clip();
+  if (unlocked) {
+    _drawMiniConstellation(ctx, c, x, y, r - 1, 1.0);
+  } else {
+    ctx.globalAlpha = 0.4;
+    ctx.font = `${r * 0.85}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText('🔒', x, y + r * 0.05);
+  }
+  ctx.restore();
+  ctx.restore();
+
+  // Labels below node (outside clip, full alpha)
+  const labelAlpha = unlocked ? 0.80 : 0.30;
+  ctx.save();
+  ctx.globalAlpha = labelAlpha;
+  const fs = Math.max(9, r * 0.55);
+  ctx.font = `${fs}px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = unlocked ? '#c0d0ff' : 'rgba(80,85,120,0.6)';
+  ctx.fillText(c.nameZh || c.nameEn, x, y + r + 4);
+  if (unlocked) {
+    const earned = (score && score.stars > 0) ? score.stars : 0;
+    const starStr = '★'.repeat(earned) + '☆'.repeat(3 - earned);
+    ctx.font = `${Math.max(8, r * 0.5)}px sans-serif`;
+    ctx.fillStyle = earned > 0 ? COLORS.starGold : 'rgba(160,140,220,0.55)';
+    ctx.fillText(starStr, x, y + r + 4 + fs + 1);
+  }
+  ctx.restore();
+}
+
 
 // ── Item selection overlay ────────────────────────────────────
 function _drawItemOverlay(ctx, W, H) {
@@ -539,13 +715,16 @@ function _onTouchEnd(e) {
     return;
   }
 
-  // Card tap (adjust for scroll)
-  const ayy = ty + _scrollY;  // scroll-adjusted y
-  for (const cr of _cardRects) {
-    if (tx >= cr.x && tx <= cr.x + cr.w && ayy >= cr.y && ayy <= cr.y + cr.h) {
-      if (!state.isUnlocked(cr.idx)) return;
-      state.currentLevel = cr.idx;
-      console.log('navigate:game idx=' + cr.idx);
+  // Node tap — circular hit detection (STORY-00345)
+  // orbitCY at the time of the tap (approximated — uses current scrollY)
+  const orbitCY = _orbitCY - _scrollY * 0.6;
+  const now2 = performance.now() * 0.001;
+  for (const node of _nodeRects) {
+    const { x: nx, y: ny } = _getNodeXY(node.ring, node.slot, now2, orbitCY);
+    if (Math.hypot(tx - nx, ty - ny) <= node.r + 10) {
+      if (!state.isUnlocked(node.idx)) return;
+      state.currentLevel = node.idx;
+      console.log('navigate:game idx=' + node.idx);
 
       // Check if player has any items — show selection overlay
       const hasItems = ITEMS.some(it => state.getItemQty(it.id) > 0);
