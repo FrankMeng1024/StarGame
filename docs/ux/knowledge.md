@@ -1,5 +1,13 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 41-mini Updates (2026-04-21)
+
+### Intro Animation — Fine-tuning (STORY-00333/334/335)
+- Background starfield: 168 stars (was 125). Denser, more immersive — reads as "nice" not yet "breathtaking" (Low friction).
+- Constellation: Cygnus (天鹅座) replaces Orion. Cross/X-wing shape creates sense of flight and scale — more visually dynamic.
+- Title: 48px, single-space, purple/lavender gradient with visible glow halo. Reads as flowing and unified.
+- Overall cinematic quality: HIGH. First-time user would not skip on first viewing.
+
 ## Sprint 40-mini Updates (2026-04-21)
 
 ### Intro Animation — Full Redesign (STORY-00329)

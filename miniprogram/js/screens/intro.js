@@ -48,16 +48,16 @@ export function showIntro(navigate) {
   // Force-clear any stuck fade overlay from previous navigation
   resetFade();
 
-  // Fixed Orion — consistent, most recognizable constellation shape
-  _conDef = CONSTELLATIONS[0]; // 猎户座 (Orion)
+  // Cygnus (天鹅座) — sweeping Northern Cross with outstretched wings
+  _conDef = CONSTELLATIONS[17]; // 天鹅座 (Cygnus)
   _buildConStars();
 
   // Build background starfield — 3 size tiers
   _bgStars = [];
   const W = G.SCREEN_W;
   const H = G.SCREEN_H;
-  // Tiny stars (70): r=0.5-0.7, dimmer
-  for (let i = 0; i < 70; i++) {
+  // Tiny stars (105): r=0.5-0.7, dimmer
+  for (let i = 0; i < 105; i++) {
     _bgStars.push({
       x: ((i * 137 + 41) % (W + 1)),
       y: ((i * 97 + 23)  % (H + 1)),
@@ -67,8 +67,8 @@ export function showIntro(navigate) {
       speed: 0.4 + (i % 7) * 0.12,
     });
   }
-  // Medium stars (40): r=1.0-1.4
-  for (let i = 0; i < 40; i++) {
+  // Medium stars (45): r=1.0-1.4
+  for (let i = 0; i < 45; i++) {
     _bgStars.push({
       x: ((i * 211 + 83) % (W + 1)),
       y: ((i * 173 + 59) % (H + 1)),
@@ -78,13 +78,13 @@ export function showIntro(navigate) {
       speed: 0.6 + (i % 5) * 0.18,
     });
   }
-  // Large/bright stars (15): r=1.8-2.4 — the "real stars you can see"
-  for (let i = 0; i < 15; i++) {
+  // Large/bright stars (18): r=1.8-2.4 — the "real stars you can see"
+  for (let i = 0; i < 18; i++) {
     _bgStars.push({
       x: ((i * 307 + 131) % (W + 1)),
       y: ((i * 251 + 107) % (H + 1)),
       r: 1.8 + (i % 4) * 0.15,
-      baseAlpha: 0.40 + (i % 3) * 0.12,
+      baseAlpha: 0.50 + (i % 3) * 0.14,
       phase: i * 2.03,
       speed: 0.3 + (i % 4) * 0.10,
     });
@@ -381,30 +381,30 @@ function _loop(now) {
 
     // Outer title glow halo
     ctx.save();
-    ctx.globalAlpha = titleAlpha * 0.30;
+    ctx.globalAlpha = titleAlpha * 0.38;
     ctx.shadowColor = '#a070ff';
     ctx.shadowBlur  = 40;
-    ctx.font = 'bold 42px sans-serif';
+    ctx.font = 'bold 48px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = '#c090ff';
-    ctx.fillText('追  星  少  女', W / 2, TY);
+    ctx.fillText('追 星 少 女', W / 2, TY);
     ctx.restore();
 
     // Title with gradient
     ctx.save();
     ctx.globalAlpha = titleAlpha;
-    ctx.font = 'bold 42px sans-serif';
+    ctx.font = 'bold 48px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.shadowColor = '#c090ff';
     ctx.shadowBlur  = 14;
     const titleGrd = ctx.createLinearGradient(W / 2 - 80, TY - 25, W / 2 + 80, TY + 25);
-    titleGrd.addColorStop(0,   '#e0d0ff');
-    titleGrd.addColorStop(0.5, '#c8a8ff');
-    titleGrd.addColorStop(1,   '#b090ff');
+    titleGrd.addColorStop(0,   '#ede8ff');
+    titleGrd.addColorStop(0.5, '#d0b0ff');
+    titleGrd.addColorStop(1,   '#a880ff');
     ctx.fillStyle = titleGrd;
-    ctx.fillText('追  星  少  女', W / 2, TY);
+    ctx.fillText('追 星 少 女', W / 2, TY);
     ctx.restore();
 
     // Decorative separator

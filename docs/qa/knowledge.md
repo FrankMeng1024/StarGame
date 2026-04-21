@@ -2,6 +2,17 @@
 
 ---
 
+## Sprint 41-mini Updates (2026-04-21)
+
+### Sprint 41-mini — PASS (HIGH confidence)
+- Intro animation star count: 168 (105 tiny + 45 medium + 18 large), up from 125.
+- CONSTELLATIONS[17] is Cygnus (天鹅座) — spread diagonal cross/X with 9 stars. Replaces Orion.
+- Title: 48px bold, single-space '追 星 少 女', gradient #ede8ff→#d0b0ff→#a880ff, glow alpha=0.38.
+- _DEV_FREEZE technique confirmed stable for t=2s/t=6s/t=11s captures. Canvas region: abs (15,135) size (975,460).
+- All ACs verified via code inspection + screenshot evidence.
+
+---
+
 ## Sprint 40-mini Updates (2026-04-21)
 
 ### Sprint 40-mini — PASS (MEDIUM confidence, timed screenshot verification)
