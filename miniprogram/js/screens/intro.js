@@ -1,7 +1,7 @@
 // intro.js — 开场动画（微信小游戏版 Canvas）
-// Phase 1 (0-5s):  流星雨 — gold diagonal streaks across dark sky
-// Phase 2 (5-9s):  随机星座节点逐一显现 + 连线绘制  (upper screen area)
-// Phase 3 (9-13s): 标题 "追星少女" 淡入  (lower screen area)
+// Phase 1 (0-4s):  流星雨 — gold diagonal streaks, staggered angles
+// Phase 2 (4-9s):  星座节点逐一显现 + 连线从A点向B点生长
+// Phase 3 (9-13s): 标题 "追星少女" 淡入
 // 触摸任意位置可跳过
 // 结束后调用 navigate('menu')
 
@@ -18,18 +18,26 @@ let _startTime = 0;
 let _lastNow   = 0;
 let _done      = false;
 
-// Meteors
-let _meteors   = [];  // {x,y,vx,vy,len,alpha}
+// Background starfield (3 size tiers)
+let _bgStars   = [];  // {x,y,r,baseAlpha,phase,speed}
 
-// Constellation for phase 2 (random selection)
+// Meteors — each fully independent
+let _meteors   = [];  // {x,y,vx,vy,len,width,alpha,born,dead,angle}
+
+// Constellation for phase 2
 let _conDef    = null;
 let _mappedStars = [];
 let _mappedLines = [];
 
-// Sparkle particles for star reveal (STORY-00277)
+// Per-star reveal tracking
+let _revealedCount = 0;
+let _starRevealTimes = [];  // elapsed-seconds when each star was revealed
+
+// Per-line draw progress tracking
+let _lineDrawStart = [];  // elapsed-seconds when each line started drawing
+
+// Sparkle particles
 let _sparkles  = [];  // {x,y,vx,vy,life,maxLife}
-// Track which stars have already triggered sparkle burst
-let _sparkleTriggered = new Set();
 
 // ── Public API ────────────────────────────────────────────────
 export function showIntro(navigate) {
@@ -37,26 +45,78 @@ export function showIntro(navigate) {
   _cleanup();
   _done = false;
 
-  // STORY-00290: Force-clear any stuck fade overlay from previous navigation
-  // (root cause of black screen on real device: _fadeAlpha=1 from prior fadeNavigate call)
+  // Force-clear any stuck fade overlay from previous navigation
   resetFade();
 
-  // STORY-00316 (CR-113): Fixed Orion — consistent with HTML version, best shape for intro
+  // Fixed Orion — consistent, most recognizable constellation shape
   _conDef = CONSTELLATIONS[0]; // 猎户座 (Orion)
   _buildConStars();
 
-  // Spawn initial meteors — 4 with born=0 for immediate visibility (STORY-00283)
+  // Build background starfield — 3 size tiers
+  _bgStars = [];
+  const W = G.SCREEN_W;
+  const H = G.SCREEN_H;
+  // Tiny stars (70): r=0.5-0.7, dimmer
+  for (let i = 0; i < 70; i++) {
+    _bgStars.push({
+      x: ((i * 137 + 41) % (W + 1)),
+      y: ((i * 97 + 23)  % (H + 1)),
+      r: 0.5 + (i % 3) * 0.1,
+      baseAlpha: 0.12 + (i % 5) * 0.06,
+      phase: i * 0.73,
+      speed: 0.4 + (i % 7) * 0.12,
+    });
+  }
+  // Medium stars (40): r=1.0-1.4
+  for (let i = 0; i < 40; i++) {
+    _bgStars.push({
+      x: ((i * 211 + 83) % (W + 1)),
+      y: ((i * 173 + 59) % (H + 1)),
+      r: 1.0 + (i % 3) * 0.2,
+      baseAlpha: 0.22 + (i % 4) * 0.08,
+      phase: i * 1.17,
+      speed: 0.6 + (i % 5) * 0.18,
+    });
+  }
+  // Large/bright stars (15): r=1.8-2.4 — the "real stars you can see"
+  for (let i = 0; i < 15; i++) {
+    _bgStars.push({
+      x: ((i * 307 + 131) % (W + 1)),
+      y: ((i * 251 + 107) % (H + 1)),
+      r: 1.8 + (i % 4) * 0.15,
+      baseAlpha: 0.40 + (i % 3) * 0.12,
+      phase: i * 2.03,
+      speed: 0.3 + (i % 4) * 0.10,
+    });
+  }
+
+  // Spawn meteors — each fully independent: different angle, speed, timing
   _meteors = [];
+  const baseAngles = [
+    Math.PI * 0.28, Math.PI * 0.32, Math.PI * 0.35,
+    Math.PI * 0.29, Math.PI * 0.33, Math.PI * 0.31,
+    Math.PI * 0.27, Math.PI * 0.36, Math.PI * 0.30,
+  ];
+  // 4 meteors appear immediately (born=0)
   for (let i = 0; i < 4; i++) {
-    _spawnMeteor(0); // appear from frame 1
+    const angle = baseAngles[i] + (Math.random() * 0.04 - 0.02);
+    _spawnMeteorFull(angle, 0);
   }
-  for (let i = 0; i < 5; i++) {
-    _spawnMeteor(1000 + Math.random() * 8000); // stagger remaining across 9s
+  // 5 more staggered across 0-8s
+  for (let i = 4; i < 9; i++) {
+    const angle = baseAngles[i] + (Math.random() * 0.06 - 0.03);
+    const delay = 500 + Math.random() * 7500;
+    _spawnMeteorFull(angle, delay);
   }
+
+  _revealedCount = 0;
+  _starRevealTimes = [];
+  _lineDrawStart = [];
+  _sparkles = [];
 
   G.CANVAS.addEventListener('touchstart', _onSkip);
 
-  _startTime = 0; // will be set on first frame
+  _startTime = 0;
   _rafId = requestAnimationFrame(_loop);
 }
 
@@ -69,7 +129,8 @@ function _cleanup() {
   if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
   try { G.CANVAS.removeEventListener('touchstart', _onSkip); } catch (e) {}
   _sparkles = [];
-  _sparkleTriggered = new Set();
+  _bgStars = [];
+  _meteors = [];
   _lastNow = 0;
 }
 
@@ -88,36 +149,35 @@ function _buildConStars() {
   if (!_conDef || !_conDef.stars) { _mappedStars = []; _mappedLines = []; return; }
   const W = G.SCREEN_W;
   const H = G.SCREEN_H;
-  // STORY-00290: Constellation in upper 35% of screen — better visual proportion
-  // Portrait: cx=center, cy=28% down; Landscape: similar upper placement
-  const SIZE = Math.min(W, H) * 0.65;  // STORY-00316: was 0.50 — larger, more impressive
+  // Constellation in upper-center area — large and impressive
+  const SIZE = Math.min(W, H) * 0.68;
   const cx = W / 2;
-  const cy = H * 0.32;  // STORY-00316: was 0.28 — slightly lower for balance with meteors
-  const PAD = 18;
+  const cy = H * 0.33;
+  const PAD = 16;
   const AREA = SIZE - PAD * 2;
 
   _mappedStars = _conDef.stars.map(s => ({
     x: cx - SIZE / 2 + PAD + s.x * AREA,
     y: cy - SIZE / 2 + PAD + s.y * AREA,
-    r: Math.max(3, Math.min(8, 10 - (s.mag || 3))),  // STORY-00316: was max(2,min(6,...)) — larger range, stronger size contrast
+    r: Math.max(3, Math.min(9, 11 - (s.mag || 3))),  // size by magnitude: brighter=larger
   }));
   _mappedLines = _conDef.lines || [];
 }
 
-function _spawnMeteor(delayMs) {
+function _spawnMeteorFull(angle, delayMs) {
   const W = G.SCREEN_W;
   const H = G.SCREEN_H;
-  const speed = 380 + Math.random() * 80; // px/s — STORY-00326: was 600-1000, reduced for slower/longer-visible streaks
-  const angle = Math.PI * 0.32; // ~58° diagonal
+  const speed = 350 + Math.random() * 250; // 350-600 px/s — varied speeds
   _meteors.push({
-    x: Math.random() * W * 1.5 - W * 0.25,
-    y: -20 - Math.random() * H * 0.3,
-    vx: Math.cos(angle) * speed,
-    vy: Math.sin(angle) * speed,
-    len: 80 + Math.random() * 100,  // STORY-00326: was 60-140, longer trails
-    alpha: 0.92 + Math.random() * 0.08,  // STORY-00326: was 0.85-1.0, higher minimum
-    born: delayMs, // ms since intro start
-    dead: false,
+    x:     Math.random() * W * 1.4 - W * 0.2,
+    y:     -20 - Math.random() * H * 0.35,
+    vx:    Math.cos(angle) * speed,
+    vy:    Math.sin(angle) * speed,
+    len:   70 + Math.random() * 90,     // tail length 70-160px
+    width: 1.8 + Math.random() * 1.0,   // varied thickness
+    alpha: 0.85 + Math.random() * 0.15,
+    born:  delayMs,
+    dead:  false,
   });
 }
 
@@ -126,111 +186,167 @@ function _loop(now) {
   if (_startTime === 0) _startTime = now;
   const dt = _lastNow > 0 ? Math.min((now - _lastNow) / 1000, 0.05) : 1 / 60;
   _lastNow = now;
+
   // QA FREEZE HOOK: wx.__introFreezeAt = N freezes animation at N seconds
-  let elapsed = (now - _startTime) / 1000; // seconds
-  if (typeof wx !== 'undefined' && typeof wx.__introFreezeAt === 'number') {
+  // DEV_FREEZE: set to a number to hard-freeze for screenshot capture (remove before commit)
+  const _DEV_FREEZE = 0; // 0 = disabled
+  let elapsed = (now - _startTime) / 1000;
+  if (_DEV_FREEZE > 0) {
+    elapsed = _DEV_FREEZE;
+  } else if (typeof wx !== 'undefined' && typeof wx.__introFreezeAt === 'number') {
     elapsed = wx.__introFreezeAt;
   }
 
   const ctx = G.CTX;
   const W   = G.SCREEN_W;
   const H   = G.SCREEN_H;
+  const elapsedMs = now - _startTime;
 
-  // ── Clear — deep space ──────────────────────────────────────
+  // ── Clear — deep space black ──────────────────────────────────
   ctx.fillStyle = '#020510';
   ctx.fillRect(0, 0, W, H);
 
-  // ── Background micro-stars — active twinkle (STORY-00284) ────
+  // ── Background starfield — 3 size tiers, all twinkling independently ──
   ctx.save();
-  for (let i = 0; i < 80; i++) {
-    // Deterministic pseudo-random using i as seed
-    const sx = ((i * 137 + 41) % W);
-    const sy = ((i * 97 + 23) % H);
-    const twinkle = 0.25 + 0.45 * Math.abs(Math.sin(elapsed * (0.5 + (i % 7) * 0.2) + i * 0.8));
+  for (const s of _bgStars) {
+    // Independent twinkle per star using its own phase and speed
+    const twinkle = s.baseAlpha * (0.55 + 0.45 * Math.sin(elapsed * s.speed + s.phase));
     ctx.globalAlpha = twinkle;
-    ctx.fillStyle = '#ffffff';
+    ctx.fillStyle = s.r > 1.5 ? '#d0e0ff' : '#ffffff'; // large stars slightly blue-white
     ctx.beginPath();
-    ctx.arc(sx, sy, 0.7, 0, TWO_PI);
+    ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
     ctx.fill();
   }
   ctx.restore();
 
-  const elapsedMs = now - _startTime;
-
-  // ── Phase 1: Meteors (0-5s) ─────────────────────────────────
+  // ── Phase 1: Meteor shower (0–5s) ─────────────────────────────
   if (elapsed < 5) {
-    // Spawn new meteors periodically
-    if (_meteors.filter(m => !m.dead).length < 4 && Math.random() < 0.08) {
-      _spawnMeteor(elapsedMs);
-    }
-    for (const m of _meteors) {
-      if (m.dead || elapsedMs < m.born) continue;
-      const age = (elapsedMs - m.born) / 1000;
-      m.x += m.vx * dt;
-      m.y += m.vy * dt;
-      if (m.y > H + 50 || m.x > W + 50) { m.dead = true; continue; }
-      // Trail: draw line from current pos back along velocity — longer trail (STORY-00277)
-      const trailFactor = 0.45; // STORY-00326: was 0.28 — much longer, more dramatic trails (60% increase)
-      const tx0 = m.x - m.vx * trailFactor;
-      const ty0 = m.y - m.vy * trailFactor;
-      const fadeA = m.alpha * Math.max(0, 1 - age * 0.25);
-      ctx.save();
-      const grd = ctx.createLinearGradient(m.x, m.y, tx0, ty0);
-      grd.addColorStop(0, `rgba(255,215,0,${fadeA.toFixed(2)})`);
-      grd.addColorStop(1, 'rgba(255,215,0,0)');
-      ctx.strokeStyle = grd;
-      ctx.lineWidth = 2.5;  // STORY-00326: was 2 — thicker streaks
-      ctx.beginPath();
-      ctx.moveTo(m.x, m.y);
-      ctx.lineTo(tx0, ty0);
-      ctx.stroke();
-      ctx.restore();
+    // Occasionally spawn more meteors if count is low
+    const alive = _meteors.filter(m => !m.dead).length;
+    if (alive < 3 && Math.random() < 0.06) {
+      const angle = Math.PI * (0.27 + Math.random() * 0.10);
+      _spawnMeteorFull(angle, elapsedMs);
     }
   }
+  // Draw all active meteors (they can still be visible after 5s)
+  for (const m of _meteors) {
+    if (m.dead || elapsedMs < m.born) continue;
+    const age = (elapsedMs - m.born) / 1000;
+    m.x += m.vx * dt;
+    m.y += m.vy * dt;
+    if (m.y > H + 60 || m.x > W + 60 || m.x < -W * 0.5) { m.dead = true; continue; }
 
-  // ── Phase 2: Constellation reveal (2-8s) ───────────────────
-  if (elapsed >= 2 && elapsed < 8 && _mappedStars.length > 0) {
-    const t2 = elapsed - 2; // 0-6s within phase
-    const revealFrac = t2 / 6; // 0→1 over 6s — STORY-00283: starts at 2s (was 3s)
+    // Fade out with age
+    const fadeA = m.alpha * Math.max(0, 1 - age * 0.2);
+    if (fadeA < 0.02) { m.dead = true; continue; }
 
-    const starsToShow = Math.floor(revealFrac * _mappedStars.length);
-    const linesToShow = Math.floor(revealFrac * _mappedLines.length);
-
-    // Fade in phase 2
-    const phaseAlpha = Math.min(1, (elapsed - 2) * 0.8);
+    // Trail: bright head → transparent tail
+    const dist = Math.sqrt(m.vx * m.vx + m.vy * m.vy);
+    const nx = m.vx / dist, ny = m.vy / dist;
+    const tx = m.x - nx * m.len;
+    const ty = m.y - ny * m.len;
 
     ctx.save();
-    ctx.globalAlpha = phaseAlpha;
+    const grd = ctx.createLinearGradient(m.x, m.y, tx, ty);
+    grd.addColorStop(0,    `rgba(255,248,180,${(fadeA).toFixed(2)})`);
+    grd.addColorStop(0.12, `rgba(255,215,0,${(fadeA * 0.80).toFixed(2)})`);
+    grd.addColorStop(0.5,  `rgba(255,200,80,${(fadeA * 0.30).toFixed(2)})`);
+    grd.addColorStop(1,    'rgba(255,215,0,0)');
+    ctx.strokeStyle = grd;
+    ctx.lineWidth   = m.width;
+    ctx.lineCap     = 'round';
+    ctx.shadowColor = 'rgba(255,220,80,0.5)';
+    ctx.shadowBlur  = 6;
+    ctx.beginPath();
+    ctx.moveTo(m.x, m.y);
+    ctx.lineTo(tx, ty);
+    ctx.stroke();
+    // Bright glowing head dot
+    ctx.shadowBlur  = 10;
+    ctx.fillStyle   = 'rgba(255,255,200,0.9)';
+    ctx.beginPath();
+    ctx.arc(m.x, m.y, m.width * 1.4, 0, TWO_PI);
+    ctx.fill();
+    ctx.restore();
+  }
 
-    // Lines
-    ctx.strokeStyle = 'rgba(255,215,0,0.75)';  // STORY-00326: was 0.5 — more visible gold lines
-    ctx.lineWidth = 2.5;  // STORY-00326: was 1.2
-    ctx.shadowColor = 'rgba(255,215,0,0.6)';
-    ctx.shadowBlur = 10;  // STORY-00326: was 4
-    for (let li = 0; li < linesToShow; li++) {
+  // ── Phase 2: Constellation reveal (3–9s) ──────────────────────
+  if (elapsed >= 3 && _mappedStars.length > 0) {
+    // Star reveal: one new star every 0.45s
+    const STAR_INTERVAL = 0.45;
+    const PHASE2_START  = 3.0;
+    const p2e = elapsed - PHASE2_START;
+
+    const shouldReveal = Math.min(
+      Math.floor(p2e / STAR_INTERVAL) + 1,
+      _mappedStars.length
+    );
+    while (_revealedCount < shouldReveal) {
+      // Record when this star was revealed (backdate to actual reveal time, not current elapsed)
+      _starRevealTimes[_revealedCount] = PHASE2_START + _revealedCount * STAR_INTERVAL;
+      // Sparkle burst on reveal
+      const s = _mappedStars[_revealedCount];
+      for (let k = 0; k < 8; k++) {
+        const ang = (k * TWO_PI) / 8 + Math.random() * 0.3;
+        const spd = 60 + Math.random() * 60;
+        _sparkles.push({ x: s.x, y: s.y, vx: Math.cos(ang) * spd, vy: Math.sin(ang) * spd, life: 30, maxLife: 30 });
+      }
+      _revealedCount++;
+    }
+
+    // Line reveal: after 2 stars are shown, lines start drawing
+    // Each line starts when BOTH its endpoint stars are revealed, + 0.15s delay
+    for (let li = 0; li < _mappedLines.length; li++) {
+      if (_lineDrawStart[li] !== undefined) continue; // already started
+      const [a, b] = _mappedLines[li];
+      if (a < _revealedCount && b < _revealedCount) {
+        // Both endpoints revealed — schedule line draw at max reveal time + 0.15s
+        const revealA = _starRevealTimes[a] || 0;
+        const revealB = _starRevealTimes[b] || 0;
+        _lineDrawStart[li] = Math.max(revealA, revealB) + 0.15;
+      }
+    }
+
+    // Draw lines with growth animation
+    ctx.save();
+    for (let li = 0; li < _mappedLines.length; li++) {
+      if (_lineDrawStart[li] === undefined) continue;
       const [a, b] = _mappedLines[li];
       if (!_mappedStars[a] || !_mappedStars[b]) continue;
+      const sa = _mappedStars[a], sb = _mappedStars[b];
+      // Line grows from A toward B over 0.5s
+      const prog = Math.min(1, (elapsed - _lineDrawStart[li]) / 0.5);
+      if (prog <= 0) continue;
+      const ex = sa.x + (sb.x - sa.x) * prog;
+      const ey = sa.y + (sb.y - sa.y) * prog;
+
+      const grad = ctx.createLinearGradient(sa.x, sa.y, sb.x, sb.y);
+      grad.addColorStop(0, 'rgba(255,215,0,0.90)');
+      grad.addColorStop(1, 'rgba(255,215,0,0.45)');
+      ctx.strokeStyle = grad;
+      ctx.lineWidth   = 2.5;
+      ctx.shadowColor = 'rgba(255,215,0,0.7)';
+      ctx.shadowBlur  = 10;
       ctx.beginPath();
-      ctx.moveTo(_mappedStars[a].x, _mappedStars[a].y);
-      ctx.lineTo(_mappedStars[b].x, _mappedStars[b].y);
+      ctx.moveTo(sa.x, sa.y);
+      ctx.lineTo(ex, ey);
       ctx.stroke();
     }
-    ctx.shadowBlur = 0;
+    ctx.restore();
 
-    // Stars
-    for (let si = 0; si < starsToShow; si++) {
-      const s = _mappedStars[si];
-      // Sparkle burst trigger — once per star reveal (STORY-00277, enhanced STORY-00326)
-      if (!_sparkleTriggered.has(si)) {
-        _sparkleTriggered.add(si);
-        for (let k = 0; k < 8; k++) {  // STORY-00326: was 6 particles → 8
-          const angle = (k * Math.PI * 2) / 8;
-          _sparkles.push({ x: s.x, y: s.y, vx: Math.cos(angle) * 80, vy: Math.sin(angle) * 80, life: 28, maxLife: 28 });  // STORY-00326: faster+longer
-        }
-      }
+    // Draw revealed stars
+    ctx.save();
+    for (let si = 0; si < _revealedCount; si++) {
+      const s   = _mappedStars[si];
+      const age = elapsed - (_starRevealTimes[si] || elapsed);
+
+      // Pulse effect at reveal (first 0.4s)
+      const pulse = age < 0.4 ? (age / 0.4) : 1.0;
+      const scale = age < 0.25 ? (1.0 + 0.8 * Math.sin(age / 0.25 * Math.PI)) : 1.0;
+
       // Glow
       ctx.save();
-      ctx.globalAlpha = phaseAlpha * 0.4;
+      ctx.globalAlpha = 0.45 * pulse;
       const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3.5);
       grd.addColorStop(0, '#ffd700');
       grd.addColorStop(1, 'rgba(255,215,0,0)');
@@ -239,92 +355,35 @@ function _loop(now) {
       ctx.arc(s.x, s.y, s.r * 3.5, 0, TWO_PI);
       ctx.fill();
       ctx.restore();
-      // Core
-      ctx.fillStyle = '#fff8dc';
+
+      // Core star
+      ctx.globalAlpha = 0.9 * pulse;
+      ctx.shadowColor = '#ffd700';
+      ctx.shadowBlur  = 12 * pulse;
+      ctx.fillStyle   = '#fff8dc';
       ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
+      ctx.arc(s.x, s.y, s.r * scale, 0, TWO_PI);
       ctx.fill();
     }
     ctx.restore();
 
-    // Constellation name
-    if (elapsed > 4 && _conDef) {  // STORY-00283: was elapsed>5, adjusted for earlier start
-      const nameAlpha = Math.min(1, (elapsed - 4) * 1.5);
-      ctx.save();
-      ctx.globalAlpha = nameAlpha;
-      ctx.font = '16px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillStyle = 'rgba(200,190,255,0.9)';
-      // STORY-00290: position below the upper constellation area
-      ctx.fillText(_conDef.nameZh + '  ' + _conDef.nameEn, W / 2, H * 0.52);
-      ctx.restore();
-    }
+    // ── NO constellation name text — intentionally removed ──
   }
 
-  // ── Phase 3: Title fade-in (8-12s) ─────────────────────────
-  // STORY-00290: title in lower area (H*0.68) — upper area has constellation
-  if (elapsed >= 8) {
-    const t3 = elapsed - 8; // 0-4s
+  // ── Phase 3: Title fade-in (9–13s) ────────────────────────────
+  if (elapsed >= 9) {
+    const t3 = elapsed - 9;
     const titleAlpha = Math.min(1, t3 / 1.5);
-    const TY = H * 0.68;  // lower anchor for title group
+    const TY = H * 0.72;  // lower area — constellation stays in upper area
 
-    // Dim constellation for focus on title (upper area dims slightly)
-    if (_mappedStars.length > 0) {
-      ctx.save();
-      ctx.globalAlpha = Math.max(0, 1 - (t3 / 4) * 0.5);
-      ctx.strokeStyle = 'rgba(255,215,0,0.4)';
-      ctx.lineWidth = 1;
-      for (const [a, b] of _mappedLines) {
-        if (!_mappedStars[a] || !_mappedStars[b]) continue;
-        ctx.beginPath();
-        ctx.moveTo(_mappedStars[a].x, _mappedStars[a].y);
-        ctx.lineTo(_mappedStars[b].x, _mappedStars[b].y);
-        ctx.stroke();
-      }
-      for (const s of _mappedStars) {
-        ctx.fillStyle = '#fff8dc';
-        ctx.globalAlpha = 0.6 * Math.max(0, 1 - (t3 / 4) * 0.5);
-        ctx.beginPath();
-        ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
-        ctx.fill();
-      }
-      ctx.restore();
-    }
-
-    // ── Cosmic portal glow (STORY-00284) — 3 pulsing concentric rings around title ──
-    ctx.save();
-    ctx.globalAlpha = titleAlpha;
-    const pulseA = 0.5 + 0.5 * Math.sin(elapsed * 1.2);
-    const pulseB = 0.5 + 0.5 * Math.sin(elapsed * 0.8 + 1.0);
-    const pulseC = 0.5 + 0.5 * Math.sin(elapsed * 0.5 + 2.1);
-    // Ring 1 — innermost purple (centered on title)
-    const grd1 = ctx.createRadialGradient(W/2, TY, 0, W/2, TY, 70);
-    grd1.addColorStop(0, `rgba(160,80,255,${(0.18 + 0.10 * pulseA).toFixed(2)})`);
-    grd1.addColorStop(1, 'rgba(120,0,200,0)');
-    ctx.fillStyle = grd1;
-    ctx.beginPath(); ctx.arc(W/2, TY, 70, 0, TWO_PI); ctx.fill();
-    // Ring 2 — mid indigo
-    const grd2 = ctx.createRadialGradient(W/2, TY, 25, W/2, TY, 120);
-    grd2.addColorStop(0, 'rgba(80,0,180,0)');
-    grd2.addColorStop(0.5, `rgba(100,40,220,${(0.10 + 0.06 * pulseB).toFixed(2)})`);
-    grd2.addColorStop(1, 'rgba(60,0,160,0)');
-    ctx.fillStyle = grd2;
-    ctx.beginPath(); ctx.arc(W/2, TY, 120, 0, TWO_PI); ctx.fill();
-    // Ring 3 — outer violet fade
-    const grd3 = ctx.createRadialGradient(W/2, TY, 60, W/2, TY, 170);
-    grd3.addColorStop(0, 'rgba(60,0,140,0)');
-    grd3.addColorStop(0.5, `rgba(80,20,180,${(0.06 + 0.04 * pulseC).toFixed(2)})`);
-    grd3.addColorStop(1, 'rgba(40,0,100,0)');
-    ctx.fillStyle = grd3;
-    ctx.beginPath(); ctx.arc(W/2, TY, 170, 0, TWO_PI); ctx.fill();
-    ctx.restore();
+    // Keep constellation visible but slightly dimmed
+    // (already drawn above — no re-draw needed)
 
     // Outer title glow halo
     ctx.save();
-    ctx.globalAlpha = titleAlpha * 0.35;
+    ctx.globalAlpha = titleAlpha * 0.30;
     ctx.shadowColor = '#a070ff';
-    ctx.shadowBlur = 40;
+    ctx.shadowBlur  = 40;
     ctx.font = 'bold 42px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
@@ -332,66 +391,47 @@ function _loop(now) {
     ctx.fillText('追  星  少  女', W / 2, TY);
     ctx.restore();
 
-    // Title with gradient fill (STORY-00284)
+    // Title with gradient
     ctx.save();
     ctx.globalAlpha = titleAlpha;
     ctx.font = 'bold 42px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.shadowColor = '#c090ff';
-    ctx.shadowBlur = 14;
-    const titleGrd = ctx.createLinearGradient(W/2 - 80, TY - 25, W/2 + 80, TY + 25);
-    titleGrd.addColorStop(0, '#e0d0ff');
+    ctx.shadowBlur  = 14;
+    const titleGrd = ctx.createLinearGradient(W / 2 - 80, TY - 25, W / 2 + 80, TY + 25);
+    titleGrd.addColorStop(0,   '#e0d0ff');
     titleGrd.addColorStop(0.5, '#c8a8ff');
-    titleGrd.addColorStop(1, '#b090ff');
+    titleGrd.addColorStop(1,   '#b090ff');
     ctx.fillStyle = titleGrd;
     ctx.fillText('追  星  少  女', W / 2, TY);
     ctx.restore();
 
-    // Decorative separator (STORY-00284)
+    // Decorative separator
     if (t3 > 1.2) {
       const sepAlpha = Math.min(1, (t3 - 1.2) / 0.8) * titleAlpha;
       const sepY = TY + 28;
-      const sepLineW = W * 0.18;
       ctx.save();
       ctx.globalAlpha = sepAlpha * 0.65;
       ctx.strokeStyle = 'rgba(180,140,255,1)';
-      ctx.lineWidth = 0.8;
-      // Left line
-      ctx.beginPath(); ctx.moveTo(W/2 - 14, sepY); ctx.lineTo(W/2 - sepLineW, sepY); ctx.stroke();
-      // Right line
-      ctx.beginPath(); ctx.moveTo(W/2 + 14, sepY); ctx.lineTo(W/2 + sepLineW, sepY); ctx.stroke();
-      // Center star
-      ctx.fillStyle = 'rgba(200,170,255,1)';
+      ctx.lineWidth   = 0.8;
+      ctx.beginPath(); ctx.moveTo(W / 2 - 14, sepY); ctx.lineTo(W / 2 - W * 0.18, sepY); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(W / 2 + 14, sepY); ctx.lineTo(W / 2 + W * 0.18, sepY); ctx.stroke();
+      ctx.fillStyle   = 'rgba(200,170,255,1)';
       ctx.font = '10px sans-serif';
       ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('✦', W/2, sepY);
+      ctx.fillText('✦', W / 2, sepY);
       ctx.restore();
     }
 
-    // Subtitle with upward float (STORY-00284)
-    const subAlpha = Math.min(1, t3 / 2.5);
-    if (subAlpha > 0) {
-      // Float: starts 8px below final position, floats up over 1.5s
-      const floatOffset = 8 * Math.max(0, 1 - t3 / 1.5);
-      ctx.save();
-      ctx.globalAlpha = subAlpha;
-      ctx.font = '15px sans-serif';
-      ctx.textAlign = 'center';
-      ctx.textBaseline = 'top';
-      ctx.fillStyle = 'rgba(185,165,230,0.9)';
-      ctx.fillText('探索88星座的奇妙旅程', W / 2, TY + 38 + floatOffset);
-      ctx.restore();
-    }
-
-    // Auto-finish at 13s (suppressed when QA freeze hook is active)
-    if (elapsed >= 13 && !(typeof wx !== 'undefined' && typeof wx.__introFreezeAt === 'number')) {
+    // Auto-finish at 14s
+    if (elapsed >= 14 && !(typeof wx !== 'undefined' && typeof wx.__introFreezeAt === 'number')) {
       _finish();
       return;
     }
   }
 
-  // ── Sparkle particles (STORY-00277) ──────────────────────────
+  // ── Sparkle particles ─────────────────────────────────────────
   if (_sparkles.length > 0) {
     ctx.save();
     for (let si = _sparkles.length - 1; si >= 0; si--) {
@@ -401,18 +441,18 @@ function _loop(now) {
       sp.life--;
       if (sp.life <= 0) { _sparkles.splice(si, 1); continue; }
       const a = sp.life / sp.maxLife;
-      ctx.globalAlpha = a * 0.90;
-      ctx.fillStyle = '#ffd700';
+      ctx.globalAlpha = a * 0.85;
+      ctx.fillStyle   = '#ffd700';
       ctx.beginPath();
-      ctx.arc(sp.x, sp.y, 3, 0, TWO_PI);  // STORY-00326: was 2px — larger sparkles
+      ctx.arc(sp.x, sp.y, 2.5, 0, TWO_PI);
       ctx.fill();
     }
     ctx.restore();
   }
 
-  // ── Skip hint (STORY-00283) — show from frame 1 ──────────────
-  if (elapsed >= 0) {
-    const hintAlpha = Math.min(0.75, elapsed * 1.5); // fade in quickly
+  // ── Skip hint ─────────────────────────────────────────────────
+  {
+    const hintAlpha = Math.min(0.70, elapsed * 1.5);
     ctx.save();
     ctx.globalAlpha = hintAlpha;
     ctx.font = '13px sans-serif';
@@ -423,9 +463,8 @@ function _loop(now) {
     ctx.restore();
   }
 
-  // Global fade overlay (STORY-00282)
-  const dt282 = 1 / 60;
-  tickFade(dt282);
+  // Global fade overlay
+  tickFade(1 / 60);
   drawFadeOverlay(ctx, W, H);
 
   _rafId = requestAnimationFrame(_loop);

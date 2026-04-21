@@ -1,5 +1,18 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 40-mini Updates (2026-04-21)
+
+### Intro Animation — Full Redesign (STORY-00329)
+- 3-phase structure: meteor shower (0-5s), constellation reveal (3-9s), title fade-in (9-13s). Auto-finish at 14s.
+- Orion (猎户座) used as fixed constellation — most recognizable shape. NO constellation name text shown.
+- Background: 125 stars in 3 tiers — tiny (70, r=0.5-0.7px), medium (40, r=1.0-1.4px), large (15, r=1.8-2.4px). Independent twinkling phases.
+- 9 meteors with varied angles (PI*0.27 to PI*0.36) and speeds (350-600px/s). First 4 at time 0, remaining 5 staggered 0.5-8s.
+- Constellation stars appear one by one (0.45s interval from t=3s). Lines grow A→B over 0.5s.
+- Title "追 星 少 女" fades in at t=9s, positioned at H*0.72 (lower area). Purple gradient.
+- Visual quality: PREMIUM — golden constellation glow, depth-layered starfield, gradient meteor trails.
+- Constellation at H*0.33 (upper area), title at H*0.72 (lower area) — clean vertical separation, no overlap.
+- Tap-to-skip at any point; "✦ 轻触跳过" hint visible at lower-right throughout.
+
 ## Sprint 38-mini Updates (2026-04-21)
 
 ### Sprint 38-mini Visual Upgrades — Significant Quality Lift

@@ -2,6 +2,21 @@
 
 ---
 
+## Sprint 40-mini Updates (2026-04-21)
+
+### Sprint 40-mini — PASS (MEDIUM confidence, timed screenshot verification)
+
+#### Intro animation redesign (STORY-00329)
+- 3-phase intro: meteor shower (0-5s), constellation reveal (3-9s), title fade-in (9-13s). Auto-finish at 14s.
+- AC verification via _DEV_FREEZE constant: set N in source, reload DevTools, capture screenshot.
+- t=2s: dark starfield + golden meteor streak visible. Star background confirmed.
+- t=6s: 7 golden constellation stars + partial connecting lines. Growth animation confirmed by intermediate state.
+- t=11s: full constellation (9 stars, all lines) + "追星少女" purple gradient title. No constellation name text.
+- Animation properties (stagger, phase variation) LOW confidence — static screenshots insufficient for temporal verification.
+- Future pattern: for animation ACs, use rapid burst capture (5 frames over 2s) rather than single timed frame.
+
+---
+
 ## Sprint 39-mini Updates (2026-04-20)
 
 ### Sprint 39-mini — PASS (HIGH confidence, code-path verification)
