@@ -1,8 +1,8 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: Sprint 37-mini COMPLETE — VU ACCEPTED 9.6/10 — PROJECT COMPLETE.
-**Current Sprint**: Sprint 37-mini DONE
-**Last Updated**: 2026-04-20
+**Status**: Sprint 43-mini COMPLETE — awaiting user Demo acceptance.
+**Current Sprint**: Sprint 43-mini
+**Last Updated**: 2026-04-21
 
 > **Sprint 37-mini COMPLETE**: 2 Stories STORY-00323~00324 Done. Star flash sequence before linedraw (STORY-00323): new 'starflash' phase, 150ms intervals, scale 1→2→1. Victory→levels flicker fix (STORY-00324): _cleanup() before all result navigation buttons. Arch PASS. QA PASS (STORY-00323 LOW confidence — miniprogram Canvas only). UX no Blockers. VU ACCEPTED 9.6/10 — PROJECT COMPLETE. All 11 user-reported issues (CR-113~CR-121) resolved across Sprint 35/36/37-mini.
 
@@ -66,6 +66,12 @@
 | Sprint 35-mini | COMPLETE | 视觉品质修复: 开场动画星星大小/封面按钮布局/图鉴5列网格/安全区域适配 (STORY-00316~00319) — QA PASS + UX no Blockers |
 | Sprint 36-mini | COMPLETE | 道具商店视觉升级+女角色重绘+胜利界面重设计 (STORY-00320~00322) — Arch PASS + QA PASS + UX no Blockers |
 | Sprint 37-mini | COMPLETE | 胜利星星闪烁顺序+选关闪烁修复 (STORY-00323~00324) — VU ACCEPTED 9.6/10 — PROJECT COMPLETE |
+| Sprint 38-mini | COMPLETE | 核心视觉差距修复 (STORY-00325~00328) — Arch PASS + QA PASS + UX no Blockers |
+| Sprint 39-mini | COMPLETE | 画廊与商店信息完整化 (STORY-00329~00332) — Arch PASS + QA PASS |
+| Sprint 40-mini | COMPLETE | 开场动画重设计 — 真实星空+自然流星+无名称星座连线+标题淡入 (STORY-00329) — Arch PASS + QA PASS + UX no Blockers |
+| Sprint 41-mini | COMPLETE | 开场动画微调 — 星空加密+标题流线化+换天鹅座 (STORY-00333~00335) — Arch PASS + QA PASS + UX no Blockers |
+| Sprint 42-mini | COMPLETE | 开场标题对标Web — Ma Shan Zheng书法字体+纯色浅紫+StarCatcher副标题 (STORY-00336) — Arch PASS + QA PASS + UX no Blockers |
+| Sprint 43-mini | COMPLETE | 背景星空去规律化 — sin-hash替换LCG，消除对角线星串伪影 (STORY-00337) — Arch PASS + QA PASS + UX no Blockers |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |

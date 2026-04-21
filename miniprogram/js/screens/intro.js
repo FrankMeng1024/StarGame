@@ -70,40 +70,42 @@ export function showIntro(navigate) {
   _buildConStars();
 
   // Build background starfield — 3 size tiers
+  // Hash scatter: sin-based hash breaks linear patterns that cause diagonal streaks
   _bgStars = [];
   const W = G.SCREEN_W;
   const H = G.SCREEN_H;
+  function _h(n) { return Math.abs((Math.sin(n * 127.1 + 311.7) * 43758.5453) % 1); }
   // Tiny stars (105): r=0.5-0.7, dimmer
   for (let i = 0; i < 105; i++) {
     _bgStars.push({
-      x: ((i * 137 + 41) % (W + 1)),
-      y: ((i * 97 + 23)  % (H + 1)),
-      r: 0.5 + (i % 3) * 0.1,
-      baseAlpha: 0.12 + (i % 5) * 0.06,
-      phase: i * 0.73,
-      speed: 0.4 + (i % 7) * 0.12,
+      x: _h(i)        * W,
+      y: _h(i + 1000) * H,
+      r: 0.4 + _h(i + 2000) * 0.3,
+      baseAlpha: 0.10 + _h(i + 3000) * 0.22,
+      phase: _h(i + 4000) * 6.28,
+      speed: 0.4 + _h(i + 5000) * 0.8,
     });
   }
-  // Medium stars (45): r=1.0-1.4
+  // Medium stars (45): r=1.0-1.5
   for (let i = 0; i < 45; i++) {
     _bgStars.push({
-      x: ((i * 211 + 83) % (W + 1)),
-      y: ((i * 173 + 59) % (H + 1)),
-      r: 1.0 + (i % 3) * 0.2,
-      baseAlpha: 0.22 + (i % 4) * 0.08,
-      phase: i * 1.17,
-      speed: 0.6 + (i % 5) * 0.18,
+      x: _h(i + 200)  * W,
+      y: _h(i + 1200) * H,
+      r: 1.0 + _h(i + 2200) * 0.5,
+      baseAlpha: 0.20 + _h(i + 3200) * 0.28,
+      phase: _h(i + 4200) * 6.28,
+      speed: 0.5 + _h(i + 5200) * 0.7,
     });
   }
-  // Large/bright stars (18): r=1.8-2.4 — the "real stars you can see"
+  // Large/bright stars (18): r=1.8-2.6
   for (let i = 0; i < 18; i++) {
     _bgStars.push({
-      x: ((i * 307 + 131) % (W + 1)),
-      y: ((i * 251 + 107) % (H + 1)),
-      r: 1.8 + (i % 4) * 0.15,
-      baseAlpha: 0.50 + (i % 3) * 0.14,
-      phase: i * 2.03,
-      speed: 0.3 + (i % 4) * 0.10,
+      x: _h(i + 400)  * W,
+      y: _h(i + 1400) * H,
+      r: 1.8 + _h(i + 2400) * 0.8,
+      baseAlpha: 0.48 + _h(i + 3400) * 0.30,
+      phase: _h(i + 4400) * 6.28,
+      speed: 0.3 + _h(i + 5400) * 0.5,
     });
   }
 
