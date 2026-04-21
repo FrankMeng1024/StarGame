@@ -31,20 +31,18 @@ function wxCode2Session(code) {
   });
 }
 
+// DEV MODE: 所有登录直接返回 mock openid，跳过微信 code 换取
+// TODO: 上线前删除此块，恢复真实 wxCode2Session 逻辑
+const DEV_MOCK_OPENID = 'test_dev_user_001';
+
 router.post('/login', async (req, res) => {
   const { code } = req.body;
   if (!code) return res.status(400).json({ error: 'code required' });
 
-  try {
-    const openid = await wxCode2Session(code);
-    const token = jwt.sign({ openid }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
-    res.json({ token });
-  } catch (e) {
-    console.error('[auth] login error:', e.message);
-    // wx error codes (40029 = invalid code, 40163 = code used) → 400 Bad Request
-    const isWxError = e.message && e.message.startsWith('wx error');
-    res.status(isWxError ? 400 : 500).json({ error: 'login failed', detail: e.message });
-  }
+  const openid = DEV_MOCK_OPENID;
+  console.log(`[auth] DEV MODE — using mock openid: ${openid}`);
+  const token = jwt.sign({ openid }, JWT_SECRET, { expiresIn: JWT_EXPIRES_IN });
+  res.json({ token });
 });
 
 module.exports = router;
