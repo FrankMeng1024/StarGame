@@ -12,6 +12,7 @@ import { drawFadeOverlay, tickFade, resetFade } from '../engine/canvas-utils.js'
 const TWO_PI = Math.PI * 2;
 
 // ── Module state ──────────────────────────────────────────────
+let _maShanZhengLoaded = false;  // set to true once wx.loadFontFace succeeds
 let _navigate  = null;
 let _rafId     = null;
 let _startTime = 0;
@@ -47,6 +48,22 @@ export function showIntro(navigate) {
 
   // Force-clear any stuck fade overlay from previous navigation
   resetFade();
+
+  // Load Ma Shan Zheng calligraphy font (async — Phase 3 starts at t=9s, plenty of time)
+  // Wrapped in try/catch: font load failure is non-fatal, fallback to serif
+  if (!_maShanZhengLoaded) {
+    try {
+      if (typeof wx !== 'undefined' && typeof wx.loadFontFace === 'function') {
+        wx.loadFontFace({
+          family: 'Ma Shan Zheng',
+          source: "url('https://fonts.gstatic.com/s/mashanzheng/v10/NaPecZTRCLxvwo41b4gvzkXaRMTsDIRSfr0.woff2')",
+          scopes: ['webgl', '2d'],
+          success: () => { _maShanZhengLoaded = true; },
+          fail: () => { /* network unavailable or sandbox — fallback to serif */ },
+        });
+      }
+    } catch (e) { /* ignore — title renders in fallback serif */ }
+  }
 
   // Cygnus (天鹅座) — sweeping Northern Cross with outstretched wings
   _conDef = CONSTELLATIONS[17]; // 天鹅座 (Cygnus)
@@ -382,47 +399,37 @@ function _loop(now) {
     // Outer title glow halo
     ctx.save();
     ctx.globalAlpha = titleAlpha * 0.38;
-    ctx.shadowColor = '#a070ff';
-    ctx.shadowBlur  = 40;
-    ctx.font = 'bold 48px sans-serif';
+    ctx.shadowColor = '#b090ff';
+    ctx.shadowBlur  = 36;
+    const titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
+    ctx.font = `bold ${Math.round(W * 0.045)}px ${titleFont}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = '#c090ff';
-    ctx.fillText('追 星 少 女', W / 2, TY);
+    ctx.fillStyle = '#e8d5ff';
+    ctx.fillText('追星少女', W / 2, TY);
     ctx.restore();
 
-    // Title with gradient
+    // Title — plain light-purple, calligraphy font (matches Web intro.js)
     ctx.save();
     ctx.globalAlpha = titleAlpha;
-    ctx.font = 'bold 48px sans-serif';
+    ctx.font = `bold ${Math.round(W * 0.045)}px ${titleFont}`;
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.shadowColor = '#c090ff';
-    ctx.shadowBlur  = 14;
-    const titleGrd = ctx.createLinearGradient(W / 2 - 80, TY - 25, W / 2 + 80, TY + 25);
-    titleGrd.addColorStop(0,   '#ede8ff');
-    titleGrd.addColorStop(0.5, '#d0b0ff');
-    titleGrd.addColorStop(1,   '#a880ff');
-    ctx.fillStyle = titleGrd;
-    ctx.fillText('追 星 少 女', W / 2, TY);
+    ctx.shadowColor = '#b090ff';
+    ctx.shadowBlur  = 18;
+    ctx.fillStyle = '#e8d5ff';
+    ctx.fillText('追星少女', W / 2, TY);
     ctx.restore();
 
-    // Decorative separator
-    if (t3 > 1.2) {
-      const sepAlpha = Math.min(1, (t3 - 1.2) / 0.8) * titleAlpha;
-      const sepY = TY + 28;
-      ctx.save();
-      ctx.globalAlpha = sepAlpha * 0.65;
-      ctx.strokeStyle = 'rgba(180,140,255,1)';
-      ctx.lineWidth   = 0.8;
-      ctx.beginPath(); ctx.moveTo(W / 2 - 14, sepY); ctx.lineTo(W / 2 - W * 0.18, sepY); ctx.stroke();
-      ctx.beginPath(); ctx.moveTo(W / 2 + 14, sepY); ctx.lineTo(W / 2 + W * 0.18, sepY); ctx.stroke();
-      ctx.fillStyle   = 'rgba(200,170,255,1)';
-      ctx.font = '10px sans-serif';
-      ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
-      ctx.fillText('✦', W / 2, sepY);
-      ctx.restore();
-    }
+    // StarCatcher subtitle (matches Web intro.js)
+    ctx.save();
+    ctx.globalAlpha = titleAlpha * 0.85;
+    ctx.font = `${Math.round(W * 0.02)}px 'Noto Sans SC', sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(200,200,255,0.7)';
+    ctx.fillText('StarCatcher', W / 2, TY + Math.round(W * 0.035));
+    ctx.restore();
 
     // Auto-finish at 14s
     if (elapsed >= 14 && !(typeof wx !== 'undefined' && typeof wx.__introFreezeAt === 'number')) {
