@@ -1,5 +1,6 @@
-// app.js — 微信小游戏入口
+// game.js — 微信小游戏入口
 // 负责：wx.login 静默登录 → 获取 openid → 加载云端存档 → 启动主菜单
+// STORY-00347: 修复扫码黑屏 — wx.onShow 延迟启动 + 加长 canvas 就绪等待
 
 import { initGlobals } from './js/engine/globals.js';
 import { AuthManager } from './js/platform/auth.js';
@@ -13,111 +14,120 @@ import { showShop, hideShop } from './js/screens/shop.js';
 import { showAchievement, hideAchievement } from './js/screens/achievement.js';
 import { showIntro, hideIntro } from './js/screens/intro.js';
 
-// 全局 Canvas — 立即初始化 globals（其他模块从 globals.js import，无循环依赖）
+// 全局 Canvas
 const canvas = wx.createCanvas();
-const ctx = canvas.getContext('2d');
-// canvas.width/height 可能为 0（QR码扫码冷启动时Canvas尚未就绪），用 systemInfo 作为可靠来源
-const sysInfo = wx.getSystemInfoSync();
-const screenW = sysInfo.windowWidth  || 375;
-const screenH = sysInfo.windowHeight || 667;
+const ctx    = canvas.getContext('2d');
+
+// ── 获取屏幕尺寸 — 横屏时 windowWidth > windowHeight ──────────
+function _getScreenSize() {
+  const si = wx.getSystemInfoSync();
+  let w = si.windowWidth  || si.screenWidth  || 667;
+  let h = si.windowHeight || si.screenHeight || 375;
+  // 小游戏横屏：如果系统尚未旋转，w/h 可能对调，强制修正
+  if (w < h) { const tmp = w; w = h; h = tmp; }
+  return { w, h, safeArea: si.safeArea, dpr: si.pixelRatio || 1 };
+}
+
+const { w: screenW, h: screenH, safeArea, dpr } = _getScreenSize();
 canvas.width  = screenW;
 canvas.height = screenH;
-// safeArea: {top, left, bottom, right, width, height} in px — notch + home indicator
-// Falls back gracefully on older wx SDK versions where safeArea may be undefined.
-initGlobals(canvas, ctx, screenW, screenH, sysInfo.safeArea, sysInfo.pixelRatio || 1);
+initGlobals(canvas, ctx, screenW, screenH, safeArea, dpr);
 
-// 全局状态（外部只读引用）
-let gameState = null;
+// 全局状态
+let gameState   = null;
+let _booted     = false;  // 防止多次 boot
 
 // ── 导航路由 ──────────────────────────────────────────────────
 let _lastNavTime = 0;
 function navigate(key) {
-  // Debounce: ignore navigate calls within 100ms of each other (STORY-00291: was 300ms — caused level tap deadlock)
   const now = Date.now();
   if (now - _lastNavTime < 100) return;
   _lastNavTime = now;
 
-  // 先全部清理
-  hideMenu();
-  hideLevels();
-  hideGame();
-  hideGallery();
-  hideShop();
-  hideAchievement();
-  hideIntro();
+  hideMenu(); hideLevels(); hideGame();
+  hideGallery(); hideShop(); hideAchievement(); hideIntro();
 
   switch (key) {
-    case 'intro':
-      showIntro(navigate);
-      break;
-    case 'menu':
-      showMenu(navigate);
-      break;
+    case 'intro':       showIntro(navigate);       break;
+    case 'menu':        showMenu(navigate);         break;
     case 'levels':
-      _lastNavTime = 0; // STORY-00291: reset debounce so level taps are immediately responsive
+      _lastNavTime = 0;
       showLevels(navigate);
       break;
-    case 'game':
-      showGame(navigate);
-      break;
-    case 'gallery':
-      showGallery(navigate);
-      break;
-    case 'shop':
-      showShop(navigate);
-      break;
-    case 'achievement':
-      showAchievement(navigate);
-      break;
-    default:
-      showMenu(navigate);
+    case 'game':        showGame(navigate);         break;
+    case 'gallery':     showGallery(navigate);      break;
+    case 'shop':        showShop(navigate);         break;
+    case 'achievement': showAchievement(navigate);  break;
+    default:            showMenu(navigate);
   }
 }
 
+// ── 启动逻辑 ──────────────────────────────────────────────────
 async function boot() {
-  // 1. 立即从本地存档启动，消除黑屏等待
-  // 先用本地存档（同步读取，无网络等待）启动主菜单
+  if (_booted) return;
+  _booted = true;
+
+  // 本地存档同步加载
   const localSave = StorageAdapter.loadSaveLocal();
   state.fromSaveData(localSave);
   gameState = state;
 
-  // 立刻显示开场动画（不等网络）— 动画结束自动导航到 menu
-  // STORY-00276: always play intro on fresh launch — no storage gate
-  const startScreen = 'intro';
+  wx.__navigate = navigate;  // DevTools 控制台后门
 
-  // 确保 canvas 尺寸已生效再开始渲染：延迟多帧，防止扫码冷启动黑屏 (STORY-00271, STORY-00301)
-  // Some devices need 2-3 frames after QR scan cold boot before canvas size is reliable
-  let _bootAttempts = 0;
-  function _tryNavigate() {
-    _bootAttempts++;
-    if ((canvas.width === 0 || canvas.height === 0) && _bootAttempts < 5) {
-      canvas.width  = screenW;
-      canvas.height = screenH;
-      requestAnimationFrame(_tryNavigate);
+  // 确保 canvas 尺寸就绪 — 扫码冷启动时需更多帧（最多等 30 帧 ≈ 500ms）
+  // STORY-00347: 从5帧扩展到30帧，覆盖低端机扫码慢启动场景
+  let attempts = 0;
+  function _tryStart() {
+    attempts++;
+    // 每次尝试都重新拿一下尺寸（防止横屏切换未就绪）
+    const { w, h, safeArea: sa, dpr: dp } = _getScreenSize();
+    if (w > 0 && h > 0) {
+      canvas.width  = w;
+      canvas.height = h;
+      initGlobals(canvas, ctx, w, h, sa, dp);
+    }
+    if ((canvas.width === 0 || canvas.height === 0) && attempts < 30) {
+      requestAnimationFrame(_tryStart);
       return;
     }
-    // Final fallback: force dimensions from sysInfo
-    if (canvas.width === 0 || canvas.height === 0) {
-      canvas.width  = screenW;
-      canvas.height = screenH;
-    }
-    console.log('[boot] canvas size:', canvas.width, 'x', canvas.height, 'attempt:', _bootAttempts);
-    navigate(startScreen);
+    // 最终强制赋值
+    if (canvas.width === 0)  canvas.width  = screenW;
+    if (canvas.height === 0) canvas.height = screenH;
+    console.log('[boot] canvas:', canvas.width, 'x', canvas.height, 'attempts:', attempts);
+    navigate('intro');
   }
-  requestAnimationFrame(_tryNavigate);
+  requestAnimationFrame(_tryStart);
 
-  // 开发后门：挂到 wx 命名空间，DevTools console 可调用 wx.__navigate('levels')
-  wx.__navigate = navigate;
-
-  // 2. 后台异步：静默登录 + 云端存档同步（不阻塞UI）
-  // 用 merge 而非 fromSaveData，避免覆盖玩家本次会话中的进度
+  // 后台异步：登录 + 云端存档（不阻塞UI）
   try {
     await AuthManager.login();
     const saveData = await StorageAdapter.loadSave();
     state.mergeFromCloudData(saveData);
   } catch (e) {
-    console.warn('[boot] background sync failed, running offline:', e.message);
+    console.warn('[boot] sync failed, offline mode:', e.message);
   }
 }
 
+// ── STORY-00347: wx.onShow 确保扫码冷启动也能触发 boot ────────
+// 微信扫码启动时，某些设备 game.js 执行时渲染层还未就绪。
+// wx.onShow 在渲染层真正激活后才触发，是最可靠的启动时机。
+let _onShowFired = false;
+wx.onShow(() => {
+  _onShowFired = true;
+  if (!_booted) {
+    // 扫码冷启动：boot() 还未执行，从 onShow 触发
+    boot();
+  } else {
+    // 从后台切回：canvas 可能失效，重新初始化尺寸
+    const { w, h, safeArea: sa, dpr: dp } = _getScreenSize();
+    if (w > 0 && h > 0) {
+      canvas.width  = w;
+      canvas.height = h;
+      initGlobals(canvas, ctx, w, h, sa, dp);
+    }
+  }
+});
+
+// 立即尝试启动（正常点击启动路径）
+// 如果 onShow 先于 boot() 完成会被 _booted flag 保护不重复执行
 boot();
