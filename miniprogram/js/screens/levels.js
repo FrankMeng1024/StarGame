@@ -74,8 +74,7 @@ let _navigate      = null;
 let _rafId         = null;
 let _backRect      = null;
 let _shopRect      = null;
-let _prevRect      = null;
-let _nextRect      = null;
+
 let _nodeRects     = [];   // [{cx, cy, r, levelIdx}] per-group
 let _currentGroup  = 0;    // 当前显示的星系组索引
 let _groupAnim     = 0;    // 当前group动画时间偏移（用于进入动画）
@@ -151,8 +150,6 @@ function _cleanup() {
   _bgStars      = [];
   _backRect     = null;
   _shopRect     = null;
-  _prevRect     = null;
-  _nextRect     = null;
   _slideX       = 0;
   _slideTargetX = 0;
   _pendingGroup = 0;
@@ -280,18 +277,10 @@ function _loop(now) {
   ctx.fillText('选择关卡', W / 2, G.SAFE_TOP + 30);
   ctx.restore();
 
-  // ── 星系名称（随滑动淡入淡出） + 左右切换箭头 ────────────────
+  // ── 星系名称（随滑动淡入淡出） ───────────────────────────────
   const group = _GROUPS[_currentGroup];
   const penGroup = _GROUPS[_pendingGroup];
   const groupY = G.SAFE_TOP + 58;
-
-  // 左箭头
-  const canPrev = _currentGroup > 0;
-  _prevRect = _drawArrowBtn(ctx, G.SAFE_LEFT + 10, groupY - 14, 28, 28, '‹', canPrev);
-
-  // 右箭头（所有组均可自由浏览，未解锁组节点不可点击）
-  const canNext = _currentGroup < _GROUPS.length - 1;
-  _nextRect = _drawArrowBtn(ctx, W - G.SAFE_RIGHT - 38, groupY - 14, 28, 28, '›', canNext);
 
   // 星系名 crossfade
   const nameAlpha = Math.max(0, 1 - Math.abs(_slideX) / (W * 0.5));
@@ -416,24 +405,6 @@ function _drawGhostBtn(ctx, x, y, w, h, label) {
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(180,200,255,0.75)';
-  ctx.fillText(label, x + w / 2, y + h / 2);
-  ctx.restore();
-  return { x, y, w, h };
-}
-
-function _drawArrowBtn(ctx, x, y, w, h, label, enabled) {
-  ctx.save();
-  ctx.globalAlpha = enabled ? 0.85 : 0.25;
-  ctx.fillStyle = 'rgba(60,70,140,0.6)';
-  ctx.strokeStyle = enabled ? 'rgba(140,160,255,0.5)' : 'rgba(80,80,120,0.3)';
-  ctx.lineWidth = 1;
-  _roundRect(ctx, x, y, w, h, 6);
-  ctx.fill();
-  ctx.stroke();
-  ctx.font = `bold 20px sans-serif`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = enabled ? '#aabbff' : '#555580';
   ctx.fillText(label, x + w / 2, y + h / 2);
   ctx.restore();
   return { x, y, w, h };
@@ -957,15 +928,6 @@ function _onTouchEnd(e) {
   }
 
   // 左右切换箭头
-  if (_prevRect && hitTest(_prevRect, tx, ty) && _currentGroup > 0) {
-    _switchGroup(_currentGroup - 1);
-    return;
-  }
-  if (_nextRect && hitTest(_nextRect, tx, ty) && _currentGroup < _GROUPS.length - 1) {
-    _switchGroup(_currentGroup + 1);
-    return;
-  }
-
   // ── 节点点击 ─────────────────────────────────────────────
   for (const node of _nodeRects) {
     if (Math.hypot(tx - node.cx, ty - node.cy) <= node.r + 10) {
