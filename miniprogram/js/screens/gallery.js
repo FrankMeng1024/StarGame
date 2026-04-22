@@ -22,18 +22,18 @@ const _GROUPS = [
 // 六边形蜂巢布局（6节点）— 2列3行，偏移排列
 // 相对于节点区中心的比例偏移
 const _HEX_POS = [
-  { xr: -0.28, yr: -0.33 },  // 0: 左上
-  { xr:  0.28, yr: -0.33 },  // 1: 右上
-  { xr: -0.44, yr:  0.00 },  // 2: 左中
+  { xr: -0.26, yr: -0.30 },  // 0: 左上
+  { xr:  0.26, yr: -0.30 },  // 1: 右上
+  { xr: -0.40, yr:  0.00 },  // 2: 左中
   { xr:  0.00, yr:  0.00 },  // 3: 中心
-  { xr:  0.44, yr:  0.00 },  // 4: 右中
-  { xr:  0.00, yr:  0.35 },  // 5: 下中
+  { xr:  0.40, yr:  0.00 },  // 4: 右中
+  { xr:  0.00, yr:  0.32 },  // 5: 下中
 ];
 
 // 节点间装饰连线（蜂巢风格）
 const _HEX_EDGES = [[0,1],[0,2],[0,3],[1,3],[1,4],[2,3],[3,4],[3,5],[2,5],[4,5]];
 
-const _NODE_R = 42;
+const _NODE_R = 30;
 
 // 背景星云
 const _NEBULAE = [
@@ -416,7 +416,7 @@ function _drawNode(ctx, node, t, groupIdx) {
   if (unlocked) {
     // Mini 星座图
     if (c.stars && c.stars.length > 0) {
-      const size = (r - 4) * 1.55;
+      const size = (r - 3) * 0.90;
       const pts  = c.stars.map(s => ({
         x: cx + (s.x - 0.5) * size,
         y: cy + (s.y - 0.5) * size,
