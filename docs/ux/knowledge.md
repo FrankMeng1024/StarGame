@@ -1,5 +1,12 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 57-mini Updates (2026-04-22)
+
+- Shop screen ('道具商店') uses deep-space dark background with purple/teal nebula glow effects, consistent with the overall game theme. Card layout is single-column with circular icon zones featuring glow rings, purple gradient '购买' buttons, and gold coin pricing. Visual style aligns well with the game screen's space aesthetic.
+- Item cards display: icon (left), name + pill badges ('主动'/'15秒') + description text (center), price + buy button (right). Owned quantity shown as a small numbered badge in the card's top-right corner.
+- Game screen during active play shows: level label (top-left), circular countdown timer (top-center), star counter (top-right), girl character (bottom-center), constellation stars connected by lines, space debris obstacles, and dark starfield background.
+- Visual language (dark bg, purple accent, glow effects, gold coins) is thematically consistent across shop and game screens. No jarring style breaks between screens.
+
 ## Sprint 41-mini Updates (2026-04-21)
 
 ### Intro Animation — Fine-tuning (STORY-00333/334/335)

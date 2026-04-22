@@ -2,6 +2,14 @@
 
 ---
 
+## Sprint 57-mini Updates (2026-04-22)
+
+- Shop screen now uses unified deep-space visual system (drawSkyBg + drawNebulae + drawBgStars + drawHeaderBar) — consistent with menu, levels, and gallery screens. Card layout is single-column with purple-blue gradient, circular icon zones with glow, and purple gradient buy buttons.
+- Game screen setKeepScreenOn integration uses defensive pattern: typeof guard + try/catch in both enable (showGame) and disable (_cleanup) paths — robust against environments where wx.setKeepScreenOn may not exist.
+- Shop header follows unified pattern: '← 返回 | [page title] | [right content]' — same as gallery and levels screens.
+
+---
+
 ## Sprint 41-mini Updates (2026-04-21)
 
 ### Sprint 41-mini — PASS (HIGH confidence)

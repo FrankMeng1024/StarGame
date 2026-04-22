@@ -165,6 +165,13 @@ export function showGame(navigate) {
   _navigate = navigate;
   _cleanup();
 
+  // CR-140: 防息屏 — 游戏运行时保持屏幕常亮
+  try {
+    if (typeof wx !== 'undefined' && wx.setKeepScreenOn) {
+      wx.setKeepScreenOn({ keepScreenOn: true });
+    }
+  } catch (e) {}
+
   _levelIdx  = state.currentLevel || 0;
   _conDef    = CONSTELLATIONS[_levelIdx];
   _sceneIdx  = Math.min(Math.floor(_levelIdx / 5), SCENE_PALETTES.length - 1);
@@ -380,6 +387,12 @@ function _cleanup() {
     cancelAnimationFrame(_rafId);
     _rafId = null;
   }
+  // CR-140: 恢复正常息屏（离开游戏界面时）
+  try {
+    if (typeof wx !== 'undefined' && wx.setKeepScreenOn) {
+      wx.setKeepScreenOn({ keepScreenOn: false });
+    }
+  } catch (e) {}
   if (G.CANVAS) {
     G.CANVAS.removeEventListener('touchstart', _onTouch);
   }
@@ -541,7 +554,11 @@ function _loop(now) {
   tickFade(dt);
   drawFadeOverlay(ctx, W, H);
 
-  _rafId = requestAnimationFrame(_loop);
+  // Guard: tickFade's callback (fadeNavigate) may have called navigate() → _cleanup() → _rafId=null.
+  // If so, do NOT re-schedule _loop — another screen has already taken over the canvas.
+  if (_rafId !== null) {
+    _rafId = requestAnimationFrame(_loop);
+  }
 }
 
 // ── Timer ─────────────────────────────────────────────────────
