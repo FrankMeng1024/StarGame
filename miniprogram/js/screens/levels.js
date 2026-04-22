@@ -1,5 +1,5 @@
 // levels.js — Canvas 选关屏幕（微信小游戏版）
-// 替代原版 DOM screen-levels，纯 Canvas 2D 绘制
+// STORY-00348: 星系分组选关 — 30个关卡分5组，每组6个，逐组解锁
 
 import { G } from '../engine/globals.js';
 import {
@@ -12,69 +12,104 @@ import state from '../engine/state.js';
 
 const TWO_PI = Math.PI * 2;
 
-// ── STORY-00345: Orbital level select — 5 concentric elliptical rings ────────
-// Orbit ring definitions: rx = half-width, speed = rad/s, offset = initial angle
-const _RINGS = [
-  { rx:  62, speed: 0.020, offset: Math.PI * 0.1 },
-  { rx: 104, speed: 0.014, offset: Math.PI * 0.4 },
-  { rx: 147, speed: 0.009, offset: Math.PI * 0.7 },
-  { rx: 190, speed: 0.006, offset: Math.PI * 1.1 },
-  { rx: 233, speed: 0.004, offset: Math.PI * 1.5 },
+// ── 星系分组定义 ───────────────────────────────────────────────
+// 5组 × 6个关卡，每组完成（全部通关）才解锁下一组
+const _GROUPS = [
+  {
+    name: '冬季星空',
+    color: '#88ccff',
+    glowColor: 'rgba(80,160,255,0.18)',
+    levels: [0, 1, 4, 5, 6, 7],   // 猎户/大熊/白羊/金牛/双子/巨蟹
+  },
+  {
+    name: '夏季黄道',
+    color: '#ffcc66',
+    glowColor: 'rgba(255,180,60,0.18)',
+    levels: [2, 3, 8, 9, 10, 11], // 天蝎/狮子/处女/天秤/射手/摩羯
+  },
+  {
+    name: '秋日星原',
+    color: '#cc99ff',
+    glowColor: 'rgba(180,100,255,0.18)',
+    levels: [12, 13, 14, 15, 16, 17], // 水瓶/双鱼/仙后/英仙/天鹰/天鹅
+  },
+  {
+    name: '北天极圈',
+    color: '#66ffcc',
+    glowColor: 'rgba(60,220,160,0.18)',
+    levels: [18, 19, 20, 21, 22, 23], // 天琴/南十字/小熊/牧夫/御夫/飞马
+  },
+  {
+    name: '南天深空',
+    color: '#ff8888',
+    glowColor: 'rgba(255,80,80,0.18)',
+    levels: [24, 25, 26, 27, 28, 29], // 海豚/南鱼/天龙/蛇夫/半人马/猎犬
+  },
 ];
-const _ELLIPSE_RATIO = 0.55;  // ry = rx * ratio (3D depth feel)
-const _NODE_R = [22, 20, 18, 16, 14];  // node radius per ring (outer = smaller)
-const _RING_LABELS = ['入门', '基础', '进阶', '挑战', '传奇'];
-const _RING_LABEL_COLORS = ['#80c080', '#90b0e0', '#c0a0ff', '#ff9060', '#ff6060'];
 
-// Orbital background nebulae (anti-claustrophobia: very faint, not pure black)
+// 6节点的布局位置（比例坐标，相对于节点区域中心）
+// 排成2行3列，间距充足
+const _NODE_POSITIONS = [
+  // row0
+  { xr: -0.340, yr: -0.26 },
+  { xr:  0.000, yr: -0.30 },
+  { xr:  0.340, yr: -0.26 },
+  // row1
+  { xr: -0.340, yr:  0.26 },
+  { xr:  0.000, yr:  0.30 },
+  { xr:  0.340, yr:  0.26 },
+];
+
+const _NODE_R = 30;  // 节点半径（比原来14-22px大得多）
+
+// ── 背景星云 ──────────────────────────────────────────────────
 const _NEBULAE = [
-  { xRatio: 0.22, yRatio: 0.28, rx: 120, ry: 70,  r: '100,70,255', a: 0.055 },
-  { xRatio: 0.78, yRatio: 0.58, rx: 100, ry: 60,  r: '40,180,200', a: 0.045 },
-  { xRatio: 0.50, yRatio: 0.85, rx: 130, ry: 75,  r: '200,80,150', a: 0.040 },
+  { xr: 0.22, yr: 0.32, rx: 130, ry: 80,  col: '100,70,255',  a: 0.07 },
+  { xr: 0.78, yr: 0.62, rx: 110, ry: 65,  col: '40,180,200',  a: 0.06 },
+  { xr: 0.50, yr: 0.88, rx: 140, ry: 80,  col: '200,80,150',  a: 0.05 },
 ];
 
-// ── Module state ──────────────────────────────────────────────
-let _navigate     = null;
-let _rafId        = null;
-let _nodeRects    = [];   // [{cx,cy,r,idx}] — replaces _cardRects
-let _backRect     = null;
-let _shopRect     = null;  // STORY-00282: shop shortcut
-let _scrollY      = 0;
-let _scrollTarget = 0;
-let _lastTouchY   = 0;
-let _isDragging   = false;
-let _totalH       = 0;
-let _scrollVelocity = 0;  // for momentum scrolling
-let _lastTouchTime  = 0;
-let _orbitCX      = 0;   // orbital center x (computed at layout)
-let _orbitCY      = 0;   // orbital center y (computed at layout)
-let _bgStars      = [];  // background star field
+// ── 模块状态 ──────────────────────────────────────────────────
+let _navigate      = null;
+let _rafId         = null;
+let _backRect      = null;
+let _shopRect      = null;
+let _prevRect      = null;
+let _nextRect      = null;
+let _nodeRects     = [];   // [{cx, cy, r, levelIdx}] per-group, recomputed on group change
+let _currentGroup  = 0;    // 当前显示的星系组索引
+let _groupAnim     = 0;    // 当前group动画时间偏移（用于进入动画）
+let _slideDir      = 0;    // 切换动画：+1右划进 -1左划进
+let _slideProgress = 1;    // 0→1 切换动画进度（1=完成）
+let _bgStars       = [];
 
-// STORY-00342: Ma Shan Zheng font loading (same pattern as menu.js + intro.js)
-// ⛔ 禁止修改：字体风格已定稿，与开场动画/主菜单一致，保持全游戏字体统一
+// STORY-00342: Ma Shan Zheng font
 let _maShanZhengLoaded = false;
 
-// ── Item selection overlay state ───────────────────────────────
-let _overlayActive      = false;
-let _overlayToggled     = new Set(); // item IDs selected for use
-let _overlayBtnRects    = [];        // [{id, rect}] toggle buttons
-let _overlayConfirm     = null;
-let _overlaySkip        = null;
-let _overlayScrollY     = 0;
+// ── Item selection overlay ────────────────────────────────────
+let _overlayActive       = false;
+let _overlayToggled      = new Set();
+let _overlayBtnRects     = [];
+let _overlayConfirm      = null;
+let _overlaySkip         = null;
+let _overlayScrollY      = 0;
 let _overlayScrollTarget = 0;
-let _overlayTotalRowsH  = 0;  // total height of all item rows
-let _overlayRowsClipY   = 0;  // clip top for rows area
-let _overlayRowsClipH   = 0;  // clip height for rows area
+let _overlayTotalRowsH   = 0;
+let _overlayRowsClipY    = 0;
+let _overlayRowsClipH    = 0;
+let _isDragging          = false;
+let _lastTouchY          = 0;
 
 // ── Public API ────────────────────────────────────────────────
 export function showLevels(navigate) {
   _navigate = navigate;
   _cleanup();
 
-  _bgStars = [];  // reset so _computeLayout regenerates
+  // 确定当前应该显示哪个星系：找第一个未完成的组
+  _currentGroup = _getActiveGroup();
+
   _computeLayout();
 
-  // STORY-00342: load Ma Shan Zheng for title consistency (same as menu.js/intro.js)
   if (!_maShanZhengLoaded) {
     try {
       if (typeof wx !== 'undefined' && typeof wx.loadFontFace === 'function') {
@@ -83,15 +118,15 @@ export function showLevels(navigate) {
           source: "url('https://fonts.gstatic.com/s/mashanzheng/v10/NaPecZTRCLxvwo41b4gvzkXaRMTsDIRSfr0.woff2')",
           scopes: ['webgl', '2d'],
           success: () => { _maShanZhengLoaded = true; },
-          fail: () => { /* fallback to serif */ },
+          fail: () => {},
         });
       }
-    } catch (e) { /* ignore */ }
+    } catch (e) {}
   }
 
-  G.CANVAS.addEventListener('touchstart',  _onTouchStart);
-  G.CANVAS.addEventListener('touchmove',   _onTouchMove);
-  G.CANVAS.addEventListener('touchend',    _onTouchEnd);
+  G.CANVAS.addEventListener('touchstart', _onTouchStart);
+  G.CANVAS.addEventListener('touchmove',  _onTouchMove);
+  G.CANVAS.addEventListener('touchend',   _onTouchEnd);
 
   _rafId = requestAnimationFrame(_loop);
 }
@@ -102,62 +137,88 @@ export function hideLevels() {
 
 // ── Internal ──────────────────────────────────────────────────
 function _cleanup() {
-  if (_rafId !== null) {
-    cancelAnimationFrame(_rafId);
-    _rafId = null;
-  }
+  if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   if (G.CANVAS) {
-    G.CANVAS.removeEventListener('touchstart',  _onTouchStart);
-    G.CANVAS.removeEventListener('touchmove',   _onTouchMove);
-    G.CANVAS.removeEventListener('touchend',    _onTouchEnd);
+    G.CANVAS.removeEventListener('touchstart', _onTouchStart);
+    G.CANVAS.removeEventListener('touchmove',  _onTouchMove);
+    G.CANVAS.removeEventListener('touchend',   _onTouchEnd);
   }
-  _nodeRects = [];
-  _bgStars   = [];
-  _backRect  = null;
-  _shopRect  = null;
-  _scrollY   = 0;
-  _scrollTarget = 0;
-  _scrollVelocity = 0;
+  _nodeRects    = [];
+  _bgStars      = [];
+  _backRect     = null;
+  _shopRect     = null;
+  _prevRect     = null;
+  _nextRect     = null;
+  _slideDir     = 0;
+  _slideProgress = 1;
   _overlayActive = false;
   _overlayToggled.clear();
   _overlayBtnRects = [];
   _overlayConfirm = null;
-  _overlaySkip = null;
+  _overlaySkip    = null;
   _overlayScrollY = _overlayScrollTarget = 0;
   _overlayTotalRowsH = 0;
+  _isDragging = false;
+}
+
+// 找第一个未完成/未完全锁定的组
+function _getActiveGroup() {
+  for (let g = 0; g < _GROUPS.length; g++) {
+    if (_isGroupUnlocked(g) && !_isGroupCompleted(g)) return g;
+  }
+  // 全完成了就显示最后一组
+  return _GROUPS.length - 1;
+}
+
+// 第g组是否已解锁（第0组始终解锁；后续组需要前一组完成）
+function _isGroupUnlocked(g) {
+  if (g === 0) return true;
+  return _isGroupCompleted(g - 1);
+}
+
+// 第g组是否全部完成（组内所有关卡都已通关，即isUnlocked意味着第一关解锁，但完成=有分数）
+function _isGroupCompleted(g) {
+  return _GROUPS[g].levels.every(idx => {
+    const sc = state.getScore(idx);
+    return sc && sc.stars > 0;
+  });
 }
 
 function _computeLayout() {
   const W = G.SCREEN_W;
   const H = G.SCREEN_H;
-  // Orbital center: horizontally centered, vertically at ~42% of screen
-  _orbitCX = W / 2;
-  _orbitCY = G.SAFE_TOP + 56 + (H - G.SAFE_TOP - 56) * 0.42;
-  // Total scrollable height: enough to reveal outermost ring fully
-  const outerRx = _RINGS[4].rx;
-  _totalH = _orbitCY + outerRx + 80 + G.SAFE_BOTTOM;
 
-  // Pre-compute static node positions for hit testing (using t=0)
-  // Actual positions are re-computed each frame in _getNodeXY
-  _nodeRects = CONSTELLATIONS.map((_, idx) => {
-    const ring = Math.floor(idx / 6);
-    const slot = idx % 6;
-    return { ring, slot, r: _NODE_R[ring], idx };
+  // 节点区域：标题下方到底部留出组指示器空间
+  const nodeAreaTop    = G.SAFE_TOP + 60;
+  const nodeAreaBottom = H - G.SAFE_BOTTOM - 44;  // 留44px给底部组指示器
+  const nodeAreaCX     = W / 2;
+  const nodeAreaCY     = (nodeAreaTop + nodeAreaBottom) / 2;
+  const nodeAreaW      = W * 0.82;
+  const nodeAreaH      = nodeAreaBottom - nodeAreaTop;
+
+  _nodeRects = _NODE_POSITIONS.map((pos, slot) => {
+    const levelIdx = _GROUPS[_currentGroup].levels[slot];
+    return {
+      cx: nodeAreaCX + pos.xr * nodeAreaW,
+      cy: nodeAreaCY + pos.yr * nodeAreaH,
+      r:  _NODE_R,
+      levelIdx,
+      slot,
+    };
   });
 
-  // Background stars (generated once)
+  // 背景星点（生成一次）
   if (_bgStars.length === 0) {
-    _bgStars = Array.from({ length: 160 }, () => ({
+    _bgStars = Array.from({ length: 120 }, () => ({
       x: Math.random() * W,
-      y: Math.random() * (_totalH * 1.1),
-      r: Math.random() * 0.8 + 0.2,
-      a: Math.random() * 0.5 + 0.15,
+      y: Math.random() * H,
+      r: Math.random() * 0.9 + 0.2,
+      a: Math.random() * 0.55 + 0.15,
       phase: Math.random() * Math.PI * 2,
-      speed: Math.random() * 1.8 + 1.0,
+      speed: Math.random() * 1.8 + 0.8,
     }));
   }
 }
-
 
 function _loop(now) {
   const ctx = G.CTX;
@@ -165,127 +226,131 @@ function _loop(now) {
   const H   = G.SCREEN_H;
   const t   = now * 0.001;
 
-  // Smooth scroll with momentum
-  if (!_isDragging) {
-    _scrollTarget += _scrollVelocity;
-    _scrollVelocity *= 0.88;  // friction
-    const maxScroll = Math.max(0, _totalH - G.SCREEN_H);
-    _scrollTarget = Math.max(0, Math.min(maxScroll, _scrollTarget));
+  // 切换动画推进
+  if (_slideProgress < 1) {
+    _slideProgress = Math.min(1, _slideProgress + 0.07);
   }
-  _scrollY += (_scrollTarget - _scrollY) * 0.22;
 
-  // Background: deep space (not pure black — anti-claustrophobia)
-  ctx.fillStyle = '#06091e';
+  // ── 背景 ──────────────────────────────────────────────────
+  ctx.fillStyle = '#05081c';
   ctx.fillRect(0, 0, W, H);
 
-  // Nebula halos (subtle color, parallax)
-  _drawNebulaBg(ctx, W, H);
+  // 星云光晕
+  _drawNebulaBg(ctx, W, H, t);
 
-  // Background stars (parallax 0.15x)
+  // 背景星点
   for (const s of _bgStars) {
-    const sy = s.y - _scrollY * 0.15;
-    if (sy < -4 || sy > H + 4) continue;
-    const tw = 0.5 + 0.5 * Math.sin(t * s.speed + s.phase);
+    const tw = 0.6 + 0.4 * Math.sin(t * s.speed + s.phase);
     ctx.globalAlpha = s.a * tw;
     ctx.fillStyle = '#d4e4ff';
     ctx.beginPath();
-    ctx.arc(s.x, sy, s.r, 0, TWO_PI);
+    ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
     ctx.fill();
   }
   ctx.globalAlpha = 1;
 
-  // ── Back button (fixed, above scroll area) ────────────────
-  _backRect = drawButton(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 10, 88, 38, '← 返回', {
-    fontSize: 14,
-    radius:   10,
-    color0:   'rgba(80,60,140,0.85)',
-    color1:   'rgba(60,90,180,0.85)',
-  });
+  // ── 固定Header ────────────────────────────────────────────
+  _backRect = _drawGhostBtn(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 10, 80, 32, '← 返回');
+  _shopRect = _drawGhostBtn(ctx, W - G.SAFE_RIGHT - 10 - 68, G.SAFE_TOP + 10, 68, 32, '🛒 商店');
 
-  // Shop shortcut (top-right, STORY-00282)
-  _shopRect = drawButton(ctx, W - G.SAFE_RIGHT - 10 - 72, G.SAFE_TOP + 10, 72, 32, '🛒 商店', {
-    fontSize: 12,
-    radius:   10,
-    color0:   'rgba(80,60,140,0.85)',
-    color1:   'rgba(60,90,180,0.85)',
-  });
-
-  // Title — STORY-00342: Ma Shan Zheng calligraphy font, gold + glow (matches menu.js style)
   const titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
   ctx.save();
-  ctx.font         = `bold 22px ${titleFont}`;
-  ctx.textAlign    = 'center';
+  ctx.font = `bold 22px ${titleFont}`;
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle    = COLORS.starGold;
-  ctx.shadowColor  = 'rgba(255,200,80,0.55)';
-  ctx.shadowBlur   = 10;
+  ctx.fillStyle = COLORS.starGold;
+  ctx.shadowColor = 'rgba(255,200,80,0.55)';
+  ctx.shadowBlur  = 10;
   ctx.fillText('选择关卡', W / 2, G.SAFE_TOP + 30);
   ctx.restore();
 
-  // ── Orbital system (scrollable) ───────────────────────────
-  const padTop = G.SAFE_TOP + 56;
+  // ── 星系名称 + 左右切换箭头 ───────────────────────────────
+  const group = _GROUPS[_currentGroup];
+  const groupY = G.SAFE_TOP + 58;
+
+  // 左箭头
+  const canPrev = _currentGroup > 0;
+  _prevRect = _drawArrowBtn(ctx, G.SAFE_LEFT + 10, groupY - 14, 28, 28, '‹', canPrev);
+
+  // 右箭头（所有组均可自由浏览，未解锁组节点不可点击）
+  const canNext = _currentGroup < _GROUPS.length - 1;
+  _nextRect = _drawArrowBtn(ctx, W - G.SAFE_RIGHT - 38, groupY - 14, 28, 28, '›', canNext);
+
+  // 星系名
+  ctx.save();
+  ctx.font = `bold 15px ${titleFont}`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = group.color;
+  ctx.shadowColor = group.glowColor.replace('0.18', '0.6');
+  ctx.shadowBlur  = 8;
+  ctx.fillText(group.name, W / 2, groupY);
+  ctx.restore();
+
+  // ── 节点区域（含切换动画） ────────────────────────────────
+  const padTop = G.SAFE_TOP + 72;
+  const padBottom = H - G.SAFE_BOTTOM - 44;
   ctx.save();
   ctx.beginPath();
-  ctx.rect(0, padTop, W, H - padTop);
+  ctx.rect(0, padTop, W, padBottom - padTop);
   ctx.clip();
 
-  // Orbital center shifts up with scroll (parallax 0.6x — objects follow scroll but slower)
-  const orbitCY = _orbitCY - _scrollY * 0.6;
+  // 切换滑动偏移
+  const slideX = _slideDir * W * (1 - _easeOut(_slideProgress));
 
-  // Orbit rings
-  _drawOrbits(ctx, orbitCY);
+  ctx.save();
+  ctx.translate(slideX, 0);
 
-  // Sun at center
-  _drawSun(ctx, _orbitCX, orbitCY, t);
+  // 组完成状态徽章
+  const groupDone = _isGroupCompleted(_currentGroup);
 
-  // Nodes: draw outer rings first (z-order: ring 4 behind ring 0)
-  for (let ring = 4; ring >= 0; ring--) {
-    for (let slot = 0; slot < 6; slot++) {
-      const idx = ring * 6 + slot;
-      if (idx >= CONSTELLATIONS.length) continue;
-      const { x: nx, y: ny } = _getNodeXY(ring, slot, t, orbitCY);
-      // Skip off-screen nodes
-      if (ny + _NODE_R[ring] * 3 < padTop || ny - _NODE_R[ring] * 3 > H) continue;
-      _drawNode(ctx, idx, nx, ny, _NODE_R[ring], t);
-    }
+  // 绘制节点间连线（装饰性，按位置画细线）
+  _drawGroupConnections(ctx, t);
+
+  // 绘制各节点
+  for (const node of _nodeRects) {
+    _drawNode(ctx, node, t);
+  }
+
+  // 完成徽章
+  if (groupDone) {
+    _drawCompleteBadge(ctx, W, padTop, padBottom, t);
   }
 
   ctx.restore();
+  ctx.restore();
 
-  // Draw item selection overlay if active
+  // ── 底部组指示器 ──────────────────────────────────────────
+  _drawGroupIndicator(ctx, W, H);
+
+  // ── 道具选择遮罩 ──────────────────────────────────────────
   if (_overlayActive) {
     _drawItemOverlay(ctx, W, H);
   }
 
-  // Global fade overlay (STORY-00282)
+  // 全局淡入淡出
   tickFade(1 / 60);
   drawFadeOverlay(ctx, W, H);
 
   _rafId = requestAnimationFrame(_loop);
 }
 
-// ── STORY-00345: Orbital rendering helpers ────────────────────
+// ── 渲染辅助 ──────────────────────────────────────────────────
 
-// Get node screen position for given ring/slot at animation time t
-function _getNodeXY(ring, slot, t, orbitCY) {
-  const r = _RINGS[ring];
-  const a = r.offset + slot * (TWO_PI / 6) + r.speed * t;
-  return {
-    x: _orbitCX + Math.cos(a) * r.rx,
-    y: orbitCY  + Math.sin(a) * r.rx * _ELLIPSE_RATIO,
-  };
+function _easeOut(t) {
+  return 1 - Math.pow(1 - t, 3);
 }
 
-// Nebula background halos
-function _drawNebulaBg(ctx, W, H) {
+function _drawNebulaBg(ctx, W, H, t) {
+  const drift = Math.sin(t * 0.15) * 8;
   for (const n of _NEBULAE) {
-    const nx = n.xRatio * W;
-    const ny = n.yRatio * H - _scrollY * 0.25;
+    const nx = n.xr * W + drift * 0.5;
+    const ny = n.yr * H + drift * 0.3;
     ctx.save();
     ctx.scale(1, n.ry / n.rx);
     const g = ctx.createRadialGradient(nx, ny * (n.rx / n.ry), 0, nx, ny * (n.rx / n.ry), n.rx);
-    g.addColorStop(0, `rgba(${n.r},${n.a})`);
-    g.addColorStop(1, `rgba(${n.r},0)`);
+    g.addColorStop(0, `rgba(${n.col},${n.a})`);
+    g.addColorStop(1, `rgba(${n.col},0)`);
     ctx.beginPath();
     ctx.arc(nx, ny * (n.rx / n.ry), n.rx, 0, TWO_PI);
     ctx.fillStyle = g;
@@ -294,77 +359,182 @@ function _drawNebulaBg(ctx, W, H) {
   }
 }
 
-// Orbit ring ellipses
-function _drawOrbits(ctx, orbitCY) {
+// 透明边框幽灵按钮（融入深空背景，不抢眼）
+function _drawGhostBtn(ctx, x, y, w, h, label) {
   ctx.save();
-  for (let i = 0; i < _RINGS.length; i++) {
-    const ring = _RINGS[i];
-    ctx.save();
-    ctx.scale(1, _ELLIPSE_RATIO);
+  // 极淡背景
+  ctx.fillStyle = 'rgba(20,30,80,0.45)';
+  _roundRect(ctx, x, y, w, h, 8);
+  ctx.fill();
+  // 细边框
+  ctx.strokeStyle = 'rgba(120,150,255,0.30)';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+  // 文字
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = 'rgba(180,200,255,0.75)';
+  ctx.fillText(label, x + w / 2, y + h / 2);
+  ctx.restore();
+  return { x, y, w, h };
+}
+
+function _drawArrowBtn(ctx, x, y, w, h, label, enabled) {
+  ctx.save();
+  ctx.globalAlpha = enabled ? 0.85 : 0.25;
+  ctx.fillStyle = 'rgba(60,70,140,0.6)';
+  ctx.strokeStyle = enabled ? 'rgba(140,160,255,0.5)' : 'rgba(80,80,120,0.3)';
+  ctx.lineWidth = 1;
+  _roundRect(ctx, x, y, w, h, 6);
+  ctx.fill();
+  ctx.stroke();
+  ctx.font = `bold 20px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = enabled ? '#aabbff' : '#555580';
+  ctx.fillText(label, x + w / 2, y + h / 2);
+  ctx.restore();
+  return { x, y, w, h };
+}
+
+function _drawGroupConnections(ctx, t) {
+  // 6节点之间画几条装饰线（不是全连接，只画邻近的）
+  const pairs = [[0,1],[1,2],[0,3],[1,4],[2,5],[3,4],[4,5]];
+  ctx.save();
+  ctx.globalAlpha = 0.12;
+  ctx.strokeStyle = '#8899cc';
+  ctx.lineWidth = 0.8;
+  ctx.setLineDash([4, 8]);
+  const dashOff = t * 6;
+  ctx.lineDashOffset = -dashOff;
+  for (const [a, b] of pairs) {
+    if (a >= _nodeRects.length || b >= _nodeRects.length) continue;
+    const na = _nodeRects[a];
+    const nb = _nodeRects[b];
     ctx.beginPath();
-    ctx.arc(_orbitCX, orbitCY / _ELLIPSE_RATIO, ring.rx, 0, TWO_PI);
-    ctx.strokeStyle = `rgba(100,130,200,${0.09 + i * 0.012})`;
-    ctx.lineWidth = 0.6;
-    ctx.setLineDash([3, 5]);
+    ctx.moveTo(na.cx, na.cy);
+    ctx.lineTo(nb.cx, nb.cy);
     ctx.stroke();
-    ctx.setLineDash([]);
-    ctx.restore();
-    // Difficulty label at right of ring
-    ctx.save();
-    ctx.globalAlpha = 0.35;
-    ctx.font = '9px sans-serif';
-    ctx.fillStyle = _RING_LABEL_COLORS[i];
-    ctx.textAlign = 'left';
+  }
+  ctx.setLineDash([]);
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+function _drawNode(ctx, node, t) {
+  const { cx, cy, r, levelIdx, slot } = node;
+  const c        = CONSTELLATIONS[levelIdx];
+  const unlocked = state.isUnlocked(levelIdx);
+  const score    = state.getScore(levelIdx);
+  const isNewest = _isNewestUnlocked(levelIdx);
+  const alpha    = unlocked ? 1.0 : 0.28;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // 外发光（已解锁）
+  if (unlocked) {
+    const pulse = 0.5 + 0.5 * Math.sin(t * 1.3 + slot * 0.7);
+    const glowR = r * (isNewest ? (2.0 + pulse * 0.5) : 2.2);
+    const ga = isNewest ? (0.16 + pulse * 0.10) : 0.10;
+    const g = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, glowR);
+    const group = _GROUPS[_currentGroup];
+    g.addColorStop(0, group.glowColor.replace('0.18', String(ga)));
+    g.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.arc(cx, cy, glowR, 0, TWO_PI);
+    ctx.fillStyle = g;
+    ctx.fill();
+  }
+
+  // 节点主体渐变
+  const grad = ctx.createRadialGradient(cx - r * 0.25, cy - r * 0.25, r * 0.05, cx, cy, r);
+  if (unlocked) {
+    grad.addColorStop(0, 'rgba(45,60,140,0.97)');
+    grad.addColorStop(0.6, 'rgba(22,32,100,0.95)');
+    grad.addColorStop(1, 'rgba(8,12,50,0.92)');
+  } else {
+    grad.addColorStop(0, 'rgba(20,22,50,0.80)');
+    grad.addColorStop(1, 'rgba(8,10,28,0.70)');
+  }
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, TWO_PI);
+  ctx.fillStyle = grad;
+  ctx.fill();
+
+  // 边框
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, TWO_PI);
+  if (unlocked) {
+    const ba = 0.50 + Math.sin(t * 1.0 + slot * 0.5) * 0.12;
+    const group = _GROUPS[_currentGroup];
+    // 将颜色字符串转为rgba
+    ctx.strokeStyle = group.color + Math.round(ba * 255).toString(16).padStart(2, '0');
+    ctx.lineWidth = isNewest ? 1.8 : 1.2;
+  } else {
+    ctx.strokeStyle = 'rgba(50,55,100,0.30)';
+    ctx.lineWidth = 0.7;
+  }
+  ctx.stroke();
+
+  // 内容（星座图 or 锁）
+  ctx.save();
+  ctx.beginPath();
+  ctx.arc(cx, cy, r - 1, 0, TWO_PI);
+  ctx.clip();
+  if (unlocked) {
+    _drawMiniConstellation(ctx, c, cx, cy, r - 1, 1.0);
+  } else {
+    ctx.globalAlpha = 0.45;
+    ctx.font = `${r * 0.85}px sans-serif`;
+    ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillText(_RING_LABELS[i], _orbitCX + ring.rx + 5, orbitCY);
+    ctx.fillText('🔒', cx, cy + r * 0.05);
+  }
+  ctx.restore();
+  ctx.restore();
+
+  // 标签（节点外，全透明度）
+  const labelAlpha = unlocked ? 0.90 : 0.30;
+  ctx.save();
+  ctx.globalAlpha = labelAlpha;
+  ctx.font = `bold 11px sans-serif`;
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = unlocked ? '#c8d8ff' : 'rgba(80,85,130,0.6)';
+  ctx.fillText(c.nameZh || c.nameEn, cx, cy + r + 5);
+  if (unlocked) {
+    const earned = (score && score.stars > 0) ? score.stars : 0;
+    const starStr = '★'.repeat(earned) + '☆'.repeat(3 - earned);
+    ctx.font = `10px sans-serif`;
+    ctx.fillStyle = earned > 0 ? COLORS.starGold : 'rgba(160,140,220,0.55)';
+    ctx.fillText(starStr, cx, cy + r + 18);
+  }
+  ctx.restore();
+
+  // 最新可玩节点的脉冲外环
+  if (isNewest) {
+    const pulse2 = 0.5 + 0.5 * Math.sin(t * 2.5);
+    ctx.save();
+    ctx.globalAlpha = 0.25 * pulse2;
+    ctx.strokeStyle = _GROUPS[_currentGroup].color;
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 5 + pulse2 * 4, 0, TWO_PI);
+    ctx.stroke();
     ctx.restore();
   }
-  ctx.restore();
 }
 
-// Central sun
-function _drawSun(ctx, cx, cy, t) {
-  const pulse = 1 + Math.sin(t * 0.7) * 0.03;
-  const sr = 22 * pulse;
-  // Very gentle halo (anti-megalophobia: sr≤28, soft alpha)
-  const halo = ctx.createRadialGradient(cx, cy, sr, cx, cy, sr * 4);
-  halo.addColorStop(0, 'rgba(255,200,100,0.07)');
-  halo.addColorStop(1, 'rgba(255,160,40,0)');
-  ctx.beginPath();
-  ctx.arc(cx, cy, sr * 4, 0, TWO_PI);
-  ctx.fillStyle = halo;
-  ctx.fill();
-  const glow = ctx.createRadialGradient(cx, cy, sr * 0.3, cx, cy, sr * 2);
-  glow.addColorStop(0, 'rgba(255,220,130,0.22)');
-  glow.addColorStop(1, 'rgba(255,160,40,0)');
-  ctx.beginPath();
-  ctx.arc(cx, cy, sr * 2, 0, TWO_PI);
-  ctx.fillStyle = glow;
-  ctx.fill();
-  const sunG = ctx.createRadialGradient(cx - sr * 0.3, cy - sr * 0.3, sr * 0.05, cx, cy, sr);
-  sunG.addColorStop(0, '#fffaee');
-  sunG.addColorStop(0.3, '#ffd870');
-  sunG.addColorStop(0.75, '#e88820');
-  sunG.addColorStop(1, '#b05010');
-  ctx.beginPath();
-  ctx.arc(cx, cy, sr, 0, TWO_PI);
-  ctx.fillStyle = sunG;
-  ctx.fill();
-  ctx.save();
-  for (let i = 0; i < 8; i++) {
-    const a = (i / 8) * TWO_PI + t * 0.08;
-    ctx.globalAlpha = 0.05 + Math.sin(t * 0.5 + i) * 0.02;
-    ctx.strokeStyle = '#ffd870';
-    ctx.lineWidth = 1.0;
-    ctx.beginPath();
-    ctx.moveTo(cx + Math.cos(a) * (sr + 1), cy + Math.sin(a) * (sr + 1));
-    ctx.lineTo(cx + Math.cos(a) * (sr + 12), cy + Math.sin(a) * (sr + 12));
-    ctx.stroke();
-  }
-  ctx.restore();
+// 是否是最新解锁（即：已解锁，但此关组内前一个刚完成，或者是第一关）
+function _isNewestUnlocked(levelIdx) {
+  if (!state.isUnlocked(levelIdx)) return false;
+  const sc = state.getScore(levelIdx);
+  if (sc && sc.stars > 0) return false;  // 已完成，不算"最新"
+  return true;  // 解锁但未完成
 }
 
-// Mini constellation line drawing inside a node
 function _drawMiniConstellation(ctx, c, cx, cy, r, alpha) {
   const size = r * 1.65;
   const pts = c.stars.map(s => ({
@@ -393,100 +563,79 @@ function _drawMiniConstellation(ctx, c, cx, cy, r, alpha) {
   ctx.restore();
 }
 
-// Draw a single orbital node
-function _drawNode(ctx, idx, x, y, r, t) {
-  const c        = CONSTELLATIONS[idx];
-  const unlocked = state.isUnlocked(idx);
-  const score    = state.getScore(idx);
-  const alpha    = unlocked ? 1.0 : 0.30;
-
+function _drawCompleteBadge(ctx, W, padTop, padBottom, t) {
+  const pulse = 0.8 + 0.2 * Math.sin(t * 2);
+  const cx = W / 2;
+  const cy = (padTop + padBottom) / 2;
   ctx.save();
-  ctx.globalAlpha = alpha;
-
-  // Outer glow for unlocked nodes
-  if (unlocked) {
-    const glowA = 0.10 + Math.sin(t * 1.2 + idx * 0.5) * 0.04;
-    const g = ctx.createRadialGradient(x, y, r * 0.4, x, y, r * 2.8);
-    g.addColorStop(0, `rgba(140,160,255,${glowA})`);
-    g.addColorStop(1, 'rgba(0,0,0,0)');
-    ctx.beginPath();
-    ctx.arc(x, y, r * 2.8, 0, TWO_PI);
-    ctx.fillStyle = g;
-    ctx.fill();
-  }
-
-  // Node body gradient
-  const grad = ctx.createRadialGradient(x - r * 0.2, y - r * 0.2, r * 0.05, x, y, r);
-  if (unlocked) {
-    grad.addColorStop(0, 'rgba(40,55,130,0.97)');
-    grad.addColorStop(0.6, 'rgba(20,30,90,0.95)');
-    grad.addColorStop(1, 'rgba(8,12,40,0.92)');
-  } else {
-    grad.addColorStop(0, 'rgba(22,24,48,0.75)');
-    grad.addColorStop(1, 'rgba(10,12,28,0.65)');
-  }
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, TWO_PI);
-  ctx.fillStyle = grad;
-  ctx.fill();
-
-  // Border
-  ctx.beginPath();
-  ctx.arc(x, y, r, 0, TWO_PI);
-  if (unlocked) {
-    const ba = 0.45 + Math.sin(t * 0.9 + idx * 0.4) * 0.1;
-    ctx.strokeStyle = `rgba(140,170,255,${ba})`;
-    ctx.lineWidth = 0.8;
-  } else {
-    ctx.strokeStyle = 'rgba(50,55,90,0.3)';
-    ctx.lineWidth = 0.5;
-  }
-  ctx.stroke();
-
-  // Constellation drawing (clipped to circle)
-  ctx.save();
-  ctx.beginPath();
-  ctx.arc(x, y, r - 0.5, 0, TWO_PI);
-  ctx.clip();
-  if (unlocked) {
-    _drawMiniConstellation(ctx, c, x, y, r - 1, 1.0);
-  } else {
-    ctx.globalAlpha = 0.4;
-    ctx.font = `${r * 0.85}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🔒', x, y + r * 0.05);
-  }
-  ctx.restore();
-  ctx.restore();
-
-  // Labels below node (outside clip, full alpha)
-  const labelAlpha = unlocked ? 0.80 : 0.30;
-  ctx.save();
-  ctx.globalAlpha = labelAlpha;
-  const fs = Math.max(9, r * 0.55);
-  ctx.font = `${fs}px sans-serif`;
+  ctx.globalAlpha = 0.18 * pulse;
+  ctx.font = '48px sans-serif';
   ctx.textAlign = 'center';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle = unlocked ? '#c0d0ff' : 'rgba(80,85,120,0.6)';
-  ctx.fillText(c.nameZh || c.nameEn, x, y + r + 4);
-  if (unlocked) {
-    const earned = (score && score.stars > 0) ? score.stars : 0;
-    const starStr = '★'.repeat(earned) + '☆'.repeat(3 - earned);
-    ctx.font = `${Math.max(8, r * 0.5)}px sans-serif`;
-    ctx.fillStyle = earned > 0 ? COLORS.starGold : 'rgba(160,140,220,0.55)';
-    ctx.fillText(starStr, x, y + r + 4 + fs + 1);
-  }
+  ctx.textBaseline = 'middle';
+  ctx.fillText('✓', cx, cy);
   ctx.restore();
 }
 
+function _drawGroupIndicator(ctx, W, H) {
+  const n     = _GROUPS.length;
+  const dotR  = 5;
+  const gap   = 18;
+  const totalW = n * dotR * 2 + (n - 1) * (gap - dotR * 2);
+  const startX = (W - totalW) / 2 + dotR;
+  const dotY   = H - G.SAFE_BOTTOM - 18;
+
+  for (let i = 0; i < n; i++) {
+    const dx = startX + i * gap;
+    const unlocked = _isGroupUnlocked(i);
+    const completed = _isGroupCompleted(i);
+    const active    = i === _currentGroup;
+
+    ctx.save();
+    if (active) {
+      ctx.shadowColor = _GROUPS[i].color;
+      ctx.shadowBlur  = 8;
+    }
+    ctx.globalAlpha = active ? 1.0 : (unlocked ? 0.55 : 0.22);
+    ctx.beginPath();
+    ctx.arc(dx, dotY, active ? dotR + 2 : dotR, 0, TWO_PI);
+    ctx.fillStyle = completed ? _GROUPS[i].color : (active ? _GROUPS[i].color : 'rgba(120,130,180,0.8)');
+    ctx.fill();
+    if (completed && !active) {
+      ctx.globalAlpha = 0.7;
+      ctx.font = '8px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#05081c';
+      ctx.fillText('✓', dx, dotY);
+    }
+    ctx.restore();
+  }
+
+  // 组名称小字
+  ctx.save();
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillStyle = _GROUPS[_currentGroup].color;
+  ctx.globalAlpha = 0.7;
+  ctx.fillText(`${_currentGroup + 1} / ${n}  ${_GROUPS[_currentGroup].name}`, W / 2, H - G.SAFE_BOTTOM - 30);
+  ctx.restore();
+}
+
+// ── 切换星系 ──────────────────────────────────────────────────
+function _switchGroup(newGroup, dir) {
+  if (newGroup < 0 || newGroup >= _GROUPS.length) return;
+  if (newGroup === _currentGroup) return;
+  _currentGroup  = newGroup;
+  _slideDir      = dir;
+  _slideProgress = 0;
+  _computeLayout();
+}
 
 // ── Item selection overlay ────────────────────────────────────
 function _drawItemOverlay(ctx, W, H) {
-  // Smooth overlay scroll
   _overlayScrollY += (_overlayScrollTarget - _overlayScrollY) * 0.22;
 
-  // Dim background
   ctx.save();
   ctx.fillStyle = 'rgba(0,0,0,0.70)';
   ctx.fillRect(0, 0, W, H);
@@ -495,16 +644,14 @@ function _drawItemOverlay(ctx, W, H) {
   const ownedItems = ITEMS.filter(it => state.getItemQty(it.id) > 0);
   const cardW = Math.min(W - 40, 340);
   const rowH  = 60;
-  const HEADER_H = 70;   // title + subtitle area
-  const FOOTER_H = 64;   // bottom buttons area (44px button + 10px top + 10px bottom)
+  const HEADER_H = 70;
+  const FOOTER_H = 64;
   const naturalContentH = HEADER_H + ownedItems.length * rowH + FOOTER_H;
-  // Clamp card height to available screen (safe margins)
   const maxCardH = H - G.SAFE_TOP - G.SAFE_BOTTOM - 16;
   const cardH = Math.min(naturalContentH, maxCardH);
   const cardX = (W - cardW) / 2;
   const cardY = Math.max(G.SAFE_TOP + 8, (H - cardH) / 2);
 
-  // Card background
   ctx.save();
   ctx.fillStyle = 'rgba(20,25,60,0.97)';
   _roundRect(ctx, cardX, cardY, cardW, cardH, 14);
@@ -514,27 +661,24 @@ function _drawItemOverlay(ctx, W, H) {
   ctx.stroke();
   ctx.restore();
 
-  // Title — STORY-00307: bold 18px
   ctx.save();
-  ctx.font         = 'bold 18px sans-serif';
-  ctx.textAlign    = 'center';
+  ctx.font = 'bold 18px sans-serif';
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle    = COLORS.text;
-  ctx.shadowColor  = 'rgba(150,120,255,0.6)';
-  ctx.shadowBlur   = 8;
+  ctx.fillStyle = COLORS.text;
+  ctx.shadowColor = 'rgba(150,120,255,0.6)';
+  ctx.shadowBlur  = 8;
   ctx.fillText('选择使用道具', W / 2, cardY + 30);
   ctx.restore();
 
-  // Sub-title — STORY-00307: 12px
   ctx.save();
-  ctx.font         = '12px sans-serif';
-  ctx.textAlign    = 'center';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle    = COLORS.text2;
+  ctx.fillStyle = COLORS.text2;
   ctx.fillText('本关结束后自动消耗，可多选', W / 2, cardY + 54);
   ctx.restore();
 
-  // Scrollable rows area — clipped between header and footer
   const rowsAreaTop  = cardY + HEADER_H;
   const rowsAreaH    = cardH - HEADER_H - FOOTER_H;
   _overlayTotalRowsH = ownedItems.length * rowH;
@@ -543,7 +687,6 @@ function _drawItemOverlay(ctx, W, H) {
   const maxRowScroll = Math.max(0, _overlayTotalRowsH - rowsAreaH);
   _overlayScrollTarget = Math.max(0, Math.min(maxRowScroll, _overlayScrollTarget));
 
-  // Item rows (clipped + scrolled)
   _overlayBtnRects = [];
   ctx.save();
   ctx.beginPath();
@@ -556,62 +699,56 @@ function _drawItemOverlay(ctx, W, H) {
     const toggled = _overlayToggled.has(it.id);
     const qty = state.getItemQty(it.id);
 
-    // Row bg
     ctx.save();
     ctx.fillStyle = toggled ? 'rgba(60,180,100,0.18)' : 'rgba(255,255,255,0.04)';
     _roundRect(ctx, cardX + 10, rowY, cardW - 20, rowH - 5, 8);
     ctx.fill();
     if (toggled) {
       ctx.strokeStyle = 'rgba(60,220,100,0.5)';
-      ctx.lineWidth   = 1;
+      ctx.lineWidth = 1;
       ctx.stroke();
     }
     ctx.restore();
 
-    // Icon + name + desc — STORY-00307: 24px icon, bold 14px name, 13px desc
     ctx.save();
-    ctx.font         = '24px sans-serif';
-    ctx.textAlign    = 'left';
+    ctx.font = '24px sans-serif';
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'middle';
     ctx.fillText(it.icon, cardX + 14, rowY + rowH * 0.5 - 3);
     ctx.restore();
 
     ctx.save();
-    ctx.font         = 'bold 14px sans-serif';
-    ctx.textAlign    = 'left';
+    ctx.font = 'bold 14px sans-serif';
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillStyle    = COLORS.text;
+    ctx.fillStyle = COLORS.text;
     ctx.fillText(it.nameZh + '  ×' + qty, cardX + 48, rowY + 8);
     ctx.restore();
 
     ctx.save();
-    ctx.font         = '13px sans-serif';
-    ctx.textAlign    = 'left';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
-    ctx.fillStyle    = COLORS.text2;
+    ctx.fillStyle = COLORS.text2;
     ctx.fillText(it.desc, cardX + 48, rowY + 28);
     ctx.restore();
 
-    // Toggle button — STORY-00307: 62×32px per AC spec
     const btnW = 62, btnH = 32;
     const btnX = cardX + cardW - 18 - btnW;
     const btnY = rowY + (rowH - 5 - btnH) / 2;
     const btn = drawButton(ctx, btnX, btnY, btnW, btnH, toggled ? '✓ 已选' : '使用', {
-      fontSize: 12,
-      radius: 8,
+      fontSize: 12, radius: 8,
       color0: toggled ? 'rgba(30,140,70,0.9)' : 'rgba(80,60,160,0.85)',
       color1: toggled ? 'rgba(20,180,80,0.9)' : 'rgba(60,90,200,0.85)',
     });
-    // Store btn in content-space y (caller adjusts for scroll)
     _overlayBtnRects.push({ id: it.id, rect: btn });
   });
 
   ctx.restore();
 
-  // Bottom buttons: 跳过 + 确定出发 — STORY-00307: 44px height, full-width
   const btnY2  = cardY + cardH - 54;
   const btnW2  = (cardW - 36) / 2;
-  _overlaySkip    = drawButton(ctx, cardX + 10,               btnY2, btnW2, 44, '跳过', {
+  _overlaySkip    = drawButton(ctx, cardX + 10, btnY2, btnW2, 44, '跳过', {
     fontSize: 15, radius: 10,
     color0: 'rgba(60,60,100,0.80)', color1: 'rgba(80,80,140,0.80)',
   });
@@ -622,64 +759,53 @@ function _drawItemOverlay(ctx, W, H) {
 }
 
 // ── Touch handling ────────────────────────────────────────────
+let _touchStartX = 0;
+let _touchStartY = 0;
+
 function _onTouchStart(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  _lastTouchY = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
-  _isDragging = false;
-  _scrollVelocity = 0;
-  _lastTouchTime = Date.now();
+  _touchStartX = touch.clientX;
+  _touchStartY = touch.clientY;
+  _lastTouchY  = touch.clientY;
+  _isDragging  = false;
 }
 
 function _onTouchMove(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const rawY = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
-  const dy = rawY - _lastTouchY;
-  _lastTouchY = rawY;
+  const dy = touch.clientY - _lastTouchY;
+  _lastTouchY = touch.clientY;
 
   if (_overlayActive) {
-    // Scroll the overlay rows
     if (Math.abs(dy) > 2) _isDragging = true;
     const maxScroll = Math.max(0, _overlayTotalRowsH - _overlayRowsClipH);
     _overlayScrollTarget = Math.max(0, Math.min(maxScroll, _overlayScrollTarget - dy));
-    return;
+  } else {
+    const dx = touch.clientX - _touchStartX;
+    if (Math.abs(dx) > 8 || Math.abs(dy) > 8) _isDragging = true;
   }
-
-  _scrollVelocity = -dy;  // track velocity for momentum
-  if (Math.abs(dy) > 2) _isDragging = true;
-
-  const maxScroll = Math.max(0, _totalH - G.SCREEN_H);
-  _scrollTarget = Math.max(0, Math.min(maxScroll, _scrollTarget - dy));
 }
 
 function _onTouchEnd(e) {
-  if (_isDragging) {
-    _isDragging = false;
-    return;
-  }
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const tx = touch.clientX;  // fixed: revert incorrect DPR (STORY-00269)
-  const ty = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
+  const tx = touch.clientX;
+  const ty = touch.clientY;
+  const dx = tx - _touchStartX;
 
-  // ── Overlay touch handling ───────────────────────────────────
+  // ── 遮罩触摸 ─────────────────────────────────────────────
   if (_overlayActive) {
     if (_isDragging) { _isDragging = false; return; }
 
-    // Toggle item buttons — adjust ty for the overlay scroll offset
     const scrolledTY = ty + _overlayScrollY;
     for (const { id, rect } of _overlayBtnRects) {
       if (hitTest(rect, tx, scrolledTY)) {
-        if (_overlayToggled.has(id)) {
-          _overlayToggled.delete(id);
-        } else {
-          _overlayToggled.add(id);
-        }
+        if (_overlayToggled.has(id)) _overlayToggled.delete(id);
+        else _overlayToggled.add(id);
         return;
       }
     }
-    // Skip — go to game with no items
     if (_overlaySkip && hitTest(_overlaySkip, tx, ty)) {
       state.selectedItems = [];
       _overlayActive = false;
@@ -687,7 +813,6 @@ function _onTouchEnd(e) {
       if (_navigate) _navigate('game');
       return;
     }
-    // Confirm — go to game with selected items
     if (_overlayConfirm && hitTest(_overlayConfirm, tx, ty)) {
       state.selectedItems = [..._overlayToggled];
       _overlayActive = false;
@@ -695,38 +820,52 @@ function _onTouchEnd(e) {
       if (_navigate) _navigate('game');
       return;
     }
-    // Tap outside overlay dismisses it (cancel)
     _overlayActive = false;
     _overlayScrollY = _overlayScrollTarget = 0;
     return;
   }
 
-  // Back button (fixed — no scroll offset)
-  if (_backRect && hitTest(_backRect, tx, ty)) {
-    console.log('navigate:menu');
-    if (_navigate) _navigate('menu');
+  // ── 左右滑动切换星系 ──────────────────────────────────────
+  if (_isDragging) {
+    _isDragging = false;
+    if (Math.abs(dx) > 50) {
+      if (dx < 0) {
+        // 向左滑 → 下一组（从右边进入）
+        _switchGroup(_currentGroup + 1, -1);
+      } else {
+        // 向右滑 → 上一组（从左边进入）
+        _switchGroup(_currentGroup - 1, 1);
+      }
+    }
     return;
   }
 
-  // Shop shortcut (STORY-00282)
+  // ── 固定按钮 ─────────────────────────────────────────────
+  if (_backRect && hitTest(_backRect, tx, ty)) {
+    if (_navigate) _navigate('menu');
+    return;
+  }
   if (_shopRect && hitTest(_shopRect, tx, ty)) {
-    console.log('navigate:shop');
     if (_navigate) _navigate('shop');
     return;
   }
 
-  // Node tap — circular hit detection (STORY-00345)
-  // orbitCY at the time of the tap (approximated — uses current scrollY)
-  const orbitCY = _orbitCY - _scrollY * 0.6;
-  const now2 = performance.now() * 0.001;
-  for (const node of _nodeRects) {
-    const { x: nx, y: ny } = _getNodeXY(node.ring, node.slot, now2, orbitCY);
-    if (Math.hypot(tx - nx, ty - ny) <= node.r + 10) {
-      if (!state.isUnlocked(node.idx)) return;
-      state.currentLevel = node.idx;
-      console.log('navigate:game idx=' + node.idx);
+  // 左右切换箭头
+  if (_prevRect && hitTest(_prevRect, tx, ty) && _currentGroup > 0) {
+    _switchGroup(_currentGroup - 1, 1);
+    return;
+  }
+  if (_nextRect && hitTest(_nextRect, tx, ty) && _currentGroup < _GROUPS.length - 1) {
+    _switchGroup(_currentGroup + 1, -1);
+    return;
+  }
 
-      // Check if player has any items — show selection overlay
+  // ── 节点点击 ─────────────────────────────────────────────
+  for (const node of _nodeRects) {
+    if (Math.hypot(tx - node.cx, ty - node.cy) <= node.r + 10) {
+      if (!state.isUnlocked(node.levelIdx)) return;
+      state.currentLevel = node.levelIdx;
+
       const hasItems = ITEMS.some(it => state.getItemQty(it.id) > 0);
       if (hasItems) {
         _overlayActive = true;
@@ -735,8 +874,6 @@ function _onTouchEnd(e) {
         _overlayScrollY = _overlayScrollTarget = 0;
         return;
       }
-
-      // No items — go straight to game
       state.selectedItems = [];
       if (_navigate) _navigate('game');
       return;
