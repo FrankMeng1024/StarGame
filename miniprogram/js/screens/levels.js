@@ -788,14 +788,16 @@ function _drawItemOverlay(ctx, W, H) {
 // ── Touch handling ────────────────────────────────────────────
 let _touchStartX = 0;
 let _touchStartY = 0;
+let _touchStartTime = 0;
 
 function _onTouchStart(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  _touchStartX = touch.clientX;
-  _touchStartY = touch.clientY;
-  _lastTouchY  = touch.clientY;
-  _isDragging  = false;
+  _touchStartX    = touch.clientX;
+  _touchStartY    = touch.clientY;
+  _lastTouchY     = touch.clientY;
+  _touchStartTime = Date.now();
+  _isDragging     = false;
 }
 
 function _onTouchMove(e) {
@@ -888,11 +890,15 @@ function _onTouchEnd(e) {
   if (_isDragging) {
     _isDragging = false;
     const W = G.SCREEN_W;
+    const dt = Math.max(1, Date.now() - _touchStartTime);
+    const velocity = dx / dt; // px/ms
     const COMMIT_THRESHOLD = W * 0.28;
-    if (Math.abs(_slideX) >= COMMIT_THRESHOLD) {
-      if (_slideX < 0 && _currentGroup < _GROUPS.length - 1) {
+    const isFastSwipe = Math.abs(velocity) > 0.3 && Math.abs(dx) > 20;
+    if (Math.abs(_slideX) >= COMMIT_THRESHOLD || isFastSwipe) {
+      const goDir = (dx < 0 || (isFastSwipe && velocity < 0)) ? 1 : -1;
+      if (goDir > 0 && _currentGroup < _GROUPS.length - 1) {
         _switchGroup(_currentGroup + 1);
-      } else if (_slideX > 0 && _currentGroup > 0) {
+      } else if (goDir < 0 && _currentGroup > 0) {
         _switchGroup(_currentGroup - 1);
       } else {
         _slideTargetX = 0;
