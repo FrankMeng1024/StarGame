@@ -22,18 +22,18 @@ const _GROUPS = [
 // 六边形蜂巢布局（6节点）— 2列3行，偏移排列
 // 相对于节点区中心的比例偏移
 const _HEX_POS = [
-  { xr: -0.30, yr: -0.35 },  // 0: 左上
-  { xr:  0.30, yr: -0.35 },  // 1: 右上
-  { xr: -0.48, yr:  0.00 },  // 2: 左中
+  { xr: -0.28, yr: -0.33 },  // 0: 左上
+  { xr:  0.28, yr: -0.33 },  // 1: 右上
+  { xr: -0.44, yr:  0.00 },  // 2: 左中
   { xr:  0.00, yr:  0.00 },  // 3: 中心
-  { xr:  0.48, yr:  0.00 },  // 4: 右中
-  { xr:  0.00, yr:  0.38 },  // 5: 下中
+  { xr:  0.44, yr:  0.00 },  // 4: 右中
+  { xr:  0.00, yr:  0.35 },  // 5: 下中
 ];
 
 // 节点间装饰连线（蜂巢风格）
 const _HEX_EDGES = [[0,1],[0,2],[0,3],[1,3],[1,4],[2,3],[3,4],[3,5],[2,5],[4,5]];
 
-const _NODE_R = 36;
+const _NODE_R = 42;
 
 // 背景星云
 const _NEBULAE = [
@@ -46,13 +46,13 @@ const _NEBULAE = [
 let _navigate     = null;
 let _rafId        = null;
 let _currentGroup = 0;
-let _slideDir     = 0;
-let _slideProgress = 1;
+let _pendingGroup = 0;    // spring lerp 目标组
+let _pendingNodes = null; // 目标组预计算节点（动画中双屏渲染）
+let _slideX        = 0;   // spring lerp 当前偏移
+let _slideTargetX  = 0;   // spring lerp 目标偏移
 let _nodeRects    = [];   // [{cx, cy, r, idx}]
 let _bgStars      = [];
 let _backRect     = null;
-let _prevRect     = null;
-let _nextRect     = null;
 let _isDragging   = false;
 let _touchStartX  = 0;
 let _touchStartY  = 0;
@@ -114,8 +114,6 @@ function _cleanup() {
   _nodeRects   = [];
   _bgStars     = [];
   _backRect    = null;
-  _prevRect    = null;
-  _nextRect    = null;
   _drawer      = null;
   _drawerRects = {};
   _carouselPos = 0;
@@ -124,19 +122,23 @@ function _cleanup() {
   _carouselPrevRect = null;
   _carouselNextRect = null;
   _isDragging  = false;
-  _slideProgress = 1;
+  _slideX        = 0;
+  _slideTargetX  = 0;
+  _pendingGroup  = 0;
+  _pendingNodes  = null;
+  _currentGroup  = 0;
 }
 
 function _computeLayout() {
   const W = G.SCREEN_W;
   const H = G.SCREEN_H;
 
-  // 节点区：标题下到底部组指示器上方
+  // 节点区：标题下到底部组指示器上方（指示器只占26px，节点可用空间更大）
   const areaTop    = G.SAFE_TOP + 72;
-  const areaBottom = H - G.SAFE_BOTTOM - 44;
+  const areaBottom = H - G.SAFE_BOTTOM - 26;
   const areaCX     = W / 2;
   const areaCY     = (areaTop + areaBottom) / 2;
-  const areaW      = W * 0.86;
+  const areaW      = W * 0.92;
   const areaH      = areaBottom - areaTop;
 
   _nodeRects = _HEX_POS.map((pos, slot) => {
@@ -169,8 +171,15 @@ function _loop(now) {
   const H   = G.SCREEN_H;
   const t   = now * 0.001;
 
-  // 切换动画
-  if (_slideProgress < 1) _slideProgress = Math.min(1, _slideProgress + 0.07);
+  // ── Spring lerp 切换动画（与关卡界面完全一致） ─────────────
+  _slideX += (_slideTargetX - _slideX) * 0.18;
+  if (!_isDragging && Math.abs(_slideX - _slideTargetX) < 0.5) {
+    if (_pendingGroup !== _currentGroup) {
+      _currentGroup = _pendingGroup;
+      if (_pendingNodes) { _nodeRects = _pendingNodes; _pendingNodes = null; }
+    }
+    _slideX = 0; _slideTargetX = 0;
+  }
   // 抽屉动画
   if (_drawer) {
     _drawer.phase = Math.min(1, _drawer.phase + 0.06);
@@ -216,44 +225,62 @@ function _loop(now) {
   ctx.fillText(`${discovered}/${CONSTELLATIONS.length} 已解锁`, W - G.SAFE_RIGHT - 12, G.SAFE_TOP + 26);
   ctx.restore();
 
-  // ── 星系名 + 切换箭头 ────────────────────────────────────
+  // ── 星系名（crossfade，无箭头按钮） ──────────────────────────
   const group  = _GROUPS[_currentGroup];
+  const penGroup = _GROUPS[_pendingGroup];
   const groupY = G.SAFE_TOP + 58;
-  const canPrev = _currentGroup > 0;
-  const canNext = _currentGroup < _GROUPS.length - 1;
-  _prevRect = _arrowBtn(ctx, G.SAFE_LEFT + 10, groupY - 14, 28, 28, '‹', canPrev);
-  _nextRect = _arrowBtn(ctx, W - G.SAFE_RIGHT - 38, groupY - 14, 28, 28, '›', canNext);
 
-  ctx.save();
-  ctx.font = `bold 15px ${titleFont}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = group.color;
-  ctx.shadowColor = group.glow + '0.6)';
-  ctx.shadowBlur  = 8;
-  ctx.fillText(group.name, W / 2, groupY);
-  ctx.restore();
+  const nameAlpha    = Math.max(0, 1 - Math.abs(_slideX) / (G.SCREEN_W * 0.35));
+  const pendingAlpha = Math.min(1, Math.abs(_slideX) / (G.SCREEN_W * 0.35));
+  if (nameAlpha > 0.01) {
+    ctx.save();
+    ctx.globalAlpha = nameAlpha;
+    ctx.font = `bold 15px ${titleFont}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = group.color;
+    ctx.shadowColor = group.glow + '0.6)'; ctx.shadowBlur = 8;
+    ctx.fillText(group.name, W / 2, groupY);
+    ctx.restore();
+  }
+  if (pendingAlpha > 0.01 && _pendingGroup !== _currentGroup) {
+    ctx.save();
+    ctx.globalAlpha = pendingAlpha;
+    ctx.font = `bold 15px ${titleFont}`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillStyle = penGroup.color;
+    ctx.shadowColor = penGroup.glow + '0.6)'; ctx.shadowBlur = 8;
+    ctx.fillText(penGroup.name, W / 2, groupY);
+    ctx.restore();
+  }
 
-  // ── 节点区（clip + 切换动画） ────────────────────────────
+  // ── 节点区（clip + spring 双屏渲染） ─────────────────────
   const padTop    = G.SAFE_TOP + 72;
-  const padBottom = H - G.SAFE_BOTTOM - 44;
+  const padBottom = H - G.SAFE_BOTTOM - 26;  // 指示器只占 26px，节点不被遮挡
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, padTop, W, padBottom - padTop);
   ctx.clip();
 
-  const slideX = _slideDir * W * (1 - _easeOut(_slideProgress));
+  // 当前组节点（随拖动偏移）
+  const slideRatio = Math.min(1, Math.abs(_slideX) / W);
   ctx.save();
-  ctx.translate(slideX, 0);
-
-  // 蜂巢连线
-  _drawHexEdges(ctx, t);
-
-  // 节点
-  for (const node of _nodeRects) {
-    _drawNode(ctx, node, t);
-  }
+  ctx.globalAlpha = Math.max(0, 1 - slideRatio * 0.5);
+  ctx.translate(_slideX, 0);
+  _drawHexEdges(ctx, t, _nodeRects, _currentGroup);
+  for (const node of _nodeRects) { _drawNode(ctx, node, t, _currentGroup); }
   ctx.restore();
+
+  // 目标组节点（从对侧滑入）
+  if (_pendingNodes && _pendingGroup !== _currentGroup && Math.abs(_slideX) > 2) {
+    const pdir = _pendingGroup > _currentGroup ? -1 : 1;
+    ctx.save();
+    ctx.globalAlpha = Math.min(1, slideRatio * 1.2);
+    ctx.translate(_slideX + pdir * -W, 0);
+    _drawHexEdges(ctx, t, _pendingNodes, _pendingGroup);
+    for (const node of _pendingNodes) { _drawNode(ctx, node, t, _pendingGroup); }
+    ctx.restore();
+  }
+
   ctx.restore();
 
   // ── 组指示器 ─────────────────────────────────────────────
@@ -276,12 +303,14 @@ function _drawNebulaBg(ctx, W, H, t) {
     const nx = n.xr * W + drift * 0.4;
     const ny = n.yr * H + drift * 0.25;
     ctx.save();
+    ctx.translate(nx, ny);
     ctx.scale(1, n.ry / n.rx);
-    const g = ctx.createRadialGradient(nx, ny * n.rx / n.ry, 0, nx, ny * n.rx / n.ry, n.rx);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, n.rx);
     g.addColorStop(0, `rgba(${n.col},${n.a})`);
+    g.addColorStop(0.5, `rgba(${n.col},${n.a * 0.5})`);
     g.addColorStop(1, `rgba(${n.col},0)`);
     ctx.beginPath();
-    ctx.arc(nx, ny * n.rx / n.ry, n.rx, 0, TWO_PI);
+    ctx.arc(0, 0, n.rx, 0, TWO_PI);
     ctx.fillStyle = g;
     ctx.fill();
     ctx.restore();
@@ -289,15 +318,15 @@ function _drawNebulaBg(ctx, W, H, t) {
 }
 
 // ── 蜂巢连线 ──────────────────────────────────────────────────
-function _drawHexEdges(ctx, t) {
-  const group = _GROUPS[_currentGroup];
+function _drawHexEdges(ctx, t, nodes, groupIdx) {
+  const group = _GROUPS[groupIdx];
   ctx.save();
   ctx.setLineDash([3, 6]);
   ctx.lineDashOffset = -(t * 5) % 9;
   ctx.lineWidth = 0.7;
   for (const [a, b] of _HEX_EDGES) {
-    const na = _nodeRects[a];
-    const nb = _nodeRects[b];
+    const na = nodes[a];
+    const nb = nodes[b];
     if (!na || !nb) continue;
     const bothUnlocked = state.isUnlocked(na.idx) && state.isUnlocked(nb.idx);
     ctx.globalAlpha = bothUnlocked ? 0.22 : 0.06;
@@ -313,14 +342,14 @@ function _drawHexEdges(ctx, t) {
 }
 
 // ── 节点绘制 ──────────────────────────────────────────────────
-function _drawNode(ctx, node, t) {
+function _drawNode(ctx, node, t, groupIdx) {
   const { cx, cy, r, idx, slot } = node;
   const c        = CONSTELLATIONS[idx];
   const unlocked = state.isUnlocked(idx);
   const score    = state.getScore(idx);
   const explored = score && score.stars > 0;  // 曾经通关（即"探索过"）
   const isActive = _drawer && _drawer.idx === idx;  // 当前选中
-  const group    = _GROUPS[_currentGroup];
+  const group    = _GROUPS[groupIdx];
 
   ctx.save();
   ctx.globalAlpha = unlocked ? 1.0 : 0.28;
@@ -477,11 +506,11 @@ function _drawNode(ctx, node, t) {
 // ── 组指示器 ──────────────────────────────────────────────────
 function _drawGroupIndicator(ctx, W, H) {
   const n     = _GROUPS.length;
-  const dotR  = 5;
-  const gap   = 18;
+  const dotR  = 4;
+  const gap   = 14;
   const totalW = n * dotR * 2 + (n - 1) * (gap - dotR * 2);
   const startX = (W - totalW) / 2 + dotR;
-  const dotY   = H - G.SAFE_BOTTOM - 18;
+  const dotY   = H - G.SAFE_BOTTOM - 10;
 
   for (let i = 0; i < n; i++) {
     const dx     = startX + i * gap;
@@ -490,14 +519,14 @@ function _drawGroupIndicator(ctx, W, H) {
 
     ctx.save();
     if (active) { ctx.shadowColor = _GROUPS[i].color; ctx.shadowBlur = 8; }
-    ctx.globalAlpha = active ? 1.0 : 0.50;
+    ctx.globalAlpha = active ? 1.0 : 0.45;
     ctx.beginPath();
-    ctx.arc(dx, dotY, active ? dotR + 2 : dotR, 0, TWO_PI);
+    ctx.arc(dx, dotY, active ? dotR + 1 : dotR, 0, TWO_PI);
     ctx.fillStyle = _GROUPS[i].color;
     ctx.fill();
     if (done && !active) {
       ctx.globalAlpha = 0.7;
-      ctx.font = '8px sans-serif';
+      ctx.font = '7px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#05081c';
@@ -505,15 +534,6 @@ function _drawGroupIndicator(ctx, W, H) {
     }
     ctx.restore();
   }
-
-  ctx.save();
-  ctx.font = '11px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.fillStyle = _GROUPS[_currentGroup].color;
-  ctx.globalAlpha = 0.7;
-  ctx.fillText(`${_currentGroup + 1}/${n}  ${_GROUPS[_currentGroup].name}`, W / 2, H - G.SAFE_BOTTOM - 30);
-  ctx.restore();
 }
 
 // ── 底部抽屉 ──────────────────────────────────────────────────
@@ -869,24 +889,6 @@ function _ghostBtn(ctx, x, y, w, h, label) {
   return { x, y, w, h };
 }
 
-function _arrowBtn(ctx, x, y, w, h, label, enabled) {
-  ctx.save();
-  ctx.globalAlpha = enabled ? 0.85 : 0.25;
-  ctx.fillStyle = 'rgba(60,70,140,0.6)';
-  ctx.strokeStyle = enabled ? 'rgba(140,160,255,0.5)' : 'rgba(80,80,120,0.3)';
-  ctx.lineWidth = 1;
-  _roundRect(ctx, x, y, w, h, 6);
-  ctx.fill();
-  ctx.stroke();
-  ctx.font = 'bold 20px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = enabled ? '#aabbff' : '#555580';
-  ctx.fillText(label, x + w / 2, y + h / 2);
-  ctx.restore();
-  return { x, y, w, h };
-}
-
 // ── 照片加载 ──────────────────────────────────────────────────
 // STORY-00351: 直接用 img.src 赋值，不走 wx.downloadFile（需要域名白名单）
 // img.src 赋值在开发模式关闭域名校验后即可访问任意 HTTPS URL
@@ -940,16 +942,33 @@ function _roundRect(ctx, x, y, w, h, r) {
   ctx.closePath();
 }
 
-function _switchGroup(newGroup, dir) {
+function _switchGroup(newGroup) {
   if (newGroup < 0 || newGroup >= _GROUPS.length) return;
   if (newGroup === _currentGroup) return;
-  _currentGroup  = newGroup;
-  _slideDir      = dir;
-  _slideProgress = 0;
+  const dir = newGroup > _currentGroup ? -1 : 1;
+  _pendingGroup = newGroup;
+  _slideTargetX = dir * G.SCREEN_W;
+
+  // 预计算目标组节点
+  const W2 = G.SCREEN_W;
+  const H2 = G.SCREEN_H;
+  const aTop = G.SAFE_TOP + 72;
+  const aBot = H2 - G.SAFE_BOTTOM - 26;
+  const aCX  = W2 / 2;
+  const aCY  = (aTop + aBot) / 2;
+  const aW   = W2 * 0.92;
+  const aH   = aBot - aTop;
+  _pendingNodes = _HEX_POS.map((pos, slot) => ({
+    cx: aCX + pos.xr * aW,
+    cy: aCY + pos.yr * aH,
+    r:  _NODE_R,
+    idx: _GROUPS[newGroup].levels[slot],
+    slot,
+  }));
+
   _drawer        = null;
   _carouselForIdx = -1;
   _carouselImgs   = [];
-  _computeLayout();
 }
 
 // ── Touch handling ─────────────────────────────────────────────
@@ -971,7 +990,7 @@ function _onTouchMove(e) {
   if (!touch) return;
   const dy = touch.clientY - _drawerLastTY;
   _drawerLastTY = touch.clientY;
-  const dx = touch.clientX - _touchStartX2;
+  const dx = touch.clientX - _touchStartX;
 
   if (_drawer) {
     if (Math.abs(dy) > 2) _drawerDragging = true;
@@ -983,6 +1002,32 @@ function _onTouchMove(e) {
     }
   } else {
     if (Math.abs(dx) > 8 || Math.abs(dy) > 8) _isDragging = true;
+
+    // 水平拖拽驱动 spring
+    if (_isDragging && Math.abs(dx) > Math.abs(touch.clientY - _touchStartY)) {
+      const W = G.SCREEN_W;
+      const canLeft  = _currentGroup < _GROUPS.length - 1;
+      const canRight = _currentGroup > 0;
+      let rawDx = dx;
+      if ((rawDx < 0 && !canLeft) || (rawDx > 0 && !canRight)) rawDx *= 0.25; // 边界阻尼
+      _slideX       = rawDx;
+      _slideTargetX = rawDx;
+
+      // 预加载目标组节点
+      const targetGroup = rawDx < 0 ? _currentGroup + 1 : _currentGroup - 1;
+      if (targetGroup >= 0 && targetGroup < _GROUPS.length && targetGroup !== _pendingGroup) {
+        const H2 = G.SCREEN_H;
+        const aTop = G.SAFE_TOP + 72;
+        const aBot = H2 - G.SAFE_BOTTOM - 26;
+        const aCX  = W / 2; const aCY = (aTop + aBot) / 2;
+        const aW   = W * 0.92; const aH = aBot - aTop;
+        _pendingGroup = targetGroup;
+        _pendingNodes = _HEX_POS.map((pos, slot) => ({
+          cx: aCX + pos.xr * aW, cy: aCY + pos.yr * aH,
+          r:  _NODE_R, idx: _GROUPS[targetGroup].levels[slot], slot,
+        }));
+      }
+    }
   }
 }
 
@@ -991,7 +1036,7 @@ function _onTouchEnd(e) {
   if (!touch) return;
   const tx = touch.clientX;
   const ty = touch.clientY;
-  const dx = tx - _touchStartX2;
+  const dx = tx - _touchStartX;
 
   // ── 抽屉开启状态 ──────────────────────────────────────────
   if (_drawer) {
@@ -1039,12 +1084,22 @@ function _onTouchEnd(e) {
     return;
   }
 
-  // ── 左右滑动切换星系 ──────────────────────────────────────
+  // ── 左右滑动切换星系（28% 阈值，参考关卡界面） ───────────────
   if (_isDragging) {
     _isDragging = false;
-    if (Math.abs(dx) > 50) {
-      if (dx < 0) _switchGroup(_currentGroup + 1, -1);
-      else        _switchGroup(_currentGroup - 1,  1);
+    const W = G.SCREEN_W;
+    const COMMIT_THRESHOLD = W * 0.28;
+    if (Math.abs(_slideX) >= COMMIT_THRESHOLD) {
+      if (_slideX < 0 && _currentGroup < _GROUPS.length - 1) {
+        _switchGroup(_currentGroup + 1);
+      } else if (_slideX > 0 && _currentGroup > 0) {
+        _switchGroup(_currentGroup - 1);
+      } else {
+        _slideTargetX = 0; _pendingGroup = _currentGroup; _pendingNodes = null;
+      }
+    } else {
+      // 未达阈值 → 弹回原位
+      _slideTargetX = 0; _pendingGroup = _currentGroup; _pendingNodes = null;
     }
     return;
   }
@@ -1052,14 +1107,6 @@ function _onTouchEnd(e) {
   // ── 固定按钮 ─────────────────────────────────────────────
   if (_backRect && hitTest(_backRect, tx, ty)) {
     if (_navigate) _navigate('menu');
-    return;
-  }
-  if (_prevRect && hitTest(_prevRect, tx, ty) && _currentGroup > 0) {
-    _switchGroup(_currentGroup - 1, 1);
-    return;
-  }
-  if (_nextRect && hitTest(_nextRect, tx, ty) && _currentGroup < _GROUPS.length - 1) {
-    _switchGroup(_currentGroup + 1, -1);
     return;
   }
 
