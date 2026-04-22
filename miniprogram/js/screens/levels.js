@@ -76,11 +76,14 @@ let _backRect      = null;
 let _shopRect      = null;
 let _prevRect      = null;
 let _nextRect      = null;
-let _nodeRects     = [];   // [{cx, cy, r, levelIdx}] per-group, recomputed on group change
+let _nodeRects     = [];   // [{cx, cy, r, levelIdx}] per-group
 let _currentGroup  = 0;    // 当前显示的星系组索引
 let _groupAnim     = 0;    // 当前group动画时间偏移（用于进入动画）
-let _slideDir      = 0;    // 切换动画：+1右划进 -1左划进
-let _slideProgress = 1;    // 0→1 切换动画进度（1=完成）
+// ── Spring lerp 切换动画（与图鉴界面完全一致） ──────────────────
+let _slideX        = 0;    // 当前节点区域 X 偏移（实际渲染值）
+let _slideTargetX  = 0;    // 目标 X 偏移
+let _pendingGroup  = 0;    // 动画目标对应的组（动画完成后 commit）
+let _pendingNodes  = null; // 目标组的节点布局（动画中同屏渲染）
 let _bgStars       = [];
 
 // STORY-00342: Ma Shan Zheng font
@@ -107,6 +110,7 @@ export function showLevels(navigate) {
 
   // 确定当前应该显示哪个星系：找第一个未完成的组
   _currentGroup = _getActiveGroup();
+  _pendingGroup = _currentGroup;
 
   _computeLayout();
 
@@ -149,8 +153,11 @@ function _cleanup() {
   _shopRect     = null;
   _prevRect     = null;
   _nextRect     = null;
-  _slideDir     = 0;
-  _slideProgress = 1;
+  _slideX       = 0;
+  _slideTargetX = 0;
+  _pendingGroup = 0;
+  _currentGroup = 0;
+  _pendingNodes = null;
   _overlayActive = false;
   _overlayToggled.clear();
   _overlayBtnRects = [];
@@ -226,9 +233,18 @@ function _loop(now) {
   const H   = G.SCREEN_H;
   const t   = now * 0.001;
 
-  // 切换动画推进
-  if (_slideProgress < 1) {
-    _slideProgress = Math.min(1, _slideProgress + 0.07);
+  // ── Spring lerp 切换动画 ─────────────────────────────────
+  _slideX += (_slideTargetX - _slideX) * 0.28;
+  if (!_isDragging && Math.abs(_slideX - _slideTargetX) < 0.5) {
+    if (_pendingGroup !== _currentGroup) {
+      _currentGroup = _pendingGroup;
+      if (_pendingNodes) {
+        _nodeRects    = _pendingNodes;
+        _pendingNodes = null;
+      }
+    }
+    _slideX       = 0;
+    _slideTargetX = 0;
   }
 
   // ── 背景 ──────────────────────────────────────────────────
@@ -264,8 +280,9 @@ function _loop(now) {
   ctx.fillText('选择关卡', W / 2, G.SAFE_TOP + 30);
   ctx.restore();
 
-  // ── 星系名称 + 左右切换箭头 ───────────────────────────────
+  // ── 星系名称（随滑动淡入淡出） + 左右切换箭头 ────────────────
   const group = _GROUPS[_currentGroup];
+  const penGroup = _GROUPS[_pendingGroup];
   const groupY = G.SAFE_TOP + 58;
 
   // 左箭头
@@ -276,18 +293,35 @@ function _loop(now) {
   const canNext = _currentGroup < _GROUPS.length - 1;
   _nextRect = _drawArrowBtn(ctx, W - G.SAFE_RIGHT - 38, groupY - 14, 28, 28, '›', canNext);
 
-  // 星系名
-  ctx.save();
-  ctx.font = `bold 15px ${titleFont}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = group.color;
-  ctx.shadowColor = group.glowColor.replace('0.18', '0.6');
-  ctx.shadowBlur  = 8;
-  ctx.fillText(group.name, W / 2, groupY);
-  ctx.restore();
+  // 星系名 crossfade
+  const nameAlpha = Math.max(0, 1 - Math.abs(_slideX) / (W * 0.5));
+  const pendingAlpha = Math.max(0, Math.abs(_slideX) / (W * 0.5));
+  if (nameAlpha > 0.01) {
+    ctx.save();
+    ctx.globalAlpha = nameAlpha;
+    ctx.font = `bold 15px ${titleFont}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = group.color;
+    ctx.shadowColor = group.glowColor.replace('0.18', '0.6');
+    ctx.shadowBlur  = 8;
+    ctx.fillText(group.name, W / 2, groupY);
+    ctx.restore();
+  }
+  if (pendingAlpha > 0.01 && _pendingGroup !== _currentGroup) {
+    ctx.save();
+    ctx.globalAlpha = pendingAlpha;
+    ctx.font = `bold 15px ${titleFont}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = penGroup.color;
+    ctx.shadowColor = penGroup.glowColor.replace('0.18', '0.6');
+    ctx.shadowBlur  = 8;
+    ctx.fillText(penGroup.name, W / 2, groupY);
+    ctx.restore();
+  }
 
-  // ── 节点区域（含切换动画） ────────────────────────────────
+  // ── 节点区域（clip + spring slideX，与图鉴完全一致） ─────────
   const padTop = G.SAFE_TOP + 72;
   const padBottom = H - G.SAFE_BOTTOM - 44;
   ctx.save();
@@ -295,29 +329,36 @@ function _loop(now) {
   ctx.rect(0, padTop, W, padBottom - padTop);
   ctx.clip();
 
-  // 切换滑动偏移
-  const slideX = _slideDir * W * (1 - _easeOut(_slideProgress));
-
+  // 当前组节点（偏移 _slideX，随滑动淡出）
+  const slideRatio = Math.min(1, Math.abs(_slideX) / W);
   ctx.save();
-  ctx.translate(slideX, 0);
-
-  // 组完成状态徽章
-  const groupDone = _isGroupCompleted(_currentGroup);
-
-  // 绘制节点间连线（装饰性，按位置画细线）
+  ctx.translate(_slideX, 0);
+  ctx.globalAlpha = 1 - slideRatio * 0.6;
   _drawGroupConnections(ctx, t);
-
-  // 绘制各节点
   for (const node of _nodeRects) {
     _drawNode(ctx, node, t);
   }
+  ctx.restore();
 
-  // 完成徽章
+  // 目标组节点（同屏对面，随滑动淡入）
+  if (_pendingNodes && _pendingGroup !== _currentGroup) {
+    const pdir = _pendingGroup > _currentGroup ? -1 : 1;
+    ctx.save();
+    ctx.translate(_slideX + pdir * -W, 0);
+    ctx.globalAlpha = 0.4 + slideRatio * 0.6;
+    _drawGroupConnectionsFor(ctx, t, _pendingNodes);
+    for (const node of _pendingNodes) {
+      _drawNode(ctx, node, t);
+    }
+    ctx.restore();
+  }
+
+  // 完成徽章（仅当前组，不随切换动画）
+  const groupDone = _isGroupCompleted(_currentGroup);
   if (groupDone) {
     _drawCompleteBadge(ctx, W, padTop, padBottom, t);
   }
 
-  ctx.restore();
   ctx.restore();
 
   // ── 底部组指示器 ──────────────────────────────────────────
@@ -399,6 +440,10 @@ function _drawArrowBtn(ctx, x, y, w, h, label, enabled) {
 }
 
 function _drawGroupConnections(ctx, t) {
+  _drawGroupConnectionsFor(ctx, t, _nodeRects);
+}
+
+function _drawGroupConnectionsFor(ctx, t, nodes) {
   // 6节点之间画几条装饰线（不是全连接，只画邻近的）
   const pairs = [[0,1],[1,2],[0,3],[1,4],[2,5],[3,4],[4,5]];
   ctx.save();
@@ -409,9 +454,9 @@ function _drawGroupConnections(ctx, t) {
   const dashOff = t * 6;
   ctx.lineDashOffset = -dashOff;
   for (const [a, b] of pairs) {
-    if (a >= _nodeRects.length || b >= _nodeRects.length) continue;
-    const na = _nodeRects[a];
-    const nb = _nodeRects[b];
+    if (a >= nodes.length || b >= nodes.length) continue;
+    const na = nodes[a];
+    const nb = nodes[b];
     ctx.beginPath();
     ctx.moveTo(na.cx, na.cy);
     ctx.lineTo(nb.cx, nb.cy);
@@ -588,7 +633,8 @@ function _drawGroupIndicator(ctx, W, H) {
     const dx = startX + i * gap;
     const unlocked = _isGroupUnlocked(i);
     const completed = _isGroupCompleted(i);
-    const active    = i === _currentGroup;
+    const active    = (i === _currentGroup && i === _pendingGroup)
+                    || (i === _pendingGroup && _pendingGroup !== _currentGroup);
 
     ctx.save();
     if (active) {
@@ -618,18 +664,37 @@ function _drawGroupIndicator(ctx, W, H) {
   ctx.textBaseline = 'bottom';
   ctx.fillStyle = _GROUPS[_currentGroup].color;
   ctx.globalAlpha = 0.7;
-  ctx.fillText(`${_currentGroup + 1} / ${n}  ${_GROUPS[_currentGroup].name}`, W / 2, H - G.SAFE_BOTTOM - 30);
+  ctx.fillText(`${_pendingGroup + 1} / ${n}  ${_GROUPS[_pendingGroup].name}`, W / 2, H - G.SAFE_BOTTOM - 30);
   ctx.restore();
 }
 
-// ── 切换星系 ──────────────────────────────────────────────────
-function _switchGroup(newGroup, dir) {
+// ── 切换星系（spring lerp，与图鉴一致） ──────────────────────────
+function _switchGroup(newGroup) {
   if (newGroup < 0 || newGroup >= _GROUPS.length) return;
-  if (newGroup === _currentGroup) return;
-  _currentGroup  = newGroup;
-  _slideDir      = dir;
-  _slideProgress = 0;
-  _computeLayout();
+  if (newGroup === _pendingGroup) return;
+
+  const W = G.SCREEN_W;
+  const H = G.SCREEN_H;
+  const nodeAreaTop    = G.SAFE_TOP + 60;
+  const nodeAreaBottom = H - G.SAFE_BOTTOM - 44;
+  const nodeAreaCX     = W / 2;
+  const nodeAreaCY     = (nodeAreaTop + nodeAreaBottom) / 2;
+  const nodeAreaW      = W * 0.82;
+  const nodeAreaH      = nodeAreaBottom - nodeAreaTop;
+
+  if (_pendingGroup !== newGroup || !_pendingNodes) {
+    _pendingNodes = _NODE_POSITIONS.map((pos, slot) => ({
+      cx: nodeAreaCX + pos.xr * nodeAreaW,
+      cy: nodeAreaCY + pos.yr * nodeAreaH,
+      r:  _NODE_R,
+      levelIdx: _GROUPS[newGroup].levels[slot],
+      slot,
+    }));
+  }
+
+  const dir = newGroup > _currentGroup ? -1 : 1;
+  _pendingGroup  = newGroup;
+  _slideTargetX  = dir * W;
 }
 
 // ── Item selection overlay ────────────────────────────────────
@@ -784,6 +849,38 @@ function _onTouchMove(e) {
   } else {
     const dx = touch.clientX - _touchStartX;
     if (Math.abs(dx) > 8 || Math.abs(dy) > 8) _isDragging = true;
+
+    if (_isDragging && Math.abs(dx) > Math.abs(touch.clientY - _touchStartY)) {
+      const W = G.SCREEN_W;
+      const canLeft  = _currentGroup < _GROUPS.length - 1;
+      const canRight = _currentGroup > 0;
+      let rawDx = dx;
+      if ((rawDx < 0 && !canLeft) || (rawDx > 0 && !canRight)) {
+        rawDx *= 0.25; // 边界阻尼
+      }
+      _slideX       = rawDx;
+      _slideTargetX = rawDx;
+
+      // 预加载目标组节点
+      const targetGroup = rawDx < 0 ? _currentGroup + 1 : _currentGroup - 1;
+      if (targetGroup >= 0 && targetGroup < _GROUPS.length && targetGroup !== _pendingGroup) {
+        const H2 = G.SCREEN_H;
+        const nodeAreaTop    = G.SAFE_TOP + 60;
+        const nodeAreaBottom = H2 - G.SAFE_BOTTOM - 44;
+        const nodeAreaCX     = W / 2;
+        const nodeAreaCY     = (nodeAreaTop + nodeAreaBottom) / 2;
+        const nodeAreaW      = W * 0.82;
+        const nodeAreaH      = nodeAreaBottom - nodeAreaTop;
+        _pendingGroup = targetGroup;
+        _pendingNodes = _NODE_POSITIONS.map((pos, slot) => ({
+          cx: nodeAreaCX + pos.xr * nodeAreaW,
+          cy: nodeAreaCY + pos.yr * nodeAreaH,
+          r:  _NODE_R,
+          levelIdx: _GROUPS[targetGroup].levels[slot],
+          slot,
+        }));
+      }
+    }
   }
 }
 
@@ -828,14 +925,23 @@ function _onTouchEnd(e) {
   // ── 左右滑动切换星系 ──────────────────────────────────────
   if (_isDragging) {
     _isDragging = false;
-    if (Math.abs(dx) > 50) {
-      if (dx < 0) {
-        // 向左滑 → 下一组（从右边进入）
-        _switchGroup(_currentGroup + 1, -1);
+    const W = G.SCREEN_W;
+    const COMMIT_THRESHOLD = W * 0.28;
+    if (Math.abs(_slideX) >= COMMIT_THRESHOLD) {
+      if (_slideX < 0 && _currentGroup < _GROUPS.length - 1) {
+        _switchGroup(_currentGroup + 1);
+      } else if (_slideX > 0 && _currentGroup > 0) {
+        _switchGroup(_currentGroup - 1);
       } else {
-        // 向右滑 → 上一组（从左边进入）
-        _switchGroup(_currentGroup - 1, 1);
+        _slideTargetX = 0;
+        _pendingGroup = _currentGroup;
+        _pendingNodes = null;
       }
+    } else {
+      // 未达阈值 → 弹回原位
+      _slideTargetX = 0;
+      _pendingGroup = _currentGroup;
+      _pendingNodes = null;
     }
     return;
   }
@@ -852,11 +958,11 @@ function _onTouchEnd(e) {
 
   // 左右切换箭头
   if (_prevRect && hitTest(_prevRect, tx, ty) && _currentGroup > 0) {
-    _switchGroup(_currentGroup - 1, 1);
+    _switchGroup(_currentGroup - 1);
     return;
   }
   if (_nextRect && hitTest(_nextRect, tx, ty) && _currentGroup < _GROUPS.length - 1) {
-    _switchGroup(_currentGroup + 1, -1);
+    _switchGroup(_currentGroup + 1);
     return;
   }
 
