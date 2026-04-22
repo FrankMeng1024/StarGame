@@ -51,13 +51,13 @@ const _GROUPS = [
 // 排成2行3列，间距充足
 const _NODE_POSITIONS = [
   // row0
-  { xr: -0.340, yr: -0.26 },
-  { xr:  0.000, yr: -0.30 },
-  { xr:  0.340, yr: -0.26 },
+  { xr: -0.340, yr: -0.28 },
+  { xr:  0.000, yr: -0.28 },
+  { xr:  0.340, yr: -0.28 },
   // row1
-  { xr: -0.340, yr:  0.26 },
-  { xr:  0.000, yr:  0.30 },
-  { xr:  0.340, yr:  0.26 },
+  { xr: -0.340, yr:  0.28 },
+  { xr:  0.000, yr:  0.28 },
+  { xr:  0.340, yr:  0.28 },
 ];
 
 const _NODE_R = 30;  // 节点半径（比原来14-22px大得多）
@@ -194,7 +194,7 @@ function _computeLayout() {
 
   // 节点区域：标题下方到底部留出组指示器空间
   const nodeAreaTop    = G.SAFE_TOP + 60;
-  const nodeAreaBottom = H - G.SAFE_BOTTOM - 44;  // 留44px给底部组指示器
+  const nodeAreaBottom = H - G.SAFE_BOTTOM - 28;  // 留28px给底部组指示器（去掉1/5文字后空间够用）
   const nodeAreaCX     = W / 2;
   const nodeAreaCY     = (nodeAreaTop + nodeAreaBottom) / 2;
   const nodeAreaW      = W * 0.82;
@@ -231,7 +231,7 @@ function _loop(now) {
   const t   = now * 0.001;
 
   // ── Spring lerp 切换动画 ─────────────────────────────────
-  _slideX += (_slideTargetX - _slideX) * 0.28;
+  _slideX += (_slideTargetX - _slideX) * 0.18;
   if (!_isDragging && Math.abs(_slideX - _slideTargetX) < 0.5) {
     if (_pendingGroup !== _currentGroup) {
       _currentGroup = _pendingGroup;
@@ -283,8 +283,8 @@ function _loop(now) {
   const groupY = G.SAFE_TOP + 58;
 
   // 星系名 crossfade
-  const nameAlpha = Math.max(0, 1 - Math.abs(_slideX) / (W * 0.5));
-  const pendingAlpha = Math.max(0, Math.abs(_slideX) / (W * 0.5));
+  const nameAlpha = Math.max(0, 1 - Math.abs(_slideX) / (W * 0.35));
+  const pendingAlpha = Math.min(1, Math.abs(_slideX) / (W * 0.35));
   if (nameAlpha > 0.01) {
     ctx.save();
     ctx.globalAlpha = nameAlpha;
@@ -312,7 +312,7 @@ function _loop(now) {
 
   // ── 节点区域（clip + spring slideX，与图鉴完全一致） ─────────
   const padTop = G.SAFE_TOP + 72;
-  const padBottom = H - G.SAFE_BOTTOM - 44;
+  const padBottom = H - G.SAFE_BOTTOM - 28;
   ctx.save();
   ctx.beginPath();
   ctx.rect(0, padTop, W, padBottom - padTop);
@@ -322,10 +322,10 @@ function _loop(now) {
   const slideRatio = Math.min(1, Math.abs(_slideX) / W);
   ctx.save();
   ctx.translate(_slideX, 0);
-  ctx.globalAlpha = 1 - slideRatio * 0.6;
+  ctx.globalAlpha = Math.max(0, 1 - slideRatio * 0.5);
   _drawGroupConnections(ctx, t);
   for (const node of _nodeRects) {
-    _drawNode(ctx, node, t);
+    _drawNode(ctx, node, t, _currentGroup);
   }
   ctx.restore();
 
@@ -334,10 +334,10 @@ function _loop(now) {
     const pdir = _pendingGroup > _currentGroup ? -1 : 1;
     ctx.save();
     ctx.translate(_slideX + pdir * -W, 0);
-    ctx.globalAlpha = 0.4 + slideRatio * 0.6;
+    ctx.globalAlpha = Math.min(1, slideRatio * 1.2);
     _drawGroupConnectionsFor(ctx, t, _pendingNodes);
     for (const node of _pendingNodes) {
-      _drawNode(ctx, node, t);
+      _drawNode(ctx, node, t, _pendingGroup);
     }
     ctx.restore();
   }
@@ -438,7 +438,7 @@ function _drawGroupConnectionsFor(ctx, t, nodes) {
   ctx.restore();
 }
 
-function _drawNode(ctx, node, t) {
+function _drawNode(ctx, node, t, groupIdx) {
   const { cx, cy, r, levelIdx, slot } = node;
   const c        = CONSTELLATIONS[levelIdx];
   const unlocked = state.isUnlocked(levelIdx);
@@ -455,7 +455,7 @@ function _drawNode(ctx, node, t) {
     const glowR = r * (isNewest ? (2.0 + pulse * 0.5) : 2.2);
     const ga = isNewest ? (0.16 + pulse * 0.10) : 0.10;
     const g = ctx.createRadialGradient(cx, cy, r * 0.5, cx, cy, glowR);
-    const group = _GROUPS[_currentGroup];
+    const group = _GROUPS[groupIdx];
     g.addColorStop(0, group.glowColor.replace('0.18', String(ga)));
     g.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.beginPath();
@@ -484,7 +484,7 @@ function _drawNode(ctx, node, t) {
   ctx.arc(cx, cy, r, 0, TWO_PI);
   if (unlocked) {
     const ba = 0.50 + Math.sin(t * 1.0 + slot * 0.5) * 0.12;
-    const group = _GROUPS[_currentGroup];
+    const group = _GROUPS[groupIdx];
     // 将颜色字符串转为rgba
     ctx.strokeStyle = group.color + Math.round(ba * 255).toString(16).padStart(2, '0');
     ctx.lineWidth = isNewest ? 1.8 : 1.2;
@@ -534,7 +534,7 @@ function _drawNode(ctx, node, t) {
     const pulse2 = 0.5 + 0.5 * Math.sin(t * 2.5);
     ctx.save();
     ctx.globalAlpha = 0.25 * pulse2;
-    ctx.strokeStyle = _GROUPS[_currentGroup].color;
+    ctx.strokeStyle = _GROUPS[groupIdx].color;
     ctx.lineWidth = 2;
     ctx.beginPath();
     ctx.arc(cx, cy, r + 5 + pulse2 * 4, 0, TWO_PI);
@@ -628,26 +628,17 @@ function _drawGroupIndicator(ctx, W, H) {
     ctx.restore();
   }
 
-  // 组名称小字
-  ctx.save();
-  ctx.font = '11px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'bottom';
-  ctx.fillStyle = _GROUPS[_currentGroup].color;
-  ctx.globalAlpha = 0.7;
-  ctx.fillText(`${_pendingGroup + 1} / ${n}  ${_GROUPS[_pendingGroup].name}`, W / 2, H - G.SAFE_BOTTOM - 30);
-  ctx.restore();
 }
 
 // ── 切换星系（spring lerp，与图鉴一致） ──────────────────────────
 function _switchGroup(newGroup) {
   if (newGroup < 0 || newGroup >= _GROUPS.length) return;
-  if (newGroup === _pendingGroup) return;
+  if (newGroup === _currentGroup) return;
 
   const W = G.SCREEN_W;
   const H = G.SCREEN_H;
   const nodeAreaTop    = G.SAFE_TOP + 60;
-  const nodeAreaBottom = H - G.SAFE_BOTTOM - 44;
+  const nodeAreaBottom = H - G.SAFE_BOTTOM - 28;
   const nodeAreaCX     = W / 2;
   const nodeAreaCY     = (nodeAreaTop + nodeAreaBottom) / 2;
   const nodeAreaW      = W * 0.82;
@@ -837,7 +828,7 @@ function _onTouchMove(e) {
       if (targetGroup >= 0 && targetGroup < _GROUPS.length && targetGroup !== _pendingGroup) {
         const H2 = G.SCREEN_H;
         const nodeAreaTop    = G.SAFE_TOP + 60;
-        const nodeAreaBottom = H2 - G.SAFE_BOTTOM - 44;
+        const nodeAreaBottom = H2 - G.SAFE_BOTTOM - 28;
         const nodeAreaCX     = W / 2;
         const nodeAreaCY     = (nodeAreaTop + nodeAreaBottom) / 2;
         const nodeAreaW      = W * 0.82;
