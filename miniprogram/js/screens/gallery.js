@@ -1087,15 +1087,16 @@ function _onTouchEnd(e) {
   }
 
   // ── 左右滑动切换星系（28% 阈值，参考关卡界面） ───────────────
-  if (_isDragging) {
+  const W = G.SCREEN_W;
+  const dt = Math.max(1, Date.now() - _touchStartTime);
+  const velocity = dx / dt; // px/ms
+  const isFastSwipe = Math.abs(velocity) > 0.3 && Math.abs(dx) > 20;
+
+  if (_isDragging || isFastSwipe) {
     _isDragging = false;
-    const W = G.SCREEN_W;
-    const dt = Math.max(1, Date.now() - _touchStartTime);
-    const velocity = dx / dt; // px/ms
     const COMMIT_THRESHOLD = W * 0.28;
-    const isFastSwipe = Math.abs(velocity) > 0.3 && Math.abs(dx) > 20;
     if (Math.abs(_slideX) >= COMMIT_THRESHOLD || isFastSwipe) {
-      const goDir = (dx < 0 || (isFastSwipe && velocity < 0)) ? 1 : -1;
+      const goDir = velocity < 0 ? 1 : -1;
       if (goDir > 0 && _currentGroup < _GROUPS.length - 1) {
         _switchGroup(_currentGroup + 1);
       } else if (goDir < 0 && _currentGroup > 0) {
