@@ -908,9 +908,9 @@ function _drawDetail(ctx, W, H, t) {
   const CLIP_TOP  = BODY_TOP + 4;
   const CLIP_H    = BODY_H - 8;
 
-  // 加载/重置照片（只使用本地图片，过滤掉外部URL防止加载失败）
+  // 加载/重置照片（本地 + ESA CDN，过滤Wikimedia等其他外部URL）
   const allPhotos = c.photos || (c.photo ? [c.photo] : []);
-  const photos = allPhotos.filter(u => u && !u.startsWith('http'));
+  const photos = allPhotos.filter(u => u && (!u.startsWith('http') || u.includes('esahubble.org')));
   if (_carouselForIdx !== _detail.idx) {
     _carouselForIdx = _detail.idx;
     _carouselImgs   = [];
@@ -1026,12 +1026,21 @@ function _drawDetail(ctx, W, H, t) {
   if (infos.length > 0) {
     const pillH = 22;
     let px = RIGHT_X;
+    let pillRowY = oy2;
     for (const info of infos) {
       ctx.save();
       ctx.font = '12px sans-serif';
-      const tw = ctx.measureText(info).width + 16;
+      // 截断超长文字
+      let label = info;
+      const maxPillW = RIGHT_W - 4;
+      while (label.length > 4 && ctx.measureText(label).width + 16 > maxPillW) {
+        label = label.slice(0, -1);
+      }
+      const tw = Math.min(ctx.measureText(label).width + 16, maxPillW);
+      // 换行前检查（检查下一个pill是否超出宽度）
+      if (px + tw > RIGHT_X + RIGHT_W) { px = RIGHT_X; pillRowY += pillH + 4; }
       ctx.fillStyle = 'rgba(50,60,120,0.55)';
-      _roundRect(ctx, px, oy2, tw, pillH, 10);
+      _roundRect(ctx, px, pillRowY, tw, pillH, 10);
       ctx.fill();
       ctx.strokeStyle = grp.color + '40';
       ctx.lineWidth = 0.7;
@@ -1039,24 +1048,23 @@ function _drawDetail(ctx, W, H, t) {
       ctx.textAlign = 'left';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = 'rgba(195,195,235,0.85)';
-      ctx.fillText(info, px + 7, oy2 + pillH / 2);
+      ctx.fillText(label, px + 7, pillRowY + pillH / 2, tw - 14);
       ctx.restore();
       px += tw + 6;
-      if (px > RIGHT_X + RIGHT_W - 50) { px = RIGHT_X; oy2 += pillH + 4; }
     }
-    oy2 += pillH + 8;
+    oy2 = pillRowY + pillH + 10;
   }
 
   // ── lore（神话/描述） ─────────────────────────────────────
   ctx.save();
-  ctx.font = '13px sans-serif';
-  ctx.fillStyle = 'rgba(200,196,238,0.88)';
+  ctx.font = '14px sans-serif';
+  ctx.fillStyle = 'rgba(210,205,245,0.92)';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   const lines = _wrapText(ctx, c.lore || '', RIGHT_W);
   for (const line of lines) {
     ctx.fillText(line, RIGHT_X, oy2);
-    oy2 += 19;
+    oy2 += 22;
   }
   ctx.restore();
   oy2 += 16;
