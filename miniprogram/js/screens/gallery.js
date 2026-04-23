@@ -315,7 +315,7 @@ function _loop(now) {
   ctx.globalAlpha = 1;
 
   // ── 固定 Header ──────────────────────────────────────────
-  _backRect = _ghostBtn(ctx, G.SAFE_LEFT + 96 + 12, G.SAFE_TOP + 10, 80, 32, '← 返回');
+  _backRect = _ghostBtn(ctx, G.SAFE_LEFT + 90, G.SAFE_TOP + 10, 80, 32, '← 返回');
 
   const titleFont = _msz ? "'Ma Shan Zheng', serif" : 'serif';
   ctx.save();
@@ -335,7 +335,7 @@ function _loop(now) {
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(180,200,255,0.65)';
-  ctx.fillText(`${discovered}/${CONSTELLATIONS.length} 已解锁`, W - G.SAFE_RIGHT - 96, G.SAFE_TOP + 26);
+  ctx.fillText(`${discovered}/${CONSTELLATIONS.length} 已解锁`, W - G.SAFE_RIGHT - 90, G.SAFE_TOP + 26);
   ctx.restore();
 
   // ── 星系名（crossfade，无箭头按钮） ──────────────────────────
@@ -685,7 +685,7 @@ function _drawDetail(ctx, W, H, t) {
   ctx.globalAlpha = alpha;
 
   // 返回按钮
-  _detailRects.back = _ghostBtn(ctx, G.SAFE_LEFT + 96 + 12, G.SAFE_TOP + 8, 80, 28, '← 返回图鉴');
+  _detailRects.back = _ghostBtn(ctx, G.SAFE_LEFT + 90, G.SAFE_TOP + 8, 80, 28, '← 返回图鉴');
 
   // 星座名（header中央）
   ctx.font = `bold 22px ${titleFont}`;

@@ -140,8 +140,8 @@ function _loop(ts) {
   // Align list edges with header button edges (方案A):
   //   rowX    = return button left edge  = safeL + 96 + 10
   //   rowRight = coin button right edge  = W - safeR - 96 - 10
-  const rowX    = safeL + 96 + 10;
-  const rowRight = W - safeR - 88 - 4;
+  const rowX    = safeL + 90;
+  const rowRight = W - safeR - 88 - 2;
   const rowW    = rowRight - rowX;
 
   ITEMS.forEach((item, i) => {
@@ -442,8 +442,8 @@ function _drawBottomSheet(ctx, W, H, item, slideY) {
   // Buy button — align with list/header button boundaries
   const _safeL = G.SAFE_LEFT  || 0;
   const _safeR = G.SAFE_RIGHT || 0;
-  const btnX = _safeL + 96 + 10;
-  const btnW = (W - _safeR - 88 - 4) - btnX;
+  const btnX = _safeL + 90;
+  const btnW = (W - _safeR - 88 - 2) - btnX;
   const btnH = 40;
   const btnY = panelY + SHEET_H - btnH - 14;
   _sheetBuyRect = { x: btnX, y: btnY, w: btnW, h: btnH };
