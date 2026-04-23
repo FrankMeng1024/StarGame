@@ -1,5 +1,5 @@
 // shop.js — Canvas 道具商店（微信小游戏版）
-// CR-135: 单列大卡片布局，高端深空风格
+// CR-135: 紧凑行列 + 底部弹出详情面板
 // CR-136: 动态星云背景
 // CR-137: 统一 drawHeaderBar
 
@@ -24,18 +24,26 @@ export const ITEMS = [
   { id: 'double_coins', icon: '🪙', nameZh: '双倍金币',   desc: '本关金币奖励自动×2（被动）',    type: '被动', duration: '全局', cost: 30 },
 ];
 
-// ── 背景星云（偏右+底部，不遮挡左侧卡片区域）───────────────────
+// ── 背景星云 ───────────────────────────────────────────────────
 const _NEBULAE = [
   { xr: 0.82, yr: 0.28, rx: 110, ry: 70,  col: '100,70,255',  a: 0.07 },
   { xr: 0.15, yr: 0.75, rx:  90, ry: 60,  col: '40,180,200',  a: 0.055 },
   { xr: 0.88, yr: 0.78, rx: 120, ry: 72,  col: '200,80,150',  a: 0.05 },
 ];
 
+// ── Layout constants ──────────────────────────────────────────
+const ROW_H      = 54;   // height of each compact row
+const ROW_GAP    = 6;
+const PAD_X      = 14;
+const PAD_TOP_EXTRA = 8;
+const SHEET_H    = 220;  // bottom sheet panel height
+
 // ── Module state ──────────────────────────────────────────────
 let _navigate    = null;
 let _rafId       = null;
 let _backRect    = null;
-let _buyRects    = [];
+let _rowRects    = [];   // [{ rect, itemIdx }] rebuilt each frame
+let _sheetBuyRect = null;
 let _scrollY     = 0;
 let _scrollTarget = 0;
 let _lastTouchY  = 0;
@@ -44,10 +52,8 @@ let _totalH      = 0;
 let _feedback    = null;
 let _maShanZhengLoaded = false;
 
-// Layout constants — CR-135: single column, larger cards
-const CARD_GAP  = 10;
-const PAD_X     = 14;
-const PAD_TOP_EXTRA = 8;  // breathing room below header divider
+// Bottom sheet state
+let _sheet = null;  // null | { idx, slideY, targetSlideY }
 
 // ── Public API ────────────────────────────────────────────────
 export function showShop(navigate) {
@@ -89,22 +95,18 @@ function _cleanup() {
     G.CANVAS.removeEventListener('touchmove',  _onTouchMove);
     G.CANVAS.removeEventListener('touchend',   _onTouchEnd);
   }
-  _backRect = null;
-  _buyRects = [];
-  _scrollY  = _scrollTarget = 0;
-  _feedback = null;
-}
-
-function _cardH() {
-  return Math.min(130, Math.max(110, G.SCREEN_H * 0.20));
+  _backRect    = null;
+  _sheetBuyRect = null;
+  _rowRects    = [];
+  _scrollY     = _scrollTarget = 0;
+  _feedback    = null;
+  _sheet       = null;
 }
 
 function _computeLayout() {
-  const H = G.SCREEN_H;
   const headerH = (G.SAFE_TOP || 0) + 48;
-  const padTop = headerH + PAD_TOP_EXTRA;
-  const ch = _cardH();
-  _totalH = padTop + ITEMS.length * (ch + CARD_GAP) + 16 + (G.SAFE_BOTTOM || 0);
+  const padTop  = headerH + PAD_TOP_EXTRA;
+  _totalH = padTop + ITEMS.length * (ROW_H + ROW_GAP) + 16 + (G.SAFE_BOTTOM || 0);
 }
 
 // ── RAF loop ──────────────────────────────────────────────────
@@ -119,12 +121,13 @@ function _loop(ts) {
   drawNebulae(ctx, W, H, _NEBULAE, t);
   drawBgStars(ctx, t);
 
+  // Scroll spring
   _scrollY += (_scrollTarget - _scrollY) * 0.18;
 
   const headerH = (G.SAFE_TOP || 0) + 48;
 
-  // ── Scrollable item list ──
-  _buyRects = [];
+  // ── Scrollable item rows ──
+  _rowRects = [];
   const padTop = headerH + PAD_TOP_EXTRA;
   ctx.save();
   ctx.beginPath();
@@ -132,28 +135,54 @@ function _loop(ts) {
   ctx.clip();
   ctx.translate(0, -_scrollY);
 
-  const safeL = G.SAFE_LEFT || 0;
+  const safeL = G.SAFE_LEFT  || 0;
   const safeR = G.SAFE_RIGHT || 0;
-  const cardW = W - safeL - safeR - PAD_X * 2;
-  const ch    = _cardH();
+  const rowW  = W - safeL - safeR - PAD_X * 2;
 
   ITEMS.forEach((item, i) => {
-    const cardX = safeL + PAD_X;
-    const cardY = padTop + i * (ch + CARD_GAP);
-    _drawItemCard(ctx, W, item, i, cardX, cardY, cardW, ch, t);
+    const rowX = safeL + PAD_X;
+    const rowY = padTop + i * (ROW_H + ROW_GAP);
+    const isSelected = _sheet && _sheet.idx === i;
+    _drawItemRow(ctx, W, item, i, rowX, rowY, rowW, ROW_H, isSelected);
+    _rowRects.push({ rect: { x: rowX, y: rowY, w: rowW, h: ROW_H }, itemIdx: i });
   });
 
   ctx.restore();
 
-  // ── Header (drawn last = always on top) ──
+  // ── Header (drawn on top) ──
+  // Draw coin count to left of capsule zone (not via rightText which renders at far right)
   const hdr = drawHeaderBar(ctx, W, H, '道具商店', {
     safeLeft:   G.SAFE_LEFT  || 0,
     safeTop:    G.SAFE_TOP   || 0,
     safeRight:  G.SAFE_RIGHT || 0,
     fontLoaded: _maShanZhengLoaded,
-    rightText:  '🪙 ' + state.coins,
   });
   _backRect = hdr.backRect;
+
+  // Coin count — positioned right of title, well left of WeChat capsule
+  const headerCY = (G.SAFE_TOP || 0) + 24;
+  ctx.save();
+  ctx.font         = 'bold 13px sans-serif';
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = '#ffd700';
+  ctx.shadowColor  = 'rgba(255,200,0,0.5)';
+  ctx.shadowBlur   = 5;
+  ctx.fillText('🪙 ' + state.coins, W / 2 + 54, headerCY);
+  ctx.restore();
+
+  // ── Bottom sheet animation ──
+  if (_sheet) {
+    _sheet.slideY += (_sheet.targetSlideY - _sheet.slideY) * 0.16;
+    if (_sheet.targetSlideY >= H && _sheet.slideY > H - 4) {
+      _sheet = null;
+    }
+  }
+
+  // ── Bottom sheet drawing ──
+  if (_sheet) {
+    _drawBottomSheet(ctx, W, H, ITEMS[_sheet.idx], _sheet.slideY);
+  }
 
   // ── Feedback toast ──
   if (_feedback && Date.now() < _feedback.expiresAt) {
@@ -161,7 +190,7 @@ function _loop(ts) {
     ctx.save();
     ctx.globalAlpha = alpha;
     ctx.fillStyle = _feedback.error ? 'rgba(200,60,60,0.92)' : 'rgba(30,200,120,0.92)';
-    _roundRect(ctx, W / 2 - 100, H / 2 - 22, 200, 44, 12);
+    _roundRect(ctx, W / 2 - 110, H / 2 - 22, 220, 44, 12);
     ctx.fill();
     ctx.font = 'bold 14px sans-serif';
     ctx.textAlign = 'center';
@@ -177,156 +206,99 @@ function _loop(ts) {
   _rafId = requestAnimationFrame(_loop);
 }
 
-function _drawItemCard(ctx, W, item, idx, cardX, cardY, cardW, cardH, t) {
+// ── Compact row drawing ───────────────────────────────────────
+function _drawItemRow(ctx, W, item, idx, rowX, rowY, rowW, rowH, isSelected) {
   const owned  = state.getItemQty(item.id);
   const canBuy = state.coins >= item.cost;
 
-  // ── Card background — deep purple-blue gradient, top highlight ──
+  // Row background
   ctx.save();
-  const bgGrd = ctx.createLinearGradient(cardX, cardY, cardX, cardY + cardH);
-  bgGrd.addColorStop(0, 'rgba(10,6,36,0.92)');
-  bgGrd.addColorStop(1, 'rgba(22,14,58,0.88)');
+  const bgGrd = ctx.createLinearGradient(rowX, rowY, rowX, rowY + rowH);
+  if (isSelected) {
+    bgGrd.addColorStop(0, 'rgba(60,30,110,0.95)');
+    bgGrd.addColorStop(1, 'rgba(40,20,80,0.92)');
+  } else {
+    bgGrd.addColorStop(0, 'rgba(12,7,38,0.90)');
+    bgGrd.addColorStop(1, 'rgba(20,12,52,0.86)');
+  }
   ctx.fillStyle = bgGrd;
-  _roundRect(ctx, cardX, cardY, cardW, cardH, 14);
+  _roundRect(ctx, rowX, rowY, rowW, rowH, 12);
   ctx.fill();
-  // Top 1px highlight line
-  ctx.fillStyle = 'rgba(255,255,255,0.07)';
-  ctx.fillRect(cardX + 14, cardY, cardW - 28, 1);
+  ctx.strokeStyle = isSelected ? 'rgba(180,120,255,0.55)' : 'rgba(100,80,180,0.28)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
   ctx.restore();
 
-  // ── Left icon zone ──
-  const iconZoneW = cardH;
-  const iconCx = cardX + iconZoneW / 2;
-  const iconCy = cardY + cardH / 2;
-  const iconR  = cardH * 0.28;
+  // Left icon circle
+  const iconR  = 17;
+  const iconCx = rowX + 10 + iconR;
+  const iconCy = rowY + rowH / 2;
 
-  // Glow halo behind icon
   ctx.save();
-  const haloGrd = ctx.createRadialGradient(iconCx, iconCy, 0, iconCx, iconCy, iconR * 1.8);
-  haloGrd.addColorStop(0, 'rgba(140,90,255,0.18)');
+  const haloGrd = ctx.createRadialGradient(iconCx, iconCy, 0, iconCx, iconCy, iconR * 1.6);
+  haloGrd.addColorStop(0, 'rgba(140,90,255,0.20)');
   haloGrd.addColorStop(1, 'rgba(80,40,180,0)');
   ctx.fillStyle = haloGrd;
-  ctx.beginPath();
-  ctx.arc(iconCx, iconCy, iconR * 1.8, 0, TWO_PI);
-  ctx.fill();
+  ctx.beginPath(); ctx.arc(iconCx, iconCy, iconR * 1.6, 0, TWO_PI); ctx.fill();
   ctx.restore();
 
-  // Icon circle base
   ctx.save();
   const circleGrd = ctx.createRadialGradient(iconCx, iconCy - iconR * 0.2, 0, iconCx, iconCy, iconR);
-  circleGrd.addColorStop(0, 'rgba(70,40,140,0.85)');
-  circleGrd.addColorStop(1, 'rgba(30,16,70,0.75)');
+  circleGrd.addColorStop(0, 'rgba(70,40,140,0.88)');
+  circleGrd.addColorStop(1, 'rgba(30,16,70,0.78)');
   ctx.fillStyle = circleGrd;
-  ctx.beginPath();
-  ctx.arc(iconCx, iconCy, iconR, 0, TWO_PI);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(180,140,255,0.45)';
+  ctx.beginPath(); ctx.arc(iconCx, iconCy, iconR, 0, TWO_PI); ctx.fill();
+  ctx.strokeStyle = 'rgba(180,140,255,0.50)';
   ctx.lineWidth = 1.2;
   ctx.stroke();
   ctx.restore();
 
   _drawItemIcon(ctx, item.id, iconCx, iconCy, iconR);
 
-  // ── Right content zone ──
-  const contentX = cardX + iconZoneW + 10;
-  const contentW = cardW - iconZoneW - 10 - 8;
-
-  // Item name
+  // Middle: name + type badge
+  const midX = rowX + 10 + iconR * 2 + 12;
   ctx.save();
   ctx.font         = 'bold 14px sans-serif';
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'top';
-  ctx.fillStyle    = '#e8e0ff';
-  ctx.shadowColor  = 'rgba(160,120,255,0.3)';
-  ctx.shadowBlur   = 4;
-  ctx.fillText(item.nameZh, contentX, cardY + 12);
+  ctx.fillStyle    = '#ede6ff';
+  ctx.shadowColor  = 'rgba(160,120,255,0.25)';
+  ctx.shadowBlur   = 3;
+  ctx.fillText(item.nameZh, midX, rowY + 11);
   ctx.restore();
 
-  // Type + duration badges (inline, small)
-  const badgeY = cardY + 30;
-  _drawPillBadge(ctx, contentX, badgeY, item.type,     item.type === '主动' ? 'rgba(160,100,255,0.35)' : 'rgba(80,130,220,0.35)', '#c0a0ff');
-  _drawPillBadge(ctx, contentX + 44, badgeY, item.duration, 'rgba(60,80,120,0.35)', '#8899cc');
+  _drawPillBadge(ctx, midX, rowY + rowH - 20, item.type,
+    item.type === '主动' ? 'rgba(160,100,255,0.35)' : 'rgba(80,130,220,0.35)', '#c0a0ff');
 
-  // Description (up to 2 lines)
-  ctx.save();
-  ctx.font         = '11px sans-serif';
-  ctx.textAlign    = 'left';
-  ctx.textBaseline = 'top';
-  ctx.fillStyle    = 'rgba(255,255,255,0.62)';
-  const maxDescW = contentW - 90;  // leave room for price+btn on right
-  let descText = item.desc;
-  if (ctx.measureText(descText).width > maxDescW * 1.9) {
-    // Attempt two-line split at ~halfway
-    const half = Math.floor(descText.length / 2);
-    const line1 = descText.slice(0, half);
-    const line2 = descText.slice(half);
-    ctx.fillText(line1, contentX, cardY + 48);
-    ctx.fillText(line2, contentX, cardY + 62);
-  } else if (ctx.measureText(descText).width > maxDescW) {
-    // Single line truncate
-    while (descText.length > 0 && ctx.measureText(descText + '…').width > maxDescW * 1.9) {
-      descText = descText.slice(0, -1);
-    }
-    ctx.fillText(descText + '…', contentX, cardY + 48);
-  } else {
-    ctx.fillText(descText, contentX, cardY + 48);
-  }
-  ctx.restore();
-
-  // ── Price + Buy button (right-aligned) ──
-  const btnW    = 72;
-  const btnH    = 28;
-  const btnX    = cardX + cardW - btnW - 8;
-  const priceY  = cardY + cardH - btnH - 28;
-  const btnY2   = cardY + cardH - btnH - 6;
-
-  // Price label
+  // Right: price + arrow
+  const rightX = rowX + rowW - 10;
   ctx.save();
   ctx.font         = 'bold 13px sans-serif';
   ctx.textAlign    = 'right';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle    = '#ffd700';
-  ctx.shadowColor  = 'rgba(255,200,0,0.4)';
-  ctx.shadowBlur   = 4;
-  ctx.fillText('🪙 ' + item.cost, cardX + cardW - 8, priceY + 9);
+  ctx.textBaseline = 'top';
+  ctx.fillStyle    = canBuy ? '#ffd700' : 'rgba(180,160,100,0.55)';
+  ctx.shadowColor  = 'rgba(255,200,0,0.35)';
+  ctx.shadowBlur   = canBuy ? 4 : 0;
+  ctx.fillText('🪙 ' + item.cost, rightX, rowY + 10);
   ctx.restore();
 
-  // Buy button
   ctx.save();
-  const btnGrd = ctx.createLinearGradient(btnX, btnY2, btnX, btnY2 + btnH);
-  if (canBuy) {
-    btnGrd.addColorStop(0, '#5533bb');
-    btnGrd.addColorStop(1, '#7744cc');
-  } else {
-    btnGrd.addColorStop(0, 'rgba(50,40,70,0.7)');
-    btnGrd.addColorStop(1, 'rgba(35,28,55,0.7)');
-  }
-  ctx.fillStyle = btnGrd;
-  _roundRect(ctx, btnX, btnY2, btnW, btnH, 8);
-  ctx.fill();
-  if (canBuy) {
-    ctx.strokeStyle = 'rgba(180,140,255,0.5)';
-    ctx.lineWidth   = 1;
-    ctx.stroke();
-  }
-  ctx.font         = 'bold 12px sans-serif';
-  ctx.textAlign    = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle    = canBuy ? '#f0e0ff' : 'rgba(200,180,220,0.45)';
-  ctx.fillText('购买', btnX + btnW / 2, btnY2 + btnH / 2);
+  ctx.font         = '16px sans-serif';
+  ctx.textAlign    = 'right';
+  ctx.textBaseline = 'bottom';
+  ctx.fillStyle    = 'rgba(180,160,220,0.55)';
+  ctx.fillText('›', rightX, rowY + rowH - 8);
   ctx.restore();
 
-  _buyRects.push({ rect: { x: btnX, y: btnY2, w: btnW, h: btnH }, itemIdx: idx });
-
-  // Owned count badge
+  // Owned badge
   if (owned > 0) {
-    const bx = cardX + cardW - 12;
-    const by = cardY + 10;
+    const bx = rowX + rowW - 10;
+    const by = rowY + 8;
     ctx.save();
     ctx.fillStyle   = '#2a1a5e';
     ctx.strokeStyle = '#b088ff';
     ctx.lineWidth   = 1;
-    ctx.beginPath(); ctx.arc(bx, by, 9, 0, TWO_PI); ctx.fill(); ctx.stroke();
+    ctx.beginPath(); ctx.arc(bx, by, 8, 0, TWO_PI); ctx.fill(); ctx.stroke();
     ctx.font         = 'bold 9px sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
@@ -336,7 +308,176 @@ function _drawItemCard(ctx, W, item, idx, cardX, cardY, cardW, cardH, t) {
   }
 }
 
-// Pill badge helper
+// ── Bottom sheet drawing ──────────────────────────────────────
+function _drawBottomSheet(ctx, W, H, item, slideY) {
+  _sheetBuyRect = null;
+  const owned  = state.getItemQty(item.id);
+  const canBuy = state.coins >= item.cost;
+
+  // Progress 0→1 as sheet slides up
+  const progress = Math.max(0, Math.min(1, (H - slideY) / SHEET_H));
+
+  // Dim overlay
+  ctx.save();
+  ctx.globalAlpha = progress * 0.55;
+  ctx.fillStyle   = '#000';
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+
+  // Panel
+  const panelY = slideY;
+  ctx.save();
+  ctx.globalAlpha = progress;
+
+  // Panel background with rounded top corners
+  ctx.beginPath();
+  const r = 20;
+  ctx.moveTo(0 + r, panelY);
+  ctx.lineTo(W - r, panelY);
+  ctx.quadraticCurveTo(W, panelY, W, panelY + r);
+  ctx.lineTo(W, panelY + SHEET_H);
+  ctx.lineTo(0, panelY + SHEET_H);
+  ctx.lineTo(0, panelY + r);
+  ctx.quadraticCurveTo(0, panelY, r, panelY);
+  ctx.closePath();
+  ctx.fillStyle = 'rgba(8,4,30,0.97)';
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(140,100,255,0.30)';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+
+  // Top border glow line
+  ctx.fillStyle = 'rgba(180,140,255,0.18)';
+  ctx.fillRect(r, panelY, W - r * 2, 1);
+
+  // Drag handle
+  ctx.fillStyle = 'rgba(255,255,255,0.20)';
+  _roundRect(ctx, W / 2 - 20, panelY + 8, 40, 4, 2);
+  ctx.fill();
+
+  ctx.restore();
+
+  // Content (only draw when mostly visible)
+  if (progress < 0.15) return;
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, (progress - 0.15) / 0.85);
+
+  // Large icon
+  const iconR  = 28;
+  const iconCx = W / 2;
+  const iconCy = panelY + 22 + iconR;
+
+  const haloGrd = ctx.createRadialGradient(iconCx, iconCy, 0, iconCx, iconCy, iconR * 2);
+  haloGrd.addColorStop(0, 'rgba(140,90,255,0.22)');
+  haloGrd.addColorStop(1, 'rgba(80,40,180,0)');
+  ctx.fillStyle = haloGrd;
+  ctx.beginPath(); ctx.arc(iconCx, iconCy, iconR * 2, 0, TWO_PI); ctx.fill();
+
+  const circleGrd = ctx.createRadialGradient(iconCx, iconCy - iconR * 0.2, 0, iconCx, iconCy, iconR);
+  circleGrd.addColorStop(0, 'rgba(70,40,140,0.90)');
+  circleGrd.addColorStop(1, 'rgba(30,16,70,0.82)');
+  ctx.fillStyle = circleGrd;
+  ctx.beginPath(); ctx.arc(iconCx, iconCy, iconR, 0, TWO_PI); ctx.fill();
+  ctx.strokeStyle = 'rgba(180,140,255,0.55)';
+  ctx.lineWidth   = 1.5;
+  ctx.stroke();
+
+  _drawItemIcon(ctx, item.id, iconCx, iconCy, iconR);
+
+  // Name
+  let textY = iconCy + iconR + 12;
+  ctx.font         = 'bold 16px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle    = '#ede6ff';
+  ctx.shadowColor  = 'rgba(180,140,255,0.4)';
+  ctx.shadowBlur   = 6;
+  ctx.fillText(item.nameZh, W / 2, textY);
+  textY += 24;
+
+  // Type + duration badges centered
+  const typeW    = _measurePillW(ctx, item.type);
+  const durW     = _measurePillW(ctx, item.duration);
+  const totalBadgeW = typeW + 6 + durW;
+  _drawPillBadge(ctx, W / 2 - totalBadgeW / 2, textY,
+    item.type, item.type === '主动' ? 'rgba(160,100,255,0.40)' : 'rgba(80,130,220,0.40)', '#c0a0ff');
+  _drawPillBadge(ctx, W / 2 - totalBadgeW / 2 + typeW + 6, textY,
+    item.duration, 'rgba(60,80,120,0.40)', '#8899cc');
+  textY += 22;
+
+  // Description
+  ctx.font         = '12px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle    = 'rgba(220,210,255,0.72)';
+  ctx.shadowBlur   = 0;
+  const maxDescW = W - 48;
+  let desc = item.desc;
+  if (ctx.measureText(desc).width > maxDescW) {
+    // Try to split at a natural break point
+    const half = Math.ceil(desc.length / 2);
+    ctx.fillText(desc.slice(0, half), W / 2, textY);
+    ctx.fillText(desc.slice(half), W / 2, textY + 17);
+    textY += 17;
+  } else {
+    ctx.fillText(desc, W / 2, textY);
+  }
+  textY += 18;
+
+  // Owned count
+  if (owned > 0) {
+    ctx.font      = '11px sans-serif';
+    ctx.fillStyle = '#ffd700';
+    ctx.fillText('已拥有 ' + owned + ' 个', W / 2, textY);
+    textY += 16;
+  }
+
+  ctx.restore();
+
+  // Buy button (always drawn at fixed position near sheet bottom)
+  const btnW = W - 40;
+  const btnH = 40;
+  const btnX = 20;
+  const btnY = panelY + SHEET_H - btnH - 14;
+  _sheetBuyRect = { x: btnX, y: btnY, w: btnW, h: btnH };
+
+  ctx.save();
+  ctx.globalAlpha = Math.max(0, (progress - 0.15) / 0.85);
+
+  const btnGrd = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnH);
+  if (canBuy) {
+    btnGrd.addColorStop(0, '#6644cc');
+    btnGrd.addColorStop(1, '#8855ee');
+  } else {
+    btnGrd.addColorStop(0, 'rgba(50,40,70,0.72)');
+    btnGrd.addColorStop(1, 'rgba(35,28,55,0.72)');
+  }
+  ctx.fillStyle = btnGrd;
+  _roundRect(ctx, btnX, btnY, btnW, btnH, 12);
+  ctx.fill();
+  if (canBuy) {
+    ctx.strokeStyle = 'rgba(200,160,255,0.55)';
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+  }
+
+  ctx.font         = 'bold 15px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = canBuy ? '#f0e0ff' : 'rgba(200,180,220,0.45)';
+  ctx.shadowColor  = canBuy ? 'rgba(200,160,255,0.4)' : 'none';
+  ctx.shadowBlur   = canBuy ? 6 : 0;
+  ctx.fillText('购买  🪙 ' + item.cost, btnX + btnW / 2, btnY + btnH / 2);
+
+  ctx.restore();
+}
+
+// ── Pill badge helpers ────────────────────────────────────────
+function _measurePillW(ctx, text) {
+  ctx.font = '9px sans-serif';
+  return ctx.measureText(text).width + 10;
+}
+
 function _drawPillBadge(ctx, x, y, text, bgColor, textColor) {
   if (!text) return;
   ctx.save();
@@ -354,7 +495,7 @@ function _drawPillBadge(ctx, x, y, text, bgColor, textColor) {
   ctx.restore();
 }
 
-// Canvas icon drawing (same logic as before, scaled to new iconR)
+// ── Canvas icon drawing ───────────────────────────────────────
 function _drawItemIcon(ctx, itemId, cx, cy, r) {
   ctx.save();
   ctx.strokeStyle = '#d4b8ff';
@@ -463,8 +604,11 @@ function _onTouchMove(e) {
   const dy = touch.clientY - _lastTouchY;
   _lastTouchY = touch.clientY;
   if (Math.abs(dy) > 3) _isDragging = true;
-  const maxScroll = Math.max(0, _totalH - G.SCREEN_H);
-  _scrollTarget = Math.max(0, Math.min(maxScroll, _scrollTarget - dy));
+  // Only scroll if no sheet open (or sheet not yet fully open)
+  if (!_sheet || _sheet.slideY > G.SCREEN_H - SHEET_H + 20) {
+    const maxScroll = Math.max(0, _totalH - G.SCREEN_H);
+    _scrollTarget = Math.max(0, Math.min(maxScroll, _scrollTarget - dy));
+  }
 }
 
 function _onTouchEnd(e) {
@@ -474,14 +618,35 @@ function _onTouchEnd(e) {
   const tx = touch.clientX;
   const ty = touch.clientY;
 
+  // Back button
   if (_backRect && hitTest(_backRect, tx, ty)) {
-    if (_navigate) _navigate('levels');
+    if (_navigate) _navigate('menu');
     return;
   }
 
-  for (const { rect, itemIdx } of _buyRects) {
+  // If sheet is open: buy button or dismiss
+  if (_sheet && _sheet.slideY < G.SCREEN_H - 10) {
+    // Buy button in sheet
+    if (_sheetBuyRect && hitTest(_sheetBuyRect, tx, ty)) {
+      _tryBuy(_sheet.idx);
+      return;
+    }
+    // Tap above sheet → dismiss
+    if (ty < _sheet.slideY - 10) {
+      _sheet.targetSlideY = G.SCREEN_H;
+      return;
+    }
+    return;
+  }
+
+  // Row tap → open sheet
+  for (const { rect, itemIdx } of _rowRects) {
     if (hitTest({ x: rect.x, y: rect.y - _scrollY, w: rect.w, h: rect.h }, tx, ty)) {
-      _tryBuy(itemIdx);
+      if (_sheet && _sheet.idx === itemIdx) {
+        _sheet.targetSlideY = G.SCREEN_H;
+      } else {
+        _sheet = { idx: itemIdx, slideY: G.SCREEN_H, targetSlideY: G.SCREEN_H - SHEET_H };
+      }
       return;
     }
   }
@@ -495,7 +660,7 @@ function _tryBuy(itemIdx) {
     return;
   }
   state.addItem(item.id, 1);
-  _feedback = { msg: '已购买 ' + item.nameZh + '！', expiresAt: Date.now() + 1200 };
+  _feedback = { msg: '已购买 ' + item.nameZh + '！', expiresAt: Date.now() + 1400 };
 }
 
 // ── Helper ────────────────────────────────────────────────────

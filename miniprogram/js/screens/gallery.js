@@ -335,7 +335,7 @@ function _loop(now) {
   ctx.textAlign = 'right';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(180,200,255,0.65)';
-  ctx.fillText(`${discovered}/${CONSTELLATIONS.length} 已解锁`, W - G.SAFE_RIGHT - 12, G.SAFE_TOP + 26);
+  ctx.fillText(`${discovered}/${CONSTELLATIONS.length} 已解锁`, W - G.SAFE_RIGHT - 96, G.SAFE_TOP + 26);
   ctx.restore();
 
   // ── 星系名（crossfade，无箭头按钮） ──────────────────────────
