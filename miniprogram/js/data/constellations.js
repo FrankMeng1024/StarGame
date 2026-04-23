@@ -15,7 +15,6 @@ export const CONSTELLATIONS = [
     photos: [
       'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg/480px-Orion_Nebula_-_Hubble_2006_mosaic_18000.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/Orion_Head_to_Toe.jpg/320px-Orion_Head_to_Toe.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Orion_constellation_map.svg/320px-Orion_constellation_map.svg.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3d/Horsehead_nebula_December_2011.jpg/320px-Horsehead_nebula_December_2011.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Rigel_star.jpg/320px-Rigel_star.jpg',
     ],
@@ -50,7 +49,6 @@ export const CONSTELLATIONS = [
     mainStars: '北斗七星（天枢、玉衡、开阳等）',
     photos: [
       'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b0/Ursa_Major_-_Meade_ETX.jpg/320px-Ursa_Major_-_Meade_ETX.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Ursa_Major_constellation_map.svg/320px-Ursa_Major_constellation_map.svg.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/43/UrsaMajorCC.jpg/320px-UrsaMajorCC.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c5/M81_and_M82.jpg/320px-M81_and_M82.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/3/37/Mizar_and_Alcor.jpg/320px-Mizar_and_Alcor.jpg',
@@ -77,7 +75,7 @@ export const CONSTELLATIONS = [
     bestViewMonth: '7月（夏季最佳）',
     mainStars: '心宿二（Antares）、蝎尾双星',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7f/Scorpius_constellation_map.svg/320px-Scorpius_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/52/Scorpius_constellation_map.png/320px-Scorpius_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/0/06/Antares.jpg/320px-Antares.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/8/82/Cat%27s_Eye_Nebula_-_NGC6543.jpg/320px-Cat%27s_Eye_Nebula_-_NGC6543.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9c/M6_NGC_6405.jpg/320px-M6_NGC_6405.jpg',
@@ -110,7 +108,7 @@ export const CONSTELLATIONS = [
     bestViewMonth: '4月（春季最佳）',
     mainStars: '轩辕十四（Regulus）、五帝座一',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/Leo_constellation_map.svg/320px-Leo_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/de/Leo_constellation_map.png/320px-Leo_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a2/Leo_I_Dwarf_Galaxy.jpg/320px-Leo_I_Dwarf_Galaxy.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/95/Leo_annotated.jpg/320px-Leo_annotated.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b7/Regulus_-_Leo.jpg/320px-Regulus_-_Leo.jpg',
@@ -140,8 +138,7 @@ export const CONSTELLATIONS = [
     bestViewMonth: '12月（冬季最佳）',
     mainStars: '娄宿三（Hamal）、娄宿一',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Aries_constellation_map.svg/320px-Aries_constellation_map.svg.png',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8b/Aries_IAU.svg/320px-Aries_IAU.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/Aries_constellation_map.png/320px-Aries_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/69/Teide_Observatory.jpg/320px-Teide_Observatory.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/93/Hamal_star.jpg/320px-Hamal_star.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/2/23/Aries_zodiac.jpg/320px-Aries_zodiac.jpg',
@@ -165,8 +162,7 @@ export const CONSTELLATIONS = [
     bestViewMonth: '1月（冬季最佳）',
     mainStars: '毕宿五（Aldebaran）、昴星团七姐妹',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Pleiades_large.jpg/320px-Pleiades_large.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b6/Taurus_constellation_map.svg/320px-Taurus_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Taurus_constellation_map.png/320px-Taurus_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/0/00/Crab_Nebula.jpg/320px-Crab_Nebula.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d9/Aldebaran_%28PSF%29.jpg/320px-Aldebaran_%28PSF%29.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Hyades_cluster.jpg/320px-Hyades_cluster.jpg',
@@ -192,7 +188,7 @@ export const CONSTELLATIONS = [
     bestViewMonth: '2月（冬季最佳）',
     mainStars: '北河三（Pollux）、北河二（Castor）',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Gemini_constellation_map.svg/320px-Gemini_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Gemini_constellation_map.png/320px-Gemini_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/NGC2392.jpg/320px-NGC2392.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/5/58/Gemini_star_field.jpg/320px-Gemini_star_field.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/8/88/Pollux_star.jpg/320px-Pollux_star.jpg',
@@ -221,11 +217,9 @@ export const CONSTELLATIONS = [
     bestViewMonth: '3月（春季最佳）',
     mainStars: 'Tarf（柳宿增三）、蜂巢星团',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Beehive_Cluster_-_M44.jpg/320px-Beehive_Cluster_-_M44.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Cancer_constellation_map.svg/320px-Cancer_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Cancer_constellation_map.png/320px-Cancer_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a4/55_Cancri_System.jpg/320px-55_Cancri_System.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/M67_NGC_2682.jpg/320px-M67_NGC_2682.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/2/24/Cancer_zodiac_symbol.svg/320px-Cancer_zodiac_symbol.svg.png',
     ],
     lines: [[0,2],[2,1],[2,3],[3,4]],
     stars: [
@@ -247,11 +241,10 @@ export const CONSTELLATIONS = [
     bestViewMonth: '5月（春末最佳）',
     mainStars: '角宿一（Spica）、Porrima双星',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Virgo_constellation_map.svg/320px-Virgo_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Virgo_constellation_map.png/320px-Virgo_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Sombrero_Galaxy_in_infrared_light_%28Hubble_Space_Telescope_and_Spitzer_Space_Telescope%29.jpg/320px-Sombrero_Galaxy_in_infrared_light_%28Hubble_Space_Telescope_and_Spitzer_Space_Telescope%29.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Spica_star.jpg/320px-Spica_star.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Virgo_cluster.jpg/320px-Virgo_cluster.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Virgo_IAU.svg/320px-Virgo_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]],
     stars: [
@@ -278,10 +271,9 @@ export const CONSTELLATIONS = [
     bestViewMonth: '6月（夏初最佳）',
     mainStars: '氐宿一（Zuben Elgenubi）、氐宿四',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Libra_constellation_map.svg/320px-Libra_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7d/Libra_constellation_map.png/320px-Libra_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f3/Gliese_581_star.jpg/320px-Gliese_581_star.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Libra_star_field.jpg/320px-Libra_star_field.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Libra_IAU.svg/320px-Libra_IAU.svg.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Gliese581_system.jpg/320px-Gliese581_system.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,0],[0,4]],
@@ -304,8 +296,7 @@ export const CONSTELLATIONS = [
     bestViewMonth: '8月（夏季最佳）',
     mainStars: '斗宿南斗六星、礁湖星云M8',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Lagoon_Nebula_ESO.jpg/320px-Lagoon_Nebula_ESO.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bb/Sagittarius_constellation_map.svg/320px-Sagittarius_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/80/Sagittarius_constellation_map.png/320px-Sagittarius_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Milky_Way_Arch.jpg/320px-Milky_Way_Arch.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8c/NGC_6523_Lagoon_Nebula.jpg/320px-NGC_6523_Lagoon_Nebula.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5e/Trifid.nebula.jpg/320px-Trifid.nebula.jpg',
@@ -333,11 +324,10 @@ export const CONSTELLATIONS = [
     bestViewMonth: '9月（秋季最佳）',
     mainStars: '牛宿增六（Deneb Algedi）、牛宿二',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/71/Capricornus_constellation_map.svg/320px-Capricornus_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b4/Capricornus_constellation_map.png/320px-Capricornus_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/5/54/Capricornus_star_field.jpg/320px-Capricornus_star_field.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a7/Capricornus_zodiac.jpg/320px-Capricornus_zodiac.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/M30_globular_cluster.jpg/320px-M30_globular_cluster.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/3/31/Capricornus_IAU.svg/320px-Capricornus_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0]],
     stars: [
@@ -360,11 +350,9 @@ export const CONSTELLATIONS = [
     bestViewMonth: '10月（秋季最佳）',
     mainStars: '虚宿一（Sadalsuud）、螺旋星云NGC 7293',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e6/NGC7293_%282004%29.jpg/320px-NGC7293_%282004%29.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Aquarius_constellation_map.svg/320px-Aquarius_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/01/Aquarius_constellation_map.png/320px-Aquarius_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/d/df/NGC_7009_%28taken_by_Hubble%29.jpg/320px-NGC_7009_%28taken_by_Hubble%29.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4e/Sadalsuud_star.jpg/320px-Sadalsuud_star.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e0/Aquarius_IAU.svg/320px-Aquarius_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]],
     stars: [
@@ -388,11 +376,10 @@ export const CONSTELLATIONS = [
     bestViewMonth: '11月（秋末最佳）',
     mainStars: '外屏七（Alrescha）、右更二',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ec/Pisces_constellation_map.svg/320px-Pisces_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Pisces_constellation_map.png/320px-Pisces_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d5/Pisces_star_field.jpg/320px-Pisces_star_field.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5f/NGC_7619_SDSS.jpg/320px-NGC_7619_SDSS.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6e/Pisces_star_chart.jpg/320px-Pisces_star_chart.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Pisces_IAU.svg/320px-Pisces_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[5,7],[7,8],[8,9]],
     stars: [
@@ -419,7 +406,7 @@ export const CONSTELLATIONS = [
     bestViewMonth: '11月（秋季最佳，全年可见）',
     mainStars: '王良四（Schedar）、第谷超新星遗迹',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Cassiopeia_constellation_map.svg/320px-Cassiopeia_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Cassiopeia_constellation_map.png/320px-Cassiopeia_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9b/Cassiopeia_A.jpg/320px-Cassiopeia_A.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Cassiopeia_heart_and_soul_nebulae.jpg/320px-Cassiopeia_heart_and_soul_nebulae.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/2/26/Messier_52_2MASS.jpg/320px-Messier_52_2MASS.jpg',
@@ -445,7 +432,7 @@ export const CONSTELLATIONS = [
     bestViewMonth: '12月（冬季最佳）',
     mainStars: '天船三（Mirfak）、大陵五（Algol）',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Perseus_constellation_map.svg/320px-Perseus_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/09/Perseus_constellation_map.png/320px-Perseus_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f8/Perseid_Meteor.jpg/320px-Perseid_Meteor.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/1/17/Algol_triple_star_system_imaged_with_the_CHARA_interferometer_%28labeled%29.jpg/320px-Algol_triple_star_system_imaged_with_the_CHARA_interferometer_%28labeled%29.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/7/77/Messier_34.jpg/320px-Messier_34.jpg',
@@ -475,11 +462,10 @@ export const CONSTELLATIONS = [
     bestViewMonth: '8月（夏季最佳）',
     mainStars: '河鼓二/牛郎星（Altair）、夏季大三角',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Aquila_constellation_map.svg/320px-Aquila_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/7/7c/Aquila_constellation_map.png/320px-Aquila_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/d/db/Altair_and_vicinity.jpg/320px-Altair_and_vicinity.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/45/Milky_Way_IR_Spitzer.jpg/320px-Milky_Way_IR_Spitzer.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5d/Eta_Aquilae_light_curve.png/320px-Eta_Aquilae_light_curve.png',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/ce/Aquila_IAU.svg/320px-Aquila_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[1,5]],
     stars: [
@@ -502,7 +488,7 @@ export const CONSTELLATIONS = [
     bestViewMonth: '9月（夏末最佳）',
     mainStars: '天津四（Deneb）、辇道增七（Albireo）',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d4/Cygnus_constellation_map.svg/320px-Cygnus_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/cc/Cygnus_constellation_map.png/320px-Cygnus_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/North_America_Nebula.jpg/320px-North_America_Nebula.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Cygnus_X-1.jpg/320px-Cygnus_X-1.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/e/ef/Pelican_nebula.jpg/320px-Pelican_nebula.jpg',
@@ -532,11 +518,9 @@ export const CONSTELLATIONS = [
     bestViewMonth: '8月（夏季最佳）',
     mainStars: '织女一（Vega）、环状星云M57',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/bf/Ring_Nebula.jpg/320px-Ring_Nebula.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0b/Lyra_constellation_map.svg/320px-Lyra_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/2/29/Lyra_constellation_map.png/320px-Lyra_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6f/Vega_star.jpg/320px-Vega_star.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Epsilon_Lyrae_double_double.jpg/320px-Epsilon_Lyrae_double_double.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Lyra_IAU.svg/320px-Lyra_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,1]],
     stars: [
@@ -558,11 +542,9 @@ export const CONSTELLATIONS = [
     bestViewMonth: '5月（南半球秋季最佳）',
     mainStars: '十字架一（Acrux）、十字架二（Mimosa）',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/68/Coalsack_Nebula.jpg/320px-Coalsack_Nebula.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Crux_constellation_map.svg/320px-Crux_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Crux_constellation_map.png/320px-Crux_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Southern_Cross_I_%28aka%29.jpg/320px-Southern_Cross_I_%28aka%29.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d7/Jewel_Box_Cluster_NGC_4755.jpg/320px-Jewel_Box_Cluster_NGC_4755.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9f/Crux_IAU.svg/320px-Crux_IAU.svg.png',
     ],
     lines: [[0,1],[2,3]],
     stars: [
@@ -583,11 +565,10 @@ export const CONSTELLATIONS = [
     bestViewMonth: '6月（全年可见，夏季子午线最高）',
     mainStars: '北极星/勾陈一（Polaris）、北极二（Kochab）',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/be/Ursa_Minor_constellation_map.svg/320px-Ursa_Minor_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/0/04/Ursa_Minor_constellation_map.png/320px-Ursa_Minor_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Polaris_system.jpg/320px-Polaris_system.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0d/Ursa_Minor_star_trail.jpg/320px-Ursa_Minor_star_trail.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/0/0e/Polaris_Hubble_2006_SM4.jpg/320px-Polaris_Hubble_2006_SM4.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b2/Ursa_Minor_IAU.svg/320px-Ursa_Minor_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]],
     stars: [
@@ -611,11 +592,10 @@ export const CONSTELLATIONS = [
     bestViewMonth: '6月（春末夏初最佳）',
     mainStars: '大角（Arcturus）、招摇（Izar）',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/8e/Bootes_constellation_map.svg/320px-Bootes_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/8/89/Bo%C3%B6tes_constellation_map.png/320px-Bo%C3%B6tes_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6a/Arcturus.png/320px-Arcturus.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e4/Bootes_void.jpg/320px-Bootes_void.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/7/70/Izar_double_star.jpg/320px-Izar_double_star.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ac/Bootes_IAU.svg/320px-Bootes_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[2,6]],
     stars: [
@@ -639,11 +619,9 @@ export const CONSTELLATIONS = [
     bestViewMonth: '2月（冬季最佳）',
     mainStars: '五车二（Capella）、御夫座三星团M36/37/38',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/e/e8/Auriga_constellation_map.svg/320px-Auriga_constellation_map.svg.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3f/Capella_star.jpg/320px-Capella_star.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/94/Messier_36.jpg/320px-Messier_36.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d2/Messier_37.jpg/320px-Messier_37.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c4/Auriga_IAU.svg/320px-Auriga_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,0]],
     stars: [
@@ -666,11 +644,10 @@ export const CONSTELLATIONS = [
     bestViewMonth: '10月（秋季最佳）',
     mainStars: '危宿一（Enif）、秋季大四边形四星',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/9/96/Pegasus_constellation_map.svg/320px-Pegasus_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1e/Pegasus_constellation_map.png/320px-Pegasus_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/1/15/51_pegasi_b.jpg/320px-51_pegasi_b.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/66/Pegasus_stars.jpg/320px-Pegasus_stars.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/7/74/Stephan%27s_Quintet_HST.jpg/320px-Stephan%27s_Quintet_HST.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/ab/Pegasus_IAU.svg/320px-Pegasus_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,0],[0,4],[4,5]],
     stars: [
@@ -693,11 +670,10 @@ export const CONSTELLATIONS = [
     bestViewMonth: '9月（夏末最佳）',
     mainStars: 'Sualocin、Rotanev（逆读人名趣闻）',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/63/Delphinus_constellation_map.svg/320px-Delphinus_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/49/Delphinus_constellation_map.png/320px-Delphinus_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/NGC_6905.jpg/320px-NGC_6905.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Delphinus_star_photo.jpg/320px-Delphinus_star_photo.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/5/55/NGC_6934_globular.jpg/320px-NGC_6934_globular.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c0/Delphinus_IAU.svg/320px-Delphinus_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,0],[0,2]],
     stars: [
@@ -720,10 +696,8 @@ export const CONSTELLATIONS = [
     mainStars: '北落师门（Fomalhaut）、第一颗直接拍摄的系外行星',
     photos: [
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/Fomalhaut_with_Disk_Ring_and_extrasolar_planet_b.jpg/320px-Fomalhaut_with_Disk_Ring_and_extrasolar_planet_b.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a1/Piscis_Austrinus_constellation_map.svg/320px-Piscis_Austrinus_constellation_map.svg.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3e/Fomalhaut_Hubble.jpg/320px-Fomalhaut_Hubble.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a8/Fomalhaut_star_field.jpg/320px-Fomalhaut_star_field.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/da/PsA_IAU.svg/320px-PsA_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,0]],
     stars: [
@@ -745,11 +719,10 @@ export const CONSTELLATIONS = [
     bestViewMonth: '7月（全年可见，夏季最高）',
     mainStars: '天棓四（Eltanin）、古北极星右枢（Thuban）',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/4/47/Draco_constellation_map.svg/320px-Draco_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/Draco_constellation_map.png/320px-Draco_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/4/4f/Cat%27s_Eye_Nebula_-_Hubble_1994.jpg/320px-Cat%27s_Eye_Nebula_-_Hubble_1994.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/5/5a/Draco_star_trail.jpg/320px-Draco_star_trail.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9e/NGC_6543_Cats_Eye_Nebula.jpg/320px-NGC_6543_Cats_Eye_Nebula.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d3/Draco_IAU.svg/320px-Draco_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,12],[12,13]],
     stars: [
@@ -780,11 +753,9 @@ export const CONSTELLATIONS = [
     bestViewMonth: '7月（夏季最佳）',
     mainStars: '候（Rasalhague）、开普勒超新星遗迹',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/c/c7/Ophiuchus_constellation_map.svg/320px-Ophiuchus_constellation_map.svg.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/1/12/Barnard2005.gif/320px-Barnard2005.gif',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/2/21/Rho_Ophiuchi.jpg/320px-Rho_Ophiuchi.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/3/36/Kepler_supernova_remnant.jpg/320px-Kepler_supernova_remnant.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d6/Ophiuchus_IAU.svg/320px-Ophiuchus_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[2,6]],
     stars: [
@@ -808,11 +779,10 @@ export const CONSTELLATIONS = [
     bestViewMonth: '5月（南半球最佳）',
     mainStars: '南门二（Alpha Cen）、比邻星（最近恒星4.24光年）',
     photos: [
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/a/a9/Centaurus_constellation_map.svg/320px-Centaurus_constellation_map.svg.png',
+      'https://upload.wikimedia.org/wikipedia/commons/thumb/6/6b/Centaurus_constellation_map.png/320px-Centaurus_constellation_map.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/1/1b/Omega_Centauri_by_HST.jpg/320px-Omega_Centauri_by_HST.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/3/3a/Proxima_Centauri_2.jpg/320px-Proxima_Centauri_2.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/6/65/Centaurus_A_HST.jpg/320px-Centaurus_A_HST.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/d/d0/Centaurus_IAU.svg/320px-Centaurus_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10]],
     stars: [
@@ -841,10 +811,8 @@ export const CONSTELLATIONS = [
     mainStars: '常陈一（Cor Caroli）、漩涡星系M51',
     photos: [
       'https://upload.wikimedia.org/wikipedia/commons/thumb/9/9d/Messier51_sRGB.jpg/320px-Messier51_sRGB.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/3/35/Canes_Venatici_constellation_map.svg/320px-Canes_Venatici_constellation_map.svg.png',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/5/56/M3globular.jpg/320px-M3globular.jpg',
       'https://upload.wikimedia.org/wikipedia/commons/thumb/f/f0/M94_galaxy.jpg/320px-M94_galaxy.jpg',
-      'https://upload.wikimedia.org/wikipedia/commons/thumb/b/b3/Canes_Venatici_IAU.svg/320px-Canes_Venatici_IAU.svg.png',
     ],
     lines: [[0,1],[1,2],[2,3]],
     stars: [

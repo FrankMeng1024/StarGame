@@ -57,12 +57,12 @@ let _isDragging   = false;
 let _touchStartX  = 0;
 let _touchStartY  = 0;
 
-// 底部抽屉详情
-let _drawer       = null;   // null | { idx, phase, scrollY, scrollTarget }
-let _drawerRects  = {};     // 抽屉内按钮区域
-let _drawerLastTY = 0;
-let _drawerDragging = false;
-let _drawerTotalH = 0;
+// 全屏详情页
+let _detail         = null;  // null | { idx, alpha, scrollY, scrollTarget }
+let _detailRects    = {};    // 详情页内按钮区域
+let _detailLastTY   = 0;
+let _detailDragging = false;
+let _detailTotalH   = 0;
 
 // 照片轮播
 let _carouselPos   = 0;
@@ -114,8 +114,8 @@ function _cleanup() {
   _nodeRects   = [];
   _bgStars     = [];
   _backRect    = null;
-  _drawer      = null;
-  _drawerRects = {};
+  _detail      = null;
+  _detailRects = {};
   _carouselPos = 0;
   _carouselForIdx = -1;
   _carouselImgs = [];
@@ -180,10 +180,10 @@ function _loop(now) {
     }
     _slideX = 0; _slideTargetX = 0;
   }
-  // 抽屉动画
-  if (_drawer) {
-    _drawer.phase = Math.min(1, _drawer.phase + 0.06);
-    _drawer.scrollY += (_drawer.scrollTarget - _drawer.scrollY) * 0.20;
+  // 详情页动画
+  if (_detail) {
+    _detail.alpha = Math.min(1, _detail.alpha + 0.07);
+    _detail.scrollY += (_detail.scrollTarget - _detail.scrollY) * 0.20;
   }
 
   // ── 背景 ─────────────────────────────────────────────────
@@ -286,9 +286,9 @@ function _loop(now) {
   // ── 组指示器 ─────────────────────────────────────────────
   _drawGroupIndicator(ctx, W, H);
 
-  // ── 底部抽屉 ─────────────────────────────────────────────
-  if (_drawer) {
-    _drawDrawer(ctx, W, H, t);
+  // ── 全屏详情页 ────────────────────────────────────────────
+  if (_detail) {
+    _drawDetail(ctx, W, H, t);
   }
 
   tickFade(1 / 60);
@@ -348,7 +348,7 @@ function _drawNode(ctx, node, t, groupIdx) {
   const unlocked = state.isUnlocked(idx);
   const score    = state.getScore(idx);
   const explored = score && score.stars > 0;  // 曾经通关（即"探索过"）
-  const isActive = _drawer && _drawer.idx === idx;  // 当前选中
+  const isActive = _detail && _detail.idx === idx;  // 当前选中
   const group    = _GROUPS[groupIdx];
 
   ctx.save();
@@ -490,7 +490,7 @@ function _drawNode(ctx, node, t, groupIdx) {
   ctx.restore();
 
   // ── 脉冲外环（当前选中） ──────────────────────────────────
-  if (isActive && _drawer) {
+  if (isActive && _detail) {
     const pulse = 0.5 + 0.5 * Math.sin(t * 2.8);
     ctx.save();
     ctx.globalAlpha = 0.35 * pulse;
@@ -536,152 +536,105 @@ function _drawGroupIndicator(ctx, W, H) {
   }
 }
 
-// ── 底部抽屉 ──────────────────────────────────────────────────
-// 从底部滑入，覆盖屏幕下半（约70%）
-function _drawDrawer(ctx, W, H, t) {
-  if (!_drawer) return;
-  const c   = CONSTELLATIONS[_drawer.idx];
-  const grpIdx = _GROUPS.findIndex(g => g.levels.includes(_drawer.idx));
-  const grp = _GROUPS[Math.max(0, grpIdx)];
-
-  const DRAWER_H = H * 0.72;
-  const phase    = _easeOut(_drawer.phase);
-  const drawerY  = H - DRAWER_H * phase;
-
-  // 遮罩
-  ctx.save();
-  ctx.fillStyle = `rgba(0,0,0,${0.55 * phase})`;
-  ctx.fillRect(0, 0, W, H);
-  ctx.restore();
-
-  // 抽屉背景
-  ctx.save();
-  ctx.fillStyle = 'rgba(10,14,42,0.97)';
-  _roundRect(ctx, 0, drawerY, W, DRAWER_H + 20, 18);
-  ctx.fill();
-  // 顶部彩色线
-  ctx.strokeStyle = grp.color + '66';
-  ctx.lineWidth = 1.5;
-  ctx.beginPath();
-  ctx.moveTo(20, drawerY + 1);
-  ctx.lineTo(W - 20, drawerY + 1);
-  ctx.stroke();
-  ctx.restore();
-
-  // 拖动手柄
-  ctx.save();
-  ctx.fillStyle = 'rgba(140,150,220,0.35)';
-  _roundRect(ctx, W / 2 - 22, drawerY + 7, 44, 4, 2);
-  ctx.fill();
-  ctx.restore();
-
-  // 关闭按钮
-  _drawerRects.close = _ghostBtn(ctx, W - G.SAFE_RIGHT - 50, drawerY + 12, 40, 28, '✕ 关');
-
-  // ── 可滚动内容区 ───────────────────────────────────────────
-  const CLIP_TOP  = drawerY + 46;
-  const CLIP_H    = DRAWER_H - 46 - (G.SAFE_BOTTOM || 0) - 8;
-
-  ctx.save();
-  ctx.beginPath();
-  ctx.rect(0, CLIP_TOP, W, CLIP_H);
-  ctx.clip();
-  ctx.translate(0, -_drawer.scrollY + CLIP_TOP);
-
-  const SL   = (G.SAFE_LEFT || 0) + 18;
-  const SR   = (G.SAFE_RIGHT || 0) + 18;
-  const CW   = W - SL - SR;
-  let   oy   = 10;
+// ── 全屏详情页 ────────────────────────────────────────────────
+// 全屏淡入，横屏左右分栏：左40%星图+名称，右60%图片+描述
+function _drawDetail(ctx, W, H, t) {
+  if (!_detail) return;
+  const c      = CONSTELLATIONS[_detail.idx];
+  const grpIdx = _GROUPS.findIndex(g => g.levels.includes(_detail.idx));
+  const grp    = _GROUPS[Math.max(0, grpIdx)];
+  const alpha  = _easeOut(_detail.alpha);
 
   const titleFont = _msz ? "'Ma Shan Zheng', serif" : 'serif';
 
-  // 星座名 + 英文名
+  // ── 全屏背景（淡入） ─────────────────────────────────────
   ctx.save();
-  ctx.font = `bold 26px ${titleFont}`;
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = 'rgba(5,7,24,0.98)';
+  ctx.fillRect(0, 0, W, H);
+  // 背景星云（轻量版）
+  for (const n of _NEBULAE) {
+    const nx = n.xr * W;
+    const ny = n.yr * H;
+    ctx.save();
+    ctx.translate(nx, ny);
+    ctx.scale(1, n.ry / n.rx);
+    const ng = ctx.createRadialGradient(0, 0, 0, 0, 0, n.rx);
+    ng.addColorStop(0, `rgba(${n.col},${n.a * 0.7})`);
+    ng.addColorStop(1, `rgba(${n.col},0)`);
+    ctx.beginPath();
+    ctx.arc(0, 0, n.rx, 0, TWO_PI);
+    ctx.fillStyle = ng;
+    ctx.fill();
+    ctx.restore();
+  }
+  ctx.restore();
+
+  // ── Header ───────────────────────────────────────────────
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  _detailRects.back = _ghostBtn(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 8, 90, 30, '← 返回图鉴');
+
+  // 星座名（header中央）
+  ctx.font = `bold 20px ${titleFont}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = grp.color;
   ctx.shadowColor = grp.color;
-  ctx.shadowBlur  = 12;
-  ctx.fillText(c.nameZh, W / 2, oy + 14);
+  ctx.shadowBlur  = 10;
+  ctx.fillText(c.nameZh, W / 2, G.SAFE_TOP + 22);
+  ctx.shadowBlur = 0;
   ctx.restore();
-  oy += 32;
+
+  // ── 分栏布局 ─────────────────────────────────────────────
+  const HEADER_H  = G.SAFE_TOP + 46;
+  const FOOTER_H  = G.SAFE_BOTTOM + 4;
+  const BODY_TOP  = HEADER_H;
+  const BODY_H    = H - HEADER_H - FOOTER_H;
+
+  // 分割线
+  const SPLIT_X = Math.round(W * 0.40);
+
+  // ── 左侧40%：星图 ─────────────────────────────────────────
+  const LEFT_W   = SPLIT_X;
+  const LEFT_CX  = LEFT_W / 2;
+  const LEFT_CY  = BODY_TOP + BODY_H / 2;
+  const CHART_R  = Math.min(LEFT_W * 0.42, BODY_H * 0.38, 96);
 
   ctx.save();
-  ctx.font = '12px sans-serif';
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'rgba(160,155,200,0.75)';
-  ctx.fillText(c.nameEn + (c.icon ? '  ' + c.icon : '') + '  ·  ' + grp.name, W / 2, oy);
-  ctx.restore();
-  oy += 22;
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.rect(0, BODY_TOP, LEFT_W, BODY_H);
+  ctx.clip();
 
-  // 信息pills
-  const infos = [
-    c.region        ? `📍 ${c.region}` : null,
-    c.bestViewMonth ? `🗓 ${c.bestViewMonth}` : null,
-    c.mainStars     ? `⭐ ${c.mainStars}` : null,
-  ].filter(Boolean);
+  // 星图圆形背景
+  const bgG = ctx.createRadialGradient(LEFT_CX, LEFT_CY, 0, LEFT_CX, LEFT_CY, CHART_R);
+  bgG.addColorStop(0, 'rgba(18,24,62,0.96)');
+  bgG.addColorStop(0.7, 'rgba(10,14,40,0.92)');
+  bgG.addColorStop(1, 'rgba(5,7,24,0.80)');
+  ctx.beginPath();
+  ctx.arc(LEFT_CX, LEFT_CY, CHART_R, 0, TWO_PI);
+  ctx.fillStyle = bgG;
+  ctx.fill();
+  ctx.strokeStyle = grp.color + '55';
+  ctx.lineWidth = 1.5;
+  ctx.stroke();
 
-  if (infos.length > 0) {
-    oy += 4;
-    const pillH = 22;
-    let px = SL;
-    for (const info of infos) {
-      ctx.save();
-      ctx.font = '11px sans-serif';
-      const tw = ctx.measureText(info).width + 16;
-      ctx.fillStyle = 'rgba(60,70,140,0.55)';
-      _roundRect(ctx, px, oy, tw, pillH, 11);
-      ctx.fill();
-      ctx.strokeStyle = grp.color + '44';
-      ctx.lineWidth = 0.8;
-      ctx.stroke();
-      ctx.textAlign = 'left';
-      ctx.textBaseline = 'middle';
-      ctx.fillStyle = 'rgba(200,200,240,0.85)';
-      ctx.fillText(info, px + 8, oy + pillH / 2);
-      ctx.restore();
-      px += tw + 8;
-      if (px > W - SR - 80) { px = SL; oy += pillH + 5; }
-    }
-    oy += pillH + 10;
-  }
-
-  // ── 大星图 ─────────────────────────────────────────────────
   if (c.stars && c.stars.length > 0) {
-    const CHART_SIZE = Math.min(CW * 0.70, 180);
-    const chartX     = SL + (CW - CHART_SIZE) / 2;
-    const chartY     = oy;
-    const PAD        = 20;
-    const AREA       = CHART_SIZE - PAD * 2;
-
-    // 圆形背景
-    const bgG = ctx.createRadialGradient(
-      chartX + CHART_SIZE / 2, chartY + CHART_SIZE / 2, 0,
-      chartX + CHART_SIZE / 2, chartY + CHART_SIZE / 2, CHART_SIZE / 2
-    );
-    bgG.addColorStop(0, 'rgba(16,20,55,0.96)');
-    bgG.addColorStop(1, 'rgba(6,8,28,0.88)');
-    ctx.save();
-    ctx.beginPath();
-    ctx.arc(chartX + CHART_SIZE / 2, chartY + CHART_SIZE / 2, CHART_SIZE / 2, 0, TWO_PI);
-    ctx.fillStyle = bgG;
-    ctx.fill();
-    ctx.strokeStyle = grp.color + '55';
-    ctx.lineWidth = 1.5;
-    ctx.stroke();
-    ctx.restore();
+    const PAD  = CHART_R * 0.18;
+    const AREA = (CHART_R - PAD) * 2;
+    const ox   = LEFT_CX - CHART_R + PAD;
+    const oy   = LEFT_CY - CHART_R + PAD;
 
     ctx.save();
     ctx.beginPath();
-    ctx.arc(chartX + CHART_SIZE / 2, chartY + CHART_SIZE / 2, CHART_SIZE / 2 - 2, 0, TWO_PI);
+    ctx.arc(LEFT_CX, LEFT_CY, CHART_R - 2, 0, TWO_PI);
     ctx.clip();
 
     const mapped = c.stars.map(s => ({
-      x: chartX + PAD + s.x * AREA,
-      y: chartY + PAD + s.y * AREA,
-      r: Math.min(magToRadius(s.mag) * 1.4, 7),
+      x: ox + s.x * AREA,
+      y: oy + s.y * AREA,
+      r: Math.min(magToRadius(s.mag) * 1.5, 6),
       color: typeToColor(s.type),
       name: s.name,
       mag: s.mag,
@@ -703,14 +656,14 @@ function _drawDrawer(ctx, W, H, t) {
 
     // 星点
     for (const s of mapped) {
-      const grd2 = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 2.5);
+      const grd2 = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 2.2);
       grd2.addColorStop(0, s.color);
       grd2.addColorStop(1, 'rgba(0,0,0,0)');
       ctx.save();
-      ctx.globalAlpha = 0.40;
+      ctx.globalAlpha = 0.38;
       ctx.fillStyle = grd2;
       ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r * 2.5, 0, TWO_PI);
+      ctx.arc(s.x, s.y, s.r * 2.2, 0, TWO_PI);
       ctx.fill();
       ctx.restore();
       ctx.fillStyle = s.color;
@@ -719,106 +672,149 @@ function _drawDrawer(ctx, W, H, t) {
       ctx.fill();
     }
 
-    // 星名标注（最亮5颗）
-    const cx2 = chartX + CHART_SIZE / 2;
-    const cy2 = chartY + CHART_SIZE / 2;
+    // 星名标注（最亮4颗）
     const bright = mapped
       .map((s, i) => ({ ...s, mag: c.stars[i].mag }))
       .filter(s => s.mag <= 2.5 && s.name)
       .sort((a, b) => a.mag - b.mag)
-      .slice(0, 5);
+      .slice(0, 4);
     const placed = [];
     ctx.save();
-    ctx.font = '9px sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.72)';
-    ctx.strokeStyle = 'rgba(255,255,255,0.38)';
-    ctx.lineWidth = 0.7;
+    ctx.font = '8px sans-serif';
+    ctx.fillStyle = 'rgba(255,255,255,0.70)';
+    ctx.strokeStyle = 'rgba(255,255,255,0.32)';
+    ctx.lineWidth = 0.6;
     ctx.setLineDash([2, 2]);
     for (const bs of bright) {
-      const ang = Math.atan2(bs.y - cy2, bs.x - cx2) + Math.PI / 4;
-      const ll  = 9;
+      const ang = Math.atan2(bs.y - LEFT_CY, bs.x - LEFT_CX) + Math.PI / 5;
+      const ll  = 8;
       const lx  = bs.x + Math.cos(ang) * ll;
       let   ly  = bs.y + Math.sin(ang) * ll;
       for (const p of placed) {
-        if (Math.abs(lx - p.x) < 28 && Math.abs(ly - p.y) < 11) ly -= 10;
+        if (Math.abs(lx - p.x) < 26 && Math.abs(ly - p.y) < 10) ly -= 9;
       }
       placed.push({ x: lx, y: ly });
       ctx.beginPath(); ctx.moveTo(bs.x, bs.y); ctx.lineTo(lx, ly); ctx.stroke();
-      ctx.textAlign  = lx >= cx2 ? 'left' : 'right';
+      ctx.textAlign    = lx >= LEFT_CX ? 'left' : 'right';
       ctx.textBaseline = 'middle';
-      ctx.fillText(bs.name, lx + (lx >= cx2 ? 2 : -2), ly);
+      ctx.fillText(bs.name, lx + (lx >= LEFT_CX ? 2 : -2), ly);
     }
     ctx.setLineDash([]);
     ctx.restore();
     ctx.restore();
-    oy += CHART_SIZE + 14;
   }
 
-  // ── 照片轮播 ──────────────────────────────────────────────
+  // 左栏文字：英文名 + 符号
+  const nameY = LEFT_CY + CHART_R + 10;
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = 'rgba(180,170,230,0.80)';
+  ctx.fillText(c.nameEn, LEFT_CX, nameY);
+  if (c.symbol) {
+    ctx.font = '16px sans-serif';
+    ctx.fillStyle = grp.color;
+    ctx.fillText(c.symbol, LEFT_CX, nameY + 14);
+  }
+
+  // 左右竖分割线
+  ctx.strokeStyle = grp.color + '28';
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(SPLIT_X, BODY_TOP + 8);
+  ctx.lineTo(SPLIT_X, BODY_TOP + BODY_H - 8);
+  ctx.stroke();
+
+  ctx.restore(); // end left clip
+
+  // ── 右侧60%：图片 + 描述（可滚动） ──────────────────────
+  const RIGHT_X   = SPLIT_X + 8;
+  const RIGHT_W   = W - RIGHT_X - (G.SAFE_RIGHT || 0) - 10;
+  const CLIP_TOP  = BODY_TOP + 4;
+  const CLIP_H    = BODY_H - 8;
+
+  // 加载/重置照片
   const photos = c.photos || (c.photo ? [c.photo] : []);
-  if (_carouselForIdx !== _drawer.idx) {
-    _carouselForIdx = _drawer.idx;
+  if (_carouselForIdx !== _detail.idx) {
+    _carouselForIdx = _detail.idx;
     _carouselImgs   = [];
     _carouselPos    = 0;
-    photos.forEach((url, i) => _loadPhoto(url, i, _drawer.idx));
+    photos.forEach((url, i) => _loadPhoto(url, i, _detail.idx));
   }
 
-  if (photos.length > 0) {
-    ctx.save();
-    ctx.font = 'bold 10px sans-serif';
-    ctx.textAlign = 'left';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = COLORS.starGold;
-    ctx.fillText('天文摄影 · ASTROPHOTOGRAPHY', SL, oy + 8);
-    ctx.restore();
-    oy += 20;
-  }
-
-  const PHOTO_H = 150;
-  const slot    = _carouselImgs[_carouselPos] || { img: null, loaded: false, error: false };
   ctx.save();
-  ctx.fillStyle = 'rgba(25,20,55,0.75)';
-  _roundRect(ctx, SL, oy, CW, PHOTO_H, 8);
-  ctx.fill();
-  _roundRect(ctx, SL, oy, CW, PHOTO_H, 8);
+  ctx.globalAlpha = alpha;
+  ctx.beginPath();
+  ctx.rect(RIGHT_X, CLIP_TOP, RIGHT_W, CLIP_H);
   ctx.clip();
+  ctx.translate(0, -_detail.scrollY + CLIP_TOP);
+
+  let oy2 = 6;
+
+  // ── 天文图片 ─────────────────────────────────────────────
+  const PHOTO_H = Math.min(160, CLIP_H * 0.48);
+  const slot    = _carouselImgs[_carouselPos] || { img: null, loaded: false, error: false };
+
+  ctx.save();
+  ctx.fillStyle = 'rgba(20,16,48,0.80)';
+  _roundRect(ctx, RIGHT_X, oy2, RIGHT_W, PHOTO_H, 8);
+  ctx.fill();
+  ctx.beginPath();
+  _roundRect(ctx, RIGHT_X, oy2, RIGHT_W, PHOTO_H, 8);
+  ctx.clip();
+
   if (slot.loaded && slot.img) {
-    // object-fit:contain — 保持图片宽高比居中显示
-    const iw = slot.img.width  || CW;
+    const iw = slot.img.width  || RIGHT_W;
     const ih = slot.img.height || PHOTO_H;
-    const scale = Math.min(CW / iw, PHOTO_H / ih);
+    const scale = Math.min(RIGHT_W / iw, PHOTO_H / ih);
     const dw = iw * scale;
     const dh = ih * scale;
-    const dx = SL + (CW - dw) / 2;
-    const dy = oy + (PHOTO_H - dh) / 2;
+    const dx = RIGHT_X + (RIGHT_W - dw) / 2;
+    const dy = oy2 + (PHOTO_H - dh) / 2;
     ctx.drawImage(slot.img, dx, dy, dw, dh);
   } else if (slot.error || photos.length === 0) {
-    ctx.font = '26px sans-serif';
+    // 旋转星形占位符（加载失败 / 无图）
+    ctx.font = '13px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(160,150,200,0.4)';
-    ctx.fillText('📷', SL + CW / 2, oy + PHOTO_H / 2 - 12);
-    ctx.font = '12px sans-serif';
     ctx.fillStyle = 'rgba(140,130,180,0.55)';
-    ctx.fillText('暂无图片', SL + CW / 2, oy + PHOTO_H / 2 + 12);
+    ctx.fillText('暂无图片', RIGHT_X + RIGHT_W / 2, oy2 + PHOTO_H / 2);
   } else {
-    ctx.font = '12px sans-serif';
+    // 旋转星形加载动画
+    const cx3 = RIGHT_X + RIGHT_W / 2;
+    const cy3 = oy2 + PHOTO_H / 2;
+    const spin = t * 1.6;
+    ctx.save();
+    ctx.translate(cx3, cy3);
+    ctx.rotate(spin);
+    ctx.strokeStyle = grp.color + 'aa';
+    ctx.lineWidth = 1.5;
+    for (let sp = 0; sp < 6; sp++) {
+      const a = (sp / 6) * TWO_PI;
+      ctx.beginPath();
+      ctx.moveTo(Math.cos(a) * 6, Math.sin(a) * 6);
+      ctx.lineTo(Math.cos(a) * 14, Math.sin(a) * 14);
+      ctx.stroke();
+    }
+    ctx.restore();
+    ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(150,140,190,0.65)';
-    ctx.fillText('加载中...', SL + CW / 2, oy + PHOTO_H / 2);
+    ctx.fillStyle = 'rgba(150,140,190,0.60)';
+    ctx.fillText('加载中...', cx3, cy3 + 22);
   }
   ctx.restore();
 
+  // 照片翻页按钮
   if (photos.length > 1) {
-    const BW = 30, BH = 40, BY = oy + (PHOTO_H - BH) / 2;
+    const BW = 24, BH = 34, BY = oy2 + (PHOTO_H - BH) / 2;
     const drawBtn2 = (bx, label, active2) => {
       ctx.save();
-      ctx.globalAlpha = active2 ? 0.80 : 0.22;
-      ctx.fillStyle = 'rgba(10,8,30,0.75)';
-      _roundRect(ctx, bx, BY, BW, BH, 6);
+      ctx.globalAlpha = active2 ? 0.75 : 0.18;
+      ctx.fillStyle = 'rgba(8,6,22,0.70)';
+      _roundRect(ctx, bx, BY, BW, BH, 5);
       ctx.fill();
-      ctx.font = 'bold 20px sans-serif';
+      ctx.font = 'bold 18px sans-serif';
       ctx.textAlign = 'center';
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#c8d4ff';
@@ -826,49 +822,71 @@ function _drawDrawer(ctx, W, H, t) {
       ctx.restore();
       return { x: bx, y: BY, w: BW, h: BH };
     };
-    _carouselPrevRect = drawBtn2(SL + 3, '‹', _carouselPos > 0);
-    _carouselNextRect = drawBtn2(SL + CW - BW - 3, '›', _carouselPos < photos.length - 1);
+    _carouselPrevRect = drawBtn2(RIGHT_X + 2, '‹', _carouselPos > 0);
+    _carouselNextRect = drawBtn2(RIGHT_X + RIGHT_W - BW - 2, '›', _carouselPos < photos.length - 1);
     ctx.save();
-    ctx.font = '10px sans-serif';
+    ctx.font = '9px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(210,205,255,0.8)';
-    ctx.fillText(`${_carouselPos + 1}/${photos.length}`, SL + CW / 2, oy + PHOTO_H - 9);
+    ctx.fillStyle = 'rgba(210,205,255,0.75)';
+    ctx.fillText(`${_carouselPos + 1}/${photos.length}`, RIGHT_X + RIGHT_W / 2, oy2 + PHOTO_H - 8);
     ctx.restore();
   } else {
     _carouselPrevRect = null;
     _carouselNextRect = null;
   }
-  oy += PHOTO_H + 14;
+  oy2 += PHOTO_H + 10;
 
-  // ── 分割线 + lore ──────────────────────────────────────────
-  ctx.save();
-  ctx.strokeStyle = grp.color + '30';
-  ctx.lineWidth = 1;
-  ctx.beginPath();
-  ctx.moveTo(SL, oy); ctx.lineTo(SL + CW, oy);
-  ctx.stroke();
-  ctx.restore();
-  oy += 12;
+  // ── 信息pills ─────────────────────────────────────────────
+  const infos = [
+    c.region        ? `${c.region}` : null,
+    c.bestViewMonth ? `${c.bestViewMonth}` : null,
+    c.mainStars     ? `主星 ${c.mainStars}` : null,
+  ].filter(Boolean);
 
+  if (infos.length > 0) {
+    const pillH = 20;
+    let px = RIGHT_X;
+    for (const info of infos) {
+      ctx.save();
+      ctx.font = '10px sans-serif';
+      const tw = ctx.measureText(info).width + 14;
+      ctx.fillStyle = 'rgba(50,60,120,0.55)';
+      _roundRect(ctx, px, oy2, tw, pillH, 10);
+      ctx.fill();
+      ctx.strokeStyle = grp.color + '40';
+      ctx.lineWidth = 0.7;
+      ctx.stroke();
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = 'rgba(195,195,235,0.85)';
+      ctx.fillText(info, px + 7, oy2 + pillH / 2);
+      ctx.restore();
+      px += tw + 6;
+      if (px > RIGHT_X + RIGHT_W - 50) { px = RIGHT_X; oy2 += pillH + 4; }
+    }
+    oy2 += pillH + 8;
+  }
+
+  // ── lore（神话/描述） ─────────────────────────────────────
   ctx.save();
-  ctx.font = '13px sans-serif';
-  ctx.fillStyle = 'rgba(205,200,240,0.88)';
+  ctx.font = '12px sans-serif';
+  ctx.fillStyle = 'rgba(200,196,238,0.88)';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
-  const lines = _wrapText(ctx, c.lore || '', CW);
+  const lines = _wrapText(ctx, c.lore || '', RIGHT_W);
   for (const line of lines) {
-    ctx.fillText(line, SL, oy);
-    oy += 18;
+    ctx.fillText(line, RIGHT_X, oy2);
+    oy2 += 17;
   }
   ctx.restore();
-  oy += 20;
+  oy2 += 16;
 
-  _drawerTotalH      = oy;
-  const maxScroll    = Math.max(0, _drawerTotalH - CLIP_H);
-  _drawer.scrollTarget = Math.max(0, Math.min(maxScroll, _drawer.scrollTarget));
+  _detailTotalH         = oy2;
+  const maxScroll       = Math.max(0, _detailTotalH - CLIP_H);
+  _detail.scrollTarget  = Math.max(0, Math.min(maxScroll, _detail.scrollTarget));
 
-  ctx.restore();
+  ctx.restore(); // end right clip+alpha
 }
 
 // ── 幽灵按钮 ──────────────────────────────────────────────────
@@ -966,7 +984,7 @@ function _switchGroup(newGroup) {
     slot,
   }));
 
-  _drawer        = null;
+  _detail         = null;
   _carouselForIdx = -1;
   _carouselImgs   = [];
 }
@@ -982,26 +1000,26 @@ function _onTouchStart(e) {
   _touchStartX    = touch.clientX;
   _touchStartY    = touch.clientY;
   _touchStartTime = Date.now();
-  _drawerLastTY   = touch.clientY;
-  _drawerDragging = false;
+  _detailLastTY   = touch.clientY;
+  _detailDragging = false;
   _isDragging     = false;
 }
 
 function _onTouchMove(e) {
   const touch = e.changedTouches[0];
   if (!touch) return;
-  const dy = touch.clientY - _drawerLastTY;
-  _drawerLastTY = touch.clientY;
+  const dy = touch.clientY - _detailLastTY;
+  _detailLastTY = touch.clientY;
   const dx = touch.clientX - _touchStartX;
 
-  if (_drawer) {
-    if (Math.abs(dy) > 2) _drawerDragging = true;
-    if (_drawer) {
-      const DRAWER_H = G.SCREEN_H * 0.72;
-      const CLIP_H   = DRAWER_H - 46 - (G.SAFE_BOTTOM || 0) - 8;
-      const maxScroll = Math.max(0, _drawerTotalH - CLIP_H);
-      _drawer.scrollTarget = Math.max(0, Math.min(maxScroll, _drawer.scrollTarget - dy));
-    }
+  if (_detail) {
+    if (Math.abs(dy) > 2) _detailDragging = true;
+    const W2 = G.SCREEN_W;
+    const H2 = G.SCREEN_H;
+    const HEADER_H = G.SAFE_TOP + 46;
+    const CLIP_H   = H2 - HEADER_H - (G.SAFE_BOTTOM + 4) - 8;
+    const maxScroll = Math.max(0, _detailTotalH - CLIP_H);
+    _detail.scrollTarget = Math.max(0, Math.min(maxScroll, _detail.scrollTarget - dy));
   } else {
     if (Math.abs(dx) > 8 || Math.abs(dy) > 8) _isDragging = true;
 
@@ -1040,49 +1058,36 @@ function _onTouchEnd(e) {
   const ty = touch.clientY;
   const dx = tx - _touchStartX;
 
-  // ── 抽屉开启状态 ──────────────────────────────────────────
-  if (_drawer) {
-    if (_drawerDragging) {
-      // 向下大幅滑动 → 关闭抽屉
-      if (ty - _touchStartY > 60) {
-        _drawer = null;
-        _carouselForIdx = -1;
-        _carouselImgs   = [];
-      }
-      _drawerDragging = false;
+  // ── 全屏详情开启状态 ──────────────────────────────────────
+  if (_detail) {
+    if (_detailDragging) {
+      _detailDragging = false;
       return;
     }
 
-    // 关闭按钮
-    if (_drawerRects.close && hitTest(_drawerRects.close, tx, ty)) {
-      _drawer = null;
+    // 返回图鉴按钮
+    if (_detailRects.back && hitTest(_detailRects.back, tx, ty)) {
+      _detail = null;
       _carouselForIdx = -1;
       _carouselImgs   = [];
       return;
     }
 
     // 照片轮播按钮（需要补偿scroll）
-    const DRAWER_H = G.SCREEN_H * 0.72;
-    const drawerY  = G.SCREEN_H - DRAWER_H * _easeOut(_drawer.phase);
-    const CLIP_TOP = drawerY + 46;
-    const sty = ty + _drawer.scrollY - CLIP_TOP;
+    const HEADER_H = G.SAFE_TOP + 46;
+    const CLIP_TOP = HEADER_H + 4;
+    const sty = ty + _detail.scrollY - CLIP_TOP;
     if (_carouselPrevRect && hitTest(_carouselPrevRect, tx, sty) && _carouselPos > 0) {
       _carouselPos--;
       return;
     }
     if (_carouselNextRect && hitTest(_carouselNextRect, tx, sty)) {
-      const photos = CONSTELLATIONS[_drawer.idx].photos
-        || (CONSTELLATIONS[_drawer.idx].photo ? [CONSTELLATIONS[_drawer.idx].photo] : []);
+      const photos = CONSTELLATIONS[_detail.idx].photos
+        || (CONSTELLATIONS[_detail.idx].photo ? [CONSTELLATIONS[_detail.idx].photo] : []);
       if (_carouselPos < photos.length - 1) _carouselPos++;
       return;
     }
 
-    // 点击抽屉外区域 → 关闭
-    if (ty < drawerY) {
-      _drawer = null;
-      _carouselForIdx = -1;
-      _carouselImgs   = [];
-    }
     return;
   }
 
@@ -1117,21 +1122,21 @@ function _onTouchEnd(e) {
     return;
   }
 
-  // ── 节点点击 → 打开抽屉 ──────────────────────────────────
+  // ── 节点点击 → 打开全屏详情 ──────────────────────────────
   for (const node of _nodeRects) {
     if (Math.hypot(tx - node.cx, ty - node.cy) <= node.r + 12) {
       if (!state.isUnlocked(node.idx)) {
         try { wx.vibrateShort({ type: 'light' }); } catch (e2) {}
         return;
       }
-      // 同一节点再次点击 → 关闭抽屉
-      if (_drawer && _drawer.idx === node.idx) {
-        _drawer = null;
+      // 同一节点再次点击 → 关闭详情
+      if (_detail && _detail.idx === node.idx) {
+        _detail = null;
         _carouselForIdx = -1;
         _carouselImgs   = [];
         return;
       }
-      _drawer = { idx: node.idx, phase: 0, scrollY: 0, scrollTarget: 0 };
+      _detail = { idx: node.idx, alpha: 0, scrollY: 0, scrollTarget: 0 };
       _carouselForIdx = -1;
       _carouselImgs   = [];
       _carouselPos    = 0;
