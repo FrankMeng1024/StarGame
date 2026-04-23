@@ -483,10 +483,10 @@ function _loop(now) {
   // ── Constellation info panel (STORY-00298) ──
   _drawConInfoPanel(ctx, W, H, isLandscape);
 
-  // Mute button — top-right corner, within safe area
+  // Mute button — top-left corner, away from WeChat capsule (top-right)
   const muteBtnSize = 36;
-  const muteBtnX    = W - G.SAFE_RIGHT - muteBtnSize - 10;
-  const muteBtnY    = G.SAFE_TOP + 10;
+  const muteBtnX    = (G.SAFE_LEFT || 0) + 10;
+  const muteBtnY    = (G.SAFE_TOP  || 0) + 10;
   const muteIcon    = AudioAdapter.isMuted() ? '🔇' : '🔊';
   ctx.save();
   ctx.font         = '18px sans-serif';
@@ -526,6 +526,15 @@ function _drawConInfoPanel(ctx, W, H, isLandscape) {
   const panelX = safeL + (isLandscape ? 4 : 12);
   const panelY = H - safeB - PANEL_H - 8;
 
+  // Zodiac symbol map (Unicode glyphs for zodiac constellations)
+  const _ZODIAC_SYMBOL = {
+    '白羊座':'♈','金牛座':'♉','双子座':'♊','巨蟹座':'♋',
+    '狮子座':'♌','处女座':'♍','天秤座':'♎','天蝎座':'♏',
+    '射手座':'♐','摩羯座':'♑','水瓶座':'♒','双鱼座':'♓',
+  };
+  const symbol = _conDef.nameZh ? (_ZODIAC_SYMBOL[_conDef.nameZh] || '') : '';
+  const symbolW = symbol ? 40 : 0;  // reserved width for symbol on right
+
   // Glass background
   ctx.save();
   ctx.globalAlpha = 0.82;
@@ -537,26 +546,28 @@ function _drawConInfoPanel(ctx, W, H, isLandscape) {
   ctx.stroke();
   ctx.globalAlpha = 1;
 
-  // Left: constellation name (top row)
+  // Right: zodiac symbol (large, vertically centered)
+  if (symbol) {
+    ctx.font         = 'bold 26px sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = 'rgba(255,220,120,0.55)';
+    ctx.fillText(symbol, panelX + panelW - PAD_X, panelY + PANEL_H / 2);
+  }
+
+  // Left: constellation name — takes full width minus symbol area
+  const textRight = panelX + panelW - PAD_X - symbolW - 6;
   ctx.font         = 'bold 13px sans-serif';
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = 'rgba(255,220,120,0.92)';
   ctx.fillText('✦ ' + _conDef.nameZh, panelX + PAD_X, panelY + 16);
 
-  // Left: season label (bottom row)
+  // Left second row: season + month
   if (_conDef.bestViewMonth) {
     ctx.font      = '11px sans-serif';
     ctx.fillStyle = 'rgba(200,195,240,0.72)';
     ctx.fillText(_conDef.bestViewMonth + ' 星座观测', panelX + PAD_X, panelY + 36);
-  }
-
-  // Right: viewing month (right-aligned, vertically centered)
-  if (_conDef.mainStars) {
-    ctx.font         = '11px sans-serif';
-    ctx.textAlign    = 'right';
-    ctx.fillStyle    = 'rgba(180,175,220,0.60)';
-    ctx.fillText('★ ' + _conDef.mainStars, panelX + panelW - PAD_X, panelY + PANEL_H / 2);
   }
 
   ctx.restore();
