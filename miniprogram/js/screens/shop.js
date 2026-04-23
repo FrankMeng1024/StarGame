@@ -150,26 +150,14 @@ function _loop(ts) {
   ctx.restore();
 
   // ── Header (drawn on top) ──
-  // Draw coin count to left of capsule zone (not via rightText which renders at far right)
   const hdr = drawHeaderBar(ctx, W, H, '道具商店', {
     safeLeft:   G.SAFE_LEFT  || 0,
     safeTop:    G.SAFE_TOP   || 0,
     safeRight:  G.SAFE_RIGHT || 0,
     fontLoaded: _maShanZhengLoaded,
+    rightText:  '🪙 ' + state.coins,
   });
   _backRect = hdr.backRect;
-
-  // Coin count — positioned right of title, well left of WeChat capsule
-  const headerCY = (G.SAFE_TOP || 0) + 24;
-  ctx.save();
-  ctx.font         = 'bold 13px sans-serif';
-  ctx.textAlign    = 'left';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle    = '#ffd700';
-  ctx.shadowColor  = 'rgba(255,200,0,0.5)';
-  ctx.shadowBlur   = 5;
-  ctx.fillText('🪙 ' + state.coins, W / 2 + 54, headerCY);
-  ctx.restore();
 
   // ── Bottom sheet animation ──
   if (_sheet) {
@@ -270,24 +258,37 @@ function _drawItemRow(ctx, W, item, idx, rowX, rowY, rowW, rowH, isSelected) {
   _drawPillBadge(ctx, midX, rowY + rowH - 20, item.type,
     item.type === '主动' ? 'rgba(160,100,255,0.35)' : 'rgba(80,130,220,0.35)', '#c0a0ff');
 
-  // Right: price + arrow
-  const rightX = rowX + rowW - 10;
+  // Right: price column (fixed left-aligned split) + arrow
+  // Price col starts at fixed offset from right so all rows align
+  const PRICE_COL_W = 72;  // width of price+arrow zone
+  const priceColX   = rowX + rowW - PRICE_COL_W;
+
+  // Subtle separator line
+  ctx.save();
+  ctx.strokeStyle = 'rgba(120,90,200,0.22)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(priceColX - 4, rowY + 10);
+  ctx.lineTo(priceColX - 4, rowY + rowH - 10);
+  ctx.stroke();
+  ctx.restore();
+
   ctx.save();
   ctx.font         = 'bold 13px sans-serif';
-  ctx.textAlign    = 'right';
-  ctx.textBaseline = 'top';
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'middle';
   ctx.fillStyle    = canBuy ? '#ffd700' : 'rgba(180,160,100,0.55)';
   ctx.shadowColor  = 'rgba(255,200,0,0.35)';
   ctx.shadowBlur   = canBuy ? 4 : 0;
-  ctx.fillText('🪙 ' + item.cost, rightX, rowY + 10);
+  ctx.fillText('🪙 ' + item.cost, priceColX + 4, rowY + rowH / 2 - 6);
   ctx.restore();
 
   ctx.save();
   ctx.font         = '16px sans-serif';
-  ctx.textAlign    = 'right';
-  ctx.textBaseline = 'bottom';
+  ctx.textAlign    = 'left';
+  ctx.textBaseline = 'middle';
   ctx.fillStyle    = 'rgba(180,160,220,0.55)';
-  ctx.fillText('›', rightX, rowY + rowH - 8);
+  ctx.fillText('›', priceColX + 4, rowY + rowH / 2 + 8);
   ctx.restore();
 
   // Owned badge

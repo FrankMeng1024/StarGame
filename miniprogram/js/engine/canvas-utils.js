@@ -318,14 +318,24 @@ export function drawHeaderBar(ctx, W, H, title, opts = {}) {
   ctx.fillText(title, W / 2, safeTop + 24);
   ctx.restore();
 
-  // Optional right text
+  // Right coin pill — mirrors back button, same size and vertical center
   if (rightText) {
+    const safeRight = opts.safeRight || 0;
+    const cpX = W - safeRight - 96 - 10 - btnW;  // mirror of btnX from right
     ctx.save();
-    ctx.font         = 'bold 13px sans-serif';
-    ctx.textAlign    = 'right';
+    ctx.fillStyle = 'rgba(30,16,80,0.85)';
+    _roundRect(ctx, cpX, btnY, btnW, btnH, 10);
+    ctx.fill();
+    ctx.strokeStyle = 'rgba(180,150,0,0.45)';
+    ctx.lineWidth   = 1;
+    ctx.stroke();
+    ctx.font         = 'bold 12px sans-serif';
+    ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle    = '#ffd700';
-    ctx.fillText(rightText, W - (opts.safeRight || 0) - 12, safeTop + 24);
+    ctx.shadowColor  = 'rgba(255,200,0,0.4)';
+    ctx.shadowBlur   = 4;
+    ctx.fillText(rightText, cpX + btnW / 2, btnY + btnH / 2);
     ctx.restore();
   }
 
