@@ -1,0 +1,4 @@
+hwnd=2230606
+Window: (0,0) 1920x1200
+Saved full-window.png, size=1920x1200
+Saved toolbar-zoom.png

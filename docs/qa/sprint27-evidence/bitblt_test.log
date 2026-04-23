@@ -1,0 +1,4 @@
+Window: (2077,22) 1280x800
+BitBlt result: 1
+Capture: shape=(800, 1280, 3) mean=0.0 max=0
+Saved: docs/qa/sprint27-evidence/bitblt_test.png

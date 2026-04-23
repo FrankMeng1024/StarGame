@@ -1,0 +1,15 @@
+Window: (38,38) 1440x817
+Saved fullwin-new.png
+Saved toolbar-new.png
+Toolbar row2 mean brightness: 174.7
+Top brightness peaks:
+  x=325: 178.3
+  x=326: 178.3
+  x=327: 178.3
+  x=328: 178.3
+  x=329: 178.3
+  x=330: 178.3
+  x=331: 178.3
+  x=332: 178.3
+  x=333: 178.3
+  x=334: 178.3

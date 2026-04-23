@@ -1,0 +1,7 @@
+Window: (0,0) 1293x815
+Before reload: mean=73.7
+Saved before_reload.png
+Clicking reload at (484,42) norm=(8260,2293)
+Window after reload: (150,150) 1920x1200
+After reload: mean=0.0
+Saved after_reload.png

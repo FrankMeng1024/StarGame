@@ -1,0 +1,5 @@
+Window: (0,0) 1920x1200
+Saved slice0-y0-40.png: 1920x40
+Saved slice1-y40-80.png: 1920x40
+Saved slice2-y80-120.png: 1920x40
+Saved slice-bottom-y670-720.png

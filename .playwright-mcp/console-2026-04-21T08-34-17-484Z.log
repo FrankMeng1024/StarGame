@@ -1,0 +1,2 @@
+[     100ms] [WARNING] The value "844px" for key "width" was truncated to its numeric prefix. @ http://localhost:7890/demo1-galaxy-drift.html:4
+[     184ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:7890/favicon.ico:0

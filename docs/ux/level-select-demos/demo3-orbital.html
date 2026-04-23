@@ -1,0 +1,491 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=844px">
+<title>Demo 3 — 行星轨道 · 选择关卡</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #03050f;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 16px 0 40px;
+  font-family: 'Noto Serif SC', serif;
+}
+h2 {
+  color: #9aabcc;
+  font-size: 13px;
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+  opacity: 0.55;
+  font-family: sans-serif;
+  font-weight: 300;
+}
+#wrapper {
+  width: 844px;
+  height: 390px;
+  overflow: hidden;
+  position: relative;
+  border-radius: 4px;
+  border: 1px solid rgba(80,100,160,0.12);
+  cursor: default;
+}
+canvas { display: block; }
+
+/* Tooltip */
+#tooltip {
+  position: fixed;
+  background: rgba(8,12,40,0.92);
+  border: 1px solid rgba(160,180,240,0.3);
+  border-radius: 6px;
+  padding: 8px 12px;
+  color: #c0d0f0;
+  font-size: 12px;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.15s;
+  white-space: nowrap;
+  z-index: 99;
+}
+#tooltip.show { opacity: 1; }
+</style>
+</head>
+<body>
+<h2>DEMO 3 — 行星轨道</h2>
+<div id="wrapper">
+  <canvas id="c" width="844" height="390"></canvas>
+</div>
+<div id="tooltip"></div>
+<script>
+// ─── Constellation shapes ─────────────────────────────────────────────────────
+const DETAILED = [
+  { nameZh:'猎户座',
+    stars:[{x:0.28,y:0.18},{x:0.68,y:0.20},{x:0.38,y:0.50},{x:0.50,y:0.52},{x:0.62,y:0.50},{x:0.32,y:0.82},{x:0.70,y:0.80}],
+    lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[3,6]] },
+  { nameZh:'大熊座',
+    stars:[{x:0.62,y:0.20},{x:0.60,y:0.36},{x:0.40,y:0.42},{x:0.42,y:0.26},{x:0.30,y:0.28},{x:0.20,y:0.36},{x:0.12,y:0.50}],
+    lines:[[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]] },
+  { nameZh:'天蝎座',
+    stars:[{x:0.40,y:0.32},{x:0.28,y:0.22},{x:0.36,y:0.22},{x:0.44,y:0.22},{x:0.52,y:0.24},{x:0.56,y:0.30},{x:0.60,y:0.38},{x:0.64,y:0.48},{x:0.70,y:0.58},{x:0.76,y:0.70}],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]] },
+  { nameZh:'狮子座',
+    stars:[{x:0.24,y:0.38},{x:0.28,y:0.22},{x:0.38,y:0.18},{x:0.50,y:0.24},{x:0.58,y:0.30},{x:0.68,y:0.38},{x:0.74,y:0.50}],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,0]] },
+  { nameZh:'仙后座',
+    stars:[{x:0.10,y:0.48},{x:0.26,y:0.28},{x:0.42,y:0.40},{x:0.60,y:0.26},{x:0.76,y:0.46}],
+    lines:[[0,1],[1,2],[2,3],[3,4]] },
+  { nameZh:'天鹅座',
+    stars:[{x:0.50,y:0.18},{x:0.50,y:0.82},{x:0.20,y:0.50},{x:0.80,y:0.50},{x:0.50,y:0.50}],
+    lines:[[0,4],[4,1],[2,4],[4,3]] },
+];
+
+function makeSimple(pts, ls) { return { stars:pts, lines:ls }; }
+const SIMPLE_SHAPES = [
+  makeSimple([{x:0.3,y:0.3},{x:0.5,y:0.5},{x:0.7,y:0.3}],[[0,1],[1,2]]),
+  makeSimple([{x:0.2,y:0.5},{x:0.4,y:0.3},{x:0.6,y:0.3},{x:0.8,y:0.5}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.3,y:0.2},{x:0.5,y:0.4},{x:0.7,y:0.2},{x:0.5,y:0.7}],[[0,1],[1,2],[1,3]]),
+  makeSimple([{x:0.2,y:0.5},{x:0.4,y:0.2},{x:0.6,y:0.5},{x:0.4,y:0.8}],[[0,1],[1,2],[2,3],[3,0]]),
+  makeSimple([{x:0.3,y:0.3},{x:0.5,y:0.2},{x:0.7,y:0.3},{x:0.6,y:0.6},{x:0.4,y:0.6}],[[0,1],[1,2],[2,3],[3,4],[4,0]]),
+  makeSimple([{x:0.2,y:0.4},{x:0.4,y:0.2},{x:0.6,y:0.3},{x:0.8,y:0.5},{x:0.6,y:0.7}],[[0,1],[1,2],[2,3],[3,4]]),
+  makeSimple([{x:0.3,y:0.5},{x:0.5,y:0.3},{x:0.7,y:0.5},{x:0.5,y:0.7}],[[0,1],[1,2],[2,3],[3,0]]),
+  makeSimple([{x:0.2,y:0.3},{x:0.5,y:0.2},{x:0.8,y:0.3},{x:0.6,y:0.6},{x:0.4,y:0.6}],[[0,1],[1,2],[2,3],[3,4],[4,1]]),
+  makeSimple([{x:0.3,y:0.4},{x:0.5,y:0.2},{x:0.7,y:0.4},{x:0.5,y:0.6}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.2,y:0.5},{x:0.4,y:0.3},{x:0.6,y:0.4},{x:0.8,y:0.3}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.3,y:0.3},{x:0.5,y:0.5},{x:0.7,y:0.4},{x:0.5,y:0.7}],[[0,1],[1,2],[1,3]]),
+  makeSimple([{x:0.2,y:0.6},{x:0.4,y:0.3},{x:0.6,y:0.3},{x:0.8,y:0.6}],[[0,1],[1,2],[2,3],[3,0]]),
+  makeSimple([{x:0.3,y:0.2},{x:0.5,y:0.3},{x:0.7,y:0.2},{x:0.6,y:0.6},{x:0.4,y:0.6}],[[0,1],[1,2],[1,3],[3,4]]),
+  makeSimple([{x:0.25,y:0.4},{x:0.45,y:0.2},{x:0.65,y:0.4},{x:0.45,y:0.75}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.2,y:0.3},{x:0.4,y:0.5},{x:0.6,y:0.5},{x:0.8,y:0.3}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.3,y:0.5},{x:0.5,y:0.2},{x:0.7,y:0.5},{x:0.6,y:0.75},{x:0.4,y:0.75}],[[0,1],[1,2],[2,3],[3,4],[4,0]]),
+  makeSimple([{x:0.2,y:0.4},{x:0.4,y:0.3},{x:0.6,y:0.4},{x:0.8,y:0.35}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.3,y:0.3},{x:0.5,y:0.5},{x:0.7,y:0.6},{x:0.5,y:0.75}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.2,y:0.5},{x:0.4,y:0.25},{x:0.6,y:0.25},{x:0.8,y:0.5},{x:0.5,y:0.7}],[[0,1],[1,2],[2,3],[3,4],[4,0]]),
+  makeSimple([{x:0.3,y:0.35},{x:0.5,y:0.2},{x:0.7,y:0.35},{x:0.65,y:0.65},{x:0.35,y:0.65}],[[0,1],[1,2],[2,3],[3,4],[4,0]]),
+  makeSimple([{x:0.25,y:0.45},{x:0.5,y:0.2},{x:0.75,y:0.45}],[[0,1],[1,2]]),
+  makeSimple([{x:0.2,y:0.3},{x:0.4,y:0.4},{x:0.6,y:0.3},{x:0.8,y:0.4}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.3,y:0.4},{x:0.5,y:0.25},{x:0.7,y:0.4},{x:0.7,y:0.65},{x:0.3,y:0.65}],[[0,1],[1,2],[2,3],[3,4],[4,0]]),
+  makeSimple([{x:0.2,y:0.5},{x:0.35,y:0.3},{x:0.5,y:0.45},{x:0.65,y:0.3},{x:0.8,y:0.5}],[[0,1],[1,2],[2,3],[3,4]]),
+];
+
+const NAMES_ZH = ['猎户座','大熊座','天蝎座','狮子座','仙后座','天鹅座',
+  '白羊座','金牛座','双子座','巨蟹座','处女座','天秤座','射手座','摩羯座','水瓶座',
+  '双鱼座','北冕座','天琴座','天鹰座','飞马座','英仙座','御夫座','牧夫座',
+  '室女座','蛇夫座','天龙座','小熊座','南十字','武仙座','凤凰座'];
+const DIFF = [1,1,2,2,2,2,1,2,2,2,3,2,3,3,3,3,2,2,2,3,2,2,3,3,3,3,2,3,3,2];
+
+const LEVELS = Array.from({length:30}, (_,i) => ({
+  id: i+1,
+  nameZh: NAMES_ZH[i],
+  diff: DIFF[i],
+  unlocked: i < 8,
+  stars: i < 5 ? 3 : (i < 8 ? 2 : (i < 12 ? 1 : 0)),
+  shape: i < 6 ? DETAILED[i] : SIMPLE_SHAPES[(i-6) % SIMPLE_SHAPES.length],
+}));
+
+// ─── Canvas ───────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 844, H = 390;
+const CX = W / 2, CY = H / 2;
+
+// ─── Orbital layout — 5 rings, 6 nodes each ──────────────────────────────────
+// Ring radii, angular offsets, rotation speeds (rad/s)
+const RINGS = [
+  { r: 72,  speed: 0.018, offset: 0 },
+  { r: 116, speed: 0.012, offset: Math.PI / 6 },
+  { r: 160, speed: 0.008, offset: Math.PI / 4 },
+  { r: 204, speed: 0.005, offset: Math.PI / 3 },
+  { r: 248, speed: 0.003, offset: Math.PI / 5 },
+];
+
+// Per-node angular positions (6 evenly spaced + offset per ring)
+function nodeAngle(ringIdx, slotIdx, t) {
+  const ring = RINGS[ringIdx];
+  return ring.offset + slotIdx * (Math.PI * 2 / 6) + ring.speed * t;
+}
+
+function nodePos(levelIdx) {
+  const ringIdx = Math.floor(levelIdx / 6);
+  const slotIdx = levelIdx % 6;
+  return { ringIdx, slotIdx };
+}
+
+function nodeXY(ringIdx, slotIdx, t) {
+  const a = nodeAngle(ringIdx, slotIdx, t);
+  const ring = RINGS[ringIdx];
+  return {
+    x: CX + Math.cos(a) * ring.r,
+    y: CY + Math.sin(a) * ring.r * 0.52,  // slight ellipse
+  };
+}
+
+// ─── Background stars ─────────────────────────────────────────────────────────
+const BG_STARS = Array.from({length:200}, () => ({
+  x: Math.random() * W,
+  y: Math.random() * H,
+  r: Math.random() * 0.7 + 0.15,
+  a: Math.random() * 0.45 + 0.1,
+  tw: Math.random() * Math.PI * 2,
+}));
+
+// ─── Node click / hover state ─────────────────────────────────────────────────
+let hoveredNode = -1, selectedNode = -1;
+let selectedScale = 1.0, selectedScaleTarget = 1.0;
+const tooltip = document.getElementById('tooltip');
+
+// ─── Draw constellation inside node ─────────────────────────────────────────
+function drawMiniConstellation(shape, cx, cy, r, alpha) {
+  const s = shape.stars;
+  const size = r * 1.5;
+  const scaled = s.map(p => ({
+    x: cx + (p.x - 0.5) * size,
+    y: cy + (p.y - 0.5) * size,
+  }));
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.55;
+  ctx.strokeStyle = '#d0e0ff';
+  ctx.lineWidth = 0.7;
+  for (const [a, b] of shape.lines) {
+    ctx.beginPath();
+    ctx.moveTo(scaled[a].x, scaled[a].y);
+    ctx.lineTo(scaled[b].x, scaled[b].y);
+    ctx.stroke();
+  }
+  for (let i = 0; i < scaled.length; i++) {
+    ctx.globalAlpha = alpha * 0.8;
+    ctx.fillStyle = '#e8efff';
+    ctx.beginPath();
+    ctx.arc(scaled[i].x, scaled[i].y, i === 0 && s.length > 4 ? 1.6 : 1.0, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ─── Draw a single node ──────────────────────────────────────────────────────
+function drawNode(level, x, y, t, hovered, selected) {
+  const unlocked = level.unlocked;
+  const baseR = 18;
+  let scale = 1.0;
+  if (hovered) scale = 1.12;
+  if (selected) scale = 1.22 + Math.sin(t * 4) * 0.04;
+  const r = baseR * scale;
+  const alpha = unlocked ? 1 : 0.3;
+
+  ctx.save();
+  ctx.globalAlpha = alpha;
+
+  // Glow
+  if (unlocked) {
+    const glowAlpha = 0.08 + Math.sin(t * 1.5 + level.id) * 0.03;
+    const grd = ctx.createRadialGradient(x, y, r * 0.5, x, y, r * 2.2);
+    grd.addColorStop(0, `rgba(180,210,255,${glowAlpha})`);
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.beginPath();
+    ctx.arc(x, y, r * 2.2, 0, Math.PI*2);
+    ctx.fillStyle = grd;
+    ctx.fill();
+  }
+
+  // Node fill
+  const bg = ctx.createRadialGradient(x, y - r * 0.2, r * 0.05, x, y, r);
+  if (unlocked) {
+    bg.addColorStop(0, 'rgba(24,36,90,0.95)');
+    bg.addColorStop(1, 'rgba(8,12,32,0.9)');
+  } else {
+    bg.addColorStop(0, 'rgba(18,20,38,0.7)');
+    bg.addColorStop(1, 'rgba(8,10,20,0.6)');
+  }
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  ctx.fillStyle = bg;
+  ctx.fill();
+
+  // Border
+  ctx.beginPath();
+  ctx.arc(x, y, r, 0, Math.PI*2);
+  if (selected) {
+    ctx.strokeStyle = `rgba(255,220,100,0.75)`;
+    ctx.lineWidth = 1.5;
+  } else if (unlocked) {
+    ctx.strokeStyle = `rgba(160,185,240,${0.45 + Math.sin(t + level.id * 0.7) * 0.12})`;
+    ctx.lineWidth = 0.8;
+  } else {
+    ctx.strokeStyle = 'rgba(60,65,100,0.3)';
+    ctx.lineWidth = 0.6;
+  }
+  ctx.stroke();
+
+  // Constellation (clipped)
+  ctx.beginPath();
+  ctx.arc(x, y, r - 1, 0, Math.PI*2);
+  ctx.clip();
+  drawMiniConstellation(level.shape, x, y, (r - 2) * 2, unlocked ? 1 : 0.25);
+
+  ctx.restore();
+
+  // Level number
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.7;
+  ctx.font = `${6 * scale}px sans-serif`;
+  ctx.fillStyle = unlocked ? 'rgba(160,180,230,0.8)' : 'rgba(80,85,120,0.5)';
+  ctx.textAlign = 'center';
+  ctx.fillText(String(level.id).padStart(2,'0'), x, y + r + 8 * scale);
+  ctx.restore();
+
+  // Stars under number (only for completed)
+  if (unlocked && level.stars > 0) {
+    ctx.save();
+    ctx.globalAlpha = alpha * 0.75;
+    ctx.font = `${5.5 * scale}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.fillStyle = '#e0b830';
+    ctx.fillText('★'.repeat(level.stars), x, y + r + 16 * scale);
+    ctx.restore();
+  }
+}
+
+// ─── Sun (center) ─────────────────────────────────────────────────────────────
+function drawSun(t) {
+  const pulse = 1 + Math.sin(t * 0.8) * 0.04;
+  const sr = 22 * pulse;
+
+  // Outer soft glow — very gentle
+  const outerGlow = ctx.createRadialGradient(CX, CY, sr, CX, CY, sr * 3.5);
+  outerGlow.addColorStop(0, 'rgba(255,200,100,0.08)');
+  outerGlow.addColorStop(1, 'rgba(255,180,60,0)');
+  ctx.beginPath();
+  ctx.arc(CX, CY, sr * 3.5, 0, Math.PI*2);
+  ctx.fillStyle = outerGlow;
+  ctx.fill();
+
+  // Mid glow
+  const midGlow = ctx.createRadialGradient(CX, CY, sr * 0.5, CX, CY, sr * 1.8);
+  midGlow.addColorStop(0, 'rgba(255,215,120,0.25)');
+  midGlow.addColorStop(1, 'rgba(255,180,60,0)');
+  ctx.beginPath();
+  ctx.arc(CX, CY, sr * 1.8, 0, Math.PI*2);
+  ctx.fillStyle = midGlow;
+  ctx.fill();
+
+  // Sun body
+  const sunGrad = ctx.createRadialGradient(CX - sr * 0.25, CY - sr * 0.25, sr * 0.05, CX, CY, sr);
+  sunGrad.addColorStop(0, '#fff8e8');
+  sunGrad.addColorStop(0.35, '#ffd878');
+  sunGrad.addColorStop(0.75, '#f09020');
+  sunGrad.addColorStop(1, '#c05010');
+  ctx.beginPath();
+  ctx.arc(CX, CY, sr, 0, Math.PI*2);
+  ctx.fillStyle = sunGrad;
+  ctx.fill();
+
+  // Corona rays (very subtle)
+  ctx.save();
+  ctx.globalAlpha = 0.07 + Math.sin(t * 0.6) * 0.02;
+  for (let i = 0; i < 8; i++) {
+    const a = (i / 8) * Math.PI * 2 + t * 0.1;
+    const x1 = CX + Math.cos(a) * (sr + 2);
+    const y1 = CY + Math.sin(a) * (sr + 2);
+    const x2 = CX + Math.cos(a) * (sr + 14);
+    const y2 = CY + Math.sin(a) * (sr + 14);
+    ctx.strokeStyle = '#ffd878';
+    ctx.lineWidth = 1.2;
+    ctx.beginPath();
+    ctx.moveTo(x1, y1);
+    ctx.lineTo(x2, y2);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ─── Draw orbit rings ─────────────────────────────────────────────────────────
+function drawOrbits() {
+  ctx.save();
+  for (let i = 0; i < 5; i++) {
+    const ring = RINGS[i];
+    ctx.beginPath();
+    ctx.save();
+    ctx.scale(1, 0.52);
+    ctx.arc(CX, CY / 0.52, ring.r, 0, Math.PI * 2);
+    ctx.restore();
+    ctx.strokeStyle = `rgba(100,130,200,${0.08 + i * 0.01})`;
+    ctx.lineWidth = 0.5;
+    ctx.setLineDash([2, 4]);
+    ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  ctx.restore();
+}
+
+// ─── Main render ─────────────────────────────────────────────────────────────
+let lastT = 0;
+function render(ts) {
+  const t = ts / 1000;
+  requestAnimationFrame(render);
+
+  // Background
+  ctx.fillStyle = '#06091e';
+  ctx.fillRect(0, 0, W, H);
+
+  // BG stars
+  for (const s of BG_STARS) {
+    const tw = 0.6 + 0.4 * Math.sin(t * 2.5 + s.tw);
+    ctx.globalAlpha = s.a * tw;
+    ctx.fillStyle = '#d8e4ff';
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, Math.PI*2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Orbit rings
+  drawOrbits();
+
+  // Sun
+  drawSun(t);
+
+  // Nodes (back rings first for z-order)
+  for (let ring = 4; ring >= 0; ring--) {
+    for (let slot = 0; slot < 6; slot++) {
+      const levelIdx = ring * 6 + slot;
+      if (levelIdx >= 30) continue;
+      const pos = nodeXY(ring, slot, t);
+      const hovered = hoveredNode === levelIdx;
+      const selected = selectedNode === levelIdx;
+      drawNode(LEVELS[levelIdx], pos.x, pos.y, t, hovered, selected);
+    }
+  }
+
+  // Title
+  ctx.save();
+  ctx.font = '14px sans-serif';
+  ctx.fillStyle = 'rgba(200,215,255,0.65)';
+  ctx.textAlign = 'center';
+  ctx.fillText('选 择 关 卡', W/2, 22);
+  ctx.font = '9px sans-serif';
+  ctx.fillStyle = 'rgba(110,130,190,0.4)';
+  ctx.fillText('点击关卡节点开始探索', W/2, 36);
+  ctx.restore();
+
+  // Ring labels (right edge)
+  const ringLabels = ['入门','基础','进阶','挑战','传奇'];
+  for (let i = 0; i < 5; i++) {
+    const ring = RINGS[i];
+    ctx.save();
+    ctx.globalAlpha = 0.3;
+    ctx.font = '8px sans-serif';
+    ctx.fillStyle = '#a0b4d8';
+    ctx.textAlign = 'left';
+    ctx.fillText(ringLabels[i], CX + ring.r + 4, CY + 3);
+    ctx.restore();
+  }
+
+  // Vignette
+  const vig = ctx.createRadialGradient(CX, CY, H * 0.3, CX, CY, H * 0.9);
+  vig.addColorStop(0, 'rgba(6,9,30,0)');
+  vig.addColorStop(1, 'rgba(6,9,30,0.55)');
+  ctx.fillStyle = vig;
+  ctx.fillRect(0, 0, W, H);
+
+  lastT = t;
+}
+
+// ─── Hit test ─────────────────────────────────────────────────────────────────
+function hitTest(mx, my, t) {
+  const T = t ?? lastT;
+  for (let ring = 0; ring < 5; ring++) {
+    for (let slot = 0; slot < 6; slot++) {
+      const levelIdx = ring * 6 + slot;
+      if (levelIdx >= 30) continue;
+      const pos = nodeXY(ring, slot, T);
+      const dist = Math.hypot(mx - pos.x, my - pos.y);
+      if (dist < 24) return levelIdx;
+    }
+  }
+  return -1;
+}
+
+// ─── Interaction ──────────────────────────────────────────────────────────────
+const wrapper = document.getElementById('wrapper');
+canvas.addEventListener('mousemove', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const hit = hitTest(mx, my, lastT);
+  hoveredNode = hit;
+  canvas.style.cursor = hit >= 0 ? 'pointer' : 'default';
+
+  if (hit >= 0) {
+    const lv = LEVELS[hit];
+    const diffStr = lv.diff === 1 ? '入门' : lv.diff === 2 ? '进阶' : '挑战';
+    const starStr = lv.unlocked ? '★'.repeat(lv.stars) + '☆'.repeat(3-lv.stars) : '🔒';
+    tooltip.textContent = `${lv.nameZh}  难度: ${diffStr}  ${starStr}`;
+    tooltip.style.left = (e.clientX + 14) + 'px';
+    tooltip.style.top = (e.clientY - 6) + 'px';
+    tooltip.classList.add('show');
+  } else {
+    tooltip.classList.remove('show');
+  }
+});
+
+canvas.addEventListener('click', e => {
+  const rect = canvas.getBoundingClientRect();
+  const mx = e.clientX - rect.left;
+  const my = e.clientY - rect.top;
+  const hit = hitTest(mx, my, lastT);
+  if (hit >= 0) {
+    selectedNode = selectedNode === hit ? -1 : hit;
+  }
+});
+
+canvas.addEventListener('mouseleave', () => {
+  hoveredNode = -1;
+  tooltip.classList.remove('show');
+});
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

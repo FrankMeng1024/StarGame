@@ -1,0 +1,33 @@
+{
+  "sprint": 23,
+  "story": "VERIFY-NAV",
+  "hwnd": 1312814,
+  "steps": {
+    "menu": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": false
+    },
+    "level_select": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": false
+    },
+    "game": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": true
+    },
+    "fail": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": true
+    },
+    "back_to_levels": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": false
+    }
+  },
+  "pass": false
+}

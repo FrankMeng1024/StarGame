@@ -1,0 +1,2 @@
+hwnd=<ctypes.LP_c_long object at 0x00000162D0ACC3B0> (2077,22) 1280x800: Star - 微信开发者工具 Stable v2.01.2510290
+hwnd=<ctypes.LP_c_long object at 0x00000162D0ACC440> (0,0) 712x700: 微信开发者工具 Stable v2.01.2510290

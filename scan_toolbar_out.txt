@@ -1,0 +1,67 @@
+Window: (0,0) 1920x1200
+Saved toolbar-row2.png: 350x30
+Icon-gray pixel count per column (x offset from 400):
+  x=435: 2
+  x=450: 4
+  x=475: 1
+  x=490: 3
+  x=495: 1
+  x=505: 2
+  x=520: 3
+  x=525: 6
+  x=530: 6
+  x=545: 6
+  x=550: 1
+  x=560: 2
+  x=570: 3
+  x=585: 1
+  x=595: 1
+  x=610: 4
+  x=620: 1
+  x=625: 5
+  x=630: 2
+  x=635: 3
+  x=640: 6
+  x=645: 1
+  x=650: 5
+  x=655: 6
+  x=660: 2
+  x=665: 2
+  x=675: 2
+  x=690: 1
+  x=700: 6
+  x=710: 3
+  x=715: 1
+  x=720: 1
+  x=725: 5
+  x=740: 2
+  x=745: 4
+Top icon-gray columns (abs x = offset + 400):
+  x=437 (offset 37): count=6
+  x=442 (offset 42): count=6
+  x=453 (offset 53): count=6
+  x=454 (offset 54): count=6
+  x=457 (offset 57): count=6
+  x=458 (offset 58): count=6
+  x=513 (offset 113): count=6
+  x=525 (offset 125): count=6
+  x=526 (offset 126): count=6
+  x=530 (offset 130): count=6
+
+RGB at specific x positions (y=0..29, x relative to 400):
+  x=465: R=56 G=56 B=56
+  x=466: R=56 G=56 B=56
+  x=467: R=56 G=56 B=56
+  x=468: R=56 G=56 B=56
+  x=469: R=56 G=56 B=56
+  x=470: R=56 G=56 B=56
+  x=471: R=57 G=58 B=58
+  x=472: R=58 G=58 B=58
+  x=473: R=58 G=58 B=58
+  x=474: R=58 G=58 B=58
+  x=475: R=58 G=58 B=58
+  x=480: R=56 G=56 B=56
+  x=485: R=56 G=56 B=56
+  x=490: R=63 G=64 B=66
+  x=495: R=58 G=60 B=63
+  x=500: R=57 G=56 B=56

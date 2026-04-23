@@ -1,0 +1,402 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=844px">
+<title>Demo 2 — 星座盘 · 选择关卡</title>
+<style>
+* { margin: 0; padding: 0; box-sizing: border-box; }
+body {
+  background: #03040e;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  padding: 16px 0 40px;
+  font-family: 'Noto Serif SC', serif;
+}
+h2 {
+  color: #9aabcc;
+  font-size: 13px;
+  letter-spacing: 3px;
+  margin-bottom: 8px;
+  opacity: 0.55;
+  font-family: sans-serif;
+  font-weight: 300;
+}
+#wrapper {
+  width: 844px;
+  height: 390px;
+  overflow: hidden;
+  position: relative;
+  border-radius: 4px;
+  border: 1px solid rgba(80,100,160,0.12);
+}
+canvas { display: block; }
+</style>
+</head>
+<body>
+<h2>DEMO 2 — 星座盘（古典航海星图）</h2>
+<div id="wrapper">
+  <canvas id="c" width="844" height="390"></canvas>
+</div>
+<script>
+// ─── Constellation shapes ─────────────────────────────────────────────────────
+const DETAILED = [
+  { nameZh:'猎户座',  nameEn:'Orion',
+    stars:[{x:0.28,y:0.18},{x:0.68,y:0.20},{x:0.38,y:0.50},{x:0.50,y:0.52},{x:0.62,y:0.50},{x:0.32,y:0.82},{x:0.70,y:0.80}],
+    lines:[[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[3,6]] },
+  { nameZh:'大熊座',  nameEn:'Ursa Major',
+    stars:[{x:0.62,y:0.20},{x:0.60,y:0.36},{x:0.40,y:0.42},{x:0.42,y:0.26},{x:0.30,y:0.28},{x:0.20,y:0.36},{x:0.12,y:0.50}],
+    lines:[[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]] },
+  { nameZh:'天蝎座',  nameEn:'Scorpius',
+    stars:[{x:0.40,y:0.32},{x:0.28,y:0.22},{x:0.36,y:0.22},{x:0.44,y:0.22},{x:0.52,y:0.24},{x:0.56,y:0.30},{x:0.60,y:0.38},{x:0.64,y:0.48},{x:0.70,y:0.58},{x:0.76,y:0.70},{x:0.78,y:0.76}],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10]] },
+  { nameZh:'狮子座',  nameEn:'Leo',
+    stars:[{x:0.24,y:0.38},{x:0.28,y:0.22},{x:0.38,y:0.18},{x:0.50,y:0.24},{x:0.58,y:0.30},{x:0.68,y:0.38},{x:0.74,y:0.50},{x:0.80,y:0.60},{x:0.56,y:0.50}],
+    lines:[[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[4,8]] },
+  { nameZh:'仙后座',  nameEn:'Cassiopeia',
+    stars:[{x:0.10,y:0.48},{x:0.26,y:0.28},{x:0.42,y:0.40},{x:0.60,y:0.26},{x:0.76,y:0.46}],
+    lines:[[0,1],[1,2],[2,3],[3,4]] },
+  { nameZh:'天鹅座',  nameEn:'Cygnus',
+    stars:[{x:0.50,y:0.18},{x:0.50,y:0.82},{x:0.20,y:0.50},{x:0.80,y:0.50},{x:0.50,y:0.50}],
+    lines:[[0,4],[4,1],[2,4],[4,3]] },
+];
+
+function makeSimple(pts, ls) { return { stars:pts, lines:ls }; }
+const SIMPLE_SHAPES = [
+  makeSimple([{x:0.3,y:0.3},{x:0.5,y:0.5},{x:0.7,y:0.3}],[[0,1],[1,2]]),
+  makeSimple([{x:0.2,y:0.5},{x:0.4,y:0.3},{x:0.6,y:0.3},{x:0.8,y:0.5}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.3,y:0.2},{x:0.5,y:0.4},{x:0.7,y:0.2},{x:0.5,y:0.7}],[[0,1],[1,2],[1,3]]),
+  makeSimple([{x:0.2,y:0.5},{x:0.4,y:0.2},{x:0.6,y:0.5},{x:0.4,y:0.8}],[[0,1],[1,2],[2,3],[3,0]]),
+  makeSimple([{x:0.3,y:0.3},{x:0.5,y:0.2},{x:0.7,y:0.3},{x:0.6,y:0.6},{x:0.4,y:0.6}],[[0,1],[1,2],[2,3],[3,4],[4,0]]),
+  makeSimple([{x:0.2,y:0.4},{x:0.4,y:0.2},{x:0.6,y:0.3},{x:0.8,y:0.5},{x:0.6,y:0.7}],[[0,1],[1,2],[2,3],[3,4]]),
+  makeSimple([{x:0.3,y:0.5},{x:0.5,y:0.3},{x:0.7,y:0.5},{x:0.5,y:0.7}],[[0,1],[1,2],[2,3],[3,0]]),
+  makeSimple([{x:0.2,y:0.3},{x:0.5,y:0.2},{x:0.8,y:0.3},{x:0.6,y:0.6},{x:0.4,y:0.6}],[[0,1],[1,2],[2,3],[3,4],[4,1]]),
+  makeSimple([{x:0.3,y:0.4},{x:0.5,y:0.2},{x:0.7,y:0.4},{x:0.5,y:0.6}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.2,y:0.5},{x:0.4,y:0.3},{x:0.6,y:0.4},{x:0.8,y:0.3}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.3,y:0.3},{x:0.5,y:0.5},{x:0.7,y:0.4},{x:0.5,y:0.7}],[[0,1],[1,2],[1,3]]),
+  makeSimple([{x:0.2,y:0.6},{x:0.4,y:0.3},{x:0.6,y:0.3},{x:0.8,y:0.6}],[[0,1],[1,2],[2,3],[3,0]]),
+  makeSimple([{x:0.3,y:0.2},{x:0.5,y:0.3},{x:0.7,y:0.2},{x:0.6,y:0.6},{x:0.4,y:0.6}],[[0,1],[1,2],[1,3],[3,4]]),
+  makeSimple([{x:0.25,y:0.4},{x:0.45,y:0.2},{x:0.65,y:0.4},{x:0.45,y:0.75}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.2,y:0.3},{x:0.4,y:0.5},{x:0.6,y:0.5},{x:0.8,y:0.3}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.3,y:0.5},{x:0.5,y:0.2},{x:0.7,y:0.5},{x:0.6,y:0.75},{x:0.4,y:0.75}],[[0,1],[1,2],[2,3],[3,4],[4,0]]),
+  makeSimple([{x:0.2,y:0.4},{x:0.4,y:0.3},{x:0.6,y:0.4},{x:0.8,y:0.35}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.3,y:0.3},{x:0.5,y:0.5},{x:0.7,y:0.6},{x:0.5,y:0.75}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.2,y:0.5},{x:0.4,y:0.25},{x:0.6,y:0.25},{x:0.8,y:0.5},{x:0.5,y:0.7}],[[0,1],[1,2],[2,3],[3,4],[4,0]]),
+  makeSimple([{x:0.3,y:0.35},{x:0.5,y:0.2},{x:0.7,y:0.35},{x:0.65,y:0.65},{x:0.35,y:0.65}],[[0,1],[1,2],[2,3],[3,4],[4,0]]),
+  makeSimple([{x:0.25,y:0.45},{x:0.5,y:0.2},{x:0.75,y:0.45}],[[0,1],[1,2]]),
+  makeSimple([{x:0.2,y:0.3},{x:0.4,y:0.4},{x:0.6,y:0.3},{x:0.8,y:0.4}],[[0,1],[1,2],[2,3]]),
+  makeSimple([{x:0.3,y:0.4},{x:0.5,y:0.25},{x:0.7,y:0.4},{x:0.7,y:0.65},{x:0.3,y:0.65}],[[0,1],[1,2],[2,3],[3,4],[4,0]]),
+  makeSimple([{x:0.2,y:0.5},{x:0.35,y:0.3},{x:0.5,y:0.45},{x:0.65,y:0.3},{x:0.8,y:0.5}],[[0,1],[1,2],[2,3],[3,4]]),
+];
+
+const NAMES_ZH = ['猎户座','大熊座','天蝎座','狮子座','仙后座','天鹅座',
+  '白羊座','金牛座','双子座','巨蟹座','处女座','天秤座','射手座','摩羯座','水瓶座',
+  '双鱼座','北冕座','天琴座','天鹰座','飞马座','英仙座','御夫座','牧夫座',
+  '室女座','蛇夫座','天龙座','小熊座','南十字','武仙座','凤凰座'];
+const DIFF = [1,1,2,2,2,2,1,2,2,2,3,2,3,3,3,3,2,2,2,3,2,2,3,3,3,3,2,3,3,2];
+
+const LEVELS = Array.from({length:30}, (_,i) => ({
+  id: i+1,
+  nameZh: NAMES_ZH[i],
+  diff: DIFF[i],
+  unlocked: i < 8,
+  stars: i < 5 ? 3 : (i < 8 ? 2 : (i < 12 ? 1 : 0)),
+  shape: i < 6 ? DETAILED[i] : SIMPLE_SHAPES[(i-6) % SIMPLE_SHAPES.length],
+}));
+
+// ─── Canvas ───────────────────────────────────────────────────────────────────
+const canvas = document.getElementById('c');
+const ctx = canvas.getContext('2d');
+const W = 844, H = 390;
+
+// ─── Background stars (dense small dots) ─────────────────────────────────────
+const BG_STARS = Array.from({length:320}, () => ({
+  x: Math.random() * W,
+  y: Math.random() * H * 3.8,
+  r: Math.random() * 0.7 + 0.15,
+  a: Math.random() * 0.5 + 0.15,
+  tw: Math.random() * Math.PI * 2,
+}));
+
+// ─── Layout — same double-helix spread ───────────────────────────────────────
+const CONTENT_H = 1400;
+const NODE_R = 28;
+const NODE_GAP_Y = CONTENT_H / 31;
+
+function nodePos(i) {
+  const t = (i + 0.5) / 30;
+  const amp = 130;
+  const freq = 2.2;
+  return {
+    x: W / 2 + Math.sin(t * Math.PI * freq) * amp,
+    y: (i + 0.5) * NODE_GAP_Y + 40,
+  };
+}
+
+// ─── Scroll ───────────────────────────────────────────────────────────────────
+let scrollY = 0, targetScrollY = 0, velY = 0;
+const maxScroll = CONTENT_H - H;
+let isDragging = false, lastMouseY = 0;
+let hoveredNode = -1, selectedNode = -1;
+
+// ─── Constellation inside badge ───────────────────────────────────────────────
+function drawBadgeConstellation(ctx, shape, cx, cy, size, alpha) {
+  const s = shape.stars;
+  const scaled = s.map(p => ({
+    x: cx + (p.x - 0.5) * size * 1.5,
+    y: cy + (p.y - 0.5) * size * 1.5,
+  }));
+
+  ctx.save();
+  ctx.globalAlpha = alpha * 0.5;
+  ctx.strokeStyle = '#d0dcff';
+  ctx.lineWidth = 0.8;
+  for (const [a,b] of shape.lines) {
+    ctx.beginPath();
+    ctx.moveTo(scaled[a].x, scaled[a].y);
+    ctx.lineTo(scaled[b].x, scaled[b].y);
+    ctx.stroke();
+  }
+  for (let i = 0; i < scaled.length; i++) {
+    const sr = i === 0 && shape.stars.length > 5 ? 2.0 : 1.2;
+    ctx.globalAlpha = alpha * 0.85;
+    ctx.fillStyle = '#e8efff';
+    ctx.beginPath();
+    ctx.arc(scaled[i].x, scaled[i].y, sr, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ─── Draw badge node ─────────────────────────────────────────────────────────
+function drawBadge(level, cx, cy, t, hovered) {
+  const r = hovered ? NODE_R + 4 : NODE_R;
+  const unlocked = level.unlocked;
+  const baseAlpha = unlocked ? 1 : 0.35;
+
+  ctx.save();
+  ctx.globalAlpha = baseAlpha;
+
+  // Outer halo (pulsing for unlocked)
+  if (unlocked) {
+    const pulse = 0.12 + Math.sin(t * 1.2 + level.id * 0.6) * 0.04;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 8, 0, Math.PI * 2);
+    ctx.strokeStyle = `rgba(180,200,240,${pulse})`;
+    ctx.lineWidth = 1;
+    ctx.stroke();
+  }
+
+  // Badge fill — semi-transparent deep blue
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.fillStyle = unlocked
+    ? 'rgba(12,18,52,0.82)'
+    : 'rgba(10,12,30,0.55)';
+  ctx.fill();
+
+  // Badge border — crisp white/grey
+  ctx.beginPath();
+  ctx.arc(cx, cy, r, 0, Math.PI * 2);
+  ctx.strokeStyle = unlocked
+    ? `rgba(210,220,245,${0.5 + Math.sin(t * 0.8 + level.id) * 0.1})`
+    : 'rgba(80,90,130,0.35)';
+  ctx.lineWidth = 0.8;
+  ctx.stroke();
+
+  // Clip and draw constellation
+  ctx.beginPath();
+  ctx.arc(cx, cy, r - 2, 0, Math.PI * 2);
+  ctx.clip();
+  drawBadgeConstellation(ctx, level.shape, cx, cy, (r - 3) * 2, unlocked ? 1 : 0.3);
+
+  ctx.restore();
+
+  // Difficulty pips (dots top)
+  ctx.save();
+  ctx.globalAlpha = baseAlpha * 0.7;
+  for (let d = 0; d < level.diff; d++) {
+    ctx.beginPath();
+    ctx.arc(cx - (level.diff - 1) * 4 + d * 8, cy - r - 5, 2, 0, Math.PI * 2);
+    ctx.fillStyle = level.diff === 1 ? '#60d0a0' : (level.diff === 2 ? '#a0b8ff' : '#c080ff');
+    ctx.fill();
+  }
+  ctx.restore();
+
+  // Level number top-left of badge
+  ctx.save();
+  ctx.globalAlpha = baseAlpha * 0.65;
+  ctx.font = '7px sans-serif';
+  ctx.fillStyle = '#8090b8';
+  ctx.textAlign = 'left';
+  ctx.fillText('L' + level.id, cx - r + 3, cy - r + 9);
+  ctx.restore();
+
+  // Name below
+  ctx.save();
+  ctx.globalAlpha = baseAlpha * (unlocked ? 0.8 : 0.4);
+  ctx.font = '10px sans-serif';
+  ctx.fillStyle = unlocked ? '#b0c4e8' : '#404870';
+  ctx.textAlign = 'center';
+  ctx.fillText(level.nameZh, cx, cy + r + 13);
+  ctx.restore();
+
+  // Stars below name
+  if (unlocked) {
+    ctx.save();
+    ctx.font = '8px sans-serif';
+    ctx.textAlign = 'center';
+    ctx.fillStyle = level.stars > 0 ? '#e8c840' : 'rgba(80,90,130,0.5)';
+    ctx.fillText('★'.repeat(level.stars) + '☆'.repeat(3 - level.stars), cx, cy + r + 23);
+    ctx.restore();
+  }
+}
+
+// ─── Connector lines between badges ─────────────────────────────────────────
+function drawConnectors(t, scrolled) {
+  ctx.save();
+  ctx.setLineDash([2,6]);
+  ctx.lineWidth = 0.6;
+  for (let i = 0; i < 29; i++) {
+    const a = nodePos(i), b = nodePos(i+1);
+    const ay = a.y - scrolled, by = b.y - scrolled;
+    if (ay < -60 || by > H + 60) continue;
+    const connected = LEVELS[i].unlocked && LEVELS[i+1].unlocked;
+    ctx.strokeStyle = connected
+      ? `rgba(180,195,230,0.22)`
+      : `rgba(70,80,120,0.15)`;
+    ctx.lineDashOffset = -t * 8;
+    ctx.beginPath();
+    ctx.moveTo(a.x, ay);
+    ctx.lineTo(b.x, by);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ─── Tiny RA/Dec grid lines (chart aesthetic) ────────────────────────────────
+function drawChartGrid(scrolled) {
+  ctx.save();
+  ctx.globalAlpha = 0.04;
+  ctx.strokeStyle = '#a0b8d8';
+  ctx.lineWidth = 0.5;
+
+  // Horizontal lines every 60px
+  for (let gy = -scrolled % 60; gy < H; gy += 60) {
+    ctx.beginPath();
+    ctx.moveTo(0, gy);
+    ctx.lineTo(W, gy);
+    ctx.stroke();
+  }
+  // Vertical lines every 80px
+  for (let gx = 0; gx < W; gx += 80) {
+    ctx.beginPath();
+    ctx.moveTo(gx, 0);
+    ctx.lineTo(gx, H);
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+// ─── Main render ─────────────────────────────────────────────────────────────
+function render(ts) {
+  const t = ts / 1000;
+  requestAnimationFrame(render);
+
+  if (!isDragging) {
+    scrollY += (targetScrollY - scrollY) * 0.08;
+    velY *= 0.91;
+    targetScrollY += velY;
+    targetScrollY = Math.max(0, Math.min(maxScroll, targetScrollY));
+  }
+  scrollY = Math.max(0, Math.min(maxScroll, scrollY));
+
+  // Sky background
+  ctx.fillStyle = '#0a0d2a';
+  ctx.fillRect(0, 0, W, H);
+
+  // Dense BG stars
+  for (const s of BG_STARS) {
+    const sy = s.y - scrollY * 0.25;
+    if (sy < -1 || sy > H + 1) continue;
+    const tw = 0.6 + 0.4 * Math.sin(t * 3 + s.tw);
+    ctx.globalAlpha = s.a * tw;
+    ctx.fillStyle = '#dce6ff';
+    ctx.beginPath();
+    ctx.arc(s.x, sy, s.r, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+
+  // Grid
+  drawChartGrid(scrollY);
+
+  // Connectors
+  drawConnectors(t, scrollY);
+
+  // Badges
+  for (let i = 0; i < 30; i++) {
+    const pos = nodePos(i);
+    const sy = pos.y - scrollY;
+    if (sy < -NODE_R - 40 || sy > H + NODE_R + 40) continue;
+    drawBadge(LEVELS[i], pos.x, sy, t, hoveredNode === i);
+  }
+
+  // Title area — top overlay
+  ctx.fillStyle = '#0a0d2a';
+  ctx.fillRect(0, 0, W, 50);
+  ctx.font = '13px sans-serif';
+  ctx.fillStyle = 'rgba(190,205,240,0.7)';
+  ctx.textAlign = 'center';
+  ctx.letterSpacing = '4px';
+  ctx.fillText('选 择 关 卡', W/2, 24);
+  ctx.font = '9px sans-serif';
+  ctx.fillStyle = 'rgba(100,120,180,0.45)';
+  ctx.letterSpacing = '1px';
+  ctx.fillText('古典星图 · 30 Constellations', W/2, 39);
+
+  // Scroll bar
+  const pct = scrollY / maxScroll;
+  ctx.fillStyle = 'rgba(160,180,220,0.2)';
+  ctx.beginPath();
+  ctx.roundRect(W - 4, 8 + pct * (H - 50), 2, 42, 1);
+  ctx.fill();
+
+  // Top/bottom fade
+  const fadeT = ctx.createLinearGradient(0,0,0,H);
+  fadeT.addColorStop(0, 'rgba(10,13,42,0.65)');
+  fadeT.addColorStop(0.13, 'rgba(10,13,42,0)');
+  fadeT.addColorStop(0.87, 'rgba(10,13,42,0)');
+  fadeT.addColorStop(1, 'rgba(10,13,42,0.75)');
+  ctx.fillStyle = fadeT;
+  ctx.fillRect(0, 0, W, H);
+}
+
+// ─── Interaction ──────────────────────────────────────────────────────────────
+canvas.addEventListener('mousedown', e => { isDragging = true; lastMouseY = e.offsetY; velY = 0; });
+canvas.addEventListener('mousemove', e => {
+  if (isDragging) {
+    const dy = e.offsetY - lastMouseY;
+    scrollY -= dy; scrollY = Math.max(0, Math.min(maxScroll, scrollY));
+    targetScrollY = scrollY; lastMouseY = e.offsetY;
+  }
+  hoveredNode = -1;
+  for (let i = 0; i < 30; i++) {
+    const p = nodePos(i);
+    const dx = e.offsetX - p.x, dy = e.offsetY - (p.y - scrollY);
+    if (Math.hypot(dx,dy) < NODE_R + 6) { hoveredNode = i; break; }
+  }
+});
+canvas.addEventListener('mouseup', () => { isDragging = false; });
+canvas.addEventListener('wheel', e => {
+  e.preventDefault();
+  velY += e.deltaY * 0.4;
+  targetScrollY = Math.max(0, Math.min(maxScroll, targetScrollY + e.deltaY * 0.4));
+}, {passive:false});
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>

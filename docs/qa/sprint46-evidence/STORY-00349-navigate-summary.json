@@ -1,0 +1,33 @@
+{
+  "sprint": 46,
+  "story": "STORY-00349",
+  "hwnd": 2885124,
+  "steps": {
+    "menu": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "level_select": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "game": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "fail": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "back_to_levels": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    }
+  },
+  "pass": true
+}

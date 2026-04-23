@@ -1,0 +1,4 @@
+Window: (2077,22) 1280x800
+Traceback (most recent call last):
+  File "<stdin>", line 22, in <module>
+AttributeError: module 'dxcam' has no attribute 'device_count'

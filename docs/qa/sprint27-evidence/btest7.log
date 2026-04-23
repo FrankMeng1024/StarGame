@@ -1,0 +1,10 @@
+Window size: 1280x800 at (2077,22)
+PrintWindow result: 1
+Array shape: (800, 1280, 3)
+Mean brightness: 47.0
+Max R=46 G=47 B=48
+
+Pixel (100,100): R=46 G=47 B=48
+Pixel (200,200): R=46 G=47 B=48
+Pixel (400,400): R=46 G=47 B=48
+Saved to docs/qa/sprint27-evidence/printwindow_test.png

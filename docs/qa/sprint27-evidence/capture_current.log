@@ -1,0 +1,5 @@
+Window: (100,100) 1280x800
+  child hwnd=1378318 cls=Chrome_RenderWidgetHostHWND (100,100) 1280x800 vis=0
+  child hwnd=330232 cls=Intermediate D3D Window (100,100) 1280x800 vis=1
+full_primary: mean=69.6 max=255
+window_area: mean=70.7 max=255

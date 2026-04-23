@@ -1,0 +1,6 @@
+Window: (100,100) 1280x800
+  child: hwnd=1378318 cls=Chrome_RenderWidgetHostHWND (100,100) 853x533 vis=0
+  child: hwnd=330232 cls=Intermediate D3D Window (100,100) 1280x800 vis=1
+main_primary: PrintWindow=1 mean=47.0 max=48
+child_Chrome_Ren_1378318: PrintWindow=1 mean=47.0 max=48
+child_Intermedia_330232: PrintWindow=1 mean=47.0 max=48

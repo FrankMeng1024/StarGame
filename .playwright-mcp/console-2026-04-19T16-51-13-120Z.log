@@ -1,0 +1,13 @@
+[      66ms] [WARNING] Geolocation permission has been blocked as the user has ignored the permission prompt several times. This can be reset in Page Info which can be accessed by clicking the tune icon next to the URL. See https://www.chromestatus.com/feature/6443143280984064 for more information. @ http://localhost:8090/:0
+[    3147ms] [ERROR] Failed to load resource: the server responded with a status of 404 (File not found) @ http://localhost:8090/favicon.ico:0
+[  167826ms] TypeError: Cannot read properties of undefined (reading 'sky0')
+    at _applySceneTint (http://localhost:8090/js/screens/complete.js:421:62)
+    at showFail (http://localhost:8090/js/screens/complete.js:100:3)
+    at _activateScreen (http://localhost:8090/js/main.js?v=33:122:5)
+    at http://localhost:8090/js/main.js?v=33:101:7
+[  633169ms] TypeError: this.inventory.get is not a function
+    at Object.getItemQty (http://localhost:8090/js/state.js:86:27)
+    at http://localhost:8090/js/screens/item-select.js:27:57
+    at Array.filter (<anonymous>)
+    at showItemSelect (http://localhost:8090/js/screens/item-select.js:27:36)
+    at HTMLDivElement.<anonymous> (http://localhost:8090/js/screens/levels.js:126:9)

@@ -1,0 +1,33 @@
+{
+  "sprint": 29,
+  "story": "VU-SPRINT29",
+  "hwnd": 1312814,
+  "steps": {
+    "menu": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "level_select": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "game": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "fail": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "back_to_levels": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    }
+  },
+  "pass": true
+}

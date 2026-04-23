@@ -1,0 +1,7 @@
+GetWindowRect (default DPI): (2077,22) 1280x800
+GetWindowRect (DPI aware): (2077,22) 1280x800
+mss monitor[0]: left=0 top=0 w=3840 h=1200
+mss monitor[1]: left=0 top=0 w=1920 h=1200
+mss monitor[2]: left=1920 top=0 w=1920 h=1080
+
+Monitor 2 capture: shape=(1080, 1920, 3) max=0 mean=0.0

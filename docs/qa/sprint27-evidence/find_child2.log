@@ -1,0 +1,6 @@
+chrome_render: hwnd=1378318 1280x800 PrintWindow=1 mean=47.0 max=48
+  Saved docs/qa/sprint27-evidence/pw_chrome_render.png
+d3d_window: hwnd=330232 1280x800 PrintWindow=1 mean=47.0 max=48
+  Saved docs/qa/sprint27-evidence/pw_d3d_window.png
+parent: hwnd=1312814 1280x800 PrintWindow=1 mean=47.0 max=48
+  Saved docs/qa/sprint27-evidence/pw_parent.png

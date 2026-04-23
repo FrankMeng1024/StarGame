@@ -1,0 +1,71 @@
+{
+  "hwnd": 2230606,
+  "window": {
+    "left": 2039,
+    "top": 31,
+    "width": 1620,
+    "height": 1200
+  },
+  "canvas_rel": {
+    "x": 14,
+    "y": 91,
+    "w": 463,
+    "h": 299
+  },
+  "canvas_abs": {
+    "x": 2053,
+    "y": 122,
+    "w": 463,
+    "h": 299
+  },
+  "coords": {
+    "menu_challenge_btn": [
+      2409,
+      235
+    ],
+    "menu_gallery_btn": [
+      2409,
+      275
+    ],
+    "menu_shop_btn": [
+      2409,
+      313
+    ],
+    "gallery_node0": [
+      2165,
+      199
+    ],
+    "gallery_back_btn": [
+      2083,
+      137
+    ],
+    "gallery_drawer_close": [
+      2498,
+      221
+    ],
+    "levels_node0": [
+      2155,
+      214
+    ],
+    "levels_back_btn": [
+      2083,
+      137
+    ],
+    "game_center": [
+      2284,
+      271
+    ],
+    "game_canvas_ratio_center": [
+      0.5,
+      0.5
+    ],
+    "reload_btn": [
+      2781,
+      90
+    ],
+    "canvas_focus_safe": [
+      2076,
+      136
+    ]
+  }
+}

@@ -1,0 +1,4 @@
+hwnd=2230606
+Window: (0,0) 1920x1200
+Canvas brightness: 25.6
+Saved: docs/qa/sprint56-mini-evidence/current-canvas.png

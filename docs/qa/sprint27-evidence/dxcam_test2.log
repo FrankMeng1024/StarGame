@@ -1,0 +1,8 @@
+device_info: Device[0]:<Device Name:Intel(R) Iris(R) Xe Graphics Dedicated VRAM:128Mb VendorId:32902>
+
+output_info: Device[0] Output[0]: Res:(1920, 1200) Rot:0 Primary:True
+Device[0] Output[1]: Res:(1920, 1080) Rot:0 Primary:False
+
+Window: (2077,22) 1280x800
+output=0 error: Invalid Region: Region should be in 1920x1200
+output=1 error: Invalid Region: Region should be in 1920x1080

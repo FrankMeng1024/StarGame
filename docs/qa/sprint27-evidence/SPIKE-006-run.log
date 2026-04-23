@@ -1,0 +1,45 @@
+mss_navigate.py — Sprint 27 / SPIKE-006
+Output dir: docs/qa/sprint27-evidence
+✓ hwnd=1312814
+✓ Canvas (dynamic, DPI=150%): win(13,98) 414x117 → abs(1926,91)
+
+[1/5] Menu screen (reload → wait for intro → menu)
+  🖱  SendInput ↺ reload @ physical(2397,35)
+  Focusing simulator to close debug panel...
+  🖱  Click focus-simulator @ ratio(0.513,0.184) log(2138,112)
+  📸 SPIKE-006-01-menu.png brightness=99.3 (menu)
+  GLM: screen_type=skipped confidence=skipped → ✓ PASS
+
+[2/5] Level Select (click 挑战关卡)
+  🖱  Click 挑战关卡 @ ratio(0.750,0.299) log(2236,125)
+  📸 SPIKE-006-02-level-select.png brightness=99.3 (level_select)
+  GLM: screen_type=skipped confidence=skipped → ✓ PASS
+
+[3/5] Game screen (click Level 1 猎户座)
+  🖱  Click Level 1 猎户座 @ ratio(0.092,0.110) log(1964,103)
+  🖱  Click 跳过 overlay @ ratio(0.349,0.490) log(2070,148)
+  📸 SPIKE-006-03-game.png brightness=99.3 (game)
+  GLM: screen_type=skipped confidence=skipped → ✓ PASS
+
+[4/5] Fail screen (waiting 140s for Level 1 timer...)
+  📸 SPIKE-006-04-fail.png brightness=99.2 (fail after timer)
+  GLM: screen_type=skipped confidence=skipped → ✓ PASS
+
+[5/5] Menu screen via reload (game fail screen → reload → menu)
+  🖱  SendInput ↺ reload (step 5) @ physical(2397,35)
+  Focusing simulator to close debug panel...
+  🖱  Click focus-simulator-s5 @ ratio(0.513,0.184) log(2138,112)
+  📸 SPIKE-006-05-back-to-levels.png brightness=99.3 (menu after reload)
+  GLM: screen_type=skipped confidence=skipped → ✓ PASS
+  📸 SPIKE-006-05-back-to-levels.png brightness=99.3 (level_select again)
+  GLM: screen_type=skipped confidence=skipped → ✓ PASS
+
+═══ Navigation Results ═══
+  ✓ menu: skipped (skipped)
+  ✓ level_select: skipped (skipped)
+  ✓ game: skipped (skipped)
+  ✓ fail: skipped (skipped)
+  ✓ back_to_levels: skipped (skipped)
+
+Summary: docs/qa/sprint27-evidence\SPIKE-006-navigate-summary.json
+Exit: 0 (PASS)

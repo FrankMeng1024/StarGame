@@ -1,0 +1,6 @@
+[      77ms] [WARNING] Geolocation permission has been blocked as the user has ignored the permission prompt several times. This can be reset in Page Info which can be accessed by clicking the tune icon next to the URL. See https://www.chromestatus.com/feature/6443143280984064 for more information. @ http://localhost:8080/:0
+[   73425ms] TypeError: Cannot read properties of undefined (reading 'sky0')
+    at _applySceneTint (http://localhost:8080/js/screens/complete.js:421:62)
+    at showComplete (http://localhost:8080/js/screens/complete.js:13:3)
+    at _activateScreen (http://localhost:8080/js/main.js?v=33:120:5)
+    at http://localhost:8080/js/main.js?v=33:101:7

@@ -1,0 +1,73 @@
+nav_all_screens.py — Sprint 48 / STORY-00350
+✓ hwnd=2230606 pos=(0,0) size=1920x1200
+  ✓ game.js patched: intro→menu
+  ✓ ▼ detected at x=754, ↺ reload at x=764
+  Reload button abs=(764,59)
+
+[RELOAD] Clicking ↺ reload button...
+  Waiting 15s for compile + menu...
+✓ Canvas abs: (14,138) 974x434
+  🖱 click dismiss dropdown (toolbar left) @ abs(200,42)
+  🖱 click dismiss dropdown 2 @ abs(200,42)
+  🖱 click focus canvas @ abs(111,181)
+
+[1/7] Menu screen
+  📸 STORY-00350-01-menu.png brightness=49.6 [menu]
+  GLM: menu (high)
+
+[2/7] Gallery (星座图鉴)
+  🖱 click 星座图鉴 btn @ abs(763,361)
+  📸 STORY-00350-02-gallery-list.png brightness=45.2 [gallery]
+  GLM: level_select (high)
+
+[3/7] Gallery detail (tap node 0)
+  🖱 click node 0 (猎户座) @ abs(249,250)
+  📸 STORY-00350-03-gallery-detail.png brightness=45.6 [gallery detail]
+  GLM: menu (high)
+
+[4/7] Back to menu from gallery (reload 25s)
+  [RELOAD] bringing DevTools to foreground...
+  [RELOAD] clicking ↺ at abs(764,59) (skip_move)...
+  Waiting 25s for compile + menu...
+  [RELOAD] dismiss clicks at abs(200,42)
+  🖱 click dismiss dropdown after reload @ abs(200,42)
+  🖱 click dismiss dropdown 2 after reload @ abs(200,42)
+  🖱 click focus canvas after reload @ abs(111,181)
+  📸 STORY-00350-04-menu-from-gallery.png brightness=45.2 [menu]
+  GLM: level_select (high)
+
+[5/7] Shop (道具商店)
+  🖱 click 道具商店 btn @ abs(763,415)
+  📸 STORY-00350-05-shop.png brightness=45.2 [shop]
+  GLM: level_select (high)
+  [RELOAD] bringing DevTools to foreground...
+  [RELOAD] clicking ↺ at abs(764,59) (skip_move)...
+  Waiting 25s for compile + menu...
+  [RELOAD] dismiss clicks at abs(200,42)
+  🖱 click dismiss dropdown after reload @ abs(200,42)
+  🖱 click dismiss dropdown 2 after reload @ abs(200,42)
+  🖱 click focus canvas after reload @ abs(111,181)
+
+[6/7] Level Select (挑战关卡)
+  🖱 click 挑战关卡 btn @ abs(763,302)
+  📸 STORY-00350-06-level-select.png brightness=45.6 [levels]
+  GLM: menu (high)
+
+[7/7] Game screen (click Level 1)
+  🖱 click Level 1 (猎户座) @ abs(229,272)
+  🖱 click skip overlay @ abs(501,355)
+  📸 STORY-00350-07-game.png brightness=45.6 [game]
+  GLM: menu (high)
+
+  Restoring game.js...
+  ✓ game.js restored: navigate('intro')
+
+═══ All screenshots captured ═══
+  [1] Menu: docs/qa/sprint48-mini-evidence\STORY-00350-01-menu.png
+  [2] GalleryList: docs/qa/sprint48-mini-evidence\STORY-00350-02-gallery-list.png
+  [3] GalleryDetail: docs/qa/sprint48-mini-evidence\STORY-00350-03-gallery-detail.png
+  [4] MenuFromGallery: docs/qa/sprint48-mini-evidence\STORY-00350-04-menu-from-gallery.png
+  [5] Shop: docs/qa/sprint48-mini-evidence\STORY-00350-05-shop.png
+  [6] LevelSelect: docs/qa/sprint48-mini-evidence\STORY-00350-06-level-select.png
+  [7] Game: docs/qa/sprint48-mini-evidence\STORY-00350-07-game.png
+Done.

@@ -1,0 +1,4 @@
+Window: (0,0) 1920x1200
+bottom-tabs.png: 500x30
+Compile row bright peaks:
+compile-row.png saved: 750x22

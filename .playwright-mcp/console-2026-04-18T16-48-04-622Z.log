@@ -1,0 +1,2 @@
+[    5216ms] [ERROR] Failed to load resource: the server responded with a status of 404 () @ https://sapit-iex-prod.authentication.eu10.hana.ondemand.com/favicon.ico:0
+[   17860ms] [ERROR] Failed to load resource: the server responded with a status of 404 (Not Found) @ https://one.int.sap/_notification/api/action/I585134/93:0

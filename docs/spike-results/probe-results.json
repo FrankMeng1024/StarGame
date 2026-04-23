@@ -1,0 +1,33 @@
+{
+  "hwnd_discovery": {
+    "status": "OK",
+    "hwnd": 1312814,
+    "title": "Star - 微信开发者工具 Stable v2.01.2510290"
+  },
+  "mss_screenshot": {
+    "status": "OK",
+    "path": "docs/spike-results/probe-screenshot.png",
+    "brightness": 37.9,
+    "size": "318x624"
+  },
+  "glm_4v_glm-4v": {
+    "status": "FAIL",
+    "code": 429,
+    "error": "{\"error\":{\"code\":\"1113\",\"message\":\"余额不足或无可用资源包,请充值。\"}}"
+  },
+  "glm_4v_glm-4v-plus": {
+    "status": "FAIL",
+    "code": 429,
+    "error": "{\"error\":{\"code\":\"1113\",\"message\":\"余额不足或无可用资源包,请充值。\"}}"
+  },
+  "glm_4v": {
+    "status": "OK",
+    "model": "glm-4v-flash",
+    "response": "```json\n{\n    \"screen_type\": \"游戏设置界面\",\n    \"description\": \"深蓝色背景的游戏设置界面，包含四个选项：网速加速、网速扩大、宇宙炸弹和时间延长。每个选项右侧都有一个图标和文字说明，表示该功能的效果和当前拥有数量（均为0）。左上角有一个返回按钮。\"\n}\n```"
+  },
+  "glm_web_search": {
+    "status": "OK",
+    "has_tool_calls": false,
+    "response_preview": "使用Python截取微信小游戏Canvas画面，并返回一句话总结：利用Python实现微信小游戏Canvas画面截图功能。"
+  }
+}

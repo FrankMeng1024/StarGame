@@ -1,0 +1,13 @@
+Window: (2077,22) 1280x800
+Array shape: (800, 1280, 3)
+Overall max: R=0 G=0 B=0
+Mean brightness: 0.0
+x=100: max B=0
+x=150: max B=0
+x=200: max B=0
+x=250: max B=0
+x=300: max B=0
+
+Sample pixels at (200, 200): [0 0 0]
+Sample pixels at (100, 100): [0 0 0]
+Sample pixels at (400, 400): [0 0 0]

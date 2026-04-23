@@ -1,0 +1,3 @@
+Restoring hwnd=2230606...
+Window after restore: (0,0) 1920x1200
+Saved after-restore.png, brightness=46.6

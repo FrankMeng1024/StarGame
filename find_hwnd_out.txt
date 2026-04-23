@@ -1,0 +1,3 @@
+hwnd=2230606 pos=(-32000,-32000) size=237x39 title='Star - 微信开发者工具 Stable v2.01.2510290'
+hwnd=198782 pos=(38,38) size=1440x817 title=''
+BEST: hwnd=198782
