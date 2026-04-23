@@ -361,7 +361,7 @@ function _loop(now) {
     // Usable area: between safe top and info panel bottom
     const safeT   = G.SAFE_TOP    || 0;
     const safeB   = G.SAFE_BOTTOM || 0;
-    const INFO_RESERVED = 58;  // info panel height + gap
+    const INFO_RESERVED = 68;  // info panel height (52) + gap (8*2)
     const usableTop = safeT + 8;
     const usableBot = H - safeB - INFO_RESERVED;
     const usableH   = usableBot - usableTop;
@@ -518,8 +518,8 @@ function _drawConInfoPanel(ctx, W, H, isLandscape) {
   const safeL = G.SAFE_LEFT   || 0;
   const safeR = G.SAFE_RIGHT  || 0;
 
-  const PANEL_H = 44;
-  const PAD_X   = 16;
+  const PANEL_H = 52;
+  const PAD_X   = 14;
   // In landscape, panel spans the constellation half (left 60%)
   // In portrait, panel spans full width
   const panelW = isLandscape ? W * 0.62 - safeL - 8 : W - safeL - safeR - 24;
@@ -537,30 +537,26 @@ function _drawConInfoPanel(ctx, W, H, isLandscape) {
   ctx.stroke();
   ctx.globalAlpha = 1;
 
-  // Location icon + constellation name
+  // Left: constellation name (top row)
   ctx.font         = 'bold 13px sans-serif';
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = 'rgba(255,220,120,0.92)';
-  ctx.fillText('✦ ' + _conDef.nameZh, panelX + PAD_X, panelY + 14);
+  ctx.fillText('✦ ' + _conDef.nameZh, panelX + PAD_X, panelY + 16);
 
-  // Viewing tip (bestViewMonth)
+  // Left: season label (bottom row)
   if (_conDef.bestViewMonth) {
     ctx.font      = '11px sans-serif';
-    ctx.fillStyle = 'rgba(200,195,240,0.78)';
-    ctx.fillText(_conDef.bestViewMonth + '最易观测', panelX + PAD_X, panelY + 31);
+    ctx.fillStyle = 'rgba(200,195,240,0.72)';
+    ctx.fillText(_conDef.bestViewMonth + ' 星座观测', panelX + PAD_X, panelY + 36);
   }
 
-  // Notable stars (right-aligned, truncated if needed)
+  // Right: viewing month (right-aligned, vertically centered)
   if (_conDef.mainStars) {
-    const maxChars = isLandscape ? 14 : 12;
-    const starsText = _conDef.mainStars.length > maxChars
-      ? _conDef.mainStars.substring(0, maxChars) + '…'
-      : _conDef.mainStars;
     ctx.font         = '11px sans-serif';
     ctx.textAlign    = 'right';
-    ctx.fillStyle    = 'rgba(180,175,220,0.65)';
-    ctx.fillText('★ ' + starsText, panelX + panelW - PAD_X, panelY + PANEL_H / 2);
+    ctx.fillStyle    = 'rgba(180,175,220,0.60)';
+    ctx.fillText('★ ' + _conDef.mainStars, panelX + panelW - PAD_X, panelY + PANEL_H / 2);
   }
 
   ctx.restore();
