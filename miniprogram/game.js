@@ -2,6 +2,9 @@
 // 负责：wx.login 静默登录 → 获取 openid → 加载云端存档 → 启动主菜单
 // STORY-00347: 修复扫码黑屏 — wx.onShow 延迟启动 + 加长 canvas 就绪等待
 
+// DEBUG: 开启 vConsole，扫码后右下角出现绿色按钮可查看 log — 上线前删除
+wx.setEnableDebug({ enableDebug: true });
+
 import { initGlobals, G } from './js/engine/globals.js';
 import { AuthManager } from './js/platform/auth.js';
 import { StorageAdapter } from './js/platform/wx-adapter.js';
@@ -147,9 +150,15 @@ wx.onShow(() => {
   if (!_booted) {
     // 扫码冷启动：boot() 还未执行，从 onShow 触发
     boot();
-  } else if (!_navigated) {
-    // boot() 已执行但 navigate() 从未成功（RAF 以0尺寸超时）
+  } else if (!_navigated && G.CANVAS) {
+    // boot() 已执行、initGlobals 已跑（G.CANVAS 非 null）但 navigate() 还未成功
     // 此时 onShow 已触发，canvas 尺寸已修正，补发 navigate
+    navigate('intro');
+  } else if (!_navigated && !G.CANVAS) {
+    // boot() 已执行但 initGlobals 还没跑（RAF 还在等），onShow 先到了
+    // 强制立即执行 initGlobals + navigate，不再等 RAF
+    console.log('[onShow] G.CANVAS null, forcing initGlobals+navigate');
+    initGlobals(canvas, ctx, w > 0 ? w : canvas.width, h > 0 ? h : canvas.height, sa, dp);
     navigate('intro');
   }
   // _navigated 为 true：正常运行中，不需要额外操作
