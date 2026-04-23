@@ -142,9 +142,9 @@ export function hideLevels() {
 function _cleanup() {
   if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   if (G.CANVAS) {
-    G.CANVAS.removeEventListener('touchstart', _onTouchStart);
-    G.CANVAS.removeEventListener('touchmove',  _onTouchMove);
-    G.CANVAS.removeEventListener('touchend',   _onTouchEnd);
+    try { G.CANVAS.removeEventListener('touchstart', _onTouchStart); } catch(e) {}
+    try { G.CANVAS.removeEventListener('touchmove',  _onTouchMove);  } catch(e) {}
+    try { G.CANVAS.removeEventListener('touchend',   _onTouchEnd);   } catch(e) {}
   }
   _nodeRects    = [];
   _bgStars      = [];

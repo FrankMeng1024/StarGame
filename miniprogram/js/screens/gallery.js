@@ -214,9 +214,9 @@ export function hideGallery() { _cleanup(); }
 function _cleanup() {
   if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   if (G.CANVAS) {
-    G.CANVAS.removeEventListener('touchstart', _onTouchStart);
-    G.CANVAS.removeEventListener('touchmove',  _onTouchMove);
-    G.CANVAS.removeEventListener('touchend',   _onTouchEnd);
+    try { G.CANVAS.removeEventListener('touchstart', _onTouchStart); } catch(e) {}
+    try { G.CANVAS.removeEventListener('touchmove',  _onTouchMove);  } catch(e) {}
+    try { G.CANVAS.removeEventListener('touchend',   _onTouchEnd);   } catch(e) {}
   }
   _nodeRects   = [];
   _bgStars     = [];
@@ -1158,12 +1158,14 @@ function _loadPhoto(url, pos, conIdx) {
   _carouselImgs[pos] = { img: null, loaded: false, error: false };
   try {
     const img   = wx.createImage();
-    const timer = setTimeout(() => {
+    const _setTimeout = (typeof setTimeout !== 'undefined') ? setTimeout : (cb, ms) => { let t = Date.now() + ms; const id = { cancelled: false }; const check = () => { if (id.cancelled) return; if (Date.now() >= t) cb(); else requestAnimationFrame(check); }; requestAnimationFrame(check); return id; };
+    const _clearTimeout = (typeof clearTimeout !== 'undefined') ? clearTimeout : (id) => { if (id) id.cancelled = true; };
+    const timer = _setTimeout(() => {
       if (_carouselImgs[pos] && !_carouselImgs[pos].loaded)
         _carouselImgs[pos] = { img: null, loaded: false, error: true };
     }, 10000);
-    img.onload  = () => { clearTimeout(timer); if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img, loaded: true, error: false }; };
-    img.onerror = () => { clearTimeout(timer); if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img: null, loaded: false, error: true }; };
+    img.onload  = () => { _clearTimeout(timer); if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img, loaded: true, error: false }; };
+    img.onerror = () => { _clearTimeout(timer); if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img: null, loaded: false, error: true }; };
     img.src = url;
   } catch (e) {
     if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img: null, loaded: false, error: true };

@@ -181,7 +181,7 @@ function _cleanup() {
     cancelAnimationFrame(_rafId);
     _rafId = null;
   }
-  G.CANVAS.removeEventListener('touchend', _onTouch);
+  try { G.CANVAS.removeEventListener('touchend', _onTouch); } catch(e) {}
   _buttons  = [];
   _conStars = [];
   _conLines = [];

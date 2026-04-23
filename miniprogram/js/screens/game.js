@@ -472,7 +472,7 @@ function _cleanup() {
     }
   } catch (e) {}
   if (G.CANVAS) {
-    G.CANVAS.removeEventListener('touchstart', _onTouch);
+    try { G.CANVAS.removeEventListener('touchstart', _onTouch); } catch(e) {}
   }
   // Remove wx.onHide listener to prevent stacking (STORY-00247 fix)
   if (_onHideCb) {
