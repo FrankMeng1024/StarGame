@@ -321,7 +321,7 @@ export function drawHeaderBar(ctx, W, H, title, opts = {}) {
   // Right coin pill — mirrors back button, same size and vertical center
   if (rightText) {
     const safeRight = opts.safeRight || 0;
-    const cpX = W - safeRight - 96 - 4 - btnW;  // 4px gap from capsule edge
+    const cpX = W - safeRight - 88 - 4 - btnW;  // 4px gap from capsule left edge
     ctx.save();
     ctx.fillStyle = 'rgba(30,16,80,0.85)';
     _roundRect(ctx, cpX, btnY, btnW, btnH, 10);
