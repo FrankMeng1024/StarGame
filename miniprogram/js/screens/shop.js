@@ -141,7 +141,7 @@ function _loop(ts) {
   //   rowX    = return button left edge  = safeL + 96 + 10
   //   rowRight = coin button right edge  = W - safeR - 96 - 10
   const rowX    = safeL + 96 + 10;
-  const rowRight = W - safeR - 96 - 10;
+  const rowRight = W - safeR - 96 - 4;
   const rowW    = rowRight - rowX;
 
   ITEMS.forEach((item, i) => {
@@ -443,7 +443,7 @@ function _drawBottomSheet(ctx, W, H, item, slideY) {
   const _safeL = G.SAFE_LEFT  || 0;
   const _safeR = G.SAFE_RIGHT || 0;
   const btnX = _safeL + 96 + 10;
-  const btnW = (W - _safeR - 96 - 10) - btnX;
+  const btnW = (W - _safeR - 96 - 4) - btnX;
   const btnH = 40;
   const btnY = panelY + SHEET_H - btnH - 14;
   _sheetBuyRect = { x: btnX, y: btnY, w: btnW, h: btnH };
