@@ -127,9 +127,9 @@ export function showLevels(navigate) {
     } catch (e) {}
   }
 
-  G.CANVAS.addEventListener('touchstart', _onTouchStart);
-  G.CANVAS.addEventListener('touchmove',  _onTouchMove);
-  G.CANVAS.addEventListener('touchend',   _onTouchEnd);
+  wx.onTouchStart(_onTouchStart);
+  wx.onTouchMove(_onTouchMove);
+  wx.onTouchEnd(_onTouchEnd);
 
   _rafId = requestAnimationFrame(_loop);
 }
@@ -142,9 +142,9 @@ export function hideLevels() {
 function _cleanup() {
   if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   if (G.CANVAS) {
-    try { G.CANVAS.removeEventListener('touchstart', _onTouchStart); } catch(e) {}
-    try { G.CANVAS.removeEventListener('touchmove',  _onTouchMove);  } catch(e) {}
-    try { G.CANVAS.removeEventListener('touchend',   _onTouchEnd);   } catch(e) {}
+    wx.offTouchStart(_onTouchStart);
+    wx.offTouchMove(_onTouchMove);
+    wx.offTouchEnd(_onTouchEnd);
   }
   _nodeRects    = [];
   _bgStars      = [];
@@ -861,30 +861,30 @@ let _touchStartY = 0;
 let _touchStartTime = 0;
 
 function _onTouchStart(e) {
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  _touchStartX    = touch.clientX;
-  _touchStartY    = touch.clientY;
-  _lastTouchY     = touch.clientY;
+  _touchStartX    = touch.x;
+  _touchStartY    = touch.y;
+  _lastTouchY     = touch.y;
   _touchStartTime = Date.now();
   _isDragging     = false;
 }
 
 function _onTouchMove(e) {
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  const dy = touch.clientY - _lastTouchY;
-  _lastTouchY = touch.clientY;
+  const dy = touch.y - _lastTouchY;
+  _lastTouchY = touch.y;
 
   if (_overlayActive) {
     if (Math.abs(dy) > 2) _isDragging = true;
     const maxScroll = Math.max(0, _overlayTotalRowsH - _overlayRowsClipH);
     _overlayScrollTarget = Math.max(0, Math.min(maxScroll, _overlayScrollTarget - dy));
   } else {
-    const dx = touch.clientX - _touchStartX;
+    const dx = touch.x - _touchStartX;
     if (Math.abs(dx) > 8 || Math.abs(dy) > 8) _isDragging = true;
 
-    if (_isDragging && Math.abs(dx) > Math.abs(touch.clientY - _touchStartY)) {
+    if (_isDragging && Math.abs(dx) > Math.abs(touch.y - _touchStartY)) {
       const W = G.SCREEN_W;
       const canLeft  = _currentGroup < _GROUPS.length - 1;
       const canRight = _currentGroup > 0;
@@ -919,10 +919,10 @@ function _onTouchMove(e) {
 }
 
 function _onTouchEnd(e) {
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  const tx = touch.clientX;
-  const ty = touch.clientY;
+  const tx = touch.x;
+  const ty = touch.y;
   console.log('[levels] touch tx=' + tx + ' ty=' + ty);
   const dx = tx - _touchStartX;
 

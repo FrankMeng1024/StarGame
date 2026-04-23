@@ -76,9 +76,9 @@ export function showShop(navigate) {
     } catch (e) {}
   }
 
-  G.CANVAS.addEventListener('touchstart', _onTouchStart);
-  G.CANVAS.addEventListener('touchmove',  _onTouchMove);
-  G.CANVAS.addEventListener('touchend',   _onTouchEnd);
+  wx.onTouchStart(_onTouchStart);
+  wx.onTouchMove(_onTouchMove);
+  wx.onTouchEnd(_onTouchEnd);
 
   _rafId = requestAnimationFrame(_loop);
 }
@@ -91,9 +91,9 @@ export function hideShop() {
 function _cleanup() {
   if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   if (G.CANVAS) {
-    try { G.CANVAS.removeEventListener('touchstart', _onTouchStart); } catch(e) {}
-    try { G.CANVAS.removeEventListener('touchmove',  _onTouchMove);  } catch(e) {}
-    try { G.CANVAS.removeEventListener('touchend',   _onTouchEnd);   } catch(e) {}
+    wx.offTouchStart(_onTouchStart);
+    wx.offTouchMove(_onTouchMove);
+    wx.offTouchEnd(_onTouchEnd);
   }
   _backRect    = null;
   _sheetBuyRect = null;
@@ -599,17 +599,17 @@ function _drawItemIcon(ctx, itemId, cx, cy, r) {
 
 // ── Touch handling ────────────────────────────────────────────
 function _onTouchStart(e) {
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  _lastTouchY = touch.clientY;
+  _lastTouchY = touch.y;
   _isDragging = false;
 }
 
 function _onTouchMove(e) {
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  const dy = touch.clientY - _lastTouchY;
-  _lastTouchY = touch.clientY;
+  const dy = touch.y - _lastTouchY;
+  _lastTouchY = touch.y;
   if (Math.abs(dy) > 3) _isDragging = true;
   // Only scroll if no sheet open (or sheet not yet fully open)
   if (!_sheet || _sheet.slideY > G.SCREEN_H - SHEET_H + 20) {
@@ -620,10 +620,10 @@ function _onTouchMove(e) {
 
 function _onTouchEnd(e) {
   if (_isDragging) { _isDragging = false; return; }
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  const tx = touch.clientX;
-  const ty = touch.clientY;
+  const tx = touch.x;
+  const ty = touch.y;
 
   // Back button
   if (_backRect && hitTest(_backRect, tx, ty)) {

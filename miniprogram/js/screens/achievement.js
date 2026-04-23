@@ -45,9 +45,9 @@ export function showAchievement(navigate) {
     } catch (e) {}
   }
 
-  G.CANVAS.addEventListener('touchstart', _onTouchStart);
-  G.CANVAS.addEventListener('touchmove',  _onTouchMove);
-  G.CANVAS.addEventListener('touchend',   _onTouchEnd);
+  wx.onTouchStart(_onTouchStart);
+  wx.onTouchMove(_onTouchMove);
+  wx.onTouchEnd(_onTouchEnd);
   _rafId = requestAnimationFrame(_loop);
 }
 
@@ -223,7 +223,7 @@ function _roundRect(ctx, x, y, w, h, r) {
 function _onTouchStart(e) {
   const t = e.touches[0];
   if (!t) return;
-  _lastTouchY = t.clientY;  // fixed: revert incorrect DPR (STORY-00269)
+  _lastTouchY = t.y;
   _isDragging = false;
 }
 
@@ -231,7 +231,7 @@ function _onTouchMove(e) {
   e.preventDefault();
   const t = e.touches[0];
   if (!t) return;
-  const rawY = t.clientY;  // fixed: revert incorrect DPR (STORY-00269)
+  const rawY = t.y;
   const dy = _lastTouchY - rawY;
   if (Math.abs(dy) > 5) _isDragging = true;
   _lastTouchY = rawY;
@@ -241,9 +241,9 @@ function _onTouchMove(e) {
 
 function _onTouchEnd(e) {
   if (_isDragging) { _isDragging = false; return; }
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  const tx = touch.clientX, ty = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
+  const tx = touch.x, ty = touch.y;
 
   if (_backRect && hitTest(_backRect, tx, ty)) {
     if (_navigate) _navigate('menu');
@@ -255,9 +255,9 @@ function _onTouchEnd(e) {
 function _cleanup() {
   if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   if (G.CANVAS) {
-    try { G.CANVAS.removeEventListener('touchstart', _onTouchStart); } catch(e) {}
-    try { G.CANVAS.removeEventListener('touchmove',  _onTouchMove);  } catch(e) {}
-    try { G.CANVAS.removeEventListener('touchend',   _onTouchEnd);   } catch(e) {}
+    wx.offTouchStart(_onTouchStart);
+    wx.offTouchMove(_onTouchMove);
+    wx.offTouchEnd(_onTouchEnd);
   }
   _backRect = null;
   _cellRects = [];

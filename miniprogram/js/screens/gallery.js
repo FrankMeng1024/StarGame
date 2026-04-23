@@ -202,9 +202,9 @@ export function showGallery(navigate) {
     } catch (e) {}
   }
 
-  G.CANVAS.addEventListener('touchstart', _onTouchStart);
-  G.CANVAS.addEventListener('touchmove',  _onTouchMove);
-  G.CANVAS.addEventListener('touchend',   _onTouchEnd);
+  wx.onTouchStart(_onTouchStart);
+  wx.onTouchMove(_onTouchMove);
+  wx.onTouchEnd(_onTouchEnd);
   _rafId = requestAnimationFrame(_loop);
 }
 
@@ -214,9 +214,9 @@ export function hideGallery() { _cleanup(); }
 function _cleanup() {
   if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   if (G.CANVAS) {
-    try { G.CANVAS.removeEventListener('touchstart', _onTouchStart); } catch(e) {}
-    try { G.CANVAS.removeEventListener('touchmove',  _onTouchMove);  } catch(e) {}
-    try { G.CANVAS.removeEventListener('touchend',   _onTouchEnd);   } catch(e) {}
+    wx.offTouchStart(_onTouchStart);
+    wx.offTouchMove(_onTouchMove);
+    wx.offTouchEnd(_onTouchEnd);
   }
   _nodeRects   = [];
   _bgStars     = [];
@@ -1273,23 +1273,23 @@ let _touchStartX2   = 0;
 let _touchStartTime = 0;
 
 function _onTouchStart(e) {
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  _touchStartX2   = touch.clientX;
-  _touchStartX    = touch.clientX;
-  _touchStartY    = touch.clientY;
+  _touchStartX2   = touch.x;
+  _touchStartX    = touch.x;
+  _touchStartY    = touch.y;
   _touchStartTime = Date.now();
-  _detailLastTY   = touch.clientY;
+  _detailLastTY   = touch.y;
   _detailDragging = false;
   _isDragging     = false;
 }
 
 function _onTouchMove(e) {
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  const dy = touch.clientY - _detailLastTY;
-  _detailLastTY = touch.clientY;
-  const dx = touch.clientX - _touchStartX;
+  const dy = touch.y - _detailLastTY;
+  _detailLastTY = touch.y;
+  const dx = touch.x - _touchStartX;
 
   if (_detail) {
     if (Math.abs(dy) > 2) _detailDragging = true;
@@ -1303,7 +1303,7 @@ function _onTouchMove(e) {
     if (Math.abs(dx) > 8 || Math.abs(dy) > 8) _isDragging = true;
 
     // 水平拖拽驱动 spring
-    if (_isDragging && Math.abs(dx) > Math.abs(touch.clientY - _touchStartY)) {
+    if (_isDragging && Math.abs(dx) > Math.abs(touch.y - _touchStartY)) {
       const W = G.SCREEN_W;
       const canLeft  = _currentGroup < _GROUPS.length - 1;
       const canRight = _currentGroup > 0;
@@ -1331,10 +1331,10 @@ function _onTouchMove(e) {
 }
 
 function _onTouchEnd(e) {
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  const tx = touch.clientX;
-  const ty = touch.clientY;
+  const tx = touch.x;
+  const ty = touch.y;
   const dx = tx - _touchStartX;
 
   // ── 全屏图片缩放层（最优先） ───────────────────────────────

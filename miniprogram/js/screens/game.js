@@ -294,7 +294,7 @@ export function showGame(navigate) {
     } catch (e) {}
   }
 
-  G.CANVAS.addEventListener('touchstart', _onTouch);
+  wx.onTouchStart(_onTouch);
   _lastNow = 0;
   _rafId = requestAnimationFrame(_loop);
 
@@ -472,7 +472,7 @@ function _cleanup() {
     }
   } catch (e) {}
   if (G.CANVAS) {
-    try { G.CANVAS.removeEventListener('touchstart', _onTouch); } catch(e) {}
+    wx.offTouchStart(_onTouch);
   }
   // Remove wx.onHide listener to prevent stacking (STORY-00247 fix)
   if (_onHideCb) {
@@ -2367,10 +2367,10 @@ function _drawPauseOverlay(ctx, W, H) {
 
 // ── Touch handling ────────────────────────────────────────────
 function _onTouch(e) {
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  const tx = touch.clientX;  // fixed: revert incorrect DPR (STORY-00269)
-  const ty = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
+  const tx = touch.x;
+  const ty = touch.y;
 
   if (_phase === 'play') {
     // Pause button check (STORY-00236)

@@ -163,7 +163,7 @@ export function showMenu(navigate) {
 
   _buildConLayout();
 
-  G.CANVAS.addEventListener('touchend', _onTouch);
+  wx.onTouchEnd(_onTouch);
 
   // Start BGM (idempotent — safe to call every time; checks mute state internally)
   AudioAdapter.playBGM(BGM_SRC);
@@ -181,7 +181,7 @@ function _cleanup() {
     cancelAnimationFrame(_rafId);
     _rafId = null;
   }
-  try { G.CANVAS.removeEventListener('touchend', _onTouch); } catch(e) {}
+  wx.offTouchEnd(_onTouch);
   _buttons  = [];
   _conStars = [];
   _conLines = [];
@@ -588,10 +588,10 @@ function _roundRectPanel(ctx, x, y, w, h, r) {
 }
 
 function _onTouch(e) {
-  const touch = e.changedTouches[0];
+  const touch = e.touches[0];
   if (!touch) return;
-  const tx = touch.clientX;  // fixed: revert incorrect DPR (STORY-00269)
-  const ty = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
+  const tx = touch.x;
+  const ty = touch.y;
   console.log('[menu] touchend#' + Date.now() + ' tx=' + tx.toFixed(1) + ' ty=' + ty.toFixed(1) + ' btns=' + _buttons.length);
 
   // Mute button tap

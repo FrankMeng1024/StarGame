@@ -135,7 +135,7 @@ export function showIntro(navigate) {
   _lineDrawStart = [];
   _sparkles = [];
 
-  G.CANVAS.addEventListener('touchstart', _onSkip);
+  wx.onTouchStart(_onSkip);
 
   _startTime = 0;
   _rafId = requestAnimationFrame(_loop);
@@ -148,7 +148,7 @@ export function hideIntro() {
 // ── Internal ──────────────────────────────────────────────────
 function _cleanup() {
   if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
-  try { G.CANVAS.removeEventListener('touchstart', _onSkip); } catch (e) {}
+  wx.offTouchStart(_onSkip);
   _sparkles = [];
   _bgStars = [];
   _meteors = [];
