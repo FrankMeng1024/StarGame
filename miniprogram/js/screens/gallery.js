@@ -328,15 +328,37 @@ function _loop(now) {
   ctx.fillText('星座图鉴', W / 2, G.SAFE_TOP + 30);
   ctx.restore();
 
-  // 已发现计数
+  // 已发现计数 — 方案G金色风格
   const discovered = CONSTELLATIONS.filter((_, i) => state.isUnlocked(i)).length;
-  ctx.save();
-  ctx.font = '11px sans-serif';
-  ctx.textAlign = 'right';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = 'rgba(180,200,255,0.65)';
-  ctx.fillText(`${discovered}/${CONSTELLATIONS.length} 已解锁`, W - G.SAFE_RIGHT - 90, G.SAFE_TOP + 26);
-  ctx.restore();
+  {
+    const rx = W - (G.SAFE_RIGHT || 0) - 90;
+    const rw = 80;
+    const lx = rx - rw;
+    const cy = G.SAFE_TOP + 26;
+    ctx.save();
+    const tg = ctx.createLinearGradient(lx, cy, rx, cy);
+    tg.addColorStop(0, 'rgba(255,220,80,0.95)');
+    tg.addColorStop(1, 'rgba(255,160,60,0.85)');
+    ctx.font         = 'bold 12px sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = tg;
+    ctx.shadowColor  = 'rgba(255,180,60,0.5)';
+    ctx.shadowBlur   = 5;
+    ctx.fillText(`${discovered}/${CONSTELLATIONS.length} 已解锁`, rx, cy - 1);
+    ctx.shadowBlur   = 0;
+    const lg = ctx.createLinearGradient(lx, 0, rx, 0);
+    lg.addColorStop(0,   'rgba(255,200,60,0.0)');
+    lg.addColorStop(0.3, 'rgba(255,160,40,0.7)');
+    lg.addColorStop(1,   'rgba(255,220,80,0.2)');
+    ctx.strokeStyle = lg;
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(lx, cy + 10);
+    ctx.lineTo(rx, cy + 10);
+    ctx.stroke();
+    ctx.restore();
+  }
 
   // ── 星系名（crossfade，无箭头按钮） ──────────────────────────
   const group  = _GROUPS[_currentGroup];

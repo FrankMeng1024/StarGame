@@ -330,24 +330,34 @@ export function drawHeaderBar(ctx, W, H, title, opts = {}) {
   ctx.fillText(title, W / 2, safeTop + 24);
   ctx.restore();
 
-  // Right coin pill — mirrors back button, same size and vertical center
+  // Right coin — 方案G金色风格：渐变文字+底线，无背景
   if (rightText) {
     const safeRight = opts.safeRight || 0;
     const cpX = W - safeRight - 88 - 2 - btnW;  // 2px gap from capsule left edge
+    const cpCX = cpX + btnW / 2;
+    const cpCY = btnY + btnH / 2;
     ctx.save();
-    ctx.fillStyle = 'rgba(30,16,80,0.85)';
-    _roundRect(ctx, cpX, btnY, btnW, btnH, 10);
-    ctx.fill();
-    ctx.strokeStyle = 'rgba(180,150,0,0.45)';
-    ctx.lineWidth   = 1;
-    ctx.stroke();
+    const _ctg = ctx.createLinearGradient(cpX, cpCY, cpX + btnW, cpCY);
+    _ctg.addColorStop(0, 'rgba(255,220,80,0.95)');
+    _ctg.addColorStop(1, 'rgba(255,160,60,0.85)');
     ctx.font         = 'bold 12px sans-serif';
     ctx.textAlign    = 'center';
     ctx.textBaseline = 'middle';
-    ctx.fillStyle    = '#ffd700';
-    ctx.shadowColor  = 'rgba(255,200,0,0.4)';
-    ctx.shadowBlur   = 4;
-    ctx.fillText(rightText, cpX + btnW / 2, btnY + btnH / 2);
+    ctx.fillStyle    = _ctg;
+    ctx.shadowColor  = 'rgba(255,180,60,0.5)';
+    ctx.shadowBlur   = 5;
+    ctx.fillText(rightText, cpCX, cpCY - 1);
+    ctx.shadowBlur   = 0;
+    const _clg = ctx.createLinearGradient(cpX, 0, cpX + btnW, 0);
+    _clg.addColorStop(0,   'rgba(255,200,60,0.2)');
+    _clg.addColorStop(0.7, 'rgba(255,160,40,0.7)');
+    _clg.addColorStop(1,   'rgba(255,220,80,0)');
+    ctx.strokeStyle = _clg;
+    ctx.lineWidth   = 1;
+    ctx.beginPath();
+    ctx.moveTo(cpX, btnY + btnH - 1);
+    ctx.lineTo(cpX + btnW, btnY + btnH - 1);
+    ctx.stroke();
     ctx.restore();
   }
 
