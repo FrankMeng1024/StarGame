@@ -588,7 +588,7 @@ function _roundRectPanel(ctx, x, y, w, h, r) {
 }
 
 function _onTouch(e) {
-  const touch = e.touches[0];
+  const touch = e.changedTouches[0];
   if (!touch) return;
   const tx = touch.x;
   const ty = touch.y;

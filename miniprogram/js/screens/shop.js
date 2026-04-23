@@ -620,7 +620,7 @@ function _onTouchMove(e) {
 
 function _onTouchEnd(e) {
   if (_isDragging) { _isDragging = false; return; }
-  const touch = e.touches[0];
+  const touch = e.changedTouches[0];
   if (!touch) return;
   const tx = touch.x;
   const ty = touch.y;
