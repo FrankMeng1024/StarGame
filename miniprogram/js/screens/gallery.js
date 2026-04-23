@@ -688,7 +688,7 @@ function _drawDetail(ctx, W, H, t) {
   _detailRects.back = _ghostBtn(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 8, 80, 28, '← 返回图鉴');
 
   // 星座名（header中央）
-  ctx.font = `bold 20px ${titleFont}`;
+  ctx.font = `bold 22px ${titleFont}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = grp.color;
@@ -697,11 +697,13 @@ function _drawDetail(ctx, W, H, t) {
   ctx.fillText(c.nameZh, W / 2, G.SAFE_TOP + 22);
   ctx.shadowBlur = 0;
 
-  // 左右切换星座：圆形按钮，紧贴标题区右侧（右上角区域）
+  // 左右切换星座：圆形按钮，避开右上角微信胶囊（约88px宽）
   const _CBTN_R  = 15;
   const _CBTN_CY = G.SAFE_TOP + 22;
-  const _prevCX  = W - (G.SAFE_RIGHT || 0) - 70;
-  const _nextCX  = W - (G.SAFE_RIGHT || 0) - 36;
+  // 微信胶囊宽约88px + 右安全区，再留8px间隔
+  const _CAPSULE_W = 88;
+  const _prevCX  = W - (G.SAFE_RIGHT || 0) - _CAPSULE_W - 20 - _CBTN_R * 2 - 6;
+  const _nextCX  = W - (G.SAFE_RIGHT || 0) - _CAPSULE_W - 20;
   const _prevActive = _detail.idx > 0;
   const _nextActive = _detail.idx < CONSTELLATIONS.length - 1;
 
@@ -758,7 +760,7 @@ function _drawDetail(ctx, W, H, t) {
   const LEFT_W   = SPLIT_X;
   const LEFT_CX  = LEFT_W / 2;
   const LEFT_CY  = BODY_TOP + BODY_H / 2;
-  const CHART_R  = Math.min(LEFT_W * 0.42, BODY_H * 0.38, 96);
+  const CHART_R  = Math.min(LEFT_W * 0.46, BODY_H * 0.44, 110);
 
   ctx.save();
   ctx.globalAlpha = alpha;
@@ -780,7 +782,7 @@ function _drawDetail(ctx, W, H, t) {
   ctx.stroke();
 
   if (c.stars && c.stars.length > 0) {
-    const PAD  = CHART_R * 0.18;
+    const PAD  = CHART_R * 0.26;
     // 自动居中：计算所有星的包围盒，缩放后使星群居中于圆心
     const xs   = c.stars.map(s => s.x);
     const ys   = c.stars.map(s => s.y);
@@ -882,18 +884,13 @@ function _drawDetail(ctx, W, H, t) {
     ctx.restore();
   }
 
-  // 左栏文字：英文名 + 符号
-  const nameY = LEFT_CY + CHART_R + 10;
-  ctx.font = '11px sans-serif';
+  // 左栏文字：点击提示（替代星座英文名）
+  const nameY = LEFT_CY + CHART_R + 8;
+  ctx.font = '10px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillStyle = 'rgba(180,170,230,0.80)';
-  ctx.fillText(c.nameEn, LEFT_CX, nameY);
-  if (c.symbol) {
-    ctx.font = '16px sans-serif';
-    ctx.fillStyle = grp.color;
-    ctx.fillText(c.symbol, LEFT_CX, nameY + 14);
-  }
+  ctx.fillStyle = 'rgba(160,155,210,0.65)';
+  ctx.fillText('点击星点查看名称', LEFT_CX, nameY);
 
   // 左右竖分割线
   ctx.strokeStyle = grp.color + '28';
@@ -911,8 +908,9 @@ function _drawDetail(ctx, W, H, t) {
   const CLIP_TOP  = BODY_TOP + 4;
   const CLIP_H    = BODY_H - 8;
 
-  // 加载/重置照片
-  const photos = c.photos || (c.photo ? [c.photo] : []);
+  // 加载/重置照片（只使用本地图片，过滤掉外部URL防止加载失败）
+  const allPhotos = c.photos || (c.photo ? [c.photo] : []);
+  const photos = allPhotos.filter(u => u && !u.startsWith('http'));
   if (_carouselForIdx !== _detail.idx) {
     _carouselForIdx = _detail.idx;
     _carouselImgs   = [];
@@ -1026,12 +1024,12 @@ function _drawDetail(ctx, W, H, t) {
   ].filter(Boolean);
 
   if (infos.length > 0) {
-    const pillH = 20;
+    const pillH = 22;
     let px = RIGHT_X;
     for (const info of infos) {
       ctx.save();
-      ctx.font = '10px sans-serif';
-      const tw = ctx.measureText(info).width + 14;
+      ctx.font = '12px sans-serif';
+      const tw = ctx.measureText(info).width + 16;
       ctx.fillStyle = 'rgba(50,60,120,0.55)';
       _roundRect(ctx, px, oy2, tw, pillH, 10);
       ctx.fill();
@@ -1051,14 +1049,14 @@ function _drawDetail(ctx, W, H, t) {
 
   // ── lore（神话/描述） ─────────────────────────────────────
   ctx.save();
-  ctx.font = '12px sans-serif';
+  ctx.font = '13px sans-serif';
   ctx.fillStyle = 'rgba(200,196,238,0.88)';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   const lines = _wrapText(ctx, c.lore || '', RIGHT_W);
   for (const line of lines) {
     ctx.fillText(line, RIGHT_X, oy2);
-    oy2 += 17;
+    oy2 += 19;
   }
   ctx.restore();
   oy2 += 16;
