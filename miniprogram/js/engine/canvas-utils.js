@@ -251,6 +251,120 @@ export function drawFadeOverlay(ctx, w, h) {
   ctx.restore();
 }
 
+// ─── 全局统一 Header 条（CR-137）────────────────────────────────
+/**
+ * 绘制顶部 header 条，统一所有二级屏幕（shop / levels / gallery）的视觉语言。
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} W  屏幕宽
+ * @param {number} H  屏幕高（未使用，备扩展）
+ * @param {string} title  居中标题文字
+ * @param {object} opts
+ *   opts.safeLeft    {number}  safe area left offset（默认0）
+ *   opts.safeTop     {number}  safe area top offset（默认0）
+ *   opts.fontLoaded  {boolean} Ma Shan Zheng 是否已加载
+ *   opts.rightText   {string}  右侧文字（如金币数量，可选）
+ * @returns {{backRect: {x,y,w,h}, headerH: number}}
+ */
+export function drawHeaderBar(ctx, W, H, title, opts = {}) {
+  const safeLeft  = opts.safeLeft  || 0;
+  const safeTop   = opts.safeTop   || 0;
+  const fontLoaded = opts.fontLoaded || false;
+  const rightText  = opts.rightText  || '';
+
+  const headerH = safeTop + 48;
+
+  // Semi-transparent dark strip
+  ctx.save();
+  ctx.fillStyle = 'rgba(5,3,18,0.72)';
+  ctx.fillRect(0, 0, W, headerH);
+
+  // Bottom divider line
+  ctx.strokeStyle = 'rgba(160,100,255,0.25)';
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(0, headerH);
+  ctx.lineTo(W, headerH);
+  ctx.stroke();
+  ctx.restore();
+
+  // Back button
+  const btnX = safeLeft + 10;
+  const btnY = safeTop + 8;
+  const btnW = 72;
+  const btnH = 32;
+  ctx.save();
+  ctx.fillStyle = 'rgba(30,16,80,0.85)';
+  _roundRect(ctx, btnX, btnY, btnW, btnH, 10);
+  ctx.fill();
+  ctx.strokeStyle = 'rgba(120,80,220,0.5)';
+  ctx.lineWidth   = 1;
+  ctx.stroke();
+  ctx.font         = '12px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = '#f0e0ff';
+  ctx.fillText('← 返回', btnX + btnW / 2, btnY + btnH / 2);
+  ctx.restore();
+
+  // Title
+  ctx.save();
+  const titleFont = fontLoaded ? "'Ma Shan Zheng', serif" : 'serif';
+  ctx.font         = `bold 22px ${titleFont}`;
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = '#e8d5ff';
+  ctx.shadowColor  = 'rgba(160,120,255,0.5)';
+  ctx.shadowBlur   = 8;
+  ctx.fillText(title, W / 2, safeTop + 24);
+  ctx.restore();
+
+  // Optional right text
+  if (rightText) {
+    ctx.save();
+    ctx.font         = 'bold 13px sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = '#ffd700';
+    ctx.fillText(rightText, W - (opts.safeRight || 0) - 12, safeTop + 24);
+    ctx.restore();
+  }
+
+  return { backRect: { x: btnX, y: btnY, w: btnW, h: btnH }, headerH };
+}
+
+// ─── 星云椭圆辉光（CR-136）— 供 shop/levels/gallery 复用 ─────────
+/**
+ * 绘制背景星云椭圆列表。
+ * @param {CanvasRenderingContext2D} ctx
+ * @param {number} W
+ * @param {number} H
+ * @param {Array} nebulae  [{xr,yr,rx,ry,col,a}]
+ *   xr/yr: 相对于W/H的中心位置；rx/ry: 像素半径；col: 'R,G,B'字符串；a: 最大透明度
+ * @param {number} t  时间（秒），用于轻微脉冲
+ */
+export function drawNebulae(ctx, W, H, nebulae, t) {
+  for (const n of nebulae) {
+    const nx = n.xr * W;
+    const ny = n.yr * H;
+    const pulse = 1 + Math.sin((t || 0) * 0.4 + n.xr * 6) * 0.04;
+    const rx = n.rx * pulse;
+    const ry = n.ry * pulse;
+    // Draw ellipse via scale transform + radial gradient
+    ctx.save();
+    ctx.translate(nx, ny);
+    ctx.scale(1, ry / rx);
+    const g = ctx.createRadialGradient(0, 0, 0, 0, 0, rx);
+    g.addColorStop(0,   `rgba(${n.col},${n.a})`);
+    g.addColorStop(0.45, `rgba(${n.col},${n.a * 0.55})`);
+    g.addColorStop(1,   `rgba(${n.col},0)`);
+    ctx.fillStyle = g;
+    ctx.beginPath();
+    ctx.arc(0, 0, rx, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
 // ─── 内部辅助：圆角矩形 path ──────────────────────────────────
 function _roundRect(ctx, x, y, w, h, r) {
   ctx.beginPath();

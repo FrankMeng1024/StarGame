@@ -119,6 +119,7 @@ let _conLines = [];
 let _conDef   = null; // current constellation definition (STORY-00298)
 
 // STORY-00338: Ma Shan Zheng font loading (same approach as intro.js)
+// ⛔ 禁止修改：Ma Shan Zheng字体风格已定稿 (Sprint 44-mini)，与开场动画一致，保持全游戏字体统一
 let _maShanZhengLoaded = false;
 
 // STORY-00339: random constellation + reveal animation
@@ -584,7 +585,7 @@ function _onTouch(e) {
   if (!touch) return;
   const tx = touch.clientX;  // fixed: revert incorrect DPR (STORY-00269)
   const ty = touch.clientY;  // fixed: revert incorrect DPR (STORY-00269)
-  console.log('[menu] touchend tx=' + tx.toFixed(1) + ' ty=' + ty.toFixed(1) + ' btns=' + _buttons.length);
+  console.log('[menu] touchend#' + Date.now() + ' tx=' + tx.toFixed(1) + ' ty=' + ty.toFixed(1) + ' btns=' + _buttons.length);
 
   // Mute button tap
   if (_muteBtn && hitTest(_muteBtn, tx, ty)) {

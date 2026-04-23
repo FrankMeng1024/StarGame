@@ -124,6 +124,13 @@ const state = {
   },
 
   getItemQty(itemId) { return this.inventory.get(itemId) || 0; },
+
+  // 开发用：清空所有进度（恢复初始存档）
+  resetProgress() {
+    this.fromSaveData(DEFAULT_SAVE);
+    this.save();
+    console.log('[state] progress reset');
+  },
 };
 
 export default state;

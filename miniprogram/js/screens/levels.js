@@ -853,6 +853,7 @@ function _onTouchEnd(e) {
   if (!touch) return;
   const tx = touch.clientX;
   const ty = touch.clientY;
+  console.log('[levels] touch tx=' + tx + ' ty=' + ty);
   const dx = tx - _touchStartX;
 
   // ── 遮罩触摸 ─────────────────────────────────────────────

@@ -94,9 +94,9 @@ export const StorageAdapter = {
 
 // ─── Network ─────────────────────────────────────────────────────────────────
 
-// 后端地址 — 本地开发时微信开发者工具开启「不校验域名」
-// 生产时改为 https://yiiling.cn
-const API_BASE = 'https://yiiling.cn';
+// 后端地址 — 本地开发：http://localhost:3000（微信开发者工具需开启「不校验域名」）
+// 生产时改为：https://yiiling.cn
+const API_BASE = 'http://localhost:3000';
 
 export function request(method, path, body, token) {
   return new Promise((resolve, reject) => {

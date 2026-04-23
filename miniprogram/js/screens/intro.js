@@ -49,6 +49,7 @@ export function showIntro(navigate) {
   // Force-clear any stuck fade overlay from previous navigation
   resetFade();
 
+  // ⛔ 禁止修改：Ma Shan Zheng字体风格已定稿 (Sprint 44-mini)，与主菜单/开场动画一致，保持全游戏字体统一
   // Load Ma Shan Zheng calligraphy font (async — Phase 3 starts at t=9s, plenty of time)
   // Wrapped in try/catch: font load failure is non-fatal, fallback to serif
   if (!_maShanZhengLoaded) {

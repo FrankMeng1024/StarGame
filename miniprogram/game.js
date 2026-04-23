@@ -2,7 +2,7 @@
 // 负责：wx.login 静默登录 → 获取 openid → 加载云端存档 → 启动主菜单
 // STORY-00347: 修复扫码黑屏 — wx.onShow 延迟启动 + 加长 canvas 就绪等待
 
-import { initGlobals } from './js/engine/globals.js';
+import { initGlobals, G } from './js/engine/globals.js';
 import { AuthManager } from './js/platform/auth.js';
 import { StorageAdapter } from './js/platform/wx-adapter.js';
 import state from './js/engine/state.js';
@@ -83,21 +83,26 @@ async function boot() {
   let attempts = 0;
   function _tryStart() {
     attempts++;
-    // 每次尝试都重新拿一下尺寸（防止横屏切换未就绪）
     const { w, h, safeArea: sa, dpr: dp } = _getScreenSize();
     if (w > 0 && h > 0) {
       canvas.width  = w;
       canvas.height = h;
       initGlobals(canvas, ctx, w, h, sa, dp);
+      // 尺寸就绪，立即启动，不再继续循环（防止多次 initGlobals 触发布局跳变）
+      console.log('[boot] canvas:', canvas.width, 'x', canvas.height, 'attempts:', attempts);
+      navigate('intro');
+      return;
     }
-    if ((canvas.width === 0 || canvas.height === 0) && attempts < 30) {
+    // canvas 尺寸还未就绪，继续等待
+    if (attempts < 30) {
       requestAnimationFrame(_tryStart);
       return;
     }
-    // 最终强制赋值
-    if (canvas.width === 0)  canvas.width  = screenW;
-    if (canvas.height === 0) canvas.height = screenH;
-    console.log('[boot] canvas:', canvas.width, 'x', canvas.height, 'attempts:', attempts);
+    // 超时：强制赋值后启动
+    canvas.width  = screenW;
+    canvas.height = screenH;
+    initGlobals(canvas, ctx, screenW, screenH, safeArea, dpr);
+    console.log('[boot] canvas fallback:', canvas.width, 'x', canvas.height);
     navigate('intro');
   }
   requestAnimationFrame(_tryStart);
@@ -123,8 +128,9 @@ wx.onShow(() => {
     boot();
   } else {
     // 从后台切回：canvas 可能失效，重新初始化尺寸
+    // 只在尺寸真正变化时才重新初始化，避免 DevTools focus 事件触发误更新
     const { w, h, safeArea: sa, dpr: dp } = _getScreenSize();
-    if (w > 0 && h > 0) {
+    if (w > 0 && h > 0 && (w !== G.SCREEN_W || h !== G.SCREEN_H)) {
       canvas.width  = w;
       canvas.height = h;
       initGlobals(canvas, ctx, w, h, sa, dp);

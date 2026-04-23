@@ -54,6 +54,10 @@ let _total      = 0;
 // Debris
 let _debris     = [];   // {x,y,r,type,spin,angle}
 
+// STORY-00366: Magnetic field zones and debris clouds
+let _magnetZones = [];  // {x,y,r,angle} — deflect net angle on entry
+let _debrisClouds = []; // {x,y,particles:[{x,y,vx,vy,r}]} — small clusters
+
 // Caught debris (STORY-00279) — net grabs debris and drags it back slowly
 let _caughtDebris = null;
 
@@ -85,6 +89,8 @@ let _timerFlash = 0;     // seconds of red flash remaining on HUD
 // Result state
 let _phase      = 'play'; // 'play' | 'celebrate' | 'linedraw' | 'linger' | 'result'
 let _result     = null;   // {victory, timeLeft, coins, stars, uncaught}
+// STORY-00367: Star pop-out animation for victory screen
+let _starPopTimers = [0, 0, 0]; // per-star elapsed time, starts counting on result phase enter
 
 // Pause state
 let _paused     = false;
@@ -196,8 +202,9 @@ export function showGame(navigate) {
   _flashingStars = [];
   _caughtDebris = null;
 
-  // Timer — STORY-00353: base time by difficulty, +5s per star beyond 7 (ensures fairness for large constellations)
-  const diffMap = [90, 80, 70, 60, 50];
+  // Timer — STORY-00353 / CR-144: base time by difficulty
+  // CR-144: times relaxed to give room for obstacle-based challenge
+  const diffMap = [120, 100, 90, 80, 70];
   const diff    = (_conDef.difficulty || 1) - 1;
   const baseTime = diffMap[Math.max(0, Math.min(4, diff))];
   const starCount = (_conDef.stars || []).length;
@@ -234,8 +241,9 @@ export function showGame(navigate) {
   // Stars from constellation data
   _initStars(W, H);
 
-  // Debris
+  // Debris + obstacles (STORY-00366)
   _initDebris(W, H);
+  _initObstacles(W, H);
 
   initBgStars(W, H, 100);  // 100 stars for denser sky (STORY-00260)
   _particles = [];
@@ -366,7 +374,10 @@ function _initStars(W, H) {
 function _initDebris(W, H) {
   _debris = [];
   const types = ['meteor', 'satellite', 'rocket', 'cloth'];
-  const count = Math.min(5, 2 + Math.floor((_conDef.difficulty || 1) * 0.8));
+  // CR-144 difficulty debris counts: [0, 1, 2, 3, 4] for levels 1-5
+  const debrisCounts = [0, 1, 2, 3, 4];
+  const diff = Math.max(0, Math.min(4, (_conDef.difficulty || 1) - 1));
+  const count = debrisCounts[diff];
 
   const skyX0 = 20, skyX1 = W - 20;
   const skyY0 = G.SAFE_TOP + 70, skyY1 = H * 0.58;
@@ -380,6 +391,71 @@ function _initDebris(W, H) {
       spin: 0.010 + Math.random() * 0.020,
       angle: Math.random() * TWO_PI,
     });
+  }
+}
+
+// STORY-00366: Initialize magnetic field zones and debris clouds
+function _initObstacles(W, H) {
+  _magnetZones  = [];
+  _debrisClouds = [];
+
+  const diff = Math.max(0, Math.min(4, (_conDef.difficulty || 1) - 1));
+  // Magnetic zone counts: [0, 0, 1, 2, 3] for levels 1-5
+  const magnetCounts = [0, 0, 1, 2, 3];
+  // Debris cloud counts: [0, 0, 0, 1, 2] for levels 1-5
+  const cloudCounts  = [0, 0, 0, 1, 2];
+
+  const mCount = magnetCounts[diff];
+  const cCount = cloudCounts[diff];
+
+  // Star positions for spacing check
+  const starPositions = _stars.map(s => ({ x: s.x, y: s.y }));
+  const MIN_DIST = 60; // min distance from stars
+
+  function tooClose(ox, oy) {
+    for (const sp of starPositions) {
+      const dx = ox - sp.x, dy = oy - sp.y;
+      if (dx * dx + dy * dy < MIN_DIST * MIN_DIST) return true;
+    }
+    return false;
+  }
+
+  const playX0 = W * 0.10, playX1 = W * 0.85;
+  const playY0 = H * 0.12, playY1 = H * 0.60;
+
+  // Magnetic field zones (semi-transparent purple circles)
+  for (let i = 0; i < mCount; i++) {
+    let ox, oy, attempts = 0;
+    do {
+      ox = playX0 + Math.random() * (playX1 - playX0);
+      oy = playY0 + Math.random() * (playY1 - playY0);
+      attempts++;
+    } while (tooClose(ox, oy) && attempts < 30);
+    _magnetZones.push({ x: ox, y: oy, r: 40 + Math.random() * 20, angle: 0 });
+  }
+
+  // Debris clouds (3 small particles drifting together)
+  for (let i = 0; i < cCount; i++) {
+    let cx, cy, attempts = 0;
+    do {
+      cx = playX0 + Math.random() * (playX1 - playX0);
+      cy = playY0 + Math.random() * (playY1 - playY0);
+      attempts++;
+    } while (tooClose(cx, cy) && attempts < 30);
+    const particles = [];
+    for (let p = 0; p < 3; p++) {
+      const ang = (p / 3) * TWO_PI + Math.random() * 0.5;
+      const dist = 8 + Math.random() * 10;
+      particles.push({
+        x: cx + Math.cos(ang) * dist,
+        y: cy + Math.sin(ang) * dist,
+        vx: (Math.random() - 0.5) * 0.4,
+        vy: (Math.random() - 0.5) * 0.3,
+        r: 4 + Math.random() * 3,
+        baseX: cx, baseY: cy,
+      });
+    }
+    _debrisClouds.push({ x: cx, y: cy, particles });
   }
 }
 
@@ -405,6 +481,8 @@ function _cleanup() {
   }
   _stars   = [];
   _debris  = [];
+  _magnetZones  = [];   // STORY-00366
+  _debrisClouds = [];   // STORY-00366
   _particles = [];
   _shakeFrames = 0;
   _shakeX = 0;
@@ -479,6 +557,7 @@ function _loop(now) {
       _updateSlots(now);
       if (_starMapActive) { _starMapTimer -= dt; if (_starMapTimer <= 0) _starMapActive = false; }  // STORY-00296
       _updateShake();
+      _updateObstacles(dt); // STORY-00366
     }
 
     // Apply screen shake offset (game world only — HUD stays fixed)
@@ -490,6 +569,7 @@ function _loop(now) {
 
     _drawConLines(ctx);
     _drawStars(ctx, t);
+    _drawObstacles(ctx, t); // STORY-00366
     _drawDebris(ctx);
     _drawParticles(ctx);
     _drawGirl(ctx);
@@ -655,7 +735,7 @@ function _updateNet(dt) {
       _netLen   = _netMaxLen;
       _netState = 'retract';
     } else {
-      _updateNetHead();
+      _updateNetHead(dt);
       _checkCollisions();
     }
     // Record trail point + spawn launch trail particles (STORY-00257/00259)
@@ -699,10 +779,25 @@ function _updateNet(dt) {
   _updateNetHead();
 }
 
-function _updateNetHead() {
+function _updateNetHead(dt) {
   // Rope origin = girl's right glove position (STORY-00364: updated for 126px spacesuit v7)
   const ropeOriX = _poleX + 16;
   const ropeOriY = _poleY - 91;
+
+  // STORY-00366: Magnetic zone deflection — when net head enters a zone, deflect angle
+  if (_netState === 'extend') {
+    for (const mz of _magnetZones) {
+      const hx = ropeOriX + Math.sin(_netAngle) * _netLen;
+      const hy = ropeOriY - Math.cos(_netAngle) * _netLen;
+      const dx = hx - mz.x, dy = hy - mz.y;
+      if (dx * dx + dy * dy < mz.r * mz.r) {
+        // Deflect: push angle away from zone center by ±0.04 rad per frame
+        const deflect = (hx > mz.x ? 1 : -1) * 0.04 * (dt || 1/60) * 60;
+        _netAngle += deflect;
+      }
+    }
+  }
+
   _netHeadX = ropeOriX + Math.sin(_netAngle) * _netLen;
   _netHeadY = ropeOriY - Math.cos(_netAngle) * _netLen;
 }
@@ -742,6 +837,20 @@ function _checkCollisions() {
       AudioAdapter.playSFX(SFX_DEBRIS);
       _netState   = 'retract';
       return;
+    }
+  }
+
+  // STORY-00366: Debris cloud collision — touching any particle resets the net
+  for (const cloud of _debrisClouds) {
+    for (const p of cloud.particles) {
+      const dx = _netHeadX - p.x;
+      const dy = _netHeadY - p.y;
+      if (dx * dx + dy * dy <= (p.r + 14) * (p.r + 14)) {
+        _shakeFrames = 4;
+        AudioAdapter.playSFX(SFX_DEBRIS);
+        _netState = 'retract';
+        return;
+      }
     }
   }
 }
@@ -1044,6 +1153,81 @@ function _drawStars(ctx, t) {
       ctx.stroke();
     }
     ctx.restore();
+  }
+}
+
+// ── STORY-00366: Update obstacle state ───────────────────────
+function _updateObstacles(dt) {
+  // Rotate magnet zone border animation
+  for (const mz of _magnetZones) {
+    mz.angle = (mz.angle || 0) + dt * 1.2;
+  }
+  // Drift debris cloud particles in slow orbit around cloud center
+  for (const cloud of _debrisClouds) {
+    for (const p of cloud.particles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      // Gentle spring back towards orbit
+      const dx = p.x - p.baseX, dy = p.y - p.baseY;
+      const dist = Math.sqrt(dx * dx + dy * dy) || 1;
+      if (dist > 25) {
+        p.vx -= dx / dist * 0.08;
+        p.vy -= dy / dist * 0.08;
+      }
+    }
+  }
+}
+
+// ── STORY-00366: Draw magnetic zones and debris clouds ────────
+function _drawObstacles(ctx, t) {
+  // Magnetic field zones
+  for (const mz of _magnetZones) {
+    ctx.save();
+    ctx.translate(mz.x, mz.y);
+
+    // Fill: semi-transparent purple
+    const fillGrd = ctx.createRadialGradient(0, 0, 0, 0, 0, mz.r);
+    fillGrd.addColorStop(0, 'rgba(150,80,255,0.18)');
+    fillGrd.addColorStop(0.6, 'rgba(100,40,200,0.12)');
+    fillGrd.addColorStop(1, 'rgba(80,20,180,0)');
+    ctx.fillStyle = fillGrd;
+    ctx.beginPath(); ctx.arc(0, 0, mz.r, 0, TWO_PI); ctx.fill();
+
+    // Rotating dashed border
+    ctx.rotate(mz.angle);
+    ctx.strokeStyle = 'rgba(180,100,255,0.55)';
+    ctx.lineWidth = 1.5;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath(); ctx.arc(0, 0, mz.r, 0, TWO_PI); ctx.stroke();
+    ctx.setLineDash([]);
+
+    // Inner magnetic icon (small ⊕ symbol using canvas paths)
+    ctx.rotate(-mz.angle); // counter-rotate so icon stays upright
+    ctx.strokeStyle = 'rgba(200,140,255,0.70)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.arc(0, 0, 8, 0, TWO_PI); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(-8, 0); ctx.lineTo(8, 0); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(0, -8); ctx.lineTo(0, 8); ctx.stroke();
+
+    ctx.restore();
+  }
+
+  // Debris clouds
+  for (const cloud of _debrisClouds) {
+    for (const p of cloud.particles) {
+      ctx.save();
+      ctx.translate(p.x, p.y);
+      // Red-orange warning glow
+      const grd = ctx.createRadialGradient(0, 0, 0, 0, 0, p.r * 2.5);
+      grd.addColorStop(0, 'rgba(255,120,60,0.35)');
+      grd.addColorStop(1, 'rgba(255,60,20,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(0, 0, p.r * 2.5, 0, TWO_PI); ctx.fill();
+      // Core
+      ctx.fillStyle = '#cc4422';
+      ctx.beginPath(); ctx.arc(0, 0, p.r, 0, TWO_PI); ctx.fill();
+      ctx.restore();
+    }
   }
 }
 
@@ -1799,75 +1983,154 @@ function _triggerResult(victory) {
     }
     _phase = 'celebrate';
     _celebrateTimer = 1.5;
+    _starPopTimers = [0, 0, 0]; // STORY-00367: reset pop animation
   } else {
     _phase = 'result';
+    _starPopTimers = [0, 0, 0]; // STORY-00367: reset pop animation
   }
 }
 
-// ── Draw: result overlay (STORY-00322) ───────────────────────
+// ── Draw: result overlay (STORY-00322 / STORY-00367) ─────────
 function _drawResultOverlay(ctx, W, H) {
   const r = _result;
   if (!r) return;
 
-  // Dim overlay
+  // STORY-00367: Advance star pop timers
+  for (let i = 0; i < 3; i++) {
+    _starPopTimers[i] = (_starPopTimers[i] || 0) + _dt;
+  }
+
+  const t = _lastNow * 0.001;
+
+  // ── Nebula background layer (STORY-00367) ─────────────────────
   ctx.save();
-  ctx.fillStyle = 'rgba(5,8,30,0.80)';
+  if (r.victory) {
+    ctx.fillStyle = 'rgba(5,8,30,0.78)';
+  } else {
+    ctx.fillStyle = 'rgba(2,5,22,0.85)';
+  }
   ctx.fillRect(0, 0, W, H);
+
+  // Nebula wisps — canvas path clouds
+  const nebulaColor = r.victory ? 'rgba(100,60,200,0.07)' : 'rgba(30,60,120,0.10)';
+  for (let i = 0; i < 4; i++) {
+    const nx = W * (0.15 + i * 0.22 + Math.sin(t * 0.3 + i) * 0.04);
+    const ny = H * (0.25 + i * 0.12 + Math.cos(t * 0.2 + i * 1.5) * 0.03);
+    const nr = 80 + i * 25;
+    const grd = ctx.createRadialGradient(nx, ny, 0, nx, ny, nr);
+    grd.addColorStop(0, nebulaColor);
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(nx, ny, nr, 0, TWO_PI); ctx.fill();
+  }
   ctx.restore();
 
-  // Card: compact, centered, no overflow (STORY-00322)
+  // ── Card ───────────────────────────────────────────────────────
   const cardW = Math.min(W - 32, 340);
   const cardH = Math.min(H - 20, 360);
   const cardX = (W - cardW) / 2;
   const cardY = (H - cardH) / 2;
 
-  // Card background
   ctx.save();
-  ctx.fillStyle = 'rgba(20,25,60,0.95)';
+  const bgGrd = ctx.createLinearGradient(cardX, cardY, cardX, cardY + cardH);
+  if (r.victory) {
+    bgGrd.addColorStop(0, 'rgba(25,18,55,0.97)');
+    bgGrd.addColorStop(1, 'rgba(15,10,40,0.97)');
+  } else {
+    bgGrd.addColorStop(0, 'rgba(8,15,45,0.97)');
+    bgGrd.addColorStop(1, 'rgba(5,8,30,0.97)');
+  }
+  ctx.fillStyle = bgGrd;
   _roundRect(ctx, cardX, cardY, cardW, cardH, 16);
   ctx.fill();
-  ctx.strokeStyle = r.victory ? 'rgba(255,215,0,0.50)' : 'rgba(255,255,255,0.15)';  // STORY-00328: fail border changed from red to subtle white
-  ctx.lineWidth   = r.victory ? 1.5 : 1;  // STORY-00328: fail border thinner
+
+  // Border: gold shimmer for victory, subtle cold-blue for fail
+  if (r.victory) {
+    // Animated gold border shimmer
+    const shimmerPos = (t * 0.8) % 1.0;
+    const bGrd = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
+    bGrd.addColorStop(Math.max(0, shimmerPos - 0.3), 'rgba(255,215,0,0.30)');
+    bGrd.addColorStop(shimmerPos, 'rgba(255,215,0,0.85)');
+    bGrd.addColorStop(Math.min(1, shimmerPos + 0.3), 'rgba(255,215,0,0.30)');
+    ctx.strokeStyle = bGrd;
+    ctx.lineWidth = 2;
+  } else {
+    ctx.strokeStyle = 'rgba(80,120,200,0.30)';
+    ctx.lineWidth = 1;
+  }
+  _roundRect(ctx, cardX, cardY, cardW, cardH, 16);
   ctx.stroke();
   ctx.restore();
 
-  const cx  = W / 2;
-  // Title area (32px)
-  const titleY = cardY + 16 + 11; // top padding + half-height
+  const cx = W / 2;
+  const titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
+
+  // ── Title ──────────────────────────────────────────────────────
+  const titleY = cardY + 28;
   ctx.save();
-  const _titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
-  ctx.font         = `bold 22px ${_titleFont}`;
-  ctx.textAlign    = 'center';
+  ctx.font = `bold 22px ${titleFont}`;
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle    = r.victory ? '#ffd700' : '#ff8a65';  // STORY-00328: fail title warm orange-red (was #ff5555)
-  ctx.shadowColor  = r.victory ? '#ffd700' : '#ff6b35';  // STORY-00328: matching shadow
-  ctx.shadowBlur   = 10;
-  ctx.fillText(r.victory ? '✦ 关卡完成！' : '⏰ 时间到了！', cx, titleY);
+  if (r.victory) {
+    ctx.fillStyle = '#ffd700';
+    ctx.shadowColor = '#ffd700';
+    ctx.shadowBlur = 14;
+    ctx.fillText('星座揭秘！', cx, titleY);
+  } else {
+    // Cold blue-white for fail (STORY-00367: no emoji as main decoration)
+    ctx.fillStyle = '#a8c4ff';
+    ctx.shadowColor = '#4060c0';
+    ctx.shadowBlur = 12;
+    ctx.fillText('星光消逝', cx, titleY);
+  }
   ctx.restore();
 
-  // Stats row (28px below title): ★★★ | +X金币 | 剩余Ys (STORY-00322)
-  const statsY = titleY + 16 + 14; // 16 margin + 14 half-height
-  const starStr = r.victory
-    ? ('★'.repeat(r.stars) + '☆'.repeat(3 - r.stars))
-    : ('★'.repeat(r.stars) + '☆'.repeat(3 - r.stars));
-  const statsStr = starStr + '  |  +' + r.coins + '金币  |  剩余' + Math.floor(Math.max(0, r.timeLeft)) + 's';
+  // ── Stars row (STORY-00367: pop-out animation for victory) ─────
+  const starsY = titleY + 24;
+  const starSpacing = 28;
+  const starStartX = cx - starSpacing;
+  for (let i = 0; i < 3; i++) {
+    const delay = i * 0.2; // 200ms per star
+    const elapsed = (_starPopTimers[i] || 0) - delay;
+    const filled = i < r.stars;
+    let scale = 1.0;
+    if (r.victory && elapsed > 0 && elapsed < 0.35) {
+      // Pop: scale up to 1.5 then settle to 1.0
+      scale = 1.0 + Math.sin(elapsed / 0.35 * Math.PI) * 0.5;
+    }
+    const sx = starStartX + i * starSpacing;
+    ctx.save();
+    ctx.translate(sx, starsY);
+    ctx.scale(scale, scale);
+    _drawStarShape(ctx, 0, 0, 9, filled ? '#ffd700' : 'rgba(255,255,255,0.20)', filled ? 'rgba(255,215,0,0.35)' : null);
+    ctx.restore();
+  }
+
+  // ── Stats line ─────────────────────────────────────────────────
+  const statsY = starsY + 20;
   ctx.save();
-  ctx.font         = '13px sans-serif';
-  ctx.textAlign    = 'center';
+  ctx.font = '12px sans-serif';
+  ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle    = r.victory ? COLORS.starGold : 'rgba(255,255,255,0.80)';  // STORY-00328: fail stats lighter
-  ctx.fillText(statsStr, cx, statsY);
+  if (r.victory) {
+    ctx.fillStyle = 'rgba(255,215,0,0.85)';
+    ctx.fillText('+' + r.coins + ' 金币   剩余 ' + Math.floor(Math.max(0, r.timeLeft)) + 's', cx, statsY);
+  } else {
+    ctx.fillStyle = 'rgba(160,180,240,0.80)';
+    const caught = r.caught || 0;
+    const total  = r.total  || 0;
+    ctx.fillText('已捕获 ' + caught + '/' + total + ' 颗星', cx, statsY);
+  }
   ctx.restore();
 
-  // Content area: between stats row and button area
-  // Buttons occupy bottom 52px of card
-  const btnAreaH  = 52;
-  const btnAreaY  = cardY + cardH - btnAreaH;
-  const contentY  = statsY + 14 + 8; // bottom of stats + gap
-  const contentH  = btnAreaY - contentY - 4;
+  // ── Content area ───────────────────────────────────────────────
+  const btnAreaH = 52;
+  const btnAreaY = cardY + cardH - btnAreaH;
+  const contentY = statsY + 14;
+  const contentH = btnAreaY - contentY - 4;
 
   if (r.victory) {
-    // Photo area: 120px if photo exists, 0 if no photo
+    // Photo area
     let photoBottom = contentY;
     const photoH = 120;
     const photoW = cardW - 16;
@@ -1880,13 +2143,19 @@ function _drawResultOverlay(ctx, W, H) {
       ctx.clip();
       ctx.drawImage(_victoryPhoto, photoX, contentY, photoW, photoH);
       ctx.restore();
+      // Gold frame around photo
+      ctx.save();
+      ctx.strokeStyle = 'rgba(255,215,0,0.50)';
+      ctx.lineWidth = 1.5;
+      _roundRect(ctx, photoX, contentY, photoW, photoH, 8);
+      ctx.stroke();
+      ctx.restore();
       photoBottom = contentY + photoH + 6;
     } else {
-      // No photo placeholder — zero height
       photoBottom = contentY;
     }
 
-    // Story text area — height self-adapts (clip to remaining space)
+    // Lore text
     const storyH = btnAreaY - photoBottom - 8;
     if (_conDef.lore && storyH > 20 && !_loreDismissed) {
       if (_lorePages.length === 0) {
@@ -1895,28 +2164,25 @@ function _drawResultOverlay(ctx, W, H) {
       }
       const page = _lorePages[_lorePage] || '';
       const totalPages = _lorePages.length;
-
       ctx.save();
       ctx.beginPath();
       ctx.rect(cardX + 8, photoBottom, cardW - 16, storyH);
       ctx.clip();
-      ctx.font         = '12px sans-serif';
-      ctx.textAlign    = 'center';
+      ctx.font = '12px sans-serif';
+      ctx.textAlign = 'center';
       ctx.textBaseline = 'top';
-      ctx.fillStyle    = COLORS.text2;
+      ctx.fillStyle = COLORS.text2;
       _drawWrappedText(ctx, page, cx, photoBottom + 4, cardW - 32, 16);
       ctx.restore();
 
-      // Bottom fade gradient on story text
-      ctx.save();
       const fadeGrd = ctx.createLinearGradient(0, btnAreaY - 20, 0, btnAreaY - 2);
-      fadeGrd.addColorStop(0, 'rgba(20,25,60,0)');
-      fadeGrd.addColorStop(1, 'rgba(20,25,60,0.95)');
+      fadeGrd.addColorStop(0, 'rgba(25,18,55,0)');
+      fadeGrd.addColorStop(1, 'rgba(25,18,55,0.97)');
+      ctx.save();
       ctx.fillStyle = fadeGrd;
       ctx.fillRect(cardX + 8, btnAreaY - 20, cardW - 16, 20);
       ctx.restore();
 
-      // Page nav
       if (totalPages > 1) {
         const isLast = _lorePage >= totalPages - 1;
         _btnLoreNext = drawButton(ctx, cardX + cardW - 82, btnAreaY - 28, 72, 22, isLast ? '完成 ✓' : '下一段 ›', {
@@ -1930,16 +2196,16 @@ function _drawResultOverlay(ctx, W, H) {
       _btnLoreNext = null;
     }
 
-    // 3 buttons: 下一关 / 重玩 / 选关 — uniformly distributed, height 36px (STORY-00322)
-    const btnH   = 36;
+    // Buttons: 下一关 / 重玩 / 选关
+    const btnH = 36;
     const btnGap = 6;
     const totalBtnW = cardW - 24;
-    const btnW3  = (totalBtnW - btnGap * 2) / 3;
-    const bY     = btnAreaY + (btnAreaH - btnH) / 2;
+    const btnW3 = (totalBtnW - btnGap * 2) / 3;
+    const bY = btnAreaY + (btnAreaH - btnH) / 2;
     const isLastLevel = _levelIdx >= 29;
 
     if (isLastLevel) {
-      _btnNext = drawButton(ctx, cardX + 12, bY, btnW3, btnH, '🏆 图鉴', {
+      _btnNext = drawButton(ctx, cardX + 12, bY, btnW3, btnH, '图鉴', {
         fontSize: 13, color0: 'rgba(60,50,10,0.85)', color1: 'rgba(100,80,10,0.85)',
       });
     } else {
@@ -1951,27 +2217,37 @@ function _drawResultOverlay(ctx, W, H) {
     _btnLevels = drawButton(ctx, cardX + 12 + (btnW3 + btnGap) * 2, bY, btnW3, btnH, '选关', {
       fontSize: 14, color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
     });
-    _btnRetry  = null;
-    _btnShop   = null;
+    _btnRetry = null;
+    _btnShop = null;
     _btnGallery = null;
 
   } else {
-    // Fail card: stats already shown; show constellation silhouette + encouragement
-    const failContentH = btnAreaY - contentY - 4;
+    // STORY-00367: Fail screen — cold-blue stardust + constellation silhouette
+    // Animated cold-blue stardust particles (pseudo-random, seeded from time)
+    ctx.save();
+    for (let i = 0; i < 8; i++) {
+      const px = cardX + 12 + (Math.sin(t * 0.5 + i * 1.7) * 0.5 + 0.5) * (cardW - 24);
+      const py = contentY + 4 + (Math.cos(t * 0.4 + i * 2.3) * 0.5 + 0.5) * contentH * 0.7;
+      const pr = 1.5 + Math.sin(t * 1.1 + i) * 0.8;
+      const pa = 0.3 + Math.sin(t * 0.8 + i * 0.9) * 0.15;
+      ctx.fillStyle = `rgba(140,180,255,${pa.toFixed(2)})`;
+      ctx.beginPath(); ctx.arc(px, py, pr, 0, TWO_PI); ctx.fill();
+    }
+    ctx.restore();
 
-    // Personalized encouragement
+    // Encouragement text
     const conName = _conDef ? _conDef.nameZh : '星星';
     ctx.save();
-    ctx.font         = '13px sans-serif';
-    ctx.textAlign    = 'center';
+    ctx.font = '13px sans-serif';
+    ctx.textAlign = 'center';
     ctx.textBaseline = 'top';
-    ctx.fillStyle    = COLORS.text2;
-    ctx.fillText(conName + '跑得太快了，再来一次！✨', cx, contentY);
+    ctx.fillStyle = 'rgba(160,190,255,0.85)';
+    ctx.fillText(conName + '还在等你，再试一次！', cx, contentY + 2);
     ctx.restore();
 
     // Constellation silhouette (compact)
     if (_conDef.stars && _conDef.lines) {
-      const silH = Math.min(70, failContentH - 22);
+      const silH = Math.min(70, contentH - 22);
       const silW = silH * 1.3;
       const silX0 = cx - silW / 2;
       const silY0 = contentY + 22;
@@ -1985,8 +2261,8 @@ function _drawResultOverlay(ctx, W, H) {
       const toSilX = (nx) => silX0 + ((nx - minX) / rangeX) * silW;
       const toSilY = (ny) => silY0 + ((ny - minY) / rangeY) * silH;
       ctx.save();
-      ctx.strokeStyle = 'rgba(180,180,220,0.25)';
-      ctx.lineWidth   = 1;
+      ctx.strokeStyle = 'rgba(100,140,220,0.22)';
+      ctx.lineWidth = 1;
       for (const [ai, bi] of _conDef.lines) {
         const a = _conDef.stars[ai], b = _conDef.stars[bi];
         if (!a || !b) continue;
@@ -1994,24 +2270,50 @@ function _drawResultOverlay(ctx, W, H) {
         ctx.lineTo(toSilX(b.x), toSilY(b.y)); ctx.stroke();
       }
       for (const s of _conDef.stars) {
-        ctx.fillStyle = 'rgba(200,200,240,0.3)';
+        ctx.fillStyle = 'rgba(140,170,255,0.28)';
         ctx.beginPath(); ctx.arc(toSilX(s.x), toSilY(s.y), 2.5, 0, TWO_PI); ctx.fill();
       }
       ctx.restore();
     }
 
-    // 2 buttons: 重试 / 选关 (height 36px, STORY-00322)
-    const btnH   = 36;
+    // Buttons: 重试 / 选关
+    const btnH = 36;
     const totalBtnW = cardW - 24;
-    const btnW2  = (totalBtnW - 8) / 2;
-    const bY     = btnAreaY + (btnAreaH - btnH) / 2;
+    const btnW2 = (totalBtnW - 8) / 2;
+    const bY = btnAreaY + (btnAreaH - btnH) / 2;
 
-    _btnRetry  = drawButton(ctx, cardX + 12, bY, btnW2, btnH, '重试', { fontSize: 14 });
+    _btnRetry  = drawButton(ctx, cardX + 12, bY, btnW2, btnH, '重试', {
+      fontSize: 14, color0: 'rgba(30,55,110,0.90)', color1: 'rgba(50,80,160,0.90)',
+    });
     _btnLevels = drawButton(ctx, cardX + 12 + btnW2 + 8, bY, btnW2, btnH, '选关', {
-      fontSize: 14, color0: 'rgba(80,60,140,0.85)', color1: 'rgba(60,90,180,0.85)',
+      fontSize: 14, color0: 'rgba(60,40,100,0.90)', color1: 'rgba(80,55,150,0.90)',
     });
     _btnNext = null;
   }
+}
+
+// ── Helper: draw 5-point star shape ──────────────────────────
+function _drawStarShape(ctx, cx, cy, r, fillColor, glowColor) {
+  if (glowColor) {
+    const grd = ctx.createRadialGradient(cx, cy, 0, cx, cy, r * 2.5);
+    grd.addColorStop(0, glowColor);
+    grd.addColorStop(1, 'rgba(0,0,0,0)');
+    ctx.fillStyle = grd;
+    ctx.beginPath(); ctx.arc(cx, cy, r * 2.5, 0, TWO_PI); ctx.fill();
+  }
+  ctx.fillStyle = fillColor;
+  ctx.beginPath();
+  for (let i = 0; i < 5; i++) {
+    const outerA = (i * 2 * Math.PI / 5) - Math.PI / 2;
+    const innerA = outerA + Math.PI / 5;
+    const ox = cx + Math.cos(outerA) * r;
+    const oy = cy + Math.sin(outerA) * r;
+    const ix = cx + Math.cos(innerA) * (r * 0.4);
+    const iy = cy + Math.sin(innerA) * (r * 0.4);
+    if (i === 0) ctx.moveTo(ox, oy); else ctx.lineTo(ox, oy);
+    ctx.lineTo(ix, iy);
+  }
+  ctx.closePath(); ctx.fill();
 }
 
 

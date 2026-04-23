@@ -1,8 +1,8 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: Sprint 45-mini COMPLETE — awaiting user Demo acceptance.
-**Current Sprint**: Sprint 45-mini
-**Last Updated**: 2026-04-21
+**Status**: Sprint 57-mini COMPLETE — QA PASS + Arch PASS + UX no Blockers.
+**Current Sprint**: Sprint 57-mini
+**Last Updated**: 2026-04-22
 
 > **Sprint 37-mini COMPLETE**: 2 Stories STORY-00323~00324 Done. Star flash sequence before linedraw (STORY-00323): new 'starflash' phase, 150ms intervals, scale 1→2→1. Victory→levels flicker fix (STORY-00324): _cleanup() before all result navigation buttons. Arch PASS. QA PASS (STORY-00323 LOW confidence — miniprogram Canvas only). UX no Blockers. VU ACCEPTED 9.6/10 — PROJECT COMPLETE. All 11 user-reported issues (CR-113~CR-121) resolved across Sprint 35/36/37-mini.
 

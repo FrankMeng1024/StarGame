@@ -18,13 +18,13 @@ mss_navigate.py — 微信小游戏全屏幕导航 + 截图脚本
   - mss 捕获物理像素截图 (1920×1200)
 
 物理坐标（右侧面板打开时，模拟器在左侧 x=0..988）:
-  - 游戏画布: physical (14, 138, 974, 434) — left=14, top=138, w=974, h=434
-  - 挑战关卡 button: ratio(0.750, 0.299) → physical(745, 268)
-  - 星座图鉴 button: ratio(0.750, 0.408) → physical(745, 315)
-  - 道具商店 button: ratio(0.750, 0.495) → physical(745, 353)
-  - Level 1 猎户座 card: ratio(0.114, 0.147) → physical(125, 202)
-  - 跳过 overlay skip button: ratio(0.360, 0.490) → physical(365, 351)
-  - focus safe area: ratio(0.513, 0.184) → physical(514, 218) — center-right, below subtitle
+  - 游戏画布: physical (14, 137, 974, 290) — left=14, top=137, w=974, h=290
+  - 挑战关卡 button: ratio(0.668, 0.610) → physical(664, 314)
+  - 星座图鉴 button: ratio(0.668, 0.748) → physical(664, 354) (estimated)
+  - 道具商店 button: ratio(0.668, 0.886) → physical(664, 394) (estimated)
+  - Level 1 猎户座 card: ratio(0.092, 0.110) — needs recalibration for level_select
+  - 跳过 overlay skip button: ratio(0.349, 0.490) — needs recalibration
+  - focus safe area: ratio(0.300, 0.400) → physical(306, 253) — dark bg, no UI
   - Toolbar 重新加载 ↺ button: window-relative physical (484, 42)
 """
 import sys, os, time, subprocess, json, argparse, base64
@@ -234,16 +234,19 @@ def canvas_click(hwnd, canvas, rx, ry, label=""):
     """
     click at canvas-relative ratio position (rx, ry).
     canvas = (cx, cy, cw, ch) in PHYSICAL pixels (absolute screen coords).
-    Uses SendInput with MOUSEEVENTF_ABSOLUTE for reliable Chromium click.
-    Note: does NOT call SetForegroundWindow before each click — caller is responsible
-    for ensuring the window is in foreground before the first click.
+    Uses SetCursorPos + mouse_event. Since process is DPI-aware (SetProcessDpiAwareness=2),
+    SetCursorPos takes physical pixel coordinates directly.
     """
-    screen_w = user32.GetSystemMetrics(0)
-    screen_h = user32.GetSystemMetrics(1)
     # Physical absolute position
     phys_x = canvas[0] + int(canvas[2] * rx)
     phys_y = canvas[1] + int(canvas[3] * ry)
-    _sendinput_phys(phys_x, phys_y, screen_w, screen_h)
+    # SetCursorPos uses physical coords when process is DPI-aware
+    user32.SetCursorPos(phys_x, phys_y)
+    time.sleep(0.05)
+    user32.mouse_event(0x0002, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTDOWN
+    time.sleep(0.05)
+    user32.mouse_event(0x0004, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTUP
+    time.sleep(0.1)
     if label:
         print(f"  🖱  Click {label} @ ratio({rx:.3f},{ry:.3f}) log({phys_x},{phys_y})")
 
@@ -397,12 +400,14 @@ def main():
         fb_ww = r_fb.right - r_fb.left
         fb_wh = r_fb.bottom - r_fb.top
         # Scale fallback bounds proportionally if window size differs from calibration
-        scale_x = fb_ww / 1918.0
+        # Calibrated from debug-full-window.png (1917x1200):
+        # Canvas: left=14, top=137, right=988, bottom=427 → w=974, h=290
+        scale_x = fb_ww / 1917.0
         scale_y = fb_wh / 1200.0
         fb_cx = int(14 * scale_x)
-        fb_cy = int(138 * scale_y)
-        fb_cw = int(686 * scale_x)
-        fb_ch = int(459 * scale_y)
+        fb_cy = int(137 * scale_y)
+        fb_cw = int(974 * scale_x)
+        fb_ch = int(290 * scale_y)
         win_bounds = (fb_cx, fb_cy, fb_cw, fb_ch)
         print(f"⚠ Canvas detection failed — using scaled fallback: win({fb_cx},{fb_cy}) {fb_cw}x{fb_ch} (window {fb_ww}x{fb_wh})")
     cx_win, cy_win, cw, ch = win_bounds
@@ -452,10 +457,9 @@ def main():
     time.sleep(20)  # Wait for intro animation to finish → lands on menu
 
     # After reload, DevTools may show debug panel. Click simulator canvas to focus it.
-    # Safe area: center-right of canvas, below subtitle, above buttons.
-    # canvas(500,80) → ratio(0.513,0.184) — avoids all buttons and title
+    # Safe area: left-center dark bg, ratio(0.300, 0.400)
     print("  Focusing simulator to close debug panel...")
-    canvas_click(hwnd, canvas, 0.513, 0.184, "focus-simulator")
+    canvas_click(hwnd, canvas, 0.300, 0.400, "focus-simulator")
     time.sleep(1.5)  # Wait for layout to stabilize
 
     brightness, path = capture(hwnd, f"{STORY}-01-menu.png", "menu")
@@ -467,25 +471,31 @@ def main():
     # ── Step 2: Level Select ────────────────────────
     print("\n[2/5] Level Select (click 挑战关卡)")
     # After capture(), re-focus the simulator canvas by clicking a safe neutral area first.
-    # Safe area: center-right of canvas, below subtitle, above buttons.
-    _sendinput_phys(canvas[0] + int(canvas[2] * 0.513), canvas[1] + int(canvas[3] * 0.184), screen_w, screen_h)
+    # Safe area: left-center of canvas, dark bg area (no buttons/title)
+    # Canvas left=14, top=137, w=974, h=290. Safe point: (0.300, 0.400) = physical abs(306, 253)
+    focus_x2 = canvas[0] + int(canvas[2] * 0.300)
+    focus_y2 = canvas[1] + int(canvas[3] * 0.400)
+    user32.SetCursorPos(focus_x2, focus_y2)
     time.sleep(0.4)
-    # 挑战关卡 button: canvas(730,130) → ratio(0.750,0.299)
-    canvas_click(hwnd, canvas, 0.750, 0.299, "挑战关卡")
+    # 挑战关卡 button: calibrated from debug-full-window.png ratio(0.668,0.610)
+    canvas_click(hwnd, canvas, 0.668, 0.610, "挑战关卡")
     time.sleep(3.0)
     _, path = capture(hwnd, f"{STORY}-02-level-select.png", "level_select")
     verify(path, ['level_select'], 'level_select')
 
     # ── Step 3: Game screen ─────────────────────────
     print("\n[3/5] Game screen (click Level 1 猎户座)")
-    # Re-focus simulator canvas after capture()
-    _sendinput_phys(canvas[0] + int(canvas[2] * 0.513), canvas[1] + int(canvas[3] * 0.184), screen_w, screen_h)
+    # Re-focus simulator canvas after capture() — physical coords, DPI-aware
+    focus_x3 = canvas[0] + int(canvas[2] * 0.300)
+    focus_y3 = canvas[1] + int(canvas[3] * 0.400)
+    user32.SetCursorPos(focus_x3, focus_y3)
     time.sleep(0.4)
-    # Level 1 card: canvas(90,48) → ratio(0.092,0.110) — top-left card "猎户座"
-    canvas_click(hwnd, canvas, 0.092, 0.110, "Level 1 猎户座")
+    # Level 1 card: top-left card in level_select grid
+    # Calibrated from debug-phys-click.png: card center abs≈(107,195) ratio≈(0.094,0.200)
+    canvas_click(hwnd, canvas, 0.094, 0.200, "Level 1 猎户座")
     time.sleep(2)
-    # Dismiss item-selection overlay: 跳过 button ratio(0.349,0.490)
-    canvas_click(hwnd, canvas, 0.349, 0.490, "跳过 overlay")
+    # Dismiss item-selection overlay: 跳过 button — center of canvas
+    canvas_click(hwnd, canvas, 0.500, 0.500, "跳过 overlay")
     time.sleep(2)
     _, path = capture(hwnd, f"{STORY}-03-game.png", "game")
     verify(path, ['game', 'pre_level'], 'game')
@@ -514,7 +524,7 @@ def main():
     time.sleep(20)  # Wait for intro → menu
     # Focus simulator to close debug panel (same as step 1)
     print("  Focusing simulator to close debug panel...")
-    canvas_click(hwnd, canvas, 0.513, 0.184, "focus-simulator-s5")
+    canvas_click(hwnd, canvas, 0.300, 0.400, "focus-simulator-s5")
     time.sleep(1.5)
     _, path = capture(hwnd, f"{STORY}-05-back-to-levels.png", "menu after reload")
     verify(path, ['menu', 'intro', 'level_select'], 'back_to_levels')
