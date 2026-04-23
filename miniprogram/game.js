@@ -42,9 +42,10 @@ let _navigated   = false;  // 已成功调用过 navigate()
 let _lastNavTime = 0;
 function navigate(key) {
   const now = Date.now();
-  if (now - _lastNavTime < 100) return;
+  if (now - _lastNavTime < 100) { console.log('[nav] throttled:', key); return; }
   _lastNavTime = now;
   _navigated = true;
+  console.log('[nav]', key, 'W='+G.SCREEN_W, 'H='+G.SCREEN_H);
 
   hideMenu(); hideLevels(); hideGame();
   hideGallery(); hideShop(); hideAchievement(); hideIntro();
@@ -68,6 +69,7 @@ function navigate(key) {
 async function boot() {
   if (_booted) return;
   _booted = true;
+  console.log('[boot] start, W='+G.SCREEN_W+' H='+G.SCREEN_H);
 
   // 本地存档同步加载
   const localSave = StorageAdapter.loadSaveLocal();
@@ -125,13 +127,21 @@ async function boot() {
 // ── STORY-00347 + 黑屏修复: wx.onShow 确保扫码冷启动也能触发 boot ────────
 // 真机扫码冷启动时，boot() 的 RAF 循环可能在 onShow 前就以错误尺寸(0)超时了。
 // onShow 是渲染层真正激活后的最可靠时机，在此处强制修正尺寸并补发 navigate。
+// ⚠️ 关键：只在尺寸实际变化时才写 canvas.width/height，因为赋值操作（即使同值）
+//    会清空 canvas 并重置 2D context，导致正在渲染的帧黑屏。
 let _onShowFired = false;
 wx.onShow(() => {
   _onShowFired = true;
   const { w, h, safeArea: sa, dpr: dp } = _getScreenSize();
-  if (w > 0 && h > 0) {
+  console.log('[onShow] booted='+_booted+' navigated='+_navigated+' W='+w+' H='+h);
+  if (w > 0 && h > 0 && (canvas.width !== w || canvas.height !== h)) {
+    // 仅在尺寸真正变化时才重置 canvas（避免清空正在渲染的帧）
+    console.log('[onShow] resizing canvas from '+canvas.width+'x'+canvas.height+' to '+w+'x'+h);
     canvas.width  = w;
     canvas.height = h;
+    initGlobals(canvas, ctx, w, h, sa, dp);
+  } else if (w > 0 && h > 0 && (G.SCREEN_W !== w || G.SCREEN_H !== h)) {
+    // canvas 尺寸已正确但 G 全局量未同步（理论上不应发生，保险起见）
     initGlobals(canvas, ctx, w, h, sa, dp);
   }
   if (!_booted) {

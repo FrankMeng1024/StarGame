@@ -42,6 +42,7 @@ let _sparkles  = [];  // {x,y,vx,vy,life,maxLife}
 
 // ── Public API ────────────────────────────────────────────────
 export function showIntro(navigate) {
+  console.log('[intro] showIntro W='+G.SCREEN_W+' H='+G.SCREEN_H);
   _navigate = navigate;
   _cleanup();
   _done = false;
@@ -203,7 +204,10 @@ function _spawnMeteorFull(angle, delayMs) {
 
 function _loop(now) {
   if (_done) return;
-  if (_startTime === 0) _startTime = now;
+  if (_startTime === 0) {
+    _startTime = now;
+    console.log('[intro] _loop first frame W='+G.SCREEN_W+' H='+G.SCREEN_H+' canvas='+G.CANVAS.width+'x'+G.CANVAS.height);
+  }
   const dt = _lastNow > 0 ? Math.min((now - _lastNow) / 1000, 0.05) : 1 / 60;
   _lastNow = now;
 
