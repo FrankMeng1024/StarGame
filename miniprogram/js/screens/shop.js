@@ -3,7 +3,7 @@
 // CR-136: 动态星云背景
 // CR-137: 统一 drawHeaderBar
 
-import { G } from '../engine/globals.js';
+import { G, onTouch, offTouch } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
   drawHeaderBar, drawNebulae, hitTest, drawFadeOverlay, tickFade,
@@ -76,9 +76,9 @@ export function showShop(navigate) {
     } catch (e) {}
   }
 
-  wx.onTouchStart(_onTouchStart);
-  wx.onTouchMove(_onTouchMove);
-  wx.onTouchEnd(_onTouchEnd);
+  onTouch('start', _onTouchStart);
+  onTouch('move',  _onTouchMove);
+  onTouch('end',   _onTouchEnd);
 
   _rafId = requestAnimationFrame(_loop);
 }
@@ -91,9 +91,9 @@ export function hideShop() {
 function _cleanup() {
   if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   if (G.CANVAS) {
-    wx.offTouchStart(_onTouchStart);
-    wx.offTouchMove(_onTouchMove);
-    wx.offTouchEnd(_onTouchEnd);
+    offTouch('start', _onTouchStart);
+    offTouch('move',  _onTouchMove);
+    offTouch('end',   _onTouchEnd);
   }
   _backRect    = null;
   _sheetBuyRect = null;

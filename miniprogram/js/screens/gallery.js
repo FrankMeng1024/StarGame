@@ -1,7 +1,7 @@
 // gallery.js — Canvas 星座图鉴（微信小游戏版）
 // STORY-00350: 星系节点图鉴 — 六边形蜂巢布局，底部抽屉详情，与选关界面视觉统一
 
-import { G } from '../engine/globals.js';
+import { G, onTouch, offTouch } from '../engine/globals.js';
 import {
   COLORS, drawFadeOverlay, tickFade, hitTest,
 } from '../engine/canvas-utils.js';
@@ -33,7 +33,7 @@ const _HEX_POS = [
 // 节点间装饰连线（蜂巢风格）
 const _HEX_EDGES = [[0,1],[0,2],[0,3],[1,3],[1,4],[2,3],[3,4],[3,5],[2,5],[4,5]];
 
-const _NODE_R = 30;
+const _NODE_R = 36;
 
 // 星名中文对照表（Latin → 中文）
 const _STAR_ZH = {
@@ -202,9 +202,9 @@ export function showGallery(navigate) {
     } catch (e) {}
   }
 
-  wx.onTouchStart(_onTouchStart);
-  wx.onTouchMove(_onTouchMove);
-  wx.onTouchEnd(_onTouchEnd);
+  onTouch('start', _onTouchStart);
+  onTouch('move',  _onTouchMove);
+  onTouch('end',   _onTouchEnd);
   _rafId = requestAnimationFrame(_loop);
 }
 
@@ -214,9 +214,9 @@ export function hideGallery() { _cleanup(); }
 function _cleanup() {
   if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   if (G.CANVAS) {
-    wx.offTouchStart(_onTouchStart);
-    wx.offTouchMove(_onTouchMove);
-    wx.offTouchEnd(_onTouchEnd);
+    offTouch('start', _onTouchStart);
+    offTouch('move',  _onTouchMove);
+    offTouch('end',   _onTouchEnd);
   }
   _nodeRects   = [];
   _bgStars     = [];
@@ -559,7 +559,7 @@ function _drawNode(ctx, node, t, groupIdx) {
   if (unlocked) {
     // Mini 星座图
     if (c.stars && c.stars.length > 0) {
-      const size = (r - 3) * 0.90;
+      const size = (r - 3) * 0.62;
       const pts  = c.stars.map(s => ({
         x: cx + (s.x - 0.5) * size,
         y: cy + (s.y - 0.5) * size,
@@ -613,14 +613,14 @@ function _drawNode(ctx, node, t, groupIdx) {
     try { ctx.fillText(c.icon, bx, by); } catch (e) {}
   }
 
-  // 中文名
-  ctx.font = `bold 11px sans-serif`;
+  // 提示文字（替代星座名，点击引导）
+  ctx.font = `10px sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillStyle = unlocked ? (isActive ? COLORS.starGold : group.color) : 'rgba(70,75,120,0.6)';
-  ctx.shadowColor = unlocked ? group.color : 'transparent';
-  ctx.shadowBlur  = 3;
-  ctx.fillText(c.nameZh, cx, cy + r + 5);
+  ctx.fillStyle = unlocked ? 'rgba(180,180,220,0.60)' : 'rgba(70,75,120,0.4)';
+  ctx.shadowColor = 'transparent';
+  ctx.shadowBlur  = 0;
+  ctx.fillText(unlocked ? '点击查看名称' : '未解锁', cx, cy + r + 5);
 
   ctx.restore();
 
@@ -713,7 +713,7 @@ function _drawDetail(ctx, W, H, t) {
   _detailRects.back = _drawBackBtnG(ctx, G.SAFE_LEFT + 90, G.SAFE_TOP + 8, 88, 28, '← 返回图鉴');
 
   // 星座名（header中央）
-  ctx.font = `bold 22px ${titleFont}`;
+  ctx.font = `bold 24px ${titleFont}`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle = grp.color;
@@ -722,13 +722,12 @@ function _drawDetail(ctx, W, H, t) {
   ctx.fillText(c.nameZh, W / 2, G.SAFE_TOP + 22);
   ctx.shadowBlur = 0;
 
-  // 左右切换星座：圆形按钮，避开右上角微信胶囊（约88px宽）
+  // 左右切换星座：置于标题左侧，完全避开右上角微信胶囊
   const _CBTN_R  = 15;
   const _CBTN_CY = G.SAFE_TOP + 22;
-  // 微信胶囊宽约88px + 右安全区，再留8px间隔
-  const _CAPSULE_W = 88;
-  const _prevCX  = W - (G.SAFE_RIGHT || 0) - _CAPSULE_W - 20 - _CBTN_R * 2 - 6;
-  const _nextCX  = W - (G.SAFE_RIGHT || 0) - _CAPSULE_W - 20;
+  // 放在左侧：返回按钮右侧（返回按钮宽88，左起 SAFE_LEFT+90+88=SAFE_LEFT+178）
+  const _prevCX  = (G.SAFE_LEFT || 0) + 196;
+  const _nextCX  = (G.SAFE_LEFT || 0) + 196 + _CBTN_R * 2 + 8;
   const _prevActive = _detail.idx > 0;
   const _nextActive = _detail.idx < CONSTELLATIONS.length - 1;
 
@@ -881,7 +880,7 @@ function _drawDetail(ctx, W, H, t) {
           if (lx + TW > SPLIT_X - 2) lx = s.x - TW - 6;
           if (ly < BODY_TOP + 2) ly = s.y + 6;
           ctx.save();
-          ctx.font = '9px sans-serif';
+          ctx.font = '11px sans-serif';
           ctx.fillStyle = 'rgba(20,16,55,0.88)';
           _roundRect(ctx, lx, ly, TW, TH, 6);
           ctx.fill();
@@ -911,7 +910,7 @@ function _drawDetail(ctx, W, H, t) {
 
   // 左栏文字：点击提示（替代星座英文名）
   const nameY = LEFT_CY + CHART_R + 8;
-  ctx.font = '10px sans-serif';
+  ctx.font = '12px sans-serif';
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
   ctx.fillStyle = 'rgba(160,155,210,0.65)';
@@ -933,9 +932,9 @@ function _drawDetail(ctx, W, H, t) {
   const CLIP_TOP  = BODY_TOP + 4;
   const CLIP_H    = BODY_H - 8;
 
-  // 加载/重置照片（本地 + ESA CDN，过滤Wikimedia等其他外部URL）
+  // 加载/重置照片（仅本地资源，外部CDN在小游戏域名白名单外无法加载）
   const allPhotos = c.photos || (c.photo ? [c.photo] : []);
-  const photos = allPhotos.filter(u => u && (!u.startsWith('http') || u.includes('esahubble.org')));
+  const photos = allPhotos.filter(u => u && !u.startsWith('http'));
   if (_carouselForIdx !== _detail.idx) {
     _carouselForIdx = _detail.idx;
     _carouselImgs   = [];
@@ -1029,7 +1028,7 @@ function _drawDetail(ctx, W, H, t) {
     _carouselPrevRect = drawBtn2(RIGHT_X + 2, '‹', _carouselPos > 0);
     _carouselNextRect = drawBtn2(RIGHT_X + RIGHT_W - BW - 2, '›', _carouselPos < photos.length - 1);
     ctx.save();
-    ctx.font = '9px sans-serif';
+    ctx.font = '11px sans-serif';
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
     ctx.fillStyle = 'rgba(210,205,255,0.75)';
@@ -1049,12 +1048,12 @@ function _drawDetail(ctx, W, H, t) {
   ].filter(Boolean);
 
   if (infos.length > 0) {
-    const pillH = 22;
+    const pillH = 24;
     let px = RIGHT_X;
     let pillRowY = oy2;
     for (const info of infos) {
       ctx.save();
-      ctx.font = '12px sans-serif';
+      ctx.font = '13px sans-serif';
       // 截断超长文字
       let label = info;
       const maxPillW = RIGHT_W - 4;
@@ -1082,14 +1081,14 @@ function _drawDetail(ctx, W, H, t) {
 
   // ── lore（神话/描述） ─────────────────────────────────────
   ctx.save();
-  ctx.font = '14px sans-serif';
+  ctx.font = '16px sans-serif';
   ctx.fillStyle = 'rgba(210,205,245,0.92)';
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
   const lines = _wrapText(ctx, c.lore || '', RIGHT_W);
   for (const line of lines) {
     ctx.fillText(line, RIGHT_X, oy2);
-    oy2 += 22;
+    oy2 += 24;
   }
   ctx.restore();
   oy2 += 16;

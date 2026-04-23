@@ -1,7 +1,7 @@
 // game.js — Canvas 游戏屏幕（微信小游戏版）
 // 涵盖：背景场景 + 角色 + 网兜机制 + 星星 + 垃圾 + HUD + 胜负 + 结算卡
 
-import { G } from '../engine/globals.js';
+import { G, onTouch, offTouch } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
   drawButton, drawTitle, drawCard, hitTest, drawFadeOverlay, tickFade, fadeNavigate,
@@ -294,7 +294,7 @@ export function showGame(navigate) {
     } catch (e) {}
   }
 
-  wx.onTouchStart(_onTouch);
+  onTouch('start', _onTouch);
   _lastNow = 0;
   _rafId = requestAnimationFrame(_loop);
 
@@ -472,7 +472,7 @@ function _cleanup() {
     }
   } catch (e) {}
   if (G.CANVAS) {
-    wx.offTouchStart(_onTouch);
+    offTouch('start', _onTouch);
   }
   // Remove wx.onHide listener to prevent stacking (STORY-00247 fix)
   if (_onHideCb) {

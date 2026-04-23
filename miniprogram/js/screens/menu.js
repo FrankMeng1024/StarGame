@@ -2,7 +2,7 @@
 // 替代原版 DOM screen-menu + menu-sky.js
 // 所有 UI 通过 Canvas 2D 绘制，无 DOM 依赖
 
-import { G } from '../engine/globals.js';
+import { G, onTouch, offTouch } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
   drawButton, drawTitle, drawSubtitle, hitTest, drawFadeOverlay, tickFade,
@@ -163,7 +163,7 @@ export function showMenu(navigate) {
 
   _buildConLayout();
 
-  wx.onTouchStart(_onTouch);
+  onTouch('start', _onTouch);
 
   // Start BGM (idempotent — safe to call every time; checks mute state internally)
   AudioAdapter.playBGM(BGM_SRC);
@@ -181,7 +181,7 @@ function _cleanup() {
     cancelAnimationFrame(_rafId);
     _rafId = null;
   }
-  wx.offTouchStart(_onTouch);
+  offTouch('start', _onTouch);
   _buttons  = [];
   _conStars = [];
   _conLines = [];

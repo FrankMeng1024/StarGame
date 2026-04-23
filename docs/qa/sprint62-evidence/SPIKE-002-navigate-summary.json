@@ -1,0 +1,33 @@
+{
+  "sprint": 62,
+  "story": "SPIKE-002",
+  "hwnd": 262806,
+  "steps": {
+    "menu": {
+      "screen_type": "menu",
+      "confidence": "high",
+      "pass": true
+    },
+    "level_select": {
+      "screen_type": "menu",
+      "confidence": "high",
+      "pass": false
+    },
+    "game": {
+      "screen_type": "menu",
+      "confidence": "high",
+      "pass": false
+    },
+    "fail": {
+      "screen_type": "menu",
+      "confidence": "high",
+      "pass": false
+    },
+    "back_to_levels": {
+      "screen_type": "menu",
+      "confidence": "high",
+      "pass": true
+    }
+  },
+  "pass": false
+}

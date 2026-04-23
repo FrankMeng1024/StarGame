@@ -1,7 +1,7 @@
 // levels.js — Canvas 选关屏幕（微信小游戏版）
 // STORY-00348: 星系分组选关 — 30个关卡分5组，每组6个，逐组解锁
 
-import { G } from '../engine/globals.js';
+import { G, onTouch, offTouch } from '../engine/globals.js';
 import {
   COLORS,
   drawButton, hitTest, drawFadeOverlay, tickFade,
@@ -127,9 +127,9 @@ export function showLevels(navigate) {
     } catch (e) {}
   }
 
-  wx.onTouchStart(_onTouchStart);
-  wx.onTouchMove(_onTouchMove);
-  wx.onTouchEnd(_onTouchEnd);
+  onTouch('start', _onTouchStart);
+  onTouch('move',  _onTouchMove);
+  onTouch('end',   _onTouchEnd);
 
   _rafId = requestAnimationFrame(_loop);
 }
@@ -142,9 +142,9 @@ export function hideLevels() {
 function _cleanup() {
   if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   if (G.CANVAS) {
-    wx.offTouchStart(_onTouchStart);
-    wx.offTouchMove(_onTouchMove);
-    wx.offTouchEnd(_onTouchEnd);
+    offTouch('start', _onTouchStart);
+    offTouch('move',  _onTouchMove);
+    offTouch('end',   _onTouchEnd);
   }
   _nodeRects    = [];
   _bgStars      = [];

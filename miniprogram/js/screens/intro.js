@@ -5,7 +5,7 @@
 // 触摸任意位置可跳过
 // 结束后调用 navigate('menu')
 
-import { G } from '../engine/globals.js';
+import { G, onTouch, offTouch } from '../engine/globals.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
 import { drawFadeOverlay, tickFade, resetFade } from '../engine/canvas-utils.js';
 
@@ -135,7 +135,7 @@ export function showIntro(navigate) {
   _lineDrawStart = [];
   _sparkles = [];
 
-  wx.onTouchStart(_onSkip);
+  onTouch('start', _onSkip);
 
   _startTime = 0;
   _rafId = requestAnimationFrame(_loop);
@@ -148,7 +148,7 @@ export function hideIntro() {
 // ── Internal ──────────────────────────────────────────────────
 function _cleanup() {
   if (_rafId) { cancelAnimationFrame(_rafId); _rafId = null; }
-  wx.offTouchStart(_onSkip);
+  offTouch('start', _onSkip);
   _sparkles = [];
   _bgStars = [];
   _meteors = [];

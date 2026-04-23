@@ -1,7 +1,7 @@
 // achievement.js — 全部通关成就页（微信小游戏版）
 // 显示30个星座通关网格，金色=已通关，灰色=未解锁
 
-import { G } from '../engine/globals.js';
+import { G, onTouch, offTouch } from '../engine/globals.js';
 import {
   COLORS, drawSkyBg, initBgStars, drawBgStars,
   drawButton, hitTest, drawFadeOverlay, tickFade,
@@ -45,9 +45,9 @@ export function showAchievement(navigate) {
     } catch (e) {}
   }
 
-  wx.onTouchStart(_onTouchStart);
-  wx.onTouchMove(_onTouchMove);
-  wx.onTouchEnd(_onTouchEnd);
+  onTouch('start', _onTouchStart);
+  onTouch('move',  _onTouchMove);
+  onTouch('end',   _onTouchEnd);
   _rafId = requestAnimationFrame(_loop);
 }
 
@@ -255,9 +255,9 @@ function _onTouchEnd(e) {
 function _cleanup() {
   if (_rafId !== null) { cancelAnimationFrame(_rafId); _rafId = null; }
   if (G.CANVAS) {
-    wx.offTouchStart(_onTouchStart);
-    wx.offTouchMove(_onTouchMove);
-    wx.offTouchEnd(_onTouchEnd);
+    offTouch('start', _onTouchStart);
+    offTouch('move',  _onTouchMove);
+    offTouch('end',   _onTouchEnd);
   }
   _backRect = null;
   _cellRects = [];
