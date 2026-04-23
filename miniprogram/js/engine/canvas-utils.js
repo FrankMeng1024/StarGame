@@ -287,23 +287,35 @@ export function drawHeaderBar(ctx, W, H, title, opts = {}) {
   ctx.stroke();
   ctx.restore();
 
-  // Back button
+  // Back button — 方案G: 渐变文字+底线，无背景
   const btnX = safeLeft + 90;
   const btnY = safeTop + 8;
   const btnW = 72;
   const btnH = 32;
   ctx.save();
-  ctx.fillStyle = 'rgba(30,16,80,0.85)';
-  _roundRect(ctx, btnX, btnY, btnW, btnH, 10);
-  ctx.fill();
-  ctx.strokeStyle = 'rgba(120,80,220,0.5)';
-  ctx.lineWidth   = 1;
-  ctx.stroke();
-  ctx.font         = '12px sans-serif';
+  const _bCY = btnY + btnH / 2;
+  const _bCX = btnX + btnW / 2;
+  const _btg = ctx.createLinearGradient(btnX, _bCY, btnX + btnW, _bCY);
+  _btg.addColorStop(0, 'rgba(255,255,255,0.92)');
+  _btg.addColorStop(1, 'rgba(140,180,255,0.85)');
+  ctx.font         = 'bold 13px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
-  ctx.fillStyle    = '#f0e0ff';
-  ctx.fillText('← 返回', btnX + btnW / 2, btnY + btnH / 2);
+  ctx.fillStyle    = _btg;
+  ctx.shadowColor  = 'rgba(160,200,255,0.5)';
+  ctx.shadowBlur   = 6;
+  ctx.fillText('← 返回', _bCX, _bCY - 1);
+  ctx.shadowBlur   = 0;
+  const _blg = ctx.createLinearGradient(btnX, 0, btnX + btnW, 0);
+  _blg.addColorStop(0,   'rgba(255,255,255,0)');
+  _blg.addColorStop(0.3, 'rgba(140,180,255,0.7)');
+  _blg.addColorStop(1,   'rgba(100,140,255,0.2)');
+  ctx.strokeStyle = _blg;
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(btnX, btnY + btnH - 1);
+  ctx.lineTo(btnX + btnW, btnY + btnH - 1);
+  ctx.stroke();
   ctx.restore();
 
   // Title

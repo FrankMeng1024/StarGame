@@ -315,7 +315,7 @@ function _loop(now) {
   ctx.globalAlpha = 1;
 
   // ── 固定 Header ──────────────────────────────────────────
-  _backRect = _ghostBtn(ctx, G.SAFE_LEFT + 90, G.SAFE_TOP + 10, 80, 32, '← 返回');
+  _backRect = _drawBackBtnG(ctx, G.SAFE_LEFT + 90, G.SAFE_TOP + 10, 80, 32, '← 返回');
 
   const titleFont = _msz ? "'Ma Shan Zheng', serif" : 'serif';
   ctx.save();
@@ -685,7 +685,7 @@ function _drawDetail(ctx, W, H, t) {
   ctx.globalAlpha = alpha;
 
   // 返回按钮
-  _detailRects.back = _ghostBtn(ctx, G.SAFE_LEFT + 90, G.SAFE_TOP + 8, 80, 28, '← 返回图鉴');
+  _detailRects.back = _drawBackBtnG(ctx, G.SAFE_LEFT + 90, G.SAFE_TOP + 8, 88, 28, '← 返回图鉴');
 
   // 星座名（header中央）
   ctx.font = `bold 22px ${titleFont}`;
@@ -1091,6 +1091,36 @@ function _ghostBtn(ctx, x, y, w, h, label, opacity) {
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(175,195,255,0.80)';
   ctx.fillText(label, x + w / 2, y + h / 2);
+  ctx.restore();
+  return { x, y, w, h };
+}
+
+// ── 方案G 返回按钮：渐变文字+底线，无背景 ──────────────────────
+function _drawBackBtnG(ctx, x, y, w, h, label) {
+  ctx.save();
+  const cy = y + h / 2;
+  const cx = x + w / 2;
+  const tg = ctx.createLinearGradient(x, cy, x + w, cy);
+  tg.addColorStop(0, 'rgba(255,255,255,0.92)');
+  tg.addColorStop(1, 'rgba(140,180,255,0.85)');
+  ctx.font         = 'bold 13px sans-serif';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle    = tg;
+  ctx.shadowColor  = 'rgba(160,200,255,0.5)';
+  ctx.shadowBlur   = 6;
+  ctx.fillText(label, cx, cy - 1);
+  ctx.shadowBlur   = 0;
+  const lg = ctx.createLinearGradient(x, 0, x + w, 0);
+  lg.addColorStop(0,   'rgba(255,255,255,0)');
+  lg.addColorStop(0.3, 'rgba(140,180,255,0.7)');
+  lg.addColorStop(1,   'rgba(100,140,255,0.2)');
+  ctx.strokeStyle = lg;
+  ctx.lineWidth   = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, y + h - 1);
+  ctx.lineTo(x + w, y + h - 1);
+  ctx.stroke();
   ctx.restore();
   return { x, y, w, h };
 }
