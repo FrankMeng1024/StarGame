@@ -163,7 +163,7 @@ export function showMenu(navigate) {
 
   _buildConLayout();
 
-  wx.onTouchEnd(_onTouch);
+  wx.onTouchStart(_onTouch);
 
   // Start BGM (idempotent — safe to call every time; checks mute state internally)
   AudioAdapter.playBGM(BGM_SRC);
@@ -181,7 +181,7 @@ function _cleanup() {
     cancelAnimationFrame(_rafId);
     _rafId = null;
   }
-  wx.offTouchEnd(_onTouch);
+  wx.offTouchStart(_onTouch);
   _buttons  = [];
   _conStars = [];
   _conLines = [];
