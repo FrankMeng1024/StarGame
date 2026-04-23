@@ -479,14 +479,6 @@ function _drawNode(ctx, node, t, groupIdx) {
   ctx.shadowBlur  = 3;
   ctx.fillText(c.nameZh, cx, cy + r + 5);
 
-  // 探索状态标记（已通关=★, 仅解锁=○）
-  if (unlocked) {
-    const starred = explored ? '★' : '○';
-    ctx.font = `10px sans-serif`;
-    ctx.fillStyle = explored ? COLORS.starGold : 'rgba(160,150,210,0.6)';
-    ctx.shadowBlur = 0;
-    ctx.fillText(starred, cx, cy + r + 18);
-  }
   ctx.restore();
 
   // ── 脉冲外环（当前选中） ──────────────────────────────────
@@ -584,6 +576,14 @@ function _drawDetail(ctx, W, H, t) {
   ctx.shadowBlur  = 10;
   ctx.fillText(c.nameZh, W / 2, G.SAFE_TOP + 22);
   ctx.shadowBlur = 0;
+
+  // 左右切换星座按钮（紧贴名字两侧）
+  const _BTN_W = 28, _BTN_H = 28, _BTN_Y = G.SAFE_TOP + 8;
+  const _nameW = ctx.measureText(c.nameZh).width;
+  const _prevX = W / 2 - _nameW / 2 - _BTN_W - 6;
+  const _nextX = W / 2 + _nameW / 2 + 6;
+  _detailRects.prevCon = _ghostBtn(ctx, _prevX, _BTN_Y, _BTN_W, _BTN_H, '‹', _detail.idx > 0 ? 0.75 : 0.2);
+  _detailRects.nextCon = _ghostBtn(ctx, _nextX, _BTN_Y, _BTN_W, _BTN_H, '›', _detail.idx < CONSTELLATIONS.length - 1 ? 0.75 : 0.2);
   ctx.restore();
 
   // ── 分栏布局 ─────────────────────────────────────────────
@@ -622,9 +622,15 @@ function _drawDetail(ctx, W, H, t) {
 
   if (c.stars && c.stars.length > 0) {
     const PAD  = CHART_R * 0.18;
-    const AREA = (CHART_R - PAD) * 2;
-    const ox   = LEFT_CX - CHART_R + PAD;
-    const oy   = LEFT_CY - CHART_R + PAD;
+    // 自动居中：计算所有星的包围盒，缩放后使星群居中于圆心
+    const xs   = c.stars.map(s => s.x);
+    const ys   = c.stars.map(s => s.y);
+    const xMin = Math.min(...xs), xMax = Math.max(...xs);
+    const yMin = Math.min(...ys), yMax = Math.max(...ys);
+    const span = Math.max(xMax - xMin, yMax - yMin, 0.001);
+    const cScale = (CHART_R - PAD) * 1.8 / span;
+    const xMid = (xMin + xMax) / 2;
+    const yMid = (yMin + yMax) / 2;
 
     ctx.save();
     ctx.beginPath();
@@ -632,12 +638,11 @@ function _drawDetail(ctx, W, H, t) {
     ctx.clip();
 
     const mapped = c.stars.map(s => ({
-      x: ox + s.x * AREA,
-      y: oy + s.y * AREA,
+      x: LEFT_CX + (s.x - xMid) * cScale,
+      y: LEFT_CY + (s.y - yMid) * cScale,
       r: Math.min(magToRadius(s.mag) * 1.5, 6),
       color: typeToColor(s.type),
       name: s.name,
-      mag: s.mag,
     }));
 
     // 连线
@@ -675,7 +680,7 @@ function _drawDetail(ctx, W, H, t) {
     // 星名标注（最亮4颗）
     const bright = mapped
       .map((s, i) => ({ ...s, mag: c.stars[i].mag }))
-      .filter(s => s.mag <= 2.5 && s.name)
+      .filter(s => s.mag <= 4.5 && s.name)
       .sort((a, b) => a.mag - b.mag)
       .slice(0, 4);
     const placed = [];
@@ -890,8 +895,9 @@ function _drawDetail(ctx, W, H, t) {
 }
 
 // ── 幽灵按钮 ──────────────────────────────────────────────────
-function _ghostBtn(ctx, x, y, w, h, label) {
+function _ghostBtn(ctx, x, y, w, h, label, opacity) {
   ctx.save();
+  ctx.globalAlpha = (opacity !== undefined) ? opacity : 1.0;
   ctx.fillStyle = 'rgba(18,26,72,0.50)';
   _roundRect(ctx, x, y, w, h, 8);
   ctx.fill();
@@ -1070,6 +1076,24 @@ function _onTouchEnd(e) {
       _detail = null;
       _carouselForIdx = -1;
       _carouselImgs   = [];
+      return;
+    }
+
+    // 星座左右切换按钮
+    if (_detailRects.prevCon && hitTest(_detailRects.prevCon, tx, ty) && _detail.idx > 0) {
+      _detail.idx--;
+      _detail.scrollY = _detail.scrollTarget = 0;
+      _carouselPos = 0;
+      _carouselForIdx = -1;
+      _carouselImgs = [];
+      return;
+    }
+    if (_detailRects.nextCon && hitTest(_detailRects.nextCon, tx, ty) && _detail.idx < CONSTELLATIONS.length - 1) {
+      _detail.idx++;
+      _detail.scrollY = _detail.scrollTarget = 0;
+      _carouselPos = 0;
+      _carouselForIdx = -1;
+      _carouselImgs = [];
       return;
     }
 
