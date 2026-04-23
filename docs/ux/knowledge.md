@@ -624,3 +624,10 @@
 ### Navigation Regression (Sprint 10-mini)
 - _cleanup() on every navigate prevents state leaks (pause, lore pages).
 - showGame() full reset on every level entry. Cross-level state isolation confirmed via code analysis.
+
+## Sprint 58 Updates
+- Character confirmed: chibi girl in deep-purple spacesuit (#3a1f6b) + gold (#ffd700) accents, round helmet with star antenna. Occupies bottom ~25% of screen height.
+- Star distribution follows constellation structure (Orion observed). Upper 60-70% of screen, no left-right bias.
+- HUD: level name (top-left), circular timer (top-center, blue), star counter (top-right). Clean separation.
+- Background depth: starfield + terrain silhouette + nebula glow. Atmospheric, non-interfering.
+- Low friction: triangular arrow icon in play area slightly ambiguous (not a blocker).

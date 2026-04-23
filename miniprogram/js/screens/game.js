@@ -308,8 +308,10 @@ export function hideGame() {
 // ── Init helpers ──────────────────────────────────────────────
 function _initStars(W, H) {
   _stars = [];
-  const skyX0 = 16, skyX1 = W - 16;
-  const skyY0 = G.SAFE_TOP + 60, skyY1 = H * 0.62;
+  // STORY-00365: X range [W*0.05, W*0.90], Y range [H*0.08, H*0.65]
+  // Avoids HUD (top-left), star stays within visible area, no overlap with girl zone (Y > H*0.82)
+  const skyX0 = W * 0.05, skyX1 = W * 0.90;
+  const skyY0 = H * 0.08, skyY1 = H * 0.65;
 
   // STORY-00353: center constellation — compute centroid of normalized coords,
   // then shift all stars so centroid maps to sky center (0.5, 0.5).
@@ -698,9 +700,9 @@ function _updateNet(dt) {
 }
 
 function _updateNetHead() {
-  // Rope origin = girl's right hand position (STORY-00321: updated for 145px character v6)
-  const ropeOriX = _poleX + 18;
-  const ropeOriY = _poleY - 75;
+  // Rope origin = girl's right glove position (STORY-00364: updated for 126px spacesuit v7)
+  const ropeOriX = _poleX + 16;
+  const ropeOriY = _poleY - 91;
   _netHeadX = ropeOriX + Math.sin(_netAngle) * _netLen;
   _netHeadY = ropeOriY - Math.cos(_netAngle) * _netLen;
 }
@@ -1162,9 +1164,9 @@ function _drawParticles(ctx) {
   }
 }
 
-// ── Draw: girl character (STORY-00321) ───────────────────────
-// v6: GIRL_W=90 GIRL_H=145, head r=28, expressive anime eyes,
-//     flowing bezier hair, flared dress ±40px, lace hem, arms per spec.
+// ── Draw: girl character (STORY-00364) ───────────────────────
+// v7: spacesuit — deep purple-blue #3a1f6b + gold #ffd700 highlights.
+// Height 126px (head r=18, 1:2.5 head-body ratio). Landscape deep-space theme.
 // Origin: center bottom at (_poleX, _poleY). All coords relative to that.
 function _drawGirl(ctx) {
   const x = _poleX;
@@ -1173,294 +1175,205 @@ function _drawGirl(ctx) {
   ctx.save();
   ctx.translate(x, y);
 
-  // ── Body aura ────────────────────────────────────────────────
-  const auraGrd = ctx.createRadialGradient(0, -70, 8, 0, -70, 80);
-  auraGrd.addColorStop(0, 'rgba(255,160,200,0.18)');
-  auraGrd.addColorStop(1, 'rgba(255,200,220,0)');
+  // ── Body aura (purple tint for spacesuit) ────────────────────
+  const auraGrd = ctx.createRadialGradient(0, -60, 8, 0, -60, 70);
+  auraGrd.addColorStop(0, 'rgba(100,60,220,0.14)');
+  auraGrd.addColorStop(1, 'rgba(60,20,140,0)');
   ctx.fillStyle = auraGrd;
-  ctx.beginPath(); ctx.arc(0, -70, 80, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(0, -60, 70, 0, TWO_PI); ctx.fill();
 
-  // ── Shoes (round-toed, bright coral-red) ─────────────────────
-  ctx.fillStyle = '#e84466';
+  // ── Boots (metallic dark, suit-coloured) ─────────────────────
+  const bootGrd = ctx.createLinearGradient(-14, 0, 14, 8);
+  bootGrd.addColorStop(0, '#2a1555');
+  bootGrd.addColorStop(0.5, '#4a2888');
+  bootGrd.addColorStop(1, '#1a0d3a');
+  ctx.fillStyle = bootGrd;
   ctx.beginPath();
-  ctx.moveTo(-13, 14); ctx.bezierCurveTo(-16, 14, -21, 16, -20, 20);
-  ctx.bezierCurveTo(-19, 24, -10, 24, -8, 21); ctx.lineTo(-10, 14); ctx.closePath(); ctx.fill();
+  ctx.moveTo(-11, -3); ctx.bezierCurveTo(-14, -3, -17, 0, -16, 6);
+  ctx.bezierCurveTo(-15, 10, -6, 10, -4, 6); ctx.lineTo(-6, -3); ctx.closePath(); ctx.fill();
   ctx.beginPath();
-  ctx.moveTo(13, 14); ctx.bezierCurveTo(16, 14, 21, 16, 20, 20);
-  ctx.bezierCurveTo(19, 24, 10, 24, 8, 21); ctx.lineTo(10, 14); ctx.closePath(); ctx.fill();
-  // Shoe strap shine
-  ctx.save(); ctx.globalAlpha = 0.35; ctx.fillStyle = '#ffffff';
-  ctx.beginPath(); ctx.ellipse(-16, 17, 4, 1.5, 0.2, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(16, 17, 4, 1.5, -0.2, 0, TWO_PI); ctx.fill();
+  ctx.moveTo(11, -3); ctx.bezierCurveTo(14, -3, 17, 0, 16, 6);
+  ctx.bezierCurveTo(15, 10, 6, 10, 4, 6); ctx.lineTo(6, -3); ctx.closePath(); ctx.fill();
+  // Gold boot trim
+  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.75;
+  ctx.beginPath(); ctx.moveTo(-16, 2); ctx.lineTo(-4, 2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(4, 2); ctx.lineTo(16, 2); ctx.stroke();
   ctx.restore();
 
-  // ── Legs ──────────────────────────────────────────────────────
-  ctx.strokeStyle = '#e8b89a';
-  ctx.lineWidth   = 6;
+  // ── Legs (suit leggings) ──────────────────────────────────────
+  ctx.strokeStyle = '#3a1f6b';
+  ctx.lineWidth   = 7;
   ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.moveTo(-7, 5); ctx.lineTo(-11, 16); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(7, 5);  ctx.lineTo(11, 16);  ctx.stroke();
-
-  // ── White petticoat ──────────────────────────────────────────
-  ctx.save();
-  ctx.globalAlpha = 0.50;
-  ctx.fillStyle   = '#f0eaff';
-  ctx.beginPath();
-  ctx.moveTo(-32, 3); ctx.quadraticCurveTo(-24, 14, -18, 12);
-  ctx.quadraticCurveTo(-5, 16, 0, 16);
-  ctx.quadraticCurveTo(5, 16, 18, 12);
-  ctx.quadraticCurveTo(24, 14, 32, 3);
-  ctx.lineTo(24, 3); ctx.lineTo(-24, 3); ctx.closePath(); ctx.fill();
+  ctx.beginPath(); ctx.moveTo(-6, -18); ctx.lineTo(-8, -2); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(6, -18);  ctx.lineTo(8, -2);  ctx.stroke();
+  // Knee joint ring
+  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.6;
+  ctx.beginPath(); ctx.arc(-8, -10, 4, 0, TWO_PI); ctx.stroke();
+  ctx.beginPath(); ctx.arc(8, -10, 4, 0, TWO_PI); ctx.stroke();
   ctx.restore();
 
-  // ── Dress body (sky-blue + soft pink flare) ──────────────────
-  const dressGrd = ctx.createLinearGradient(-40, -50, 40, 10);
-  dressGrd.addColorStop(0, '#44aaee');
-  dressGrd.addColorStop(0.45, '#66ccff');
-  dressGrd.addColorStop(1, '#ff99cc');
-  ctx.fillStyle = dressGrd;
+  // ── Suit body (torso, deep purple-blue) ──────────────────────
+  const suitGrd = ctx.createLinearGradient(-16, -80, 16, -18);
+  suitGrd.addColorStop(0, '#4a2888');
+  suitGrd.addColorStop(0.4, '#3a1f6b');
+  suitGrd.addColorStop(1, '#28124a');
+  ctx.fillStyle = suitGrd;
   ctx.beginPath();
-  ctx.moveTo(-14, -50);
-  ctx.lineTo(-40, 5);
-  ctx.quadraticCurveTo(-28, 14, -18, 12);
-  ctx.quadraticCurveTo(-5, 16, 0, 16);
-  ctx.quadraticCurveTo(5, 16, 18, 12);
-  ctx.quadraticCurveTo(28, 14, 40, 5);
-  ctx.lineTo(14, -50);
+  ctx.moveTo(-12, -80);
+  ctx.lineTo(-16, -18);
+  ctx.quadraticCurveTo(-8, -14, 0, -14);
+  ctx.quadraticCurveTo(8, -14, 16, -18);
+  ctx.lineTo(12, -80);
   ctx.closePath(); ctx.fill();
-  // Dress shimmer streak
-  ctx.save(); ctx.globalAlpha = 0.13;
-  const shimGrd = ctx.createLinearGradient(-4, -50, 2, 12);
-  shimGrd.addColorStop(0, '#ffffff'); shimGrd.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = shimGrd;
-  ctx.beginPath(); ctx.moveTo(-4, -50); ctx.lineTo(-6, 10); ctx.lineTo(5, 10); ctx.lineTo(6, -50); ctx.closePath(); ctx.fill();
+  // Suit chest highlight streak
+  ctx.save(); ctx.globalAlpha = 0.12;
+  const suitShim = ctx.createLinearGradient(-3, -80, 3, -20);
+  suitShim.addColorStop(0, '#ffffff'); suitShim.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = suitShim;
+  ctx.beginPath(); ctx.moveTo(-3, -80); ctx.lineTo(-4, -20); ctx.lineTo(4, -20); ctx.lineTo(4, -80); ctx.closePath(); ctx.fill();
   ctx.restore();
-  // Bodice sparkles
-  ctx.save(); ctx.globalAlpha = 0.65; ctx.fillStyle = '#ffffff';
-  for (const [sx, sy] of [[-6, -38], [5, -30], [-3, -22], [7, -43]]) {
-    ctx.beginPath(); ctx.arc(sx, sy, 1.8, 0, TWO_PI); ctx.fill();
-  }
+  // Gold chest stripe
+  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 2; ctx.globalAlpha = 0.80;
+  ctx.beginPath(); ctx.moveTo(-10, -60); ctx.lineTo(10, -60); ctx.stroke();
   ctx.restore();
-  // Lace hem scallops — white half-circles along dress bottom edge (STORY-00321)
+  // Life-support pack (small box on chest)
   ctx.save();
-  ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 1.5;
-  ctx.globalAlpha = 0.70;
-  for (let hx = -36; hx < 36; hx += 5) {
-    ctx.beginPath();
-    ctx.arc(hx + 2.5, 9, 2.5, Math.PI, TWO_PI);
-    ctx.stroke();
-  }
+  const packGrd = ctx.createLinearGradient(-5, -72, 5, -52);
+  packGrd.addColorStop(0, '#5533aa'); packGrd.addColorStop(1, '#2a1055');
+  ctx.fillStyle = packGrd;
+  ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.2;
+  _roundRect(ctx, -6, -72, 12, 16, 2); ctx.fill(); ctx.stroke();
+  // Pack indicator light
+  ctx.fillStyle = '#00ffcc'; ctx.globalAlpha = 0.85;
+  ctx.beginPath(); ctx.arc(0, -66, 2.5, 0, TWO_PI); ctx.fill();
+  ctx.restore();
+  // Waist ring
+  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 2; ctx.globalAlpha = 0.65;
+  ctx.beginPath(); ctx.moveTo(-16, -18); ctx.lineTo(16, -18); ctx.stroke();
   ctx.restore();
 
-  // ── Waist bow ────────────────────────────────────────────────
-  ctx.save();
-  ctx.fillStyle = '#ff88bb';
-  ctx.shadowColor = '#ff44aa'; ctx.shadowBlur = 5;
-  // Bow center knot
-  ctx.beginPath(); ctx.ellipse(0, -50, 4.5, 3.5, 0, 0, TWO_PI); ctx.fill();
-  // Left petal
+  // ── Left arm (suit sleeve, 15° outward) ──────────────────────
+  const armCol = '#3a1f6b';
+  ctx.strokeStyle = armCol; ctx.lineWidth = 7; ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(-2, -50); ctx.bezierCurveTo(-11, -56, -16, -54, -13, -48);
-  ctx.bezierCurveTo(-11, -43, -5, -46, -2, -50); ctx.fill();
-  // Right petal
-  ctx.beginPath();
-  ctx.moveTo(2, -50); ctx.bezierCurveTo(11, -56, 16, -54, 13, -48);
-  ctx.bezierCurveTo(11, -43, 5, -46, 2, -50); ctx.fill();
-  ctx.shadowBlur = 0;
-  ctx.restore();
-
-  // ── Left arm — angle 15° outward for balance ─────────────────
-  ctx.strokeStyle = '#f5c090';
-  ctx.lineWidth   = 5;
-  ctx.lineCap     = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-14, -44);
-  ctx.bezierCurveTo(-27, -40, -32, -26, -28, -16);
+  ctx.moveTo(-12, -68);
+  ctx.bezierCurveTo(-22, -62, -26, -48, -22, -36);
   ctx.stroke();
-  ctx.fillStyle = '#f5c090';
-  ctx.beginPath(); ctx.arc(-28, -15, 5, 0, TWO_PI); ctx.fill();
+  // Left glove
+  const glvGrd1 = ctx.createRadialGradient(-22, -34, 0, -22, -34, 6);
+  glvGrd1.addColorStop(0, '#ffd700'); glvGrd1.addColorStop(1, '#cc9900');
+  ctx.fillStyle = glvGrd1;
+  ctx.beginPath(); ctx.arc(-22, -34, 5.5, 0, TWO_PI); ctx.fill();
+  // Shoulder joint ring
+  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.60;
+  ctx.beginPath(); ctx.arc(-12, -66, 5, 0, TWO_PI); ctx.stroke();
+  ctx.restore();
 
-  // ── Right arm — angle -55° raised, holding pole ──────────────
-  ctx.strokeStyle = '#f5c090';
-  ctx.lineWidth   = 5;
-  ctx.lineCap     = 'round';
+  // ── Right arm (raised, holding net pole) ─────────────────────
+  ctx.strokeStyle = armCol; ctx.lineWidth = 7; ctx.lineCap = 'round';
   ctx.beginPath();
-  ctx.moveTo(14, -44);
-  ctx.bezierCurveTo(22, -52, 24, -65, 18, -75);
+  ctx.moveTo(12, -68);
+  ctx.bezierCurveTo(20, -74, 22, -84, 16, -92);
   ctx.stroke();
-  ctx.fillStyle = '#f5c090';
-  ctx.beginPath(); ctx.arc(18, -75, 5, 0, TWO_PI); ctx.fill();
+  // Right glove
+  const glvGrd2 = ctx.createRadialGradient(16, -91, 0, 16, -91, 6);
+  glvGrd2.addColorStop(0, '#ffd700'); glvGrd2.addColorStop(1, '#cc9900');
+  ctx.fillStyle = glvGrd2;
+  ctx.beginPath(); ctx.arc(16, -91, 5.5, 0, TWO_PI); ctx.fill();
+  // Shoulder joint ring
+  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.60;
+  ctx.beginPath(); ctx.arc(12, -66, 5, 0, TWO_PI); ctx.stroke();
+  ctx.restore();
 
-  // ── Neck ─────────────────────────────────────────────────────
-  ctx.fillStyle = '#f8d5b0';
-  ctx.beginPath();
-  ctx.moveTo(-5, -50); ctx.lineTo(-4, -60); ctx.lineTo(4, -60); ctx.lineTo(5, -50);
-  ctx.closePath(); ctx.fill();
-
-  // ── Head (r=28) ──────────────────────────────────────────────
-  ctx.fillStyle = '#f8d5b0';
-  ctx.beginPath(); ctx.arc(0, -88, 28, 0, TWO_PI); ctx.fill();
-  // Rim light
+  // ── Helmet (round, r=18) ──────────────────────────────────────
+  // Outer helmet shell (dark suit colour)
+  const helmGrd = ctx.createRadialGradient(-4, -112, 3, 0, -108, 22);
+  helmGrd.addColorStop(0, '#5533aa');
+  helmGrd.addColorStop(0.6, '#3a1f6b');
+  helmGrd.addColorStop(1, '#1a0d3a');
+  ctx.fillStyle = helmGrd;
+  ctx.beginPath(); ctx.arc(0, -108, 19, 0, TWO_PI); ctx.fill();
+  // Gold helmet rim
   ctx.save();
-  ctx.strokeStyle = '#b088ff';
-  ctx.lineWidth   = 1.5;
-  ctx.globalAlpha = 0.45;
-  ctx.beginPath(); ctx.arc(0, -88, 29, 0, TWO_PI); ctx.stroke();
+  ctx.strokeStyle = '#ffd700';
+  ctx.lineWidth = 2.5;
+  ctx.globalAlpha = 0.90;
+  ctx.beginPath(); ctx.arc(0, -108, 19, 0, TWO_PI); ctx.stroke();
   ctx.restore();
-  // Ears
-  ctx.fillStyle = '#f0c090';
-  ctx.beginPath(); ctx.arc(-28, -88, 5.5, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(28, -88, 5.5, 0, TWO_PI); ctx.fill();
-
-  // Cheek blush (r=6 per spec)
-  ctx.save(); ctx.globalAlpha = 0.38; ctx.fillStyle = '#ff8899';
-  ctx.beginPath(); ctx.ellipse(-12, -82, 6, 4.5, 0, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(12, -82, 6, 4.5, 0, 0, TWO_PI); ctx.fill();
+  // Visor (oval viewport showing face inside)
+  const visorGrd = ctx.createLinearGradient(-12, -120, 12, -96);
+  visorGrd.addColorStop(0, 'rgba(80,160,255,0.55)');
+  visorGrd.addColorStop(0.5, 'rgba(40,80,200,0.45)');
+  visorGrd.addColorStop(1, 'rgba(20,40,120,0.65)');
+  ctx.fillStyle = visorGrd;
+  ctx.beginPath(); ctx.ellipse(0, -108, 13, 15, 0, 0, TWO_PI); ctx.fill();
+  // Visor gold border
+  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.75;
+  ctx.beginPath(); ctx.ellipse(0, -108, 13, 15, 0, 0, TWO_PI); ctx.stroke();
   ctx.restore();
 
-  // Eyes: white sclera r=5, purple iris r=4, black pupil r=2, white shine r=1.8
+  // ── Face inside visor ────────────────────────────────────────
+  // Skin
+  ctx.fillStyle = '#f8d5b0';
+  ctx.beginPath(); ctx.ellipse(0, -108, 9, 11, 0, 0, TWO_PI); ctx.fill();
+  // Eyes: white sclera + purple iris + pupil + shine
   ctx.fillStyle = '#f0f0ff';
-  ctx.beginPath(); ctx.ellipse(-8, -90, 5, 6, 0, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(8, -90, 5, 6, 0, 0, TWO_PI); ctx.fill();
-  // Iris with radial gradient
-  const irisG1 = ctx.createRadialGradient(-8, -91, 0.5, -8, -90, 4);
-  irisG1.addColorStop(0, '#9977ff'); irisG1.addColorStop(0.5, '#6644cc'); irisG1.addColorStop(1, '#2211aa');
-  ctx.fillStyle = irisG1;
-  ctx.beginPath(); ctx.arc(-8, -90, 4, 0, TWO_PI); ctx.fill();
-  const irisG2 = ctx.createRadialGradient(8, -91, 0.5, 8, -90, 4);
-  irisG2.addColorStop(0, '#9977ff'); irisG2.addColorStop(0.5, '#6644cc'); irisG2.addColorStop(1, '#2211aa');
-  ctx.fillStyle = irisG2;
-  ctx.beginPath(); ctx.arc(8, -90, 4, 0, TWO_PI); ctx.fill();
-  // Pupils (r=2)
+  ctx.beginPath(); ctx.ellipse(-4, -110, 2.8, 3.2, 0, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.ellipse(4, -110, 2.8, 3.2, 0, 0, TWO_PI); ctx.fill();
+  const iriG1 = ctx.createRadialGradient(-4, -110, 0.3, -4, -110, 2.2);
+  iriG1.addColorStop(0, '#9977ff'); iriG1.addColorStop(1, '#2211aa');
+  ctx.fillStyle = iriG1;
+  ctx.beginPath(); ctx.arc(-4, -110, 2.2, 0, TWO_PI); ctx.fill();
+  const iriG2 = ctx.createRadialGradient(4, -110, 0.3, 4, -110, 2.2);
+  iriG2.addColorStop(0, '#9977ff'); iriG2.addColorStop(1, '#2211aa');
+  ctx.fillStyle = iriG2;
+  ctx.beginPath(); ctx.arc(4, -110, 2.2, 0, TWO_PI); ctx.fill();
   ctx.fillStyle = '#1a0a2a';
-  ctx.beginPath(); ctx.arc(-8, -90, 2, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(8, -90, 2, 0, TWO_PI); ctx.fill();
-  // Eye shine r=1.8
+  ctx.beginPath(); ctx.arc(-4, -110, 1.1, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(4, -110, 1.1, 0, TWO_PI); ctx.fill();
   ctx.fillStyle = '#ffffff';
-  ctx.beginPath(); ctx.arc(-6, -93, 1.8, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(10, -93, 1.8, 0, TWO_PI); ctx.fill();
-  ctx.save(); ctx.globalAlpha = 0.55;
-  ctx.beginPath(); ctx.arc(-9, -87, 1, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(6.5, -87, 1, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(-3, -112, 1, 0, TWO_PI); ctx.fill();
+  ctx.beginPath(); ctx.arc(5, -112, 1, 0, TWO_PI); ctx.fill();
+  // Smile
+  ctx.save(); ctx.strokeStyle = '#e05060'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.arc(0, -105, 3.5, 0.3, Math.PI - 0.3); ctx.stroke();
   ctx.restore();
-  // Eyelashes
+  // Fringe visible through visor top
   ctx.save();
-  ctx.strokeStyle = '#221133';
-  ctx.lineWidth = 1.4;
-  ctx.lineCap = 'round';
-  for (const [ex, eAngle] of [[-11, -0.3], [-7, 0], [-3, 0.3], [5, -0.3], [9, 0], [13, 0.3]]) {
-    const baseY = -95;
-    const eyeCx = ex < 0 ? -8 : 8;
-    const dx = (ex - eyeCx) * 0.5;
-    ctx.beginPath();
-    ctx.moveTo(eyeCx + dx, baseY);
-    ctx.lineTo(eyeCx + dx + Math.sin(eAngle) * 2, baseY - 3);
-    ctx.stroke();
-  }
+  ctx.fillStyle = '#2a0f05';
+  ctx.globalAlpha = 0.75;
+  ctx.beginPath();
+  ctx.moveTo(-8, -118); ctx.bezierCurveTo(-5, -112, 0, -110, 5, -112); ctx.bezierCurveTo(8, -114, 10, -118, 10, -118);
+  ctx.closePath(); ctx.fill();
   ctx.restore();
-  // Eyebrows
-  ctx.strokeStyle = '#331122';
-  ctx.lineWidth   = 2.8;
-  ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.moveTo(-14, -97); ctx.quadraticCurveTo(-8, -101, -2, -97); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(2, -97); ctx.quadraticCurveTo(8, -101, 14, -97); ctx.stroke();
-  // Smile + lips
-  ctx.save();
-  ctx.strokeStyle = '#e05060';
-  ctx.lineWidth   = 2.5;
-  ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.arc(0, -80, 6, 0.25, Math.PI - 0.25); ctx.stroke();
-  ctx.fillStyle = 'rgba(220,80,100,0.32)';
-  ctx.beginPath(); ctx.arc(0, -80, 6, 0.25, Math.PI - 0.25); ctx.closePath(); ctx.fill();
+  // Visor glare highlight
+  ctx.save(); ctx.globalAlpha = 0.28;
+  const glare = ctx.createLinearGradient(-10, -122, 2, -110);
+  glare.addColorStop(0, '#ffffff'); glare.addColorStop(1, 'rgba(255,255,255,0)');
+  ctx.fillStyle = glare;
+  ctx.beginPath(); ctx.ellipse(-4, -116, 5, 4, -0.5, 0, TWO_PI); ctx.fill();
   ctx.restore();
 
-  // ── Hair ─────────────────────────────────────────────────────
-  const hairGrd = ctx.createLinearGradient(-18, -120, 18, -20);
-  hairGrd.addColorStop(0, '#3d1a0a');
-  hairGrd.addColorStop(0.4, '#2a0f05');
-  hairGrd.addColorStop(1, '#1a0808');
-  ctx.fillStyle = hairGrd;
-  // Back twin tails
-  ctx.beginPath();
-  ctx.moveTo(-18, -66);
-  ctx.bezierCurveTo(-32, -52, -36, -32, -28, -14);
-  ctx.bezierCurveTo(-24, -4, -16, 2, -10, 4);
-  ctx.lineTo(-10, -14);
-  ctx.bezierCurveTo(-16, -32, -16, -56, -10, -70);
-  ctx.closePath(); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(18, -66);
-  ctx.bezierCurveTo(32, -52, 36, -32, 28, -14);
-  ctx.bezierCurveTo(24, -4, 16, 2, 10, 4);
-  ctx.lineTo(10, -14);
-  ctx.bezierCurveTo(16, -32, 16, -56, 10, -70);
-  ctx.closePath(); ctx.fill();
-  // Hair cap over head
-  ctx.beginPath(); ctx.arc(0, -95, 26, Math.PI + 0.15, TWO_PI - 0.15); ctx.fill();
-  // Side tufts
-  ctx.beginPath(); ctx.ellipse(-24, -88, 7, 12, -0.3, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(24, -88, 7, 12, 0.3, 0, TWO_PI); ctx.fill();
-  // Fringe
-  ctx.beginPath();
-  ctx.moveTo(-23, -102);
-  ctx.bezierCurveTo(-14, -93, -5, -88, 0, -84);
-  ctx.bezierCurveTo(5, -88, 14, -93, 23, -102);
-  ctx.closePath(); ctx.fill();
-  // Hair highlight arc
+  // ── Helmet top antenna + star badge ──────────────────────────
   ctx.save();
-  ctx.strokeStyle = '#664422';
-  ctx.lineWidth = 2;
-  ctx.globalAlpha = 0.4;
-  ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.arc(0, -100, 16, Math.PI + 0.35, TWO_PI - 0.35); ctx.stroke();
-  ctx.restore();
-  // Purple hair shine streak
-  ctx.save();
-  ctx.strokeStyle = '#ccaaff';
-  ctx.lineWidth = 1.8;
-  ctx.globalAlpha = 0.5;
-  ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(-8, -104); ctx.bezierCurveTo(-4, -107, 4, -107, 10, -103); ctx.stroke();
-  ctx.restore();
-  // Purple butterfly hair clip on twin tails
-  ctx.fillStyle = '#ff55bb';
-  ctx.shadowColor = '#ff88dd'; ctx.shadowBlur = 4;
-  // Left clip
-  ctx.beginPath(); ctx.ellipse(-24, -14, 5, 3, -0.4, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(-22, -16, 3, 2, 0.8, 0, TWO_PI); ctx.fill();
-  // Right clip
-  ctx.beginPath(); ctx.ellipse(24, -14, 5, 3, 0.4, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(22, -16, 3, 2, -0.8, 0, TWO_PI); ctx.fill();
-  ctx.shadowBlur = 0;
-
-  // ── Star hairpin on top of head ───────────────────────────────
-  // Pin stick
-  ctx.save();
-  ctx.strokeStyle = '#ffaacc';
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(-2, -116); ctx.lineTo(2, -108); ctx.stroke();
-  // 5-point star badge (r_outer=11, r_inner=5)
-  ctx.fillStyle   = '#ffee44';
-  ctx.shadowColor = '#ffcc00';
-  ctx.shadowBlur  = 12;
+  ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, -127); ctx.lineTo(0, -120); ctx.stroke();
+  // 5-point star badge (r_outer=7, r_inner=3.2)
+  ctx.fillStyle = '#ffd700';
+  ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 10;
   ctx.globalAlpha = 0.97;
-  ctx.translate(0, -120);
+  ctx.translate(0, -130);
   ctx.beginPath();
   for (let sp = 0; sp < 5; sp++) {
     const outerA = (sp * TWO_PI / 5) - Math.PI / 2;
     const innerA = outerA + Math.PI / 5;
-    if (sp === 0) ctx.moveTo(Math.cos(outerA) * 11, Math.sin(outerA) * 11);
-    else          ctx.lineTo(Math.cos(outerA) * 11, Math.sin(outerA) * 11);
-    ctx.lineTo(Math.cos(innerA) * 5, Math.sin(innerA) * 5);
+    if (sp === 0) ctx.moveTo(Math.cos(outerA) * 7, Math.sin(outerA) * 7);
+    else          ctx.lineTo(Math.cos(outerA) * 7, Math.sin(outerA) * 7);
+    ctx.lineTo(Math.cos(innerA) * 3.2, Math.sin(innerA) * 3.2);
   }
   ctx.closePath(); ctx.fill();
-  // Star center sparkle dot
-  ctx.fillStyle = '#ffffff';
-  ctx.globalAlpha = 0.75;
-  ctx.shadowBlur = 0;
-  ctx.beginPath(); ctx.arc(0, 0, 2.5, 0, TWO_PI); ctx.fill();
+  ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.70; ctx.shadowBlur = 0;
+  ctx.beginPath(); ctx.arc(0, 0, 1.6, 0, TWO_PI); ctx.fill();
   ctx.restore();
 
   ctx.restore();
@@ -1472,9 +1385,9 @@ function _drawNet(ctx) {
   const showLen = isExtended ? _netLen : 20;
   const angle   = _netAngle;
 
-  // Rope origin — from girl's right hand position (STORY-00321: updated for 145px character v6)
-  const ropeOriX = _poleX + 18;
-  const ropeOriY = _poleY - 75;
+  // Rope origin — from girl's right glove position (STORY-00364: updated for 126px spacesuit v7)
+  const ropeOriX = _poleX + 16;
+  const ropeOriY = _poleY - 91;
 
   // Net head (mouth ring center)
   const headX = ropeOriX + Math.sin(angle) * showLen;
