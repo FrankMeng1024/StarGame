@@ -245,7 +245,7 @@ function _computeLayout() {
   const areaBottom = H - G.SAFE_BOTTOM - 26;
   const areaCX     = W / 2;
   const areaCY     = (areaTop + areaBottom) / 2;
-  const areaW      = W * 0.92;
+  const areaW      = W - (G.SAFE_LEFT || 0) - (G.SAFE_RIGHT || 0) - 180;  // align to header btn edges
   const areaH      = areaBottom - areaTop;
 
   _nodeRects = _HEX_POS.map((pos, slot) => {
