@@ -1158,14 +1158,14 @@ function _loadPhoto(url, pos, conIdx) {
   _carouselImgs[pos] = { img: null, loaded: false, error: false };
   try {
     const img   = wx.createImage();
-    const _setTimeout = (typeof setTimeout !== 'undefined') ? setTimeout : (cb, ms) => { let t = Date.now() + ms; const id = { cancelled: false }; const check = () => { if (id.cancelled) return; if (Date.now() >= t) cb(); else requestAnimationFrame(check); }; requestAnimationFrame(check); return id; };
-    const _clearTimeout = (typeof clearTimeout !== 'undefined') ? clearTimeout : (id) => { if (id) id.cancelled = true; };
-    const timer = _setTimeout(() => {
+    const _stFn = wx.setTimeout || setTimeout;
+    const _ctFn = wx.clearTimeout || clearTimeout;
+    const timer = _stFn(() => {
       if (_carouselImgs[pos] && !_carouselImgs[pos].loaded)
         _carouselImgs[pos] = { img: null, loaded: false, error: true };
     }, 10000);
-    img.onload  = () => { _clearTimeout(timer); if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img, loaded: true, error: false }; };
-    img.onerror = () => { _clearTimeout(timer); if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img: null, loaded: false, error: true }; };
+    img.onload  = () => { _ctFn(timer); if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img, loaded: true, error: false }; };
+    img.onerror = () => { _ctFn(timer); if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img: null, loaded: false, error: true }; };
     img.src = url;
   } catch (e) {
     if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img: null, loaded: false, error: true };
