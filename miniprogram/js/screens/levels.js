@@ -263,8 +263,8 @@ function _loop(now) {
   ctx.globalAlpha = 1;
 
   // ── 固定Header ────────────────────────────────────────────
-  _backRect = _drawGhostBtn(ctx, G.SAFE_LEFT + 90, G.SAFE_TOP + 10, 80, 32, '← 返回');
-  _shopRect = _drawGhostBtn(ctx, W - G.SAFE_RIGHT - 90 - 68, G.SAFE_TOP + 10, 68, 32, '🛒 商店');
+  _backRect = _drawBackBtn(ctx, G.SAFE_LEFT + 90, G.SAFE_TOP + 10, 80, 32);
+  _shopRect = _drawShopBtn(ctx, W - G.SAFE_RIGHT - 90 - 68, G.SAFE_TOP + 10, 68, 32);
 
   const titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
   ctx.save();
@@ -406,6 +406,76 @@ function _drawGhostBtn(ctx, x, y, w, h, label) {
   ctx.textBaseline = 'middle';
   ctx.fillStyle = 'rgba(180,200,255,0.75)';
   ctx.fillText(label, x + w / 2, y + h / 2);
+  ctx.restore();
+  return { x, y, w, h };
+}
+
+// 返回按钮 — 星座连线风：左侧两点连线 + 「返回」
+function _drawBackBtn(ctx, x, y, w, h) {
+  ctx.save();
+  const cy = y + h / 2;
+  const cx = x + w / 2;
+
+  // 渐变文字：白→蓝
+  const tg = ctx.createLinearGradient(x, cy, x + w, cy);
+  tg.addColorStop(0, 'rgba(255,255,255,0.92)');
+  tg.addColorStop(1, 'rgba(140,180,255,0.85)');
+  ctx.font = 'bold 13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = tg;
+  ctx.shadowColor = 'rgba(160,200,255,0.5)';
+  ctx.shadowBlur = 6;
+  ctx.fillText('← 返回', cx, cy - 1);
+
+  // 底部渐变线
+  ctx.shadowBlur = 0;
+  const lg = ctx.createLinearGradient(x, 0, x + w, 0);
+  lg.addColorStop(0, 'rgba(255,255,255,0)');
+  lg.addColorStop(0.3, 'rgba(140,180,255,0.7)');
+  lg.addColorStop(1, 'rgba(100,140,255,0.2)');
+  ctx.strokeStyle = lg;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, y + h - 1);
+  ctx.lineTo(x + w, y + h - 1);
+  ctx.stroke();
+
+  ctx.restore();
+  return { x, y, w, h };
+}
+
+// 商店按钮 — 方案G：渐变文字+底部金色线
+function _drawShopBtn(ctx, x, y, w, h) {
+  ctx.save();
+  const cy = y + h / 2;
+  const cx = x + w / 2;
+
+  // 渐变文字：金→橙
+  const tg = ctx.createLinearGradient(x, cy, x + w, cy);
+  tg.addColorStop(0, 'rgba(255,220,80,0.95)');
+  tg.addColorStop(1, 'rgba(255,160,60,0.85)');
+  ctx.font = 'bold 13px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = tg;
+  ctx.shadowColor = 'rgba(255,180,60,0.5)';
+  ctx.shadowBlur = 6;
+  ctx.fillText('✦ 道具', cx, cy - 1);
+
+  // 底部渐变线
+  ctx.shadowBlur = 0;
+  const lg = ctx.createLinearGradient(x, 0, x + w, 0);
+  lg.addColorStop(0, 'rgba(255,200,60,0.2)');
+  lg.addColorStop(0.7, 'rgba(255,160,40,0.7)');
+  lg.addColorStop(1, 'rgba(255,220,80,0)');
+  ctx.strokeStyle = lg;
+  ctx.lineWidth = 1;
+  ctx.beginPath();
+  ctx.moveTo(x, y + h - 1);
+  ctx.lineTo(x + w, y + h - 1);
+  ctx.stroke();
+
   ctx.restore();
   return { x, y, w, h };
 }
