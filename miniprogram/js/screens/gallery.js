@@ -35,6 +35,105 @@ const _HEX_EDGES = [[0,1],[0,2],[0,3],[1,3],[1,4],[2,3],[3,4],[3,5],[2,5],[4,5]]
 
 const _NODE_R = 30;
 
+// 星名中文对照表（Latin → 中文）
+const _STAR_ZH = {
+  // 大熊座
+  'Dubhe': '天枢', 'Merak': '天璇', 'Phecda': '天玑', 'Megrez': '天权',
+  'Alioth': '玉衡', 'Mizar': '开阳', 'Alkaid': '摇光',
+  // 天蝎座
+  'Graffias': '房宿三', 'Dschubba': '房宿一', 'Jabbah': '房宿四',
+  'Fang': '房宿二', 'Alniyat': '心宿一', 'Tau Sco': '尾宿一',
+  'Epsilon': '尾宿二', 'Mu Sco': '尾宿三', 'Shaula': '尾宿八',
+  'Lesath': '尾宿九', 'Alniyat2': '心宿三',
+  // 狮子座
+  'Eta Leo': '轩辕十', 'Mu Leo': '轩辕九', 'Zeta Leo': '轩辕八',
+  'Gamma Leo': '轩辕十二', 'Delta Leo': '太微左垣五', 'Beta Leo': '五帝座一',
+  'Theta Leo': '轩辕十一',
+  // 白羊座
+  'Hamal': '娄宿三', 'Sheratan': '娄宿一', 'Mesarthim': '娄宿二', 'Bharani': '胃宿一',
+  // 金牛座
+  'Elnath': '五车五', 'Zeta Tau': '天关', 'Lambda': '毕宿一',
+  'Alcyone': '昂宿六', 'Atlas': '昂宿七',
+  // 双子座
+  'Alhena': '井宿三', 'Mebsuda': '井宿五', 'Propus': '井宿四',
+  'Kappa': '积薪', 'Tejat': '井宿一', 'Wasat': '井宿四',
+  // 巨蟹座
+  'Acubens': '柳宿增十三', 'Tarf': '鬼宿四', 'Asellus B': '鬼宿三',
+  'Asellus A': '鬼宿二', 'Iota': '鬼宿一',
+  // 室女座
+  'Porrima': '太微左垣一', 'Auva': '角宿外屏', 'Vindemiatrix': '角宿二',
+  'Zaniah': '左执法', 'Syrma': '亢宿四', 'Mu Vir': '亢宿三',
+  'Heze': '亢宿二', 'Theta': '亢宿一', 'Iota Vir': '亢宿外',
+  // 天秤座
+  'Zuben Elgenubi': '氐宿一', 'Zuben Elschemali': '氐宿四',
+  'Brachium': '氐宿三', 'Gamma': '氐宿二', 'Upsilon': '氐宿增',
+  // 射手座
+  'Kaus A': '箕宿三', 'Kaus M': '箕宿二', 'Kaus B': '箕宿一',
+  'Phi Sgr': '斗宿四', 'Sigma': '斗宿三', 'Tau Sgr': '斗宿二',
+  'Lambda': '斗宿六', 'Delta': '斗宿一',
+  // 摩羯座
+  'Algedi': '牛宿一', 'Dabih': '牛宿二', 'Nashira': '垒壁阵四',
+  'Deneb A': '垒壁阵五', 'Zeta': '垒壁阵三',
+  // 水瓶座
+  'Sadalsuud': '虚宿一', 'Sadalmelik': '危宿一', 'Sadachbia': '女宿三',
+  'Albali': '女宿一', 'Ancha': '女宿四', 'Skat': '羽林军一',
+  'EE Aqr': '羽林军二',
+  // 双鱼座
+  'Alrescha': '外屏七', 'Fumalsamakah': '外屏一', 'Eta': '外屏二',
+  'Omega': '外屏三',
+  // 仙后座
+  'Schedar': '王良四', 'Caph': '王良一', 'Ruchbah': '策',
+  'Segin': '阁道二',
+  // 英仙座
+  'Mirfak': '天船三', 'Algol': '大陵五', 'Atik': '卷舌三',
+  'Nu Per': '天船二', 'Xi Per': '天船一',
+  // 天鹰座
+  'Tarazed': '河鼓三', 'Alshain': '河鼓一', 'Delta Aql': '天桴二',
+  'Zeta Aql': '天桴一',
+  // 天鹅座
+  'Sadr': '天津九', 'Albireo': '辇道增七', 'Delta Cyg': '天津一',
+  'Epsilon': '天津二', 'Zeta Cyg': '天津三',
+  // 天琴座
+  'Sulafat': '渐台三', 'Sheliak': '渐台二', 'Delta Lyr': '织女增三',
+  'Zeta Lyr': '织女增一',
+  // 南十字座
+  'Acrux': '十字架二', 'Gacrux': '十字架一', 'Mimosa': '十字架三',
+  'Delta C': '十字架四',
+  // 小熊座
+  'Kochab': '北极二', 'Pherkad': '北极一',
+  // 牧夫座
+  'Nekkar': '招摇', 'Seginus': '梗河一', 'Izar': '梗河二',
+  'Eta Boo': '玄戈一', 'Rho Boo': '梗河三',
+  // 御夫座
+  'Menkib': '天廪四', 'Hassaleh': '天廪三', 'Alnath': '五车五',
+  'Sadatoni': '柱一', 'Hoedus II': '柱二',
+  // 飞马座
+  'Markab': '室宿一', 'Scheat': '室宿二', 'Algenib': '壁宿一',
+  'Alpheratz': '壁宿二', 'Enif': '危宿三', 'Homam': '离宫六',
+  // 海豚座
+  'Sualocin': '瓠瓜一', 'Rotanev': '瓠瓜二',
+  // 天龙座
+  'Grumium': '天棓三', 'Thuban': '右枢', 'Edasich': '天棓四',
+  'Eta Dra': '天棓一', 'Zeta Dra': '天棓五', 'Gamma Dra': '天棓二',
+  'Delta Dra': '紫微右垣', 'Deneb Dra': '天棓增',
+  // 蛇夫座
+  'Cebalrai': '候', 'Sabik': '斗宿二', 'Zeta Oph': '列肆三',
+  'Yed Prior': '天江一', 'Yed Post': '天江二',
+  // 半人马座
+  'Muhlifain': '库楼七', 'Menkent': '库楼六', 'Eta Cen': '库楼二',
+  'Zeta Cen': '库楼三', 'Nu Cen': '库楼一',
+  // 猎犬座
+  'Chara': '常陈三', 'La Superba': '常陈增',
+};
+
+// 获取星星中文名（优先使用数据中的中文名，次用查找表）
+function _starZhName(name) {
+  if (!name) return '';
+  // 已是中文
+  if (/[\u4e00-\u9fa5]/.test(name)) return name;
+  return _STAR_ZH[name] || name;
+}
+
 // 背景星云
 const _NEBULAE = [
   { xr: 0.18, yr: 0.32, rx: 130, ry: 80,  col: '100,70,255',  a: 0.07 },
@@ -63,6 +162,14 @@ let _detailRects    = {};    // 详情页内按钮区域
 let _detailLastTY   = 0;
 let _detailDragging = false;
 let _detailTotalH   = 0;
+
+// 星图星名点击
+let _detailTappedStar = null; // { idx, until } — tapped star index + expire ms
+let _detailMappedStars = [];  // mapped star positions for hit-test
+
+// 照片全屏缩放
+let _zoom = null; // null | { img, alpha, targetAlpha, scale, targetScale }
+let _zoomRect = null; // hit area for photo tap
 
 // 照片轮播
 let _carouselPos   = 0;
@@ -185,6 +292,12 @@ function _loop(now) {
     _detail.alpha = Math.min(1, _detail.alpha + 0.07);
     _detail.scrollY += (_detail.scrollTarget - _detail.scrollY) * 0.20;
   }
+  // 全屏缩放动画
+  if (_zoom) {
+    _zoom.alpha += (_zoom.targetAlpha - _zoom.alpha) * 0.12;
+    _zoom.scale += (_zoom.targetScale - _zoom.scale) * 0.14;
+    if (_zoom.targetAlpha === 0 && _zoom.alpha < 0.02) _zoom = null;
+  }
 
   // ── 背景 ─────────────────────────────────────────────────
   ctx.fillStyle = '#05081c';
@@ -289,6 +402,11 @@ function _loop(now) {
   // ── 全屏详情页 ────────────────────────────────────────────
   if (_detail) {
     _drawDetail(ctx, W, H, t);
+  }
+
+  // ── 图片全屏缩放遮层（最顶层） ─────────────────────────────
+  if (_zoom) {
+    _drawZoomOverlay(ctx, W, H);
   }
 
   tickFade(1 / 60);
@@ -565,7 +683,9 @@ function _drawDetail(ctx, W, H, t) {
   // ── Header ───────────────────────────────────────────────
   ctx.save();
   ctx.globalAlpha = alpha;
-  _detailRects.back = _ghostBtn(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 8, 90, 30, '← 返回图鉴');
+
+  // 返回按钮
+  _detailRects.back = _ghostBtn(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 8, 80, 28, '← 返回图鉴');
 
   // 星座名（header中央）
   ctx.font = `bold 20px ${titleFont}`;
@@ -577,13 +697,52 @@ function _drawDetail(ctx, W, H, t) {
   ctx.fillText(c.nameZh, W / 2, G.SAFE_TOP + 22);
   ctx.shadowBlur = 0;
 
-  // 左右切换星座按钮（紧贴名字两侧）
-  const _BTN_W = 28, _BTN_H = 28, _BTN_Y = G.SAFE_TOP + 8;
-  const _nameW = ctx.measureText(c.nameZh).width;
-  const _prevX = W / 2 - _nameW / 2 - _BTN_W - 6;
-  const _nextX = W / 2 + _nameW / 2 + 6;
-  _detailRects.prevCon = _ghostBtn(ctx, _prevX, _BTN_Y, _BTN_W, _BTN_H, '‹', _detail.idx > 0 ? 0.75 : 0.2);
-  _detailRects.nextCon = _ghostBtn(ctx, _nextX, _BTN_Y, _BTN_W, _BTN_H, '›', _detail.idx < CONSTELLATIONS.length - 1 ? 0.75 : 0.2);
+  // 左右切换星座：圆形按钮，紧贴标题区右侧（右上角区域）
+  const _CBTN_R  = 15;
+  const _CBTN_CY = G.SAFE_TOP + 22;
+  const _prevCX  = W - (G.SAFE_RIGHT || 0) - 70;
+  const _nextCX  = W - (G.SAFE_RIGHT || 0) - 36;
+  const _prevActive = _detail.idx > 0;
+  const _nextActive = _detail.idx < CONSTELLATIONS.length - 1;
+
+  // prev circle
+  ctx.save();
+  ctx.shadowColor = _prevActive ? grp.color : 'transparent';
+  ctx.shadowBlur  = _prevActive ? 8 : 0;
+  ctx.globalAlpha = alpha * (_prevActive ? 0.85 : 0.25);
+  ctx.beginPath(); ctx.arc(_prevCX, _CBTN_CY, _CBTN_R, 0, TWO_PI);
+  ctx.fillStyle = 'rgba(20,15,55,0.72)';
+  ctx.fill();
+  ctx.strokeStyle = _prevActive ? grp.color : 'rgba(120,130,200,0.25)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.font = 'bold 15px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = _prevActive ? grp.color : 'rgba(150,155,200,0.4)';
+  ctx.fillText('◀', _prevCX, _CBTN_CY + 1);
+  ctx.restore();
+  _detailRects.prevCon = { x: _prevCX - _CBTN_R, y: _CBTN_CY - _CBTN_R, w: _CBTN_R * 2, h: _CBTN_R * 2 };
+
+  // next circle
+  ctx.save();
+  ctx.shadowColor = _nextActive ? grp.color : 'transparent';
+  ctx.shadowBlur  = _nextActive ? 8 : 0;
+  ctx.globalAlpha = alpha * (_nextActive ? 0.85 : 0.25);
+  ctx.beginPath(); ctx.arc(_nextCX, _CBTN_CY, _CBTN_R, 0, TWO_PI);
+  ctx.fillStyle = 'rgba(20,15,55,0.72)';
+  ctx.fill();
+  ctx.strokeStyle = _nextActive ? grp.color : 'rgba(120,130,200,0.25)';
+  ctx.lineWidth = 1.2;
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.font = 'bold 15px sans-serif';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillStyle = _nextActive ? grp.color : 'rgba(150,155,200,0.4)';
+  ctx.fillText('▶', _nextCX, _CBTN_CY + 1);
+  ctx.restore();
+  _detailRects.nextCon = { x: _nextCX - _CBTN_R, y: _CBTN_CY - _CBTN_R, w: _CBTN_R * 2, h: _CBTN_R * 2 };
+
   ctx.restore();
 
   // ── 分栏布局 ─────────────────────────────────────────────
@@ -645,6 +804,8 @@ function _drawDetail(ctx, W, H, t) {
       name: s.name,
     }));
 
+    _detailMappedStars = mapped; // store for tap detection
+
     // 连线
     ctx.strokeStyle = grp.color + 'cc';
     ctx.lineWidth   = 1.4;
@@ -677,34 +838,46 @@ function _drawDetail(ctx, W, H, t) {
       ctx.fill();
     }
 
-    // 星名标注（最亮4颗）
-    const bright = mapped
-      .map((s, i) => ({ ...s, mag: c.stars[i].mag }))
-      .filter(s => s.mag <= 4.5 && s.name)
-      .sort((a, b) => a.mag - b.mag)
-      .slice(0, 4);
-    const placed = [];
-    ctx.save();
-    ctx.font = '8px sans-serif';
-    ctx.fillStyle = 'rgba(255,255,255,0.70)';
-    ctx.strokeStyle = 'rgba(255,255,255,0.32)';
-    ctx.lineWidth = 0.6;
-    ctx.setLineDash([2, 2]);
-    for (const bs of bright) {
-      const ang = Math.atan2(bs.y - LEFT_CY, bs.x - LEFT_CX) + Math.PI / 5;
-      const ll  = 8;
-      const lx  = bs.x + Math.cos(ang) * ll;
-      let   ly  = bs.y + Math.sin(ang) * ll;
-      for (const p of placed) {
-        if (Math.abs(lx - p.x) < 26 && Math.abs(ly - p.y) < 10) ly -= 9;
+    // 点击显示星名tooltip
+    if (_detailTappedStar !== null) {
+      if (Date.now() > _detailTappedStar.until) {
+        _detailTappedStar = null;
+      } else {
+        const si = _detailTappedStar.idx;
+        const s  = mapped[si];
+        const nm = s && _starZhName(c.stars[si].name);
+        if (s && nm) {
+          const TW = Math.max(50, ctx.measureText(nm).width + 16);
+          const TH = 18;
+          let lx = s.x + 6;
+          let ly = s.y - TH / 2 - 4;
+          if (lx + TW > SPLIT_X - 2) lx = s.x - TW - 6;
+          if (ly < BODY_TOP + 2) ly = s.y + 6;
+          ctx.save();
+          ctx.font = '9px sans-serif';
+          ctx.fillStyle = 'rgba(20,16,55,0.88)';
+          _roundRect(ctx, lx, ly, TW, TH, 6);
+          ctx.fill();
+          ctx.strokeStyle = grp.color + '88';
+          ctx.lineWidth = 0.7;
+          ctx.stroke();
+          ctx.textAlign = 'center';
+          ctx.textBaseline = 'middle';
+          ctx.fillStyle = grp.color;
+          ctx.fillText(nm, lx + TW / 2, ly + TH / 2);
+          // 连接线
+          ctx.strokeStyle = grp.color + '66';
+          ctx.lineWidth = 0.6;
+          ctx.setLineDash([2, 2]);
+          ctx.beginPath();
+          ctx.moveTo(s.x, s.y);
+          ctx.lineTo(lx + TW / 2, ly + TH);
+          ctx.stroke();
+          ctx.setLineDash([]);
+          ctx.restore();
+        }
       }
-      placed.push({ x: lx, y: ly });
-      ctx.beginPath(); ctx.moveTo(bs.x, bs.y); ctx.lineTo(lx, ly); ctx.stroke();
-      ctx.textAlign    = lx >= LEFT_CX ? 'left' : 'right';
-      ctx.textBaseline = 'middle';
-      ctx.fillText(bs.name, lx + (lx >= LEFT_CX ? 2 : -2), ly);
     }
-    ctx.setLineDash([]);
     ctx.restore();
     ctx.restore();
   }
@@ -771,7 +944,7 @@ function _drawDetail(ctx, W, H, t) {
   if (slot.loaded && slot.img) {
     const iw = slot.img.width  || RIGHT_W;
     const ih = slot.img.height || PHOTO_H;
-    const scale = Math.min(RIGHT_W / iw, PHOTO_H / ih);
+    const scale = Math.max(RIGHT_W / iw, PHOTO_H / ih);
     const dw = iw * scale;
     const dh = ih * scale;
     const dx = RIGHT_X + (RIGHT_W - dw) / 2;
@@ -809,6 +982,9 @@ function _drawDetail(ctx, W, H, t) {
     ctx.fillText('加载中...', cx3, cy3 + 22);
   }
   ctx.restore();
+
+  // 记录图片点击区域（用于全屏缩放，坐标与轮播按钮一致：滚动补偿后）
+  _zoomRect = { x: RIGHT_X, y: oy2, w: RIGHT_W, h: PHOTO_H };
 
   // 照片翻页按钮
   if (photos.length > 1) {
@@ -931,6 +1107,40 @@ function _loadPhoto(url, pos, conIdx) {
   } catch (e) {
     if (_carouselForIdx === conIdx) _carouselImgs[pos] = { img: null, loaded: false, error: true };
   }
+}
+
+// ── 照片全屏缩放遮层 ────────────────────────────────────────────
+function _drawZoomOverlay(ctx, W, H) {
+  if (!_zoom) return;
+  const a = Math.max(0, Math.min(1, _zoom.alpha));
+  // 黑色半透明遮罩
+  ctx.save();
+  ctx.globalAlpha = a * 0.92;
+  ctx.fillStyle = '#000';
+  ctx.fillRect(0, 0, W, H);
+  ctx.restore();
+  // 居中图片（带弹性缩放）
+  if (_zoom.img) {
+    const iw = _zoom.img.width  || W;
+    const ih = _zoom.img.height || H;
+    const fitScale = Math.min(W / iw, H / ih);
+    const s  = _zoom.scale;
+    const dw = iw * fitScale * s;
+    const dh = ih * fitScale * s;
+    ctx.save();
+    ctx.globalAlpha = a;
+    ctx.drawImage(_zoom.img, (W - dw) / 2, (H - dh) / 2, dw, dh);
+    ctx.restore();
+  }
+  // "点击关闭"提示
+  ctx.save();
+  ctx.globalAlpha = a * 0.55;
+  ctx.font = '11px sans-serif';
+  ctx.textAlign = 'center';
+  ctx.textBaseline = 'middle';
+  ctx.fillStyle = '#fff';
+  ctx.fillText('点击关闭', W / 2, H - 18);
+  ctx.restore();
 }
 
 // ── 文字自动换行 ───────────────────────────────────────────────
@@ -1064,6 +1274,13 @@ function _onTouchEnd(e) {
   const ty = touch.clientY;
   const dx = tx - _touchStartX;
 
+  // ── 全屏图片缩放层（最优先） ───────────────────────────────
+  if (_zoom) {
+    _zoom.targetAlpha = 0;
+    _zoom.targetScale = 0.6;
+    return;
+  }
+
   // ── 全屏详情开启状态 ──────────────────────────────────────
   if (_detail) {
     if (_detailDragging) {
@@ -1076,6 +1293,7 @@ function _onTouchEnd(e) {
       _detail = null;
       _carouselForIdx = -1;
       _carouselImgs   = [];
+      _detailTappedStar = null;
       return;
     }
 
@@ -1086,6 +1304,7 @@ function _onTouchEnd(e) {
       _carouselPos = 0;
       _carouselForIdx = -1;
       _carouselImgs = [];
+      _detailTappedStar = null;
       return;
     }
     if (_detailRects.nextCon && hitTest(_detailRects.nextCon, tx, ty) && _detail.idx < CONSTELLATIONS.length - 1) {
@@ -1094,6 +1313,7 @@ function _onTouchEnd(e) {
       _carouselPos = 0;
       _carouselForIdx = -1;
       _carouselImgs = [];
+      _detailTappedStar = null;
       return;
     }
 
@@ -1109,6 +1329,36 @@ function _onTouchEnd(e) {
       const photos = CONSTELLATIONS[_detail.idx].photos
         || (CONSTELLATIONS[_detail.idx].photo ? [CONSTELLATIONS[_detail.idx].photo] : []);
       if (_carouselPos < photos.length - 1) _carouselPos++;
+      return;
+    }
+
+    // 点击图片区域 → 全屏缩放
+    if (_zoomRect && hitTest(_zoomRect, tx, sty)) {
+      const slot2 = _carouselImgs[_carouselPos];
+      if (slot2 && slot2.loaded && slot2.img) {
+        _zoom = { img: slot2.img, alpha: 0, targetAlpha: 1, scale: 0.5, targetScale: 1.0 };
+      }
+      return;
+    }
+
+    // 点击左侧星图区域 → 显示星名
+    const SPLIT_X2 = Math.round(G.SCREEN_W * 0.40);
+    if (tx < SPLIT_X2 && _detailMappedStars.length > 0) {
+      let hitIdx = -1;
+      let hitDist = 999;
+      for (let si = 0; si < _detailMappedStars.length; si++) {
+        const s = _detailMappedStars[si];
+        const dist = Math.hypot(tx - s.x, ty - s.y);
+        if (dist < Math.max(s.r + 10, 14) && dist < hitDist) {
+          hitDist = dist;
+          hitIdx  = si;
+        }
+      }
+      if (hitIdx >= 0) {
+        _detailTappedStar = { idx: hitIdx, until: Date.now() + 3000 };
+      } else {
+        _detailTappedStar = null;
+      }
       return;
     }
 
