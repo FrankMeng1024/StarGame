@@ -263,7 +263,7 @@ function _loop(now) {
   ctx.globalAlpha = 1;
 
   // ── 固定Header ────────────────────────────────────────────
-  _backRect = _drawGhostBtn(ctx, G.SAFE_LEFT + 12, G.SAFE_TOP + 10, 80, 32, '← 返回');
+  _backRect = _drawGhostBtn(ctx, G.SAFE_LEFT + 96 + 12, G.SAFE_TOP + 10, 80, 32, '← 返回');
   _shopRect = _drawGhostBtn(ctx, W - G.SAFE_RIGHT - 96 - 68, G.SAFE_TOP + 10, 68, 32, '🛒 商店');
 
   const titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';

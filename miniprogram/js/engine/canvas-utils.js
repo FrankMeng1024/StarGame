@@ -288,7 +288,7 @@ export function drawHeaderBar(ctx, W, H, title, opts = {}) {
   ctx.restore();
 
   // Back button
-  const btnX = safeLeft + 10;
+  const btnX = safeLeft + 96 + 10;
   const btnY = safeTop + 8;
   const btnW = 72;
   const btnH = 32;
