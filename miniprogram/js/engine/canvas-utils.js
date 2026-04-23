@@ -304,7 +304,7 @@ export function drawHeaderBar(ctx, W, H, title, opts = {}) {
   ctx.fillStyle    = _btg;
   ctx.shadowColor  = 'rgba(160,200,255,0.5)';
   ctx.shadowBlur   = 6;
-  ctx.fillText('← 返回', _bCX, _bCY - 1);
+  ctx.fillText('← 返回', _bCX, _bCY);
   ctx.shadowBlur   = 0;
   const _blg = ctx.createLinearGradient(btnX, 0, btnX + btnW, 0);
   _blg.addColorStop(0,   'rgba(255,255,255,0)');
@@ -346,7 +346,7 @@ export function drawHeaderBar(ctx, W, H, title, opts = {}) {
     ctx.fillStyle    = _ctg;
     ctx.shadowColor  = 'rgba(255,180,60,0.5)';
     ctx.shadowBlur   = 5;
-    ctx.fillText(rightText, cpCX, cpCY - 1);
+    ctx.fillText(rightText, cpCX, cpCY);
     ctx.shadowBlur   = 0;
     const _clg = ctx.createLinearGradient(cpX, 0, cpX + btnW, 0);
     _clg.addColorStop(0,   'rgba(255,200,60,0.2)');

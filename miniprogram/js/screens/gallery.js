@@ -331,10 +331,13 @@ function _loop(now) {
   // 已发现计数 — 方案G金色风格
   const discovered = CONSTELLATIONS.filter((_, i) => state.isUnlocked(i)).length;
   {
-    const rx = W - (G.SAFE_RIGHT || 0) - 90;
-    const rw = 80;
-    const lx = rx - rw;
-    const cy = G.SAFE_TOP + 26;
+    const btnY = G.SAFE_TOP + 10;
+    const btnH = 32;
+    const rx   = W - (G.SAFE_RIGHT || 0) - 90;
+    const rw   = 80;
+    const lx   = rx - rw;
+    const cy   = btnY + btnH / 2;
+    const lineY = btnY + btnH - 1;
     ctx.save();
     const tg = ctx.createLinearGradient(lx, cy, rx, cy);
     tg.addColorStop(0, 'rgba(255,220,80,0.95)');
@@ -354,8 +357,8 @@ function _loop(now) {
     ctx.strokeStyle = lg;
     ctx.lineWidth   = 1;
     ctx.beginPath();
-    ctx.moveTo(lx, cy + 10);
-    ctx.lineTo(rx, cy + 10);
+    ctx.moveTo(lx, lineY);
+    ctx.lineTo(rx, lineY);
     ctx.stroke();
     ctx.restore();
   }
