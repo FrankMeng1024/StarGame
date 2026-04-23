@@ -34,8 +34,9 @@ canvas.height = screenH;
 initGlobals(canvas, ctx, screenW, screenH, safeArea, dpr);
 
 // 全局状态
-let gameState   = null;
-let _booted     = false;  // 防止多次 boot
+let gameState    = null;
+let _booted      = false;  // 防止多次 boot
+let _navigated   = false;  // 已成功调用过 navigate()
 
 // ── 导航路由 ──────────────────────────────────────────────────
 let _lastNavTime = 0;
@@ -43,6 +44,7 @@ function navigate(key) {
   const now = Date.now();
   if (now - _lastNavTime < 100) return;
   _lastNavTime = now;
+  _navigated = true;
 
   hideMenu(); hideLevels(); hideGame();
   hideGallery(); hideShop(); hideAchievement(); hideIntro();
@@ -98,10 +100,13 @@ async function boot() {
       requestAnimationFrame(_tryStart);
       return;
     }
-    // 超时：强制赋值后启动
-    canvas.width  = screenW;
-    canvas.height = screenH;
-    initGlobals(canvas, ctx, screenW, screenH, safeArea, dpr);
+    // 超时：再取一次尺寸（onShow 可能已在此期间触发修正了尺寸）
+    const { w: fw, h: fh, safeArea: fsa, dpr: fdp } = _getScreenSize();
+    const fallW = fw > 0 ? fw : screenW;
+    const fallH = fh > 0 ? fh : screenH;
+    canvas.width  = fallW;
+    canvas.height = fallH;
+    initGlobals(canvas, ctx, fallW, fallH, fsa || safeArea, fdp || dpr);
     console.log('[boot] canvas fallback:', canvas.width, 'x', canvas.height);
     navigate('intro');
   }
@@ -117,25 +122,27 @@ async function boot() {
   }
 }
 
-// ── STORY-00347: wx.onShow 确保扫码冷启动也能触发 boot ────────
-// 微信扫码启动时，某些设备 game.js 执行时渲染层还未就绪。
-// wx.onShow 在渲染层真正激活后才触发，是最可靠的启动时机。
+// ── STORY-00347 + 黑屏修复: wx.onShow 确保扫码冷启动也能触发 boot ────────
+// 真机扫码冷启动时，boot() 的 RAF 循环可能在 onShow 前就以错误尺寸(0)超时了。
+// onShow 是渲染层真正激活后的最可靠时机，在此处强制修正尺寸并补发 navigate。
 let _onShowFired = false;
 wx.onShow(() => {
   _onShowFired = true;
+  const { w, h, safeArea: sa, dpr: dp } = _getScreenSize();
+  if (w > 0 && h > 0) {
+    canvas.width  = w;
+    canvas.height = h;
+    initGlobals(canvas, ctx, w, h, sa, dp);
+  }
   if (!_booted) {
     // 扫码冷启动：boot() 还未执行，从 onShow 触发
     boot();
-  } else {
-    // 从后台切回：canvas 可能失效，重新初始化尺寸
-    // 只在尺寸真正变化时才重新初始化，避免 DevTools focus 事件触发误更新
-    const { w, h, safeArea: sa, dpr: dp } = _getScreenSize();
-    if (w > 0 && h > 0 && (w !== G.SCREEN_W || h !== G.SCREEN_H)) {
-      canvas.width  = w;
-      canvas.height = h;
-      initGlobals(canvas, ctx, w, h, sa, dp);
-    }
+  } else if (!_navigated) {
+    // boot() 已执行但 navigate() 从未成功（RAF 以0尺寸超时）
+    // 此时 onShow 已触发，canvas 尺寸已修正，补发 navigate
+    navigate('intro');
   }
+  // _navigated 为 true：正常运行中，不需要额外操作
 });
 
 // 立即尝试启动（正常点击启动路径）
