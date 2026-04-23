@@ -290,33 +290,36 @@ export function drawHeaderBar(ctx, W, H, title, opts = {}) {
   // Back button — 方案G: 渐变文字+底线，无背景
   const btnX = safeLeft + 90;
   const btnY = safeTop + 8;
-  const btnW = 72;
   const btnH = 32;
+  const lineY = btnY + btnH - 1;
   ctx.save();
   const _bCY = btnY + btnH / 2;
-  const _bCX = btnX + btnW / 2;
-  const _btg = ctx.createLinearGradient(btnX, _bCY, btnX + btnW, _bCY);
+  ctx.font         = 'bold 13px sans-serif';
+  ctx.textBaseline = 'middle';
+  const _bTW  = ctx.measureText('← 返回').width;
+  const _bLX  = btnX;
+  const _bRX  = btnX + _bTW;
+  const _btg  = ctx.createLinearGradient(_bLX, _bCY, _bRX, _bCY);
   _btg.addColorStop(0, 'rgba(255,255,255,0.92)');
   _btg.addColorStop(1, 'rgba(140,180,255,0.85)');
-  ctx.font         = 'bold 13px sans-serif';
-  ctx.textAlign    = 'center';
-  ctx.textBaseline = 'middle';
+  ctx.textAlign    = 'left';
   ctx.fillStyle    = _btg;
   ctx.shadowColor  = 'rgba(160,200,255,0.5)';
   ctx.shadowBlur   = 6;
-  ctx.fillText('← 返回', _bCX, _bCY);
+  ctx.fillText('← 返回', _bLX, _bCY);
   ctx.shadowBlur   = 0;
-  const _blg = ctx.createLinearGradient(btnX, 0, btnX + btnW, 0);
-  _blg.addColorStop(0,   'rgba(255,255,255,0)');
-  _blg.addColorStop(0.3, 'rgba(140,180,255,0.7)');
-  _blg.addColorStop(1,   'rgba(100,140,255,0.2)');
+  const _blg = ctx.createLinearGradient(_bLX, 0, _bRX, 0);
+  _blg.addColorStop(0,   'rgba(255,255,255,0.15)');
+  _blg.addColorStop(0.5, 'rgba(140,180,255,0.7)');
+  _blg.addColorStop(1,   'rgba(100,140,255,0.1)');
   ctx.strokeStyle = _blg;
   ctx.lineWidth   = 1;
   ctx.beginPath();
-  ctx.moveTo(btnX, btnY + btnH - 1);
-  ctx.lineTo(btnX + btnW, btnY + btnH - 1);
+  ctx.moveTo(_bLX, lineY);
+  ctx.lineTo(_bRX, lineY);
   ctx.stroke();
   ctx.restore();
+  const btnW = _bTW;  // for backRect below
 
   // Title
   ctx.save();
@@ -333,30 +336,32 @@ export function drawHeaderBar(ctx, W, H, title, opts = {}) {
   // Right coin — 方案G金色风格：渐变文字+底线，无背景
   if (rightText) {
     const safeRight = opts.safeRight || 0;
-    const cpX = W - safeRight - 88 - 2 - btnW;  // 2px gap from capsule left edge
-    const cpCX = cpX + btnW / 2;
+    const cpRX = W - safeRight - 88 - 2;  // 右边界（capsule左侧2px）
     const cpCY = btnY + btnH / 2;
+    const lineY = btnY + btnH - 1;
     ctx.save();
-    const _ctg = ctx.createLinearGradient(cpX, cpCY, cpX + btnW, cpCY);
+    ctx.font         = 'bold 12px sans-serif';
+    ctx.textBaseline = 'middle';
+    const textW = ctx.measureText(rightText).width;
+    const cpLX  = cpRX - textW;
+    const _ctg  = ctx.createLinearGradient(cpLX, cpCY, cpRX, cpCY);
     _ctg.addColorStop(0, 'rgba(255,220,80,0.95)');
     _ctg.addColorStop(1, 'rgba(255,160,60,0.85)');
-    ctx.font         = 'bold 12px sans-serif';
-    ctx.textAlign    = 'center';
-    ctx.textBaseline = 'middle';
+    ctx.textAlign    = 'right';
     ctx.fillStyle    = _ctg;
     ctx.shadowColor  = 'rgba(255,180,60,0.5)';
     ctx.shadowBlur   = 5;
-    ctx.fillText(rightText, cpCX, cpCY);
+    ctx.fillText(rightText, cpRX, cpCY);
     ctx.shadowBlur   = 0;
-    const _clg = ctx.createLinearGradient(cpX, 0, cpX + btnW, 0);
-    _clg.addColorStop(0,   'rgba(255,200,60,0.2)');
-    _clg.addColorStop(0.7, 'rgba(255,160,40,0.7)');
-    _clg.addColorStop(1,   'rgba(255,220,80,0)');
+    const _clg = ctx.createLinearGradient(cpLX, 0, cpRX, 0);
+    _clg.addColorStop(0,   'rgba(255,200,60,0.1)');
+    _clg.addColorStop(0.5, 'rgba(255,160,40,0.7)');
+    _clg.addColorStop(1,   'rgba(255,220,80,0.15)');
     ctx.strokeStyle = _clg;
     ctx.lineWidth   = 1;
     ctx.beginPath();
-    ctx.moveTo(cpX, btnY + btnH - 1);
-    ctx.lineTo(cpX + btnW, btnY + btnH - 1);
+    ctx.moveTo(cpLX, lineY);
+    ctx.lineTo(cpRX, lineY);
     ctx.stroke();
     ctx.restore();
   }
