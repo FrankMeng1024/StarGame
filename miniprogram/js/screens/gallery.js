@@ -1196,7 +1196,7 @@ function _switchGroup(newGroup) {
   const aBot = H2 - G.SAFE_BOTTOM - 26;
   const aCX  = W2 / 2;
   const aCY  = (aTop + aBot) / 2;
-  const aW   = W2 * 0.92;
+  const aW   = W2 - (G.SAFE_LEFT || 0) - (G.SAFE_RIGHT || 0) - 180;
   const aH   = aBot - aTop;
   _pendingNodes = _HEX_POS.map((pos, slot) => ({
     cx: aCX + pos.xr * aW,
@@ -1262,7 +1262,7 @@ function _onTouchMove(e) {
         const aTop = G.SAFE_TOP + 72;
         const aBot = H2 - G.SAFE_BOTTOM - 26;
         const aCX  = W / 2; const aCY = (aTop + aBot) / 2;
-        const aW   = W * 0.92; const aH = aBot - aTop;
+        const aW   = W - (G.SAFE_LEFT || 0) - (G.SAFE_RIGHT || 0) - 180; const aH = aBot - aTop;
         _pendingGroup = targetGroup;
         _pendingNodes = _HEX_POS.map((pos, slot) => ({
           cx: aCX + pos.xr * aW, cy: aCY + pos.yr * aH,
