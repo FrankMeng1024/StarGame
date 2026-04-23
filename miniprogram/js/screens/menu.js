@@ -361,7 +361,7 @@ function _loop(now) {
     // Usable area: between safe top and info panel bottom
     const safeT   = G.SAFE_TOP    || 0;
     const safeB   = G.SAFE_BOTTOM || 0;
-    const INFO_RESERVED = 68;  // info panel height (52) + gap (8*2)
+    const INFO_RESERVED = 58;  // info panel height (44) + gap (8*2)
     const usableTop = safeT + 8;
     const usableBot = H - safeB - INFO_RESERVED;
     const usableH   = usableBot - usableTop;
@@ -518,7 +518,7 @@ function _drawConInfoPanel(ctx, W, H, isLandscape) {
   const safeL = G.SAFE_LEFT   || 0;
   const safeR = G.SAFE_RIGHT  || 0;
 
-  const PANEL_H = 52;
+  const PANEL_H = 44;
   const PAD_X   = 14;
   // In landscape, panel spans the constellation half (left 60%)
   // In portrait, panel spans full width
@@ -555,19 +555,19 @@ function _drawConInfoPanel(ctx, W, H, isLandscape) {
     ctx.fillText(symbol, panelX + panelW - PAD_X, panelY + PANEL_H / 2);
   }
 
-  // Left: constellation name — takes full width minus symbol area
-  const textRight = panelX + panelW - PAD_X - symbolW - 6;
+  // Left: constellation name
   ctx.font         = 'bold 13px sans-serif';
   ctx.textAlign    = 'left';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = 'rgba(255,220,120,0.92)';
-  ctx.fillText('✦ ' + _conDef.nameZh, panelX + PAD_X, panelY + 16);
+  ctx.fillText('✦ ' + _conDef.nameZh, panelX + PAD_X, panelY + PANEL_H / 2);
 
-  // Left second row: season + month
+  // Right: best viewing month (right-aligned, vertically centered)
   if (_conDef.bestViewMonth) {
     ctx.font      = '11px sans-serif';
+    ctx.textAlign = 'right';
     ctx.fillStyle = 'rgba(200,195,240,0.72)';
-    ctx.fillText(_conDef.bestViewMonth + ' 星座观测', panelX + PAD_X, panelY + 36);
+    ctx.fillText(_conDef.bestViewMonth + ' 最佳观赏', panelX + panelW - PAD_X - symbolW - 6, panelY + PANEL_H / 2);
   }
 
   ctx.restore();
