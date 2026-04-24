@@ -94,6 +94,7 @@ let _result     = null;   // {victory, timeLeft, coins, stars, uncaught}
 let _starPopTimers = [0, 0, 0]; // per-star elapsed time, starts counting on result phase enter
 // STORY-00373: Card entrance animation (translateY lerp + alpha fade)
 let _resultEnterTimer = 0;  // seconds since result phase entered; drives entrance animation
+let _cardSlideY = 0;        // STORY-00382: current slide offset (px) for result card entrance — stored for hitTest compensation
 
 // Pause state
 let _paused     = false;
@@ -292,6 +293,7 @@ export function showGame(navigate) {
   _lorePage = 0;
   _lorePages = [];
   _loreDismissed = false;
+  _resultEnterTimer = 0; _cardSlideY = 0;
   _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
   _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
 
@@ -567,6 +569,7 @@ function _cleanup() {
   _caughtDebris = null;
   _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
   _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
+  _resultEnterTimer = 0; _cardSlideY = 0;
   _lorePage = 0;
   _lorePages = [];
   _loreDismissed = false;
@@ -1569,9 +1572,9 @@ function _drawGirl(ctx) {
   // Swing: right arm driven by _netAngle live; left arm hangs naturally.
   // Extend/retract: right arm raised to ~upper-left (holding net up), left slightly forward.
   const POSES_SKEL = {
-    swing:   { lUpper:  10, lLower:  -5, rUpper:   0, rLower:   0, poleAngle:  90 },
-    extend:  { lUpper:  20, lLower: -10, rUpper: -130, rLower: -20, poleAngle: -55 },
-    retract: { lUpper:  15, lLower:  -8, rUpper: -130, rLower: -20, poleAngle: -55 },
+    swing:   { lUpper:  15, lLower: -10, rUpper:   0, rLower:   0, poleAngle:  90 },
+    extend:  { lUpper:  25, lLower: -15, rUpper: -130, rLower: -20, poleAngle: -55 },
+    retract: { lUpper:  18, lLower: -12, rUpper: -130, rLower: -20, poleAngle: -55 },
     catch:   { lUpper: -130, lLower: -20, rUpper: -130, rLower: -20, poleAngle: -60 },
   };
 
@@ -1637,19 +1640,53 @@ function _drawGirl(ctx) {
     const lRad = uRad + lAng * Math.PI / 180;
     const wx2 = ex + Math.sin(lRad) * fLen;
     const wy2 = ey + Math.cos(lRad) * fLen;
-    // Thicker lines for more "flesh" appearance
-    const thick = 18 * sc;   // was 12*sc — wider = more body mass
-    const thin  = 14 * sc;   // forearm slightly thinner
-    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    // Upper arm — outline + fill
-    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey);
-    ctx.strokeStyle = SKIN_STROKE; ctx.lineWidth = thick + 2*sc; ctx.stroke();
-    ctx.strokeStyle = SKIN_FILL;   ctx.lineWidth = thick; ctx.stroke();
-    // Forearm
-    ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(wx2, wy2);
-    ctx.strokeStyle = SKIN_STROKE; ctx.lineWidth = thin + 2*sc; ctx.stroke();
-    ctx.strokeStyle = SKIN_FILL;   ctx.lineWidth = thin; ctx.stroke();
-    // Hand
+
+    const thick = 9 * sc;    // half-width of upper arm
+    const thin  = 7 * sc;    // half-width of forearm
+
+    // Helper: draw a filled "sausage" limb segment using bezier outline
+    function drawSegment(x0, y0, x1, y1, w0, w1) {
+      // Perpendicular vectors
+      const dx = x1 - x0, dy = y1 - y0;
+      const len = Math.sqrt(dx*dx + dy*dy) || 1;
+      const nx = -dy / len, ny = dx / len;  // normal (perpendicular)
+      // Control points for bezier (slight bow for organic look)
+      const mx = (x0 + x1) / 2, my = (y0 + y1) / 2;
+      const bow = len * 0.05;  // 5% bow
+      const cx1 = mx + nx * bow, cy1 = my + ny * bow;
+
+      ctx.beginPath();
+      // Left side outline (bezier from base to tip)
+      ctx.moveTo(x0 + nx * w0, y0 + ny * w0);
+      ctx.quadraticCurveTo(cx1 + nx * ((w0 + w1) / 2), cy1 + ny * ((w0 + w1) / 2),
+                            x1 + nx * w1, y1 + ny * w1);
+      // Tip cap (arc)
+      ctx.arc(x1, y1, w1, Math.atan2(ny, nx), Math.atan2(-ny, -nx), false);
+      // Right side (bezier back)
+      ctx.quadraticCurveTo(cx1 - nx * ((w0 + w1) / 2), cy1 - ny * ((w0 + w1) / 2),
+                            x0 - nx * w0, y0 - ny * w0);
+      // Base cap
+      ctx.arc(x0, y0, w0, Math.atan2(-ny, -nx), Math.atan2(ny, nx), false);
+      ctx.closePath();
+
+      // Fill with skin color
+      ctx.fillStyle = SKIN_FILL;
+      ctx.fill();
+      // Stroke outline
+      ctx.strokeStyle = SKIN_STROKE;
+      ctx.lineWidth = sc;
+      ctx.stroke();
+    }
+
+    // Draw upper arm
+    drawSegment(ox, oy, ex, ey, thick, thick * 0.85);
+    // Draw forearm
+    drawSegment(ex, ey, wx2, wy2, thick * 0.85, thin);
+    // Joint circle at elbow
+    ctx.beginPath(); ctx.arc(ex, ey, thick * 0.9, 0, TWO_PI);
+    ctx.fillStyle = SKIN_FILL; ctx.fill();
+    ctx.strokeStyle = SKIN_STROKE; ctx.lineWidth = sc; ctx.stroke();
+    // Hand circle
     ctx.beginPath(); ctx.arc(wx2, wy2, hR + sc, 0, TWO_PI);
     ctx.fillStyle = SKIN_STROKE; ctx.fill();
     ctx.beginPath(); ctx.arc(wx2, wy2, hR - sc, 0, TWO_PI);
@@ -2120,6 +2157,7 @@ function _drawResultOverlay(ctx, W, H) {
   const enterEase = 1 - Math.pow(1 - enterProgress, 3);
   const cardAlpha  = enterEase;
   const cardSlideY = (1 - enterEase) * 30;  // starts 30px lower, slides up
+  _cardSlideY = cardSlideY; // STORY-00382: expose to hitTest in _onTouch
 
   const t = _lastNow * 0.001;
 
@@ -2419,6 +2457,7 @@ function _drawResultOverlay(ctx, W, H) {
   }
 
   // STORY-00373: end entrance animation transform
+  // STORY-00382: buttons stored at logical (un-offset) coords; _cardSlideY used in hitTest
   ctx.restore();
 }
 
@@ -2554,8 +2593,11 @@ function _onTouch(e) {
 
   // Result screen buttons
   if (_phase === 'result') {
+    // STORY-00382: buttons stored at logical coords; card is translated down by _cardSlideY.
+    // Compensate by subtracting _cardSlideY from ty before hitTest.
+    const rty = ty - _cardSlideY;
     // Lore page navigation (STORY-00238 / STORY-00239)
-    if (_btnLoreNext && hitTest(_btnLoreNext, tx, ty)) {
+    if (_btnLoreNext && hitTest(_btnLoreNext, tx, rty)) {
       if (_lorePage < _lorePages.length - 1) {
         _lorePage++;
       } else {
@@ -2566,43 +2608,35 @@ function _onTouch(e) {
       }
       return;
     }
-    if (_btnNext && hitTest(_btnNext, tx, ty)) {
-      _cleanup(); // STORY-00324: stop RAF before any navigation — prevents girl/list flicker
+    if (_btnNext && hitTest(_btnNext, tx, rty)) {
       if (_levelIdx >= 29) {
         // Last level completed → go to achievement screen
-        if (_navigate) fadeNavigate(() => _navigate('achievement'));
+        if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('achievement'); });
       } else {
         const nextIdx = _levelIdx + 1;
         state.currentLevel = nextIdx;
-        if (_navigate) fadeNavigate(() => _navigate('game'));
+        if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('game'); });
       }
       return;
     }
-    if (_btnRetry && hitTest(_btnRetry, tx, ty)) {
-      _cleanup(); // STORY-00324
-      if (_navigate) fadeNavigate(() => _navigate('game'));
+    if (_btnRetry && hitTest(_btnRetry, tx, rty)) {
+      if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('game'); });
       return;
     }
-    if (_btnReplay && hitTest(_btnReplay, tx, ty)) {
-      _cleanup(); // STORY-00324
-      if (_navigate) fadeNavigate(() => _navigate('game'));
+    if (_btnReplay && hitTest(_btnReplay, tx, rty)) {
+      if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('game'); });
       return;
     }
-    if (_btnLevels && hitTest(_btnLevels, tx, ty)) {
-      _cleanup(); // STORY-00324: stop RAF before levels nav — prevents girl/list flicker
-      if (_navigate) fadeNavigate(() => _navigate('levels'));
+    if (_btnLevels && hitTest(_btnLevels, tx, rty)) {
+      if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('levels'); });
       return;
     }
-    if (_btnShop && hitTest(_btnShop, tx, ty)) {
-      _cleanup(); // STORY-00324
-      if (_navigate) fadeNavigate(() => _navigate('shop'));
+    if (_btnShop && hitTest(_btnShop, tx, rty)) {
+      if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('shop'); });
       return;
     }
-    if (_btnGallery && hitTest(_btnGallery, tx, ty)) {
-      if (_navigate) {
-        _cleanup();  // STORY-00302: stop game RAF immediately before fade — prevents girl/gallery flicker
-        fadeNavigate(() => _navigate('gallery'));
-      }
+    if (_btnGallery && hitTest(_btnGallery, tx, rty)) {
+      if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('gallery'); });
       return;
     }
   }

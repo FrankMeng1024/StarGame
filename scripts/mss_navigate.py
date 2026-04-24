@@ -257,6 +257,23 @@ def canvas_click(hwnd, canvas, rx, ry, label=""):
         print(f"  🖱  Click {label} @ ratio({rx:.3f},{ry:.3f}) log({phys_x},{phys_y})")
 
 
+def game_click(game_x, game_y, label=""):
+    """
+    Click at game-coordinate (game_x, game_y) using calibrated formula.
+    Calibrated for 1934x1214 window: phys = canvas_origin + game_coord * scale.
+    Scale derived from two-point calibration (STORY-00382 session 2026-04-24).
+    phys_x = 14.1 + game_x * 1.154
+    phys_y = 138.0 + game_y * 1.155
+    """
+    screen_w = user32.GetSystemMetrics(0)
+    screen_h = user32.GetSystemMetrics(1)
+    phys_x = int(14.1 + game_x * 1.154)
+    phys_y = int(138.0 + game_y * 1.155)
+    _sendinput_phys(phys_x, phys_y, screen_w, screen_h)
+    if label:
+        print(f"  🖱  Click {label} @ game({game_x},{game_y}) log({phys_x},{phys_y})")
+
+
 # ─── hwnd 发现 ────────────────────────────────────
 def find_devtools_hwnd():
     """动态枚举 wechatdevtools.exe 主窗口，返回最大窗口的 hwnd"""
@@ -530,7 +547,7 @@ def main():
     # After reload, DevTools may show debug panel. Click simulator canvas to focus it.
     # Safe area: left-center dark bg, ratio(0.300, 0.400)
     print("  Focusing simulator to close debug panel...")
-    canvas_click(hwnd, canvas, 0.300, 0.400, "focus-simulator")
+    game_click(253, 156, "focus-simulator")
     time.sleep(1.5)  # Wait for layout to stabilize
 
     # Re-detect canvas after reload (window may have shifted)
@@ -551,28 +568,24 @@ def main():
 
     # ── Step 2: Level Select ────────────────────────
     print("\n[2/5] Level Select (click 挑战关卡)")
-    # Pre-focus: click safe neutral area (dark bg, left-center of canvas)
-    canvas_click(hwnd, canvas, 0.300, 0.400, "focus-pre-step2")
+    game_click(300, 160, "focus-pre-step2")
     time.sleep(0.4)
-    # 挑战关卡 button: landscape layout, game canvas (657, 149) in W=844 H=390.
-    # Canvas detected at win(35,16) 484x351 with letterbox offset ~64px top.
-    # rx = (657 * 484/844) / 484 = 0.779; ry = (64 + 149 * 224/390) / 351 = 0.427
-    canvas_click(hwnd, canvas, 0.779, 0.427, "挑战关卡")
+    # 挑战关卡 button: game(657, 149) calibrated
+    game_click(657, 149, "挑战关卡")
     time.sleep(3.0)
     _, path = capture(hwnd, f"{STORY}-02-level-select.png", "level_select")
     verify(path, ['level_select'], 'level_select')
 
     # ── Step 3: Game screen ─────────────────────────
-    print("\n[3/5] Game screen (click Level 1 猎户座)")
-    # Pre-focus before clicking level card
-    canvas_click(hwnd, canvas, 0.300, 0.400, "focus-pre-step3")
+    print("\n[3/5] Game screen (click Level 1 窗户座)")
+    game_click(300, 160, "focus-pre-step3")
     time.sleep(0.4)
-    # Level 1 card: top-left card in level_select grid
-    # Calibrated from debug-phys-click.png: card center abs≈(107,195) ratio≈(0.094,0.200)
-    canvas_click(hwnd, canvas, 0.094, 0.200, "Level 1 猎户座")
+    # First level card top-left: 窗户座 at approximately game(162, 207)
+    # Adjusted for level_select layout — top row y≈200, left card x≈162
+    game_click(162, 207, "Level 1 窗户座")
     time.sleep(2)
     # Dismiss item-selection overlay: 跳过 button — center of canvas
-    canvas_click(hwnd, canvas, 0.500, 0.500, "跳过 overlay")
+    game_click(422, 195, "跳过 overlay")
     time.sleep(2)
     _, path = capture(hwnd, f"{STORY}-03-game.png", "game")
     verify(path, ['game', 'pre_level'], 'game')
@@ -597,28 +610,19 @@ def main():
                               "animation_issues": fail_burst_result.get("animation_issues", []),
                               "confidence": fail_burst_result.get("confidence", "unknown")}
 
-    # ── Step 5: Back to Level Select ────────────────
-    # NOTE: game.js fail dialog uses 'touchstart' events. Win32 mouse_event generates
-    # mouse events that WeChat DevTools simulator converts to 'touchend' only, so
-    # clicking 选关 via mouse_event does not fire the fail dialog's touchstart handler.
-    # Workaround: reload the game (which always navigates to intro → menu),
-    # then verify landing on menu or level_select screens.
-    print("\n[5/5] Menu screen via reload (game fail screen → reload → menu)")
-    r_s5 = ctypes.wintypes.RECT()
-    user32.GetWindowRect(hwnd, ctypes.byref(r_s5))
-    # Click ↺ reload button at window-relative physical (484, 42) — same as step 1
-    reload2_px = r_s5.left + 484
-    reload2_py = r_s5.top + 42
-    click_logical(reload2_px, reload2_py, "↺ reload (step 5)")
-    time.sleep(20)  # Wait for intro → menu
-    # Focus simulator to close debug panel (same as step 1)
-    print("  Focusing simulator to close debug panel...")
-    canvas_click(hwnd, canvas, 0.300, 0.400, "focus-simulator-s5")
-    time.sleep(1.5)
-    _, path = capture(hwnd, f"{STORY}-05-back-to-levels.png", "menu after reload")
-    verify(path, ['menu', 'intro', 'level_select'], 'back_to_levels')
-    _, path = capture(hwnd, f"{STORY}-05-back-to-levels.png", "level_select again")
-    verify(path, ['level_select', 'menu'], 'back_to_levels')
+    # ── Step 5: Click 重试 button → should navigate back to game ──────
+    # STORY-00382: verify 重试 button responds after hitTest fix.
+    # Button center: game(341, 349) using calibrated formula:
+    #   phys_x = 14.1 + 341*1.154 = 407, phys_y = 138.0 + 349*1.155 = 541
+    print("\n[5/5] Click 重试 button → game restart")
+    game_click(300, 200, "focus-pre-step5")
+    time.sleep(0.5)
+    game_click(341, 349, "重试 button")
+    time.sleep(4)  # Wait for game to restart + pre_level overlay
+    game_click(422, 195, "跳过 overlay step5")
+    time.sleep(3)
+    _, path = capture(hwnd, f"{STORY}-05-back-to-levels.png", "game after retry")
+    verify(path, ['game', 'pre_level', 'menu', 'level_select'], 'back_to_levels')
 
     # ── Summary ─────────────────────────────────────
     print("\n═══ Navigation Results ═══")
