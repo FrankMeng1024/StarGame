@@ -115,6 +115,19 @@ let _victoryPhoto     = null;   // wx.createImage() object
 let _victoryPhotoLoaded = false;
 let _victoryPhotoFor  = -1;    // levelIdx the photo is for
 
+// Girl PNG sprite (Sprint A — replaces bezier spacesuit; PNG not SVG — wx.createImage doesn't support SVG)
+// Sprite: 880x220 (4 frames at 220x220 each, rendered 2x of original 110x110 SVG design)
+const _girlImg = (typeof wx !== 'undefined' && wx.createImage) ? (() => {
+  const img = wx.createImage();
+  img.src = 'assets/sprites/girl.png';
+  return img;
+})() : null;
+// Sprite sheet dimensions: 880x220, 4 frames of 220x220 each
+const _GIRL_FRAME_W = 220;  // px per frame in the sprite sheet
+const _GIRL_FRAME_H = 220;
+let _girlFrame     = 0;    // 0=idle, 1=blink, 2=throw, 3=catch
+let _girlLastBlink = 0;    // ms timestamp of last blink start
+
 // Victory animation state
 let _celebrateTimer = 0;  // seconds remaining in celebrate phase
 let _lineDrawProgress = 0; // float: how many lines have been drawn so far
@@ -780,9 +793,10 @@ function _updateNet(dt) {
 }
 
 function _updateNetHead(dt) {
-  // Rope origin = girl's right glove position (STORY-00364: updated for 126px spacesuit v7)
-  const ropeOriX = _poleX + 16;
-  const ropeOriY = _poleY - 91;
+  // Rope origin matches SVG sprite: idle=(+13,-17), extend=(+27,-78) relative to _poleX/Y
+  const extended  = _netState !== 'swing';
+  const ropeOriX = extended ? _poleX + 27 : _poleX + 13;
+  const ropeOriY = extended ? _poleY - 78  : _poleY - 17;
 
   // STORY-00366: Magnetic zone deflection — when net head enters a zone, deflect angle
   if (_netState === 'extend') {
@@ -1348,232 +1362,49 @@ function _drawParticles(ctx) {
   }
 }
 
-// ── Draw: girl character (STORY-00364) ───────────────────────
-// v7: spacesuit — deep purple-blue #3a1f6b + gold #ffd700 highlights.
-// Height 126px (head r=18, 1:2.5 head-body ratio). Landscape deep-space theme.
-// Origin: center bottom at (_poleX, _poleY). All coords relative to that.
+// ── Draw: girl character (Sprint A — PNG sprite) ──────────────
+// girl.png: 880×220px, 4 frames × 220px wide. Frame 0=idle, 1=blink, 2=throw, 3=catch.
+// Origin: center-bottom aligned to (_poleX, _poleY).
 function _drawGirl(ctx) {
-  const x = _poleX;
-  const y = _poleY;
+  const now = Date.now();
 
-  ctx.save();
-  ctx.translate(x, y);
-
-  // ── Body aura (purple tint for spacesuit) ────────────────────
-  const auraGrd = ctx.createRadialGradient(0, -60, 8, 0, -60, 70);
-  auraGrd.addColorStop(0, 'rgba(100,60,220,0.14)');
-  auraGrd.addColorStop(1, 'rgba(60,20,140,0)');
-  ctx.fillStyle = auraGrd;
-  ctx.beginPath(); ctx.arc(0, -60, 70, 0, TWO_PI); ctx.fill();
-
-  // ── Boots (metallic dark, suit-coloured) ─────────────────────
-  const bootGrd = ctx.createLinearGradient(-14, 0, 14, 8);
-  bootGrd.addColorStop(0, '#2a1555');
-  bootGrd.addColorStop(0.5, '#4a2888');
-  bootGrd.addColorStop(1, '#1a0d3a');
-  ctx.fillStyle = bootGrd;
-  ctx.beginPath();
-  ctx.moveTo(-11, -3); ctx.bezierCurveTo(-14, -3, -17, 0, -16, 6);
-  ctx.bezierCurveTo(-15, 10, -6, 10, -4, 6); ctx.lineTo(-6, -3); ctx.closePath(); ctx.fill();
-  ctx.beginPath();
-  ctx.moveTo(11, -3); ctx.bezierCurveTo(14, -3, 17, 0, 16, 6);
-  ctx.bezierCurveTo(15, 10, 6, 10, 4, 6); ctx.lineTo(6, -3); ctx.closePath(); ctx.fill();
-  // Gold boot trim
-  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.75;
-  ctx.beginPath(); ctx.moveTo(-16, 2); ctx.lineTo(-4, 2); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(4, 2); ctx.lineTo(16, 2); ctx.stroke();
-  ctx.restore();
-
-  // ── Legs (suit leggings) ──────────────────────────────────────
-  ctx.strokeStyle = '#3a1f6b';
-  ctx.lineWidth   = 7;
-  ctx.lineCap     = 'round';
-  ctx.beginPath(); ctx.moveTo(-6, -18); ctx.lineTo(-8, -2); ctx.stroke();
-  ctx.beginPath(); ctx.moveTo(6, -18);  ctx.lineTo(8, -2);  ctx.stroke();
-  // Knee joint ring
-  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.2; ctx.globalAlpha = 0.6;
-  ctx.beginPath(); ctx.arc(-8, -10, 4, 0, TWO_PI); ctx.stroke();
-  ctx.beginPath(); ctx.arc(8, -10, 4, 0, TWO_PI); ctx.stroke();
-  ctx.restore();
-
-  // ── Suit body (torso, deep purple-blue) ──────────────────────
-  const suitGrd = ctx.createLinearGradient(-16, -80, 16, -18);
-  suitGrd.addColorStop(0, '#4a2888');
-  suitGrd.addColorStop(0.4, '#3a1f6b');
-  suitGrd.addColorStop(1, '#28124a');
-  ctx.fillStyle = suitGrd;
-  ctx.beginPath();
-  ctx.moveTo(-12, -80);
-  ctx.lineTo(-16, -18);
-  ctx.quadraticCurveTo(-8, -14, 0, -14);
-  ctx.quadraticCurveTo(8, -14, 16, -18);
-  ctx.lineTo(12, -80);
-  ctx.closePath(); ctx.fill();
-  // Suit chest highlight streak
-  ctx.save(); ctx.globalAlpha = 0.12;
-  const suitShim = ctx.createLinearGradient(-3, -80, 3, -20);
-  suitShim.addColorStop(0, '#ffffff'); suitShim.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = suitShim;
-  ctx.beginPath(); ctx.moveTo(-3, -80); ctx.lineTo(-4, -20); ctx.lineTo(4, -20); ctx.lineTo(4, -80); ctx.closePath(); ctx.fill();
-  ctx.restore();
-  // Gold chest stripe
-  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 2; ctx.globalAlpha = 0.80;
-  ctx.beginPath(); ctx.moveTo(-10, -60); ctx.lineTo(10, -60); ctx.stroke();
-  ctx.restore();
-  // Life-support pack (small box on chest)
-  ctx.save();
-  const packGrd = ctx.createLinearGradient(-5, -72, 5, -52);
-  packGrd.addColorStop(0, '#5533aa'); packGrd.addColorStop(1, '#2a1055');
-  ctx.fillStyle = packGrd;
-  ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.2;
-  _roundRect(ctx, -6, -72, 12, 16, 2); ctx.fill(); ctx.stroke();
-  // Pack indicator light
-  ctx.fillStyle = '#00ffcc'; ctx.globalAlpha = 0.85;
-  ctx.beginPath(); ctx.arc(0, -66, 2.5, 0, TWO_PI); ctx.fill();
-  ctx.restore();
-  // Waist ring
-  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 2; ctx.globalAlpha = 0.65;
-  ctx.beginPath(); ctx.moveTo(-16, -18); ctx.lineTo(16, -18); ctx.stroke();
-  ctx.restore();
-
-  // ── Left arm (suit sleeve, 15° outward) ──────────────────────
-  const armCol = '#3a1f6b';
-  ctx.strokeStyle = armCol; ctx.lineWidth = 7; ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(-12, -68);
-  ctx.bezierCurveTo(-22, -62, -26, -48, -22, -36);
-  ctx.stroke();
-  // Left glove
-  const glvGrd1 = ctx.createRadialGradient(-22, -34, 0, -22, -34, 6);
-  glvGrd1.addColorStop(0, '#ffd700'); glvGrd1.addColorStop(1, '#cc9900');
-  ctx.fillStyle = glvGrd1;
-  ctx.beginPath(); ctx.arc(-22, -34, 5.5, 0, TWO_PI); ctx.fill();
-  // Shoulder joint ring
-  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.60;
-  ctx.beginPath(); ctx.arc(-12, -66, 5, 0, TWO_PI); ctx.stroke();
-  ctx.restore();
-
-  // ── Right arm (raised, holding net pole) ─────────────────────
-  ctx.strokeStyle = armCol; ctx.lineWidth = 7; ctx.lineCap = 'round';
-  ctx.beginPath();
-  ctx.moveTo(12, -68);
-  ctx.bezierCurveTo(20, -74, 22, -84, 16, -92);
-  ctx.stroke();
-  // Right glove
-  const glvGrd2 = ctx.createRadialGradient(16, -91, 0, 16, -91, 6);
-  glvGrd2.addColorStop(0, '#ffd700'); glvGrd2.addColorStop(1, '#cc9900');
-  ctx.fillStyle = glvGrd2;
-  ctx.beginPath(); ctx.arc(16, -91, 5.5, 0, TWO_PI); ctx.fill();
-  // Shoulder joint ring
-  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.60;
-  ctx.beginPath(); ctx.arc(12, -66, 5, 0, TWO_PI); ctx.stroke();
-  ctx.restore();
-
-  // ── Helmet (round, r=18) ──────────────────────────────────────
-  // Outer helmet shell (dark suit colour)
-  const helmGrd = ctx.createRadialGradient(-4, -112, 3, 0, -108, 22);
-  helmGrd.addColorStop(0, '#5533aa');
-  helmGrd.addColorStop(0.6, '#3a1f6b');
-  helmGrd.addColorStop(1, '#1a0d3a');
-  ctx.fillStyle = helmGrd;
-  ctx.beginPath(); ctx.arc(0, -108, 19, 0, TWO_PI); ctx.fill();
-  // Gold helmet rim
-  ctx.save();
-  ctx.strokeStyle = '#ffd700';
-  ctx.lineWidth = 2.5;
-  ctx.globalAlpha = 0.90;
-  ctx.beginPath(); ctx.arc(0, -108, 19, 0, TWO_PI); ctx.stroke();
-  ctx.restore();
-  // Visor (oval viewport showing face inside)
-  const visorGrd = ctx.createLinearGradient(-12, -120, 12, -96);
-  visorGrd.addColorStop(0, 'rgba(80,160,255,0.55)');
-  visorGrd.addColorStop(0.5, 'rgba(40,80,200,0.45)');
-  visorGrd.addColorStop(1, 'rgba(20,40,120,0.65)');
-  ctx.fillStyle = visorGrd;
-  ctx.beginPath(); ctx.ellipse(0, -108, 13, 15, 0, 0, TWO_PI); ctx.fill();
-  // Visor gold border
-  ctx.save(); ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.5; ctx.globalAlpha = 0.75;
-  ctx.beginPath(); ctx.ellipse(0, -108, 13, 15, 0, 0, TWO_PI); ctx.stroke();
-  ctx.restore();
-
-  // ── Face inside visor ────────────────────────────────────────
-  // Skin
-  ctx.fillStyle = '#f8d5b0';
-  ctx.beginPath(); ctx.ellipse(0, -108, 9, 11, 0, 0, TWO_PI); ctx.fill();
-  // Eyes: white sclera + purple iris + pupil + shine
-  ctx.fillStyle = '#f0f0ff';
-  ctx.beginPath(); ctx.ellipse(-4, -110, 2.8, 3.2, 0, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.ellipse(4, -110, 2.8, 3.2, 0, 0, TWO_PI); ctx.fill();
-  const iriG1 = ctx.createRadialGradient(-4, -110, 0.3, -4, -110, 2.2);
-  iriG1.addColorStop(0, '#9977ff'); iriG1.addColorStop(1, '#2211aa');
-  ctx.fillStyle = iriG1;
-  ctx.beginPath(); ctx.arc(-4, -110, 2.2, 0, TWO_PI); ctx.fill();
-  const iriG2 = ctx.createRadialGradient(4, -110, 0.3, 4, -110, 2.2);
-  iriG2.addColorStop(0, '#9977ff'); iriG2.addColorStop(1, '#2211aa');
-  ctx.fillStyle = iriG2;
-  ctx.beginPath(); ctx.arc(4, -110, 2.2, 0, TWO_PI); ctx.fill();
-  ctx.fillStyle = '#1a0a2a';
-  ctx.beginPath(); ctx.arc(-4, -110, 1.1, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(4, -110, 1.1, 0, TWO_PI); ctx.fill();
-  ctx.fillStyle = '#ffffff';
-  ctx.beginPath(); ctx.arc(-3, -112, 1, 0, TWO_PI); ctx.fill();
-  ctx.beginPath(); ctx.arc(5, -112, 1, 0, TWO_PI); ctx.fill();
-  // Smile
-  ctx.save(); ctx.strokeStyle = '#e05060'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.arc(0, -105, 3.5, 0.3, Math.PI - 0.3); ctx.stroke();
-  ctx.restore();
-  // Fringe visible through visor top
-  ctx.save();
-  ctx.fillStyle = '#2a0f05';
-  ctx.globalAlpha = 0.75;
-  ctx.beginPath();
-  ctx.moveTo(-8, -118); ctx.bezierCurveTo(-5, -112, 0, -110, 5, -112); ctx.bezierCurveTo(8, -114, 10, -118, 10, -118);
-  ctx.closePath(); ctx.fill();
-  ctx.restore();
-  // Visor glare highlight
-  ctx.save(); ctx.globalAlpha = 0.28;
-  const glare = ctx.createLinearGradient(-10, -122, 2, -110);
-  glare.addColorStop(0, '#ffffff'); glare.addColorStop(1, 'rgba(255,255,255,0)');
-  ctx.fillStyle = glare;
-  ctx.beginPath(); ctx.ellipse(-4, -116, 5, 4, -0.5, 0, TWO_PI); ctx.fill();
-  ctx.restore();
-
-  // ── Helmet top antenna + star badge ──────────────────────────
-  ctx.save();
-  ctx.strokeStyle = '#ffd700'; ctx.lineWidth = 1.8; ctx.lineCap = 'round';
-  ctx.beginPath(); ctx.moveTo(0, -127); ctx.lineTo(0, -120); ctx.stroke();
-  // 5-point star badge (r_outer=7, r_inner=3.2)
-  ctx.fillStyle = '#ffd700';
-  ctx.shadowColor = '#ffcc00'; ctx.shadowBlur = 10;
-  ctx.globalAlpha = 0.97;
-  ctx.translate(0, -130);
-  ctx.beginPath();
-  for (let sp = 0; sp < 5; sp++) {
-    const outerA = (sp * TWO_PI / 5) - Math.PI / 2;
-    const innerA = outerA + Math.PI / 5;
-    if (sp === 0) ctx.moveTo(Math.cos(outerA) * 7, Math.sin(outerA) * 7);
-    else          ctx.lineTo(Math.cos(outerA) * 7, Math.sin(outerA) * 7);
-    ctx.lineTo(Math.cos(innerA) * 3.2, Math.sin(innerA) * 3.2);
+  // Pick frame
+  if (_netState === 'extend') {
+    _girlFrame = 2;  // throw
+  } else if (_catchFlashFrames > 0) {
+    _girlFrame = 3;  // catch/joy
+  } else {
+    // idle / blink cycle
+    const elapsed = now - _girlLastBlink;
+    if (_girlFrame === 0 && elapsed > 3500) {
+      _girlFrame = 1;
+      _girlLastBlink = now;
+    } else if (_girlFrame === 1 && elapsed > 150) {
+      _girlFrame = 0;
+      _girlLastBlink = now;
+    }
   }
-  ctx.closePath(); ctx.fill();
-  ctx.fillStyle = '#ffffff'; ctx.globalAlpha = 0.70; ctx.shadowBlur = 0;
-  ctx.beginPath(); ctx.arc(0, 0, 1.6, 0, TWO_PI); ctx.fill();
-  ctx.restore();
 
-  ctx.restore();
+  if (_girlImg && (_girlImg.complete !== false)) {
+    // Sprite sheet: 880x220, each frame 220x220 (2x scale of 110x110 design)
+    const sx = _girlFrame * _GIRL_FRAME_W;
+    // Draw at original design size 110x110
+    ctx.drawImage(_girlImg, sx, 0, _GIRL_FRAME_W, _GIRL_FRAME_H,
+      _poleX - 55, _poleY - 110 + 12, 110, 110);
+  }
 }
 
-// ── Draw: net (STORY-00257) ───────────────────────────────────
+// ── Draw: net — triangle bag (Sprint A, 方案B) ───────────────
 function _drawNet(ctx) {
-  const isExtended = _netLen > 0;
-  const showLen = isExtended ? _netLen : 20;
-  const angle   = _netAngle;
+  const extended  = _netState !== 'swing';
+  const showLen   = extended ? _netLen : 20;
+  const angle     = _netAngle;
 
-  // Rope origin — from girl's right glove position (STORY-00364: updated for 126px spacesuit v7)
-  const ropeOriX = _poleX + 16;
-  const ropeOriY = _poleY - 91;
+  // Rope origin — SVG girl sprite: idle=hand at (+13,-17), extend=glove at (+27,-78)
+  const ropeOriX = extended ? _poleX + 27 : _poleX + 13;
+  const ropeOriY = extended ? _poleY - 78  : _poleY - 17;
 
-  // Net head (mouth ring center)
+  // Net head position
   const headX = ropeOriX + Math.sin(angle) * showLen;
   const headY = ropeOriY - Math.cos(angle) * showLen;
 
@@ -1582,7 +1413,7 @@ function _drawNet(ctx) {
     ctx.save();
     for (let i = 0; i < _trailPoints.length; i++) {
       const tp   = _trailPoints[i];
-      const frac = (i + 1) / _trailPoints.length;  // 0→1 (oldest→newest)
+      const frac = (i + 1) / _trailPoints.length;
       ctx.globalAlpha = frac * 0.6;
       ctx.fillStyle   = '#ffffff';
       ctx.shadowColor = '#aaccff';
@@ -1594,115 +1425,102 @@ function _drawNet(ctx) {
     ctx.restore();
   }
 
-  // ── Rope ──────────────────────────────────────────────────────
-  ctx.save();
-  ctx.strokeStyle = isExtended ? '#c8874a' : 'rgba(200,135,74,0.45)';
-  ctx.lineWidth   = isExtended ? 2.5 : 1.8;
-  ctx.lineCap     = 'round';
-  ctx.beginPath();
-  ctx.moveTo(ropeOriX, ropeOriY);
-  ctx.lineTo(headX, headY);
-  ctx.stroke();
-  ctx.restore();
-
-  // ── Net bag ───────────────────────────────────────────────────
-  const mouthR = (isExtended ? 14 : 8) * _netRadiusMult;
-  const bagDepth = mouthR * 1.8;
-
-  // Bag fill
-  ctx.save();
-  ctx.globalAlpha = isExtended ? 0.22 : 0.12;
-  ctx.fillStyle   = '#ffd770';
-  ctx.beginPath();
-  // Mouth opening (top arc)
-  ctx.arc(headX, headY, mouthR, Math.PI, 0, false);  // top semicircle
-  // Bag sides taper to a point
-  ctx.bezierCurveTo(
-    headX + mouthR * 0.8, headY + bagDepth * 0.6,
-    headX + mouthR * 0.3, headY + bagDepth,
-    headX, headY + bagDepth
-  );
-  ctx.bezierCurveTo(
-    headX - mouthR * 0.3, headY + bagDepth,
-    headX - mouthR * 0.8, headY + bagDepth * 0.6,
-    headX - mouthR, headY
-  );
-  ctx.closePath();
-  ctx.fill();
-  ctx.restore();
-
-  // Bag outline stroke
-  ctx.save();
-  ctx.strokeStyle = isExtended ? 'rgba(255,210,80,0.75)' : 'rgba(255,210,80,0.35)';
-  ctx.lineWidth   = isExtended ? 1.5 : 1.0;
-  ctx.beginPath();
-  ctx.arc(headX, headY, mouthR, Math.PI, 0, false);
-  ctx.bezierCurveTo(
-    headX + mouthR * 0.8, headY + bagDepth * 0.6,
-    headX + mouthR * 0.3, headY + bagDepth,
-    headX, headY + bagDepth
-  );
-  ctx.bezierCurveTo(
-    headX - mouthR * 0.3, headY + bagDepth,
-    headX - mouthR * 0.8, headY + bagDepth * 0.6,
-    headX - mouthR, headY
-  );
-  ctx.stroke();
-  ctx.restore();
-
-  // Mesh lines inside bag — horizontal arcs
-  if (isExtended) {
+  // ── Bamboo pole ───────────────────────────────────────────────
+  if (_netLen > 0 || extended) {
+    const poleLen = Math.min(_netLen + 22, 90);
+    const px2 = ropeOriX + Math.sin(angle) * poleLen;
+    const py2 = ropeOriY - Math.cos(angle) * poleLen;
+    const pg = ctx.createLinearGradient(ropeOriX, ropeOriY, px2, py2);
+    pg.addColorStop(0, '#6a4520'); pg.addColorStop(0.5, '#a07840'); pg.addColorStop(1, '#7a5828');
     ctx.save();
-    ctx.strokeStyle = 'rgba(255,215,100,0.55)';  // fixed: was 0.40, AC specifies 0.55
-    ctx.lineWidth   = 0.8;
-    for (let i = 1; i <= 4; i++) {
-      const frac = i / 5;
-      const yr   = headY + bagDepth * frac;
-      const xr   = mouthR * (1 - frac * 0.85);
-      ctx.beginPath();
-      ctx.arc(headX, yr, xr, Math.PI, 0, false);
-      ctx.stroke();
-    }
-    // Vertical lines (2 center lines)
-    for (let i = -1; i <= 1; i++) {
-      if (i === 0) continue;
-      const xOff = mouthR * i * 0.45;
-      ctx.beginPath();
-      ctx.moveTo(headX + xOff, headY);
-      ctx.quadraticCurveTo(headX + xOff * 0.7, headY + bagDepth * 0.6, headX + xOff * 0.15, headY + bagDepth);
-      ctx.stroke();
-    }
+    ctx.strokeStyle = pg; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(ropeOriX, ropeOriY); ctx.lineTo(px2, py2); ctx.stroke();
     ctx.restore();
   }
 
-  // Mouth ring (hoop)
+  // ── Thin string from pole tip to net head ────────────────────
+  if (_netLen > 40) {
+    const poleLen = Math.min(_netLen + 22, 90);
+    const px2 = ropeOriX + Math.sin(angle) * poleLen;
+    const py2 = ropeOriY - Math.cos(angle) * poleLen;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(200,180,140,0.60)';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath(); ctx.moveTo(px2, py2); ctx.lineTo(headX, headY); ctx.stroke();
+    ctx.restore();
+  }
+
+  if (_netLen < 5 && _netState === 'swing') return;
+
+  const mouthR = (extended ? 16 : 10) * _netRadiusMult;
+  const bagD   = mouthR * 1.9;
+  const flashAlpha = _catchFlashFrames / 6;
+
   ctx.save();
-  const ringAlpha = isExtended ? 0.9 : 0.45;
-  ctx.strokeStyle = `rgba(255,215,0,${ringAlpha})`;
-  ctx.lineWidth   = isExtended ? 2.5 : 1.5;
-  ctx.shadowColor = '#ffd700';
-  ctx.shadowBlur  = isExtended ? 6 : 2;
+  ctx.translate(headX, headY);
+  ctx.rotate(angle);
+
+  // Bag fill
+  const bagGrd = ctx.createLinearGradient(0, 0, 0, bagD);
+  bagGrd.addColorStop(0, flashAlpha > 0 ? 'rgba(255,230,150,0.18)' : 'rgba(160,200,255,0.14)');
+  bagGrd.addColorStop(1, 'rgba(80,120,200,0.04)');
+  ctx.fillStyle = bagGrd;
   ctx.beginPath();
-  ctx.ellipse(headX, headY, mouthR, mouthR * 0.35, 0, 0, TWO_PI);
+  ctx.arc(0, 0, mouthR, Math.PI, 0, false);
+  ctx.bezierCurveTo(mouthR * 0.9, bagD * 0.5, mouthR * 0.4, bagD, 0, bagD);
+  ctx.bezierCurveTo(-mouthR * 0.4, bagD, -mouthR * 0.9, bagD * 0.5, -mouthR, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Bag outline
+  ctx.strokeStyle = flashAlpha > 0
+    ? `rgba(255,220,100,${0.65 + flashAlpha * 0.35})`
+    : 'rgba(180,210,255,0.65)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(0, 0, mouthR, Math.PI, 0, false);
+  ctx.bezierCurveTo(mouthR * 0.9, bagD * 0.5, mouthR * 0.4, bagD, 0, bagD);
+  ctx.bezierCurveTo(-mouthR * 0.4, bagD, -mouthR * 0.9, bagD * 0.5, -mouthR, 0);
   ctx.stroke();
+
+  // Net mesh
+  ctx.save();
+  ctx.globalAlpha = 0.30;
+  ctx.strokeStyle = flashAlpha > 0 ? 'rgba(255,240,180,0.6)' : 'rgba(180,210,255,0.6)';
+  ctx.lineWidth = 0.6;
+  for (let i = 1; i <= 3; i++) {
+    const yt = (i / 4) * bagD;
+    const xr = mouthR * (1 - i * 0.18);
+    ctx.beginPath(); ctx.arc(0, yt, xr, Math.PI, 0, false); ctx.stroke();
+  }
+  for (let xi = -1; xi <= 1; xi += 2) {
+    ctx.beginPath();
+    ctx.moveTo(xi * mouthR * 0.5, 0);
+    ctx.quadraticCurveTo(xi * mouthR * 0.35, bagD * 0.5, xi * mouthR * 0.1, bagD);
+    ctx.stroke();
+  }
   ctx.restore();
 
-  // Catch flash (STORY-00257) — brief gold overlay on bag
-  if (_catchFlashFrames > 0) {
+  ctx.restore();
+
+  // Catch flash sparkles
+  if (flashAlpha > 0) {
     _catchFlashFrames--;
     ctx.save();
-    ctx.globalAlpha = _catchFlashFrames / 3 * 0.7;
-    ctx.fillStyle   = '#ffd700';
-    ctx.shadowColor = '#ffd700';
-    ctx.shadowBlur  = 20;
-    ctx.beginPath();
-    ctx.arc(headX, headY + bagDepth * 0.4, mouthR * 1.1, 0, TWO_PI);
-    ctx.fill();
+    ctx.globalAlpha = flashAlpha;
+    const t = Date.now() * 0.001;
+    for (let i = 0; i < 6; i++) {
+      const fa = (i / 6) * TWO_PI + t * 4;
+      const fr = mouthR * 1.5 + (1 - flashAlpha) * 10;
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(headX + Math.cos(fa) * fr, headY + Math.sin(fa) * fr, 1.5 + flashAlpha * 1.5, 0, TWO_PI);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
   // ── Caught debris drag visual (STORY-00286) ──────────────────
-  // During retract, draw the caught debris at the net head so it visibly follows
   if (_caughtDebris && _netState === 'retract') {
     const d = _caughtDebris;
     ctx.save();
@@ -1711,7 +1529,7 @@ function _drawNet(ctx) {
     ctx.shadowColor = 'rgba(255,100,30,0.5)';
     ctx.shadowBlur = 6;
     ctx.beginPath();
-    ctx.arc(headX, headY + bagDepth * 0.6, (d.r || 12) * 0.7, 0, TWO_PI);
+    ctx.arc(headX, headY + bagD * 0.6, (d.r || 12) * 0.7, 0, TWO_PI);
     ctx.fill();
     ctx.restore();
   }
