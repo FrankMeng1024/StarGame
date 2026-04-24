@@ -1,5 +1,13 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 75-mini Updates (2026-04-24)
+
+- Left arm counter-sway (STORY-00396): During swing state, girl's left arm sways opposite to net direction at 30% amplitude. Biomechanically correct — adds "life" to character without noticeable distraction. Smooth blend via _skelBlendT.
+- HUD star count bounce (STORY-00397): _hudStarFlashT=200 on catch triggers sin-curve scale animation peaking at 1.4x. Located top-right corner; peripheral visibility during gameplay is limited but appropriate as secondary feedback.
+- Star fade-out (STORY-00397): Caught stars fade as grey dot (#aaaacc) at r*0.4, alpha=fadeAlpha*0.5 over ~250ms. Effectively invisible vs particle burst but prevents harsh vanish.
+- Aim guide (STORY-00398): rgba(255,215,0,0.12) dotted line from wrist along net angle, swing-state only, below stars in z-order. Borderline imperceptible at 0.12 alpha on mobile but learnable without it in 2-3 throws.
+- Draw order confirmed: conLines → aimGuide → stars → obstacles → debris → particles → grass → girl → net
+
 ## Sprint 57-mini Updates (2026-04-22)
 
 - Shop screen ('道具商店') uses deep-space dark background with purple/teal nebula glow effects, consistent with the overall game theme. Card layout is single-column with circular icon zones featuring glow rings, purple gradient '购买' buttons, and gold coin pricing. Visual style aligns well with the game screen's space aesthetic.

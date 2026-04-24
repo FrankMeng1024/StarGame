@@ -48,9 +48,12 @@ let _poleX      = 0;
 let _poleY      = 0;
 
 // Stars
-let _stars      = [];   // {x,y,r,color,phase,speed,caught}
+let _stars      = [];   // {x,y,r,color,phase,speed,caught,fadeAlpha,fadeMs}
 let _caught     = 0;
 let _total      = 0;
+
+// STORY-00397: HUD star count bounce animation
+let _hudStarFlashT = 0;  // ms remaining for HUD star count bounce (200ms total)
 
 // Debris
 let _debris     = [];   // {x,y,r,type,spin,angle}
@@ -410,11 +413,14 @@ function _initStars(W, H) {
       phase: (i * 1.618) % TWO_PI,
       speed: 1.5 + (i % 5) * 0.6,  // STORY-00294: was 0.4+(i%5)*0.15 — wider range for visible twinkling
       caught: false,
+      fadeAlpha: 1.0,  // STORY-00397: fade-out alpha when caught
+      fadeMs: 0,       // STORY-00397: remaining fade duration (ms)
       idx:   i,  // STORY-00303: star index for reveal tracking
     });
   });
   _caught = 0;
   _total  = _stars.length;
+  _hudStarFlashT = 0;  // STORY-00397
 }
 
 function _initDebris(W, H) {
@@ -635,6 +641,11 @@ function _loop(now) {
       if (_starMapActive) { _starMapTimer -= dt; if (_starMapTimer <= 0) _starMapActive = false; }  // STORY-00296
       _updateShake();
       _updateObstacles(dt); // STORY-00366
+      // STORY-00397: tick HUD bounce + star fade-out
+      if (_hudStarFlashT > 0) _hudStarFlashT = Math.max(0, _hudStarFlashT - dt * 60);
+      for (const s of _stars) {
+        if (s.fadeMs > 0) { s.fadeMs = Math.max(0, s.fadeMs - dt * 60); s.fadeAlpha = s.fadeMs / 250; }
+      }
     }
 
     // Apply screen shake offset (game world only — HUD stays fixed)
@@ -645,6 +656,7 @@ function _loop(now) {
     }
 
     _drawConLines(ctx);
+    _drawAimGuide(ctx);  // STORY-00398: below stars z-order
     _drawStars(ctx, t);
     _drawObstacles(ctx, t); // STORY-00366
     _drawDebris(ctx);
@@ -904,7 +916,9 @@ function _checkCollisions() {
     const dy = _netHeadY - s.y;
     if (dx * dx + dy * dy <= (s.r + 20 * _netRadiusMult) * (s.r + 20 * _netRadiusMult)) {
       s.caught = true;
+      s.fadeMs = 250;          // STORY-00397: start fade-out
       _caught++;
+      _hudStarFlashT = 200;    // STORY-00397: trigger HUD bounce
       _spawnParticles(s.x, s.y, s.color);
       _netState = 'retract';
       _catchFlashFrames = 18;  // ~0.3s gold flash + catch frame (was 3)
@@ -1227,9 +1241,11 @@ function _drawStars(ctx, t) {
   const inRevealPhase = (_phase === 'starflash' || _phase === 'linedraw' || _phase === 'linger');
   for (const s of _stars) {
     if (s.caught) {
-      // Caught stars: dim, small, grey
+      // STORY-00397: caught stars fade out (fadeAlpha 1→0 over 250ms), then disappear
+      const fa = (s.fadeAlpha != null) ? s.fadeAlpha : 0;
+      if (fa <= 0) continue;  // fully faded, skip
       ctx.save();
-      ctx.globalAlpha = 0.20;
+      ctx.globalAlpha = fa * 0.5;
       ctx.fillStyle   = '#aaaacc';
       ctx.beginPath();
       ctx.arc(s.x, s.y, s.r * 0.4, 0, TWO_PI);
@@ -1601,6 +1617,7 @@ function _drawGirl(ctx) {
   // During swing, override right arm+pole with net angle (rigid-rod from shoulder)
   // _netAngle: 0=up, positive=right (same as game physics).
   // Convert to bone degrees: bone 180=up, so rodAngle = 180 - netAngleDeg.
+  const SKEL_LEFT_SWING_FACTOR = 0.3;  // STORY-00396: left arm counter-sways at 30% of net swing
   const swingWeight = 1 - _skelBlendT;
   if (swingWeight > 0) {
     const netDeg = _netAngle * 180 / Math.PI;
@@ -1608,6 +1625,9 @@ function _drawGirl(ctx) {
     rUpper    = lerp(rUpper,    rodAngle,      swingWeight);
     rLower    = lerp(rLower,    0,             swingWeight * 0.5);
     poleAngle = lerp(poleAngle, rodAngle + 10, swingWeight);
+    // STORY-00396: Left arm counter-sways opposite to net (balance dynamics)
+    // netDeg > 0 = net swings right → left arm swings left (negative correction)
+    lUpper += netDeg * (-SKEL_LEFT_SWING_FACTOR) * swingWeight;
   }
 
   // ── Draw body sprite (no arms) ──
@@ -1723,6 +1743,24 @@ function _drawGirl(ctx) {
   if (_netState !== 'extend') {
     drawPole(rHand.wx, rHand.wy, poleAngle);
   }
+}
+
+// ── Draw: aim guide — dim dotted line (STORY-00398, z-order: below stars) ────────────
+function _drawAimGuide(ctx) {
+  if (_netState !== 'swing' || _skelRHandX <= 0) return;
+  const ropeOriX = _skelRHandX;
+  const ropeOriY = _skelRHandY;
+  ctx.save();
+  ctx.strokeStyle = 'rgba(255,215,0,0.12)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([6, 6]);
+  ctx.beginPath();
+  ctx.moveTo(ropeOriX, ropeOriY);
+  ctx.lineTo(ropeOriX + Math.sin(_netAngle) * _netMaxLen,
+             ropeOriY - Math.cos(_netAngle) * _netMaxLen);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
 }
 
 // ── Draw: net — triangle bag (Sprint A, 方案B; Sprint 67 — swing visibility) ───────────────
@@ -1976,13 +2014,23 @@ function _drawHUD(ctx, W) {
   }
 
   // Star count (top-right) — STORY-00311: moved from left to right for web parity
-  ctx.save();
-  ctx.font         = 'bold 14px sans-serif';
-  ctx.textAlign    = 'right';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle    = COLORS.starGold;
-  ctx.fillText('★ ' + _caught + '/' + _total, W - G.SAFE_RIGHT - 50, ST + 26);
-  ctx.restore();
+  // STORY-00397: HUD bounce animation when star is caught
+  {
+    const starX = W - G.SAFE_RIGHT - 50, starY = ST + 26;
+    const hudBounce = _hudStarFlashT > 0
+      ? 1 + 0.4 * Math.sin(_hudStarFlashT / 200 * Math.PI)
+      : 1;
+    ctx.save();
+    ctx.translate(starX, starY);
+    ctx.scale(hudBounce, hudBounce);
+    ctx.translate(-starX, -starY);
+    ctx.font         = 'bold 14px sans-serif';
+    ctx.textAlign    = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle    = COLORS.starGold;
+    ctx.fillText('★ ' + _caught + '/' + _total, starX, starY);
+    ctx.restore();
+  }
 
   // Bomb button (legacy — kept for backward compat; slot system handles space_bomb now)
   _btnBomb = null;
