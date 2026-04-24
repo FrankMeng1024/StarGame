@@ -1,15 +1,23 @@
 """
 glm_analyze.py — 用 GLM-4V 分析微信小游戏截图
-用法: python scripts/glm_analyze.py <screenshot_path> [--prompt "自定义提示"]
-输出: JSON 到 stdout
+用法:
+  python scripts/glm_analyze.py <screenshot_path> [--prompt "自定义提示"]
+  python scripts/glm_analyze.py img1.png img2.png img3.png [--burst]
 
-返回格式:
+单张图输出:
 {
   "screen_type": "menu|level_select|pre_level|game|fail|complete|shop|gallery|intro|unknown",
   "visible_elements": ["列出所有可见UI元素"],
   "text_content": ["截图中的文字内容"],
   "visual_issues": ["任何视觉问题，无则空数组"],
   "is_loading": false,
+  "confidence": "high|medium|low"
+}
+
+多张图（--burst）输出:
+{
+  "animation_issues": ["帧间动画问题"],
+  "frame_summary": ["每帧简短描述"],
   "confidence": "high|medium|low"
 }
 
@@ -28,14 +36,16 @@ except ImportError:
 
 # ─── 参数 ───────────────────────────────────────
 parser = argparse.ArgumentParser()
-parser.add_argument('image', help='截图路径')
+parser.add_argument('images', nargs='+', help='截图路径（一张或多张）')
 parser.add_argument('--prompt', type=str, default=None, help='自定义分析提示（可选）')
 parser.add_argument('--model', type=str, default=None, help='指定 GLM 模型（可选）')
+parser.add_argument('--burst', action='store_true', help='多帧动画分析模式，输出 animation_issues')
 args = parser.parse_args()
 
-if not os.path.exists(args.image):
-    print(json.dumps({"error": f"文件不存在: {args.image}"}))
-    sys.exit(1)
+for img in args.images:
+    if not os.path.exists(img):
+        print(json.dumps({"error": f"文件不存在: {img}"}))
+        sys.exit(1)
 
 # ─── API Key 读取 ────────────────────────────────
 def load_api_key():
@@ -70,26 +80,24 @@ DEFAULT_PROMPT = """分析这张微信小游戏（追星少女/StarCatcher）截
   "confidence": "high（确定）|medium（基本确定）|low（不确定）"
 }"""
 
-# ─── 编码图像 ────────────────────────────────────
-with open(args.image, 'rb') as f:
-    b64 = base64.b64encode(f.read()).decode()
+BURST_PROMPT_TEMPLATE = ("这是游戏动画的{n}帧连续截图（100ms间隔）。"
+    "请分析帧间差异，仅返回JSON（不要markdown代码块）：\n"
+    '{"animation_issues":["帧间发现的动画问题列表，如闪烁、穿帮、角色消失等，无则空数组"],'
+    '"frame_summary":["每帧的简短描述"],'
+    '"confidence":"high|medium|low"}')
 
-prompt_text = args.prompt if args.prompt else DEFAULT_PROMPT
+# ─── 编码图像 ────────────────────────────────────
+def encode_image(path):
+    with open(path, 'rb') as f:
+        return base64.b64encode(f.read()).decode()
+
 models_to_try = [args.model] if args.model else VISION_MODELS
 
 # ─── 调用 GLM-4V ─────────────────────────────────
-def call_glm_vision(model, b64_image, prompt):
+def call_glm_vision(model, content_list):
     payload = {
         "model": model,
-        "messages": [
-            {
-                "role": "user",
-                "content": [
-                    {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64_image}"}},
-                    {"type": "text", "text": prompt}
-                ]
-            }
-        ],
+        "messages": [{"role": "user", "content": content_list}],
         "max_tokens": 512,
         "temperature": 0.1
     }
@@ -111,10 +119,28 @@ def parse_json_response(raw):
         text = m.group(1).strip()
     return json.loads(text)
 
+# ─── 构建 content list ────────────────────────────
+if args.burst or len(args.images) > 1:
+    # Multi-image burst mode
+    content = []
+    for img_path in args.images:
+        b64 = encode_image(img_path)
+        content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}})
+    burst_prompt = args.prompt if args.prompt else BURST_PROMPT_TEMPLATE.format(n=len(args.images))
+    content.append({"type": "text", "text": burst_prompt})
+else:
+    # Single image mode
+    b64 = encode_image(args.images[0])
+    prompt_text = args.prompt if args.prompt else DEFAULT_PROMPT
+    content = [
+        {"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}},
+        {"type": "text", "text": prompt_text}
+    ]
+
 last_error = None
 for model in models_to_try:
     try:
-        raw = call_glm_vision(model, b64, prompt_text)
+        raw = call_glm_vision(model, content)
         result = parse_json_response(raw)
         result["_model_used"] = model
         print(json.dumps(result, ensure_ascii=False, indent=2))
@@ -123,16 +149,18 @@ for model in models_to_try:
         last_error = f"HTTP {e.response.status_code}: {e.response.text[:200]}"
     except json.JSONDecodeError as e:
         # 解析失败，直接返回原始响应
-        print(json.dumps({
-            "screen_type": "unknown",
-            "visible_elements": [],
-            "text_content": [],
-            "visual_issues": [],
-            "is_loading": False,
+        fallback = {
             "confidence": "low",
             "_model_used": model,
             "_raw_response": raw[:500]
-        }, ensure_ascii=False, indent=2))
+        }
+        if args.burst or len(args.images) > 1:
+            fallback["animation_issues"] = []
+            fallback["frame_summary"] = []
+        else:
+            fallback.update({"screen_type": "unknown", "visible_elements": [],
+                             "text_content": [], "visual_issues": [], "is_loading": False})
+        print(json.dumps(fallback, ensure_ascii=False, indent=2))
         sys.exit(0)
     except Exception as e:
         last_error = str(e)

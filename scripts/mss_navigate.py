@@ -61,6 +61,7 @@ parser.add_argument('--sprint', type=int, default=27)
 parser.add_argument('--story', type=str, default='SPIKE-002')
 parser.add_argument('--out', type=str, default=None)
 parser.add_argument('--no-glm', action='store_true', help='跳过 GLM 验证（仅截图）')
+parser.add_argument('--burst', type=int, default=5, metavar='N', help='在游戏屏幕步骤后以100ms间隔截取N帧（默认5）')
 args = parser.parse_args()
 
 OUT_DIR = args.out or f"docs/qa/sprint{args.sprint}-evidence"
@@ -148,29 +149,35 @@ def find_canvas_bounds(hwnd):
         img = sct.grab(monitor)
         arr = np.array(img)[:, :, :3][..., ::-1]  # RGB
 
-    # B channel threshold: game canvas has B≈59-112 (navy blue);
-    # DevTools toolbar/gray panels have B≈40-56; DevTools right panel has B≈170.
-    # Use B > 56 to detect game canvas, scan at x=260 (middle of simulator).
-    B_GAME = 56  # B > 56 = game canvas
+    # Detection strategy: game canvas has B >> R (blue-shifted dark navy).
+    # DevTools chrome (toolbar, panels) is neutral grey: R≈G≈B.
+    # Condition: B > 35 AND B > R * 2.0 identifies game canvas.
+    #
+    # Vertical: scan at x=100 (safely inside simulator left panel on all layouts).
+    # Horizontal: scan at bottom 30% of canvas where starfield is solid blue.
+    #   Hard upper limit: min(win_w//2, 520) to exclude file-tree/code panels
+    #   that also have blue-tinted elements.
 
-    # ── Vertical extent: scan B channel at x=260 (center of simulator) ──
-    scan_x = min(260, win_w // 4)
+    # ── Vertical extent: scan at x=100 ──
+    scan_x = min(100, win_w // 8)
+    col_R = arr[:, scan_x, 0].astype(int)
     col_B = arr[:, scan_x, 2].astype(int)
 
     cy_top = None
-    for y in range(55, win_h):  # skip toolbar (y<55)
-        if col_B[y] > B_GAME:
+    for y in range(70, win_h):
+        b, rv = col_B[y], col_R[y]
+        if b > 35 and b > rv * 2.0:
             cy_top = y
             break
     if cy_top is None:
         return None
 
-    cy_bottom = cy_top + 100
     last_blue_y = cy_top
-    for y in range(cy_top, min(cy_top + 600, win_h)):
-        if col_B[y] > B_GAME:
+    for y in range(cy_top, min(cy_top + 900, win_h)):
+        b, rv = col_B[y], col_R[y]
+        if b > 35 and b > rv * 2.0:
             last_blue_y = y
-        elif y > last_blue_y + 15:
+        elif y > last_blue_y + 50:
             break
     cy_bottom = last_blue_y
 
@@ -178,22 +185,27 @@ def find_canvas_bounds(hwnd):
     if ch < 100:
         return None
 
-    # ── Horizontal extent: scan B channel at center row ──
-    scan_row_y = cy_top + ch // 2
+    # ── Horizontal extent: scan near bottom of canvas (solid starfield area) ──
+    # Use 70% height to land in starfield, not button/text area
+    scan_row_y = cy_top + int(ch * 0.7)
+    row_R = arr[scan_row_y, :, 0].astype(int)
     row_B = arr[scan_row_y, :, 2].astype(int)
 
+    # Left boundary
     cx_left = 0
     for x in range(0, min(200, win_w)):
-        if row_B[x] > B_GAME:
+        if row_B[x] > 35 and row_B[x] > row_R[x] * 2.0:
             cx_left = x
             break
 
-    cx_right = cx_left + 100
+    # Right boundary: cap at 65% of window width to exclude file-tree/code panels.
+    # 520 was too small when right panel is open and simulator fills ~960px of 1920px window.
+    x_cap = min(int(win_w * 0.65), 900)
     last_blue_x = cx_left
-    for x in range(cx_left, min(win_w - 5, 700)):
-        if row_B[x] > B_GAME:
+    for x in range(cx_left, x_cap):
+        if row_B[x] > 35 and row_B[x] > row_R[x] * 2.0:
             last_blue_x = x
-        elif x > last_blue_x + 20:
+        elif x > last_blue_x + 100:  # 100px gap tolerance — phone frame chrome can have ~80px gaps
             break
     cx_right = last_blue_x
 
@@ -234,19 +246,13 @@ def canvas_click(hwnd, canvas, rx, ry, label=""):
     """
     click at canvas-relative ratio position (rx, ry).
     canvas = (cx, cy, cw, ch) in PHYSICAL pixels (absolute screen coords).
-    Uses SetCursorPos + mouse_event. Since process is DPI-aware (SetProcessDpiAwareness=2),
-    SetCursorPos takes physical pixel coordinates directly.
+    Uses SendInput (same as send_input_click) for reliable delivery to DPI-aware WebView.
     """
-    # Physical absolute position
+    screen_w = user32.GetSystemMetrics(0)
+    screen_h = user32.GetSystemMetrics(1)
     phys_x = canvas[0] + int(canvas[2] * rx)
     phys_y = canvas[1] + int(canvas[3] * ry)
-    # SetCursorPos uses physical coords when process is DPI-aware
-    user32.SetCursorPos(phys_x, phys_y)
-    time.sleep(0.05)
-    user32.mouse_event(0x0002, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTDOWN
-    time.sleep(0.05)
-    user32.mouse_event(0x0004, 0, 0, 0, 0)  # MOUSEEVENTF_LEFTUP
-    time.sleep(0.1)
+    _sendinput_phys(phys_x, phys_y, screen_w, screen_h)
     if label:
         print(f"  🖱  Click {label} @ ratio({rx:.3f},{ry:.3f}) log({phys_x},{phys_y})")
 
@@ -281,12 +287,10 @@ def find_devtools_hwnd():
 # ─── 截图工具 ─────────────────────────────────────
 def capture(hwnd, filename, step_label=""):
     """截取 hwnd 全窗口，保存到 OUT_DIR/filename，返回亮度"""
-    # SW_SHOW (5) to show without changing size; bring to foreground
-    user32.ShowWindow(hwnd, 5)
-    # NOTE: do NOT call SetForegroundWindow here — it refocuses DevTools terminal
-    # panel and causes subsequent canvas_clicks to miss the simulator.
-    # Window was brought to foreground at script start; keep it there.
-    time.sleep(0.8)
+    # Bring DevTools window to foreground BEFORE capturing
+    user32.ShowWindow(hwnd, SW_RESTORE)
+    user32.SetForegroundWindow(hwnd)
+    time.sleep(1.0)  # Wait for window to become foreground and render
     r = ctypes.wintypes.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(r))
     with mss.mss() as sct:
@@ -442,17 +446,84 @@ def main():
             errors.append(f"{step_name}: expected {expected_types}, got {screen_type}")
         return ok
 
+    def burst_capture(step_num, label):
+        """连续截取 N 帧（100ms 间隔），返回帧路径列表"""
+        frames = []
+        n = args.burst
+        print(f"  📹 burst x{n} frames @ 100ms intervals ({label})")
+        # Ensure DevTools is in foreground for burst capture
+        user32.ShowWindow(hwnd, SW_RESTORE)
+        user32.SetForegroundWindow(hwnd)
+        time.sleep(0.5)
+        for i in range(n):
+            frame_letter = chr(ord('A') + i)
+            fname = f"step-{step_num:02d}-frame-{frame_letter}.png"
+            fpath = os.path.join(OUT_DIR, fname)
+            r_b = ctypes.wintypes.RECT()
+            user32.GetWindowRect(hwnd, ctypes.byref(r_b))
+            with mss.mss() as sct:
+                monitor = {"left": r_b.left, "top": r_b.top,
+                           "width": r_b.right - r_b.left, "height": r_b.bottom - r_b.top}
+                img = sct.grab(monitor)
+                arr = np.array(img)
+                brightness = float(arr.mean())
+                pil = Image.fromarray(arr[:, :, :3][..., ::-1])
+                pil.save(fpath)
+            print(f"    frame-{frame_letter}: {fname} brightness={brightness:.1f}")
+            frames.append(fpath)
+            if i < n - 1:
+                time.sleep(0.1)
+        return frames
+
+    def glm_burst_analyze(frame_paths, step_name):
+        """调用 GLM 对多帧截图进行动画分析，返回 animation_issues 列表"""
+        if args.no_glm or requests is None or not frame_paths:
+            return {"animation_issues": [], "confidence": "skipped"}
+        try:
+            content = []
+            for fp in frame_paths:
+                with open(fp, 'rb') as f:
+                    b64 = base64.b64encode(f.read()).decode()
+                content.append({"type": "image_url", "image_url": {"url": f"data:image/png;base64,{b64}"}})
+            burst_prompt = (
+                f"这是游戏动画的{len(frame_paths)}帧连续截图（100ms间隔）。"
+                "请分析帧间差异，仅返回JSON（不要markdown代码块）：\n"
+                '{"animation_issues":["帧间发现的动画问题列表，如闪烁、穿帮、角色消失等，无则空数组"],'
+                '"frame_summary":["每帧的简短描述"],'
+                '"confidence":"high|medium|low"}'
+            )
+            content.append({"type": "text", "text": burst_prompt})
+            payload = {
+                "model": "glm-4v-flash",
+                "messages": [{"role": "user", "content": content}],
+                "max_tokens": 512, "temperature": 0.1
+            }
+            r = requests.post(GLM_URL,
+                headers={"Authorization": f"Bearer {GLM_KEY}", "Content-Type": "application/json"},
+                json=payload, timeout=60)
+            r.raise_for_status()
+            raw = r.json()["choices"][0]["message"]["content"].strip()
+            import re as _re
+            m = _re.search(r'```(?:json)?\s*([\s\S]*?)```', raw)
+            if m: raw = m.group(1).strip()
+            data = json.loads(raw)
+            print(f"  GLM burst: animation_issues={data.get('animation_issues', [])} confidence={data.get('confidence','?')}")
+            return data
+        except Exception as e:
+            print(f"  GLM burst WARN: {str(e)[:80]} — degrading gracefully")
+            return {"animation_issues": [], "confidence": "error", "_error": str(e)[:80]}
+
     # ── Step 1: Menu screen ─────────────────────────
     # After reload, the game plays a constellation intro animation (~15s), then lands on menu.
     # Wait 20s to let the intro finish before capturing.
     print("\n[1/5] Menu screen (reload → wait for intro → menu)")
     r_win = ctypes.wintypes.RECT()
     user32.GetWindowRect(hwnd, ctypes.byref(r_win))
-    # The ↺ reload button is in the "Ordinary Compilation ↺" toolbar row
-    # at window-relative physical (~484, 42) in DPI-aware physical coords.
-    # This is the miniprogram recompile/reload button (restarts the game from scratch).
-    reload_px = r_win.left + 484
-    reload_py = r_win.top + 42
+    # The ↺ reload button is in the toolbar row at window-relative physical (~617, 38).
+    # NOTE: (484, 42) hits the "Ordinary Compilation ▾" dropdown arrow instead.
+    # Calibrated from mss-check.png: ↺ appears at image_x≈617 in 960px simulator capture.
+    reload_px = r_win.left + 617
+    reload_py = r_win.top + 38
     click_logical(reload_px, reload_py, "↺ reload")
     time.sleep(20)  # Wait for intro animation to finish → lands on menu
 
@@ -462,6 +533,16 @@ def main():
     canvas_click(hwnd, canvas, 0.300, 0.400, "focus-simulator")
     time.sleep(1.5)  # Wait for layout to stabilize
 
+    # Re-detect canvas after reload (window may have shifted)
+    fresh = find_canvas_bounds(hwnd)
+    if fresh:
+        r_redet = ctypes.wintypes.RECT()
+        user32.GetWindowRect(hwnd, ctypes.byref(r_redet))
+        fresh_abs_l = r_redet.left + fresh[0]
+        fresh_abs_t = r_redet.top  + fresh[1]
+        canvas = (fresh_abs_l, fresh_abs_t, fresh[2], fresh[3])
+        print(f"  ↻ Canvas re-detected: abs({fresh_abs_l},{fresh_abs_t}) {fresh[2]}x{fresh[3]}")
+
     brightness, path = capture(hwnd, f"{STORY}-01-menu.png", "menu")
     if brightness < 10:
         print("  ERROR: 截图全黑，管道失败")
@@ -470,25 +551,21 @@ def main():
 
     # ── Step 2: Level Select ────────────────────────
     print("\n[2/5] Level Select (click 挑战关卡)")
-    # After capture(), re-focus the simulator canvas by clicking a safe neutral area first.
-    # Safe area: left-center of canvas, dark bg area (no buttons/title)
-    # Canvas left=14, top=137, w=974, h=290. Safe point: (0.300, 0.400) = physical abs(306, 253)
-    focus_x2 = canvas[0] + int(canvas[2] * 0.300)
-    focus_y2 = canvas[1] + int(canvas[3] * 0.400)
-    user32.SetCursorPos(focus_x2, focus_y2)
+    # Pre-focus: click safe neutral area (dark bg, left-center of canvas)
+    canvas_click(hwnd, canvas, 0.300, 0.400, "focus-pre-step2")
     time.sleep(0.4)
-    # 挑战关卡 button: calibrated from debug-full-window.png ratio(0.668,0.610)
-    canvas_click(hwnd, canvas, 0.668, 0.610, "挑战关卡")
+    # 挑战关卡 button: landscape layout, game canvas (657, 149) in W=844 H=390.
+    # Canvas detected at win(35,16) 484x351 with letterbox offset ~64px top.
+    # rx = (657 * 484/844) / 484 = 0.779; ry = (64 + 149 * 224/390) / 351 = 0.427
+    canvas_click(hwnd, canvas, 0.779, 0.427, "挑战关卡")
     time.sleep(3.0)
     _, path = capture(hwnd, f"{STORY}-02-level-select.png", "level_select")
     verify(path, ['level_select'], 'level_select')
 
     # ── Step 3: Game screen ─────────────────────────
     print("\n[3/5] Game screen (click Level 1 猎户座)")
-    # Re-focus simulator canvas after capture() — physical coords, DPI-aware
-    focus_x3 = canvas[0] + int(canvas[2] * 0.300)
-    focus_y3 = canvas[1] + int(canvas[3] * 0.400)
-    user32.SetCursorPos(focus_x3, focus_y3)
+    # Pre-focus before clicking level card
+    canvas_click(hwnd, canvas, 0.300, 0.400, "focus-pre-step3")
     time.sleep(0.4)
     # Level 1 card: top-left card in level_select grid
     # Calibrated from debug-phys-click.png: card center abs≈(107,195) ratio≈(0.094,0.200)
@@ -499,6 +576,12 @@ def main():
     time.sleep(2)
     _, path = capture(hwnd, f"{STORY}-03-game.png", "game")
     verify(path, ['game', 'pre_level'], 'game')
+    # Burst capture: 5 frames at 100ms intervals for animation analysis
+    burst_frames = burst_capture(3, "game screen")
+    burst_result = glm_burst_analyze(burst_frames, 'game_burst')
+    results['game_burst'] = {"frames": [os.path.basename(f) for f in burst_frames],
+                              "animation_issues": burst_result.get("animation_issues", []),
+                              "confidence": burst_result.get("confidence", "unknown")}
 
     # ── Step 4: Fail screen (wait for Level 1 timer ~2min) ────────
     # Level 1 猎户座 has a ~2 minute timer. After the timer reaches 0, fail dialog appears.
@@ -507,6 +590,12 @@ def main():
     time.sleep(140)
     _, fail_path = capture(hwnd, f"{STORY}-04-fail.png", "fail after timer")
     verify(fail_path, ['fail', 'complete', 'game'], 'fail')
+    # Burst capture at fail/complete screen for result animation analysis
+    fail_burst_frames = burst_capture(4, "fail/complete screen")
+    fail_burst_result = glm_burst_analyze(fail_burst_frames, 'fail_burst')
+    results['fail_burst'] = {"frames": [os.path.basename(f) for f in fail_burst_frames],
+                              "animation_issues": fail_burst_result.get("animation_issues", []),
+                              "confidence": fail_burst_result.get("confidence", "unknown")}
 
     # ── Step 5: Back to Level Select ────────────────
     # NOTE: game.js fail dialog uses 'touchstart' events. Win32 mouse_event generates
@@ -535,6 +624,11 @@ def main():
     print("\n═══ Navigation Results ═══")
     all_pass = True
     for step, r in results.items():
+        if 'pass' not in r:
+            # burst analysis entries — not pass/fail gates
+            issues = r.get('animation_issues', [])
+            print(f"  ℹ {step}: {len(r.get('frames', []))} frames, animation_issues={issues}")
+            continue
         status = "✓" if r['pass'] else "✗"
         print(f"  {status} {step}: {r['screen_type']} ({r['confidence']})")
         if not r['pass']:
@@ -551,6 +645,9 @@ def main():
         "story": STORY,
         "hwnd": hwnd,
         "steps": results,
+        "frame_analysis": {
+            k: v for k, v in results.items() if k.endswith('_burst')
+        },
         "pass": all_pass
     }
     summary_path = os.path.join(OUT_DIR, f"{STORY}-navigate-summary.json")
