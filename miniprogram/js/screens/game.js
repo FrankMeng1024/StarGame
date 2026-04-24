@@ -41,6 +41,7 @@ let _netAngle   = 0;
 let _netLen     = 0;
 let _netMaxLen  = 0;
 let _netState   = 'swing'; // 'swing' | 'extend' | 'retract'
+let _extendHold = 0;       // frames to hold at full extension before retracting
 let _netHeadX   = 0;
 let _netHeadY   = 0;
 let _poleX      = 0;
@@ -214,6 +215,7 @@ export function showGame(navigate) {
   _poleY     = H * 0.87;  // STORY-00278: moved down from 0.82 to keep 130px character below star zone
   _netMaxLen = H * 0.88;  // fixed: was 0.75 — still too short for top-row stars (STORY-00272)
   _netLen    = 0;
+  _extendHold = 0;
   _swingT    = 0;
   _netState  = 'swing';
   _phase     = 'play';
@@ -793,8 +795,15 @@ function _updateNet(dt) {
   } else if (_netState === 'extend') {
     _netLen += NET_SPEED * _netSpeedMult * scale;
     if (_netLen >= _netMaxLen) {
-      _netLen   = _netMaxLen;
-      _netState = 'retract';
+      _netLen = _netMaxLen;
+      if (_extendHold < 12) {
+        _extendHold++;          // hold at full extension ~0.2s before retracting
+        _updateNetHead(dt);
+        _checkCollisions();
+      } else {
+        _extendHold = 0;
+        _netState   = 'retract';
+      }
     } else {
       _updateNetHead(dt);
       _checkCollisions();
@@ -879,7 +888,7 @@ function _checkCollisions() {
       _caught++;
       _spawnParticles(s.x, s.y, s.color);
       _netState = 'retract';
-      _catchFlashFrames = 3;  // gold flash on net (STORY-00257)
+      _catchFlashFrames = 18;  // ~0.3s gold flash + catch frame (was 3)
       AudioAdapter.playSFX(SFX_CATCH);
 
       if (_caught >= _total) {
@@ -1591,8 +1600,8 @@ function _drawNet(ctx) {
   }
 
   // ── Bamboo pole ───────────────────────────────────────────────
-  // Sprint 67: always draw during swing to show direction
-  {
+  // Only draw code pole during swing/retract — throw frame sprite already has the pole drawn in it
+  if (_netState !== 'extend') {
     const poleLen = Math.min(showLen + 22, 90);
     const px2 = ropeOriX + Math.sin(angle) * poleLen;
     const py2 = ropeOriY - Math.cos(angle) * poleLen;
