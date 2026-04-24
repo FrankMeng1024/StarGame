@@ -1532,25 +1532,17 @@ function _drawGirl(ctx) {
   const dt  = _skelLastMs > 0 ? Math.min(now - _skelLastMs, 50) : 16;
   _skelLastMs = now;
 
-  // ── Blink logic (frame 0/1 cycle for body sprite) ──
+  // ── Blink logic — only used when body_no_arms.png is available ──
+  // Frame transitions (_girlTransT) are skipped in skeletal mode to avoid flicker:
+  // the body sprite is always frame 0 / single frame, no cross-fade needed.
   if (_netState === 'swing') {
     const elapsed = now - _girlLastBlink;
-    let targetFrame;
-    if (_girlFrame === 0 && elapsed > 3500) { _girlLastBlink = now; targetFrame = 1; }
-    else if (_girlFrame === 1 && elapsed > 150) { _girlLastBlink = now; targetFrame = 0; }
-    else targetFrame = _girlFrame;
-    if (targetFrame !== _girlFrame) {
-      _girlPrevFrame = _girlFrame; _girlFrame = targetFrame;
-      _girlTransStart = now; _girlTransT = 0;
-    }
+    if (_girlFrame === 0 && elapsed > 3500) { _girlLastBlink = now; _girlFrame = 1; }
+    else if (_girlFrame === 1 && elapsed > 150) { _girlLastBlink = now; _girlFrame = 0; }
   } else {
-    // Non-swing: reset to frame 0 body (no blink during action)
-    if (_girlFrame !== 0) {
-      _girlPrevFrame = _girlFrame; _girlFrame = 0;
-      _girlTransStart = now; _girlTransT = 0;
-    }
+    _girlFrame = 0;
   }
-  if (_girlTransT < 1) _girlTransT = Math.min(1, (now - _girlTransStart) / _GIRL_TRANS_MS);
+  _girlTransT = 1; // always 1 in skeletal mode — no cross-fade
 
   // ── Blend control: skeletal blends smoothly when state changes ──
   if (_netState === 'swing') {
@@ -1574,11 +1566,13 @@ function _drawGirl(ctx) {
 
   // ── Arm pose keyframes (degrees, same convention as demo) ──
   // 0=down, 90=right, 180=up. lLower/rLower = elbow bend relative to upper arm.
+  // Swing: right arm driven by _netAngle live; left arm hangs naturally.
+  // Extend/retract: right arm raised to ~upper-left (holding net up), left slightly forward.
   const POSES_SKEL = {
-    swing:   { lUpper: -80, lLower: -10, rUpper: 155, rLower: 10, poleAngle: 165 },
-    extend:  { lUpper: -20, lLower: -10, rUpper: 155, rLower: 10, poleAngle: 145 },
-    retract: { lUpper: -15, lLower: -10, rUpper: 155, rLower: 10, poleAngle: 145 },
-    catch:   { lUpper: -155, lLower: -10, rUpper: 155, rLower: 10, poleAngle: 150 },
+    swing:   { lUpper:  10, lLower:  -5, rUpper:   0, rLower:   0, poleAngle:  90 },
+    extend:  { lUpper:  20, lLower: -10, rUpper: -130, rLower: -20, poleAngle: -55 },
+    retract: { lUpper:  15, lLower:  -8, rUpper: -130, rLower: -20, poleAngle: -55 },
+    catch:   { lUpper: -130, lLower: -20, rUpper: -130, rLower: -20, poleAngle: -60 },
   };
 
   // Determine target pose
@@ -1620,17 +1614,11 @@ function _drawGirl(ctx) {
             : (fallbackImg && fallbackImg.complete !== false) ? fallbackImg : null;
   if (img) {
     ctx.save();
-    if (img === fallbackImg && _girlTransT < 1 && _girlPrevFrame !== _girlFrame) {
-      ctx.globalAlpha = 1 - _girlTransT;
-      ctx.drawImage(img, _girlPrevFrame * _GIRL_FRAME_W, 0, _GIRL_FRAME_W, _GIRL_FRAME_H, dstX, dstY, 110, 110);
-      ctx.globalAlpha = _girlTransT;
-    }
-    // body_no_arms: blink handled by drawing the girl.png frame 1 (eyes closed) on top at low alpha
     ctx.globalAlpha = 1;
+    // body_no_arms.png: single 220×220 frame. girl.png fallback: use frame 0 (idle).
     ctx.drawImage(img, 0, 0, _GIRL_FRAME_W, _GIRL_FRAME_H, dstX, dstY, 110, 110);
-    // Blink overlay: draw frame 1 (blink) from original girl.png on top when blinking
+    // Blink overlay: draw girl.png frame 1 (eyes closed) on top when blinking
     if (img === bodyImg && fallbackImg && fallbackImg.complete !== false && _girlFrame === 1) {
-      ctx.globalAlpha = _girlTransT < 1 ? _girlTransT : 1;
       ctx.drawImage(fallbackImg, 1 * _GIRL_FRAME_W, 0, _GIRL_FRAME_W, _GIRL_FRAME_H, dstX, dstY, 110, 110);
     }
     ctx.restore();
@@ -1649,20 +1637,22 @@ function _drawGirl(ctx) {
     const lRad = uRad + lAng * Math.PI / 180;
     const wx2 = ex + Math.sin(lRad) * fLen;
     const wy2 = ey + Math.cos(lRad) * fLen;
-    const thick = 12 * sc;
+    // Thicker lines for more "flesh" appearance
+    const thick = 18 * sc;   // was 12*sc — wider = more body mass
+    const thin  = 14 * sc;   // forearm slightly thinner
     ctx.lineCap = 'round'; ctx.lineJoin = 'round';
-    // Upper arm
+    // Upper arm — outline + fill
     ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey);
-    ctx.strokeStyle = SKIN_STROKE; ctx.lineWidth = thick; ctx.stroke();
-    ctx.strokeStyle = SKIN_FILL;   ctx.lineWidth = thick - 3*sc; ctx.stroke();
+    ctx.strokeStyle = SKIN_STROKE; ctx.lineWidth = thick + 2*sc; ctx.stroke();
+    ctx.strokeStyle = SKIN_FILL;   ctx.lineWidth = thick; ctx.stroke();
     // Forearm
     ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(wx2, wy2);
-    ctx.strokeStyle = SKIN_STROKE; ctx.lineWidth = thick - 2*sc; ctx.stroke();
-    ctx.strokeStyle = SKIN_FILL;   ctx.lineWidth = thick - 5*sc; ctx.stroke();
+    ctx.strokeStyle = SKIN_STROKE; ctx.lineWidth = thin + 2*sc; ctx.stroke();
+    ctx.strokeStyle = SKIN_FILL;   ctx.lineWidth = thin; ctx.stroke();
     // Hand
-    ctx.beginPath(); ctx.arc(wx2, wy2, hR, 0, TWO_PI);
+    ctx.beginPath(); ctx.arc(wx2, wy2, hR + sc, 0, TWO_PI);
     ctx.fillStyle = SKIN_STROKE; ctx.fill();
-    ctx.beginPath(); ctx.arc(wx2, wy2, hR - 1.5*sc, 0, TWO_PI);
+    ctx.beginPath(); ctx.arc(wx2, wy2, hR - sc, 0, TWO_PI);
     ctx.fillStyle = SKIN_FILL; ctx.fill();
     return { wx: wx2, wy: wy2 };
   }
