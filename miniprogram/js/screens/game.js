@@ -850,8 +850,8 @@ function _updateNet(dt) {
 }
 
 function _updateNetHead(dt) {
-  // Rope origin: extend / retract+celebrating → raised (+27,-78); others → lowered (+20,-58)
-  const handRaised = _netState === 'extend' || (_netState === 'retract' && _catchFlashFrames > 0);
+  // Rope origin: extend / retract → raised (+27,-78); swing → lowered (+20,-58)
+  const handRaised = _netState === 'extend' || _netState === 'retract';
   const ropeOriX = handRaised ? _poleX + 27 : _poleX + 20;
   const ropeOriY = handRaised ? _poleY - 78  : _poleY - 58;
 
@@ -1511,15 +1511,15 @@ function _drawGirl(ctx) {
   // Pick target frame
   // extend                    → throw (2)     手举起发射
   // retract + catchFlash      → catch/joy (3) 抓到欢呼
-  // retract (no flash)        → idle (0)      没抓到，手放下，网自己飞回来
-  // swing                     → idle/blink    网彻底回来
+  // retract (no flash)        → throw (2)     没抓到，手仍举着直到网收完
+  // swing                     → idle/blink    网彻底回来，手放下
   let targetFrame;
   if (_netState === 'extend') {
     targetFrame = 2;  // throw — hand raised
   } else if (_netState === 'retract' && _catchFlashFrames > 0) {
     targetFrame = 3;  // catch/joy — celebrating
   } else if (_netState === 'retract') {
-    targetFrame = 0;  // missed — hand down while net flies back
+    targetFrame = 2;  // still holding — net not back yet
   } else {
     // idle / blink cycle
     const elapsed = now - _girlLastBlink;
