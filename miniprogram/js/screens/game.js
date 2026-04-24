@@ -91,6 +91,8 @@ let _phase      = 'play'; // 'play' | 'celebrate' | 'linedraw' | 'linger' | 'res
 let _result     = null;   // {victory, timeLeft, coins, stars, uncaught}
 // STORY-00367: Star pop-out animation for victory screen
 let _starPopTimers = [0, 0, 0]; // per-star elapsed time, starts counting on result phase enter
+// STORY-00373: Card entrance animation (translateY lerp + alpha fade)
+let _resultEnterTimer = 0;  // seconds since result phase entered; drives entrance animation
 
 // Pause state
 let _paused     = false;
@@ -672,6 +674,7 @@ function _loop(now) {
     _drawGirl(ctx);
     if (_lingerTimer <= 0) {
       _phase = 'result';
+      _resultEnterTimer = 0; // STORY-00373: reset entrance animation
     }
   } else {
     // Still draw scene for visual context
@@ -1926,6 +1929,7 @@ function _triggerResult(victory) {
   } else {
     _phase = 'result';
     _starPopTimers = [0, 0, 0]; // STORY-00367: reset pop animation
+    _resultEnterTimer = 0;      // STORY-00373: reset entrance animation
   }
 }
 
@@ -1939,6 +1943,14 @@ function _drawResultOverlay(ctx, W, H) {
     _starPopTimers[i] = (_starPopTimers[i] || 0) + _dt;
   }
 
+  // STORY-00373: Card entrance animation — slide up + alpha fade over 0.5s
+  _resultEnterTimer = (_resultEnterTimer || 0) + _dt;
+  const enterProgress = Math.min(1, _resultEnterTimer / 0.50);  // 0→1 over 0.5s
+  // ease-out: cubic
+  const enterEase = 1 - Math.pow(1 - enterProgress, 3);
+  const cardAlpha  = enterEase;
+  const cardSlideY = (1 - enterEase) * 30;  // starts 30px lower, slides up
+
   const t = _lastNow * 0.001;
 
   // ── Nebula background layer (STORY-00367) ─────────────────────
@@ -1946,7 +1958,9 @@ function _drawResultOverlay(ctx, W, H) {
   if (r.victory) {
     ctx.fillStyle = 'rgba(5,8,30,0.78)';
   } else {
-    ctx.fillStyle = 'rgba(2,5,22,0.85)';
+    // STORY-00373: fail — breathing vignette overlay to feel like fading starlight
+    const vignetteAlpha = 0.82 + 0.06 * Math.sin(t * 0.5); // slow pulse 0.76-0.88
+    ctx.fillStyle = `rgba(2,5,22,${vignetteAlpha.toFixed(3)})`;
   }
   ctx.fillRect(0, 0, W, H);
 
@@ -1964,13 +1978,17 @@ function _drawResultOverlay(ctx, W, H) {
   }
   ctx.restore();
 
-  // ── Card ───────────────────────────────────────────────────────
+  // ── Card (STORY-00373: entrance animation — slide up + alpha fade) ──
   const cardW = Math.min(W - 32, 340);
   const cardH = Math.min(H - 20, 360);
   const cardX = (W - cardW) / 2;
   const cardY = (H - cardH) / 2;
 
+  // Apply entrance: translate down by cardSlideY (starts at +30, animates to 0), fade in
   ctx.save();
+  ctx.globalAlpha = cardAlpha;
+  ctx.translate(0, cardSlideY);
+
   const bgGrd = ctx.createLinearGradient(cardX, cardY, cardX, cardY + cardH);
   if (r.victory) {
     bgGrd.addColorStop(0, 'rgba(25,18,55,0.97)');
@@ -1999,7 +2017,7 @@ function _drawResultOverlay(ctx, W, H) {
   }
   _roundRect(ctx, cardX, cardY, cardW, cardH, 16);
   ctx.stroke();
-  ctx.restore();
+  // Note: ctx.restore() for entrance animation is at end of _drawResultOverlay
 
   const cx = W / 2;
   const titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
@@ -2020,7 +2038,7 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.fillStyle = '#a8c4ff';
     ctx.shadowColor = '#4060c0';
     ctx.shadowBlur = 12;
-    ctx.fillText('星光消逝', cx, titleY);
+    ctx.fillText('星光消逝了\u2026', cx, titleY); // STORY-00373: more evocative wording
   }
   ctx.restore();
 
@@ -2229,6 +2247,9 @@ function _drawResultOverlay(ctx, W, H) {
     });
     _btnNext = null;
   }
+
+  // STORY-00373: end entrance animation transform
+  ctx.restore();
 }
 
 // ── Helper: draw 5-point star shape ──────────────────────────
@@ -2354,6 +2375,7 @@ function _onTouch(e) {
   // Tap during celebrate/starflash/linedraw/linger: skip to result
   if (_phase === 'celebrate' || _phase === 'starflash' || _phase === 'linedraw' || _phase === 'linger') {
     _phase = 'result';
+    _resultEnterTimer = 0; // STORY-00373
     return;
   }
 
