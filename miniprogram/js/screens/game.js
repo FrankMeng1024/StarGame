@@ -841,10 +841,12 @@ function _updateNet(dt) {
 }
 
 function _updateNetHead(dt) {
-  // Rope origin — extend: glove raised at (+27,-78); swing/retract: hand lowered at (+20,-58)
-  const extended  = _netState === 'extend';
-  const ropeOriX = extended ? _poleX + 27 : _poleX + 20;
-  const ropeOriY = extended ? _poleY - 78  : _poleY - 58;
+  // Rope origin:
+  //   extend / retract-celebrating → glove raised (+27,-78)
+  //   swing / retract-returning    → hand lowered (+20,-58)
+  const handRaised = _netState === 'extend' || (_netState === 'retract' && _catchFlashFrames > 0);
+  const ropeOriX = handRaised ? _poleX + 27 : _poleX + 20;
+  const ropeOriY = handRaised ? _poleY - 78  : _poleY - 58;
 
   // STORY-00366: Magnetic zone deflection — when net head enters a zone, deflect angle
   if (_netState === 'extend') {
@@ -1500,11 +1502,17 @@ function _drawGirl(ctx) {
   const now = Date.now();
 
   // Pick target frame
+  // swing          → idle/blink (0/1)
+  // extend         → throw (2)  手抬起
+  // retract + celebrating → catch/joy (3)  庆祝
+  // retract + done → idle (0)   手放下
   let targetFrame;
   if (_netState === 'extend') {
-    targetFrame = 2;  // throw
+    targetFrame = 2;  // throw — hand raised
   } else if (_catchFlashFrames > 0) {
-    targetFrame = 3;  // catch/joy
+    targetFrame = 3;  // catch/joy — celebrating
+  } else if (_netState === 'retract') {
+    targetFrame = 0;  // returning — hand lowered, idle pose
   } else {
     // idle / blink cycle
     const elapsed = now - _girlLastBlink;
@@ -1556,9 +1564,10 @@ function _drawNet(ctx) {
   const angle     = _netAngle;
   const swingAlpha = _netState === 'extend' ? 1.0 : 0.55;   // Sprint 67: swing/retract semi-transparent
 
-  // Rope origin — extend: glove raised at (+27,-78); swing/retract: hand lowered at (+20,-58)
-  const ropeOriX = extended ? _poleX + 27 : _poleX + 20;
-  const ropeOriY = extended ? _poleY - 78  : _poleY - 58;
+  // Rope origin: extend / retract-celebrating → raised; swing / retract-returning → lowered
+  const handRaised = _netState === 'extend' || (_netState === 'retract' && _catchFlashFrames > 0);
+  const ropeOriX = handRaised ? _poleX + 27 : _poleX + 20;
+  const ropeOriY = handRaised ? _poleY - 78  : _poleY - 58;
 
   // Net head position
   const headX = ropeOriX + Math.sin(angle) * showLen;
