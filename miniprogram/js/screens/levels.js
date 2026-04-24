@@ -611,6 +611,32 @@ function _drawNode(ctx, node, t, groupIdx) {
     ctx.stroke();
     ctx.restore();
   }
+
+  // CR-138: 已完成节点 — 金色外环 + 4颗小装饰星
+  const isCompleted = score && score.stars > 0;
+  if (isCompleted) {
+    ctx.save();
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 1.8;
+    ctx.shadowColor = 'rgba(255,215,0,0.6)';
+    ctx.shadowBlur = 5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 4, 0, TWO_PI);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    // 4颗装饰星点，距圆心 r+10，45°/135°/225°/315°
+    ctx.fillStyle = '#ffd700';
+    ctx.globalAlpha = 0.85;
+    for (let i = 0; i < 4; i++) {
+      const ang = (i * Math.PI / 2) + Math.PI / 4;
+      const sx = cx + Math.cos(ang) * (r + 10);
+      const sy = cy + Math.sin(ang) * (r + 10);
+      ctx.beginPath();
+      ctx.arc(sx, sy, 2.5, 0, TWO_PI);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
 }
 
 // 是否是最新解锁（即：已解锁，但此关组内前一个刚完成，或者是第一关）

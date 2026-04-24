@@ -190,6 +190,7 @@ export function showGallery(navigate, opts = {}) {
   _currentGroup = 0;
   _computeLayout();
 
+
   if (!_msz) {
     try {
       if (typeof wx !== 'undefined' && wx.loadFontFace) {
@@ -468,20 +469,29 @@ function _drawHexEdges(ctx, t, nodes, groupIdx) {
   ctx.save();
   ctx.setLineDash([3, 6]);
   ctx.lineDashOffset = -(t * 5) % 9;
-  ctx.lineWidth = 0.7;
+  ctx.lineWidth = 0.9;
+  // CR-139: 添加发光效果
+  ctx.shadowBlur = 6;
   for (const [a, b] of _HEX_EDGES) {
     const na = nodes[a];
     const nb = nodes[b];
     if (!na || !nb) continue;
     const bothUnlocked = state.isUnlocked(na.idx) && state.isUnlocked(nb.idx);
-    ctx.globalAlpha = bothUnlocked ? 0.22 : 0.06;
-    ctx.strokeStyle = bothUnlocked ? group.color : '#445588';
+    ctx.globalAlpha = bothUnlocked ? 0.28 : 0.06;
+    if (bothUnlocked) {
+      ctx.strokeStyle = group.color + '88';
+      ctx.shadowColor = group.color + '80';
+    } else {
+      ctx.strokeStyle = '#445588';
+      ctx.shadowColor = 'transparent';
+    }
     ctx.beginPath();
     ctx.moveTo(na.cx, na.cy);
     ctx.lineTo(nb.cx, nb.cy);
     ctx.stroke();
   }
   ctx.setLineDash([]);
+  ctx.shadowBlur = 0;
   ctx.globalAlpha = 1;
   ctx.restore();
 }
@@ -599,6 +609,32 @@ function _drawNode(ctx, node, t, groupIdx) {
   ctx.restore();
   ctx.restore();
 
+  // CR-139: 节点外圈 — difficulty color ring + center white dot
+  if (unlocked) {
+    // 外圈：group difficulty color, lineWidth=1.5, radius=r+3
+    ctx.save();
+    const ringAlpha = 0.5 + Math.sin(t * 1.0 + slot * 0.5) * 0.15;
+    ctx.globalAlpha = ringAlpha;
+    ctx.strokeStyle = group.color;
+    ctx.lineWidth = 1.5;
+    ctx.shadowColor = group.glow + '0.5)';
+    ctx.shadowBlur = 4;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 3, 0, TWO_PI);
+    ctx.stroke();
+    ctx.restore();
+    // 中心白点
+    ctx.save();
+    ctx.fillStyle = 'white';
+    ctx.globalAlpha = 0.7;
+    ctx.shadowColor = 'white';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(cx, cy, 3, 0, TWO_PI);
+    ctx.fill();
+    ctx.restore();
+  }
+
   // ── 节点外标签 ───────────────────────────────────────────
   const labelAlpha = unlocked ? 0.92 : 0.28;
   ctx.save();
@@ -615,14 +651,17 @@ function _drawNode(ctx, node, t, groupIdx) {
     try { ctx.fillText(c.icon, bx, by); } catch (e) {}
   }
 
-  // 提示文字（替代星座名，点击引导）
-  ctx.font = `10px sans-serif`;
+  // CR-139: 显示星座名（截断超长名称，≤5字符）
+  ctx.font = `11px sans-serif`;
   ctx.textAlign = 'center';
   ctx.textBaseline = 'top';
-  ctx.fillStyle = unlocked ? 'rgba(180,180,220,0.60)' : 'rgba(70,75,120,0.4)';
+  ctx.fillStyle = unlocked ? 'rgba(200,200,240,0.82)' : 'rgba(70,75,120,0.4)';
   ctx.shadowColor = 'transparent';
   ctx.shadowBlur  = 0;
-  ctx.fillText(unlocked ? '点击查看名称' : '未解锁', cx, cy + r + 5);
+  const labelText = unlocked
+    ? ((c.nameZh || c.nameEn || '').slice(0, 5) + ((c.nameZh || c.nameEn || '').length > 5 ? '…' : ''))
+    : '未解锁';
+  ctx.fillText(labelText, cx, cy + r + 5);
 
   ctx.restore();
 

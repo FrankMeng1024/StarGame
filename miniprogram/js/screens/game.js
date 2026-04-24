@@ -1628,8 +1628,10 @@ function _drawGirl(ctx) {
   }
 
   // ── Bone drawing helpers ──
-  const SKIN_FILL   = '#FFDFC4';
-  const SKIN_STROKE = '#D4A882';
+  // CR-149 Phase 2: Spacesuit-themed arm colors (deep blue-purple, not bare skin)
+  const SKIN_FILL   = 'rgba(80,100,180,0.92)';  // spacesuit deep blue-purple
+  const SKIN_STROKE = 'rgba(50,70,140,0.95)';   // darker spacesuit outline
+  const SUIT_HIGHLIGHT = 'rgba(140,170,255,0.6)'; // highlight on spacesuit sleeve
   const POLE_COL    = '#EAB045';
   const POLE_STROKE = '#C8882A';
 
@@ -1641,8 +1643,8 @@ function _drawGirl(ctx) {
     const wx2 = ex + Math.sin(lRad) * fLen;
     const wy2 = ey + Math.cos(lRad) * fLen;
 
-    const thick = 9 * sc;    // half-width of upper arm
-    const thin  = 7 * sc;    // half-width of forearm
+    const thick = 11 * sc;    // half-width of upper arm (CR-149 Phase 2: increased for fleshy look)
+    const thin  = 8 * sc;    // half-width of forearm
 
     // Helper: draw a filled "sausage" limb segment using bezier outline
     function drawSegment(x0, y0, x1, y1, w0, w1) {
@@ -1686,6 +1688,9 @@ function _drawGirl(ctx) {
     ctx.beginPath(); ctx.arc(ex, ey, thick * 0.9, 0, TWO_PI);
     ctx.fillStyle = SKIN_FILL; ctx.fill();
     ctx.strokeStyle = SKIN_STROKE; ctx.lineWidth = sc; ctx.stroke();
+    // CR-149 Phase 2: elbow highlight dot (spacesuit gloss)
+    ctx.beginPath(); ctx.arc(ex - thick * 0.25, ey - thick * 0.25, thick * 0.25, 0, TWO_PI);
+    ctx.fillStyle = SUIT_HIGHLIGHT; ctx.fill();
     // Hand circle
     ctx.beginPath(); ctx.arc(wx2, wy2, hR + sc, 0, TWO_PI);
     ctx.fillStyle = SKIN_STROKE; ctx.fill();

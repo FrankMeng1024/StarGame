@@ -1,8 +1,8 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: IN PROGRESS — Sprint 71-mini DONE (2026-04-25). STORY-00383/384: shop bottom sheet SHEET_H=260+✕ close button + navigation return-to-source memory. Arch PASS. QA PASS (HIGH). UX no Blockers. Committed + pushed.
-**Current Sprint**: Sprint 71-mini
-**Last Updated**: 2026-04-25
+**Status**: IN PROGRESS — Sprint 74-mini DONE (2026-04-24). STORY-00392/393/394: 选关金环+图鉴蜂巢发光边线+骨骼手臂宇航员配色. Arch PASS. QA PASS (MEDIUM — DevTools base lib blocked). UX no Blockers (1 Low: 11px label). Committed. Sprint 75 planning next.
+**Current Sprint**: Sprint 75-mini (planning)
+**Last Updated**: 2026-04-24
 
 > **Sprint 37-mini COMPLETE**: 2 Stories STORY-00323~00324 Done. Star flash sequence before linedraw (STORY-00323): new 'starflash' phase, 150ms intervals, scale 1→2→1. Victory→levels flicker fix (STORY-00324): _cleanup() before all result navigation buttons. Arch PASS. QA PASS (STORY-00323 LOW confidence — miniprogram Canvas only). UX no Blockers. VU ACCEPTED 9.6/10 — PROJECT COMPLETE. All 11 user-reported issues (CR-113~CR-121) resolved across Sprint 35/36/37-mini.
 
@@ -83,6 +83,8 @@
 | Sprint 69-mini | COMPLETE | 修复女孩精灵图灰色像素+网兜绳子起点位置 (STORY-00378/379) — Arch PASS + QA PASS + UX no Blockers |
 | Sprint 70-mini | COMPLETE | 骨骼动画Phase1完整化+结算页按钮修复 (STORY-00381/382) — Arch PASS + QA PASS (MEDIUM-HIGH) + UX no Blockers |
 | Sprint 71-mini | COMPLETE | 道具商店底部弹窗+导航来源记忆 (STORY-00383/384) — Arch PASS + QA PASS (HIGH) + UX no Blockers |
+| Sprint 74-mini | COMPLETE | 视觉精细化: 选关金环完成装饰+图鉴蜂巢发光边线+骨骼手臂宇航员配色 (STORY-00392~00394) — Arch PASS + QA PASS (MEDIUM) + UX no Blockers |
+| Sprint 73-mini | COMPLETE | 结算页按钮修复+骨骼动画Phase1+结算页深空视觉 (STORY-00386/387/388) — Arch PASS + QA PASS (MEDIUM) + UX no Blockers |
 | Sprint 61-mini | COMPLETE | 图鉴详情页二轮精修 — 圆圈放大/照片过滤/WeChat胶囊/字体增大/pill截断修复/行距/ESA 4张图 |
 
 ## VU Acceptance History

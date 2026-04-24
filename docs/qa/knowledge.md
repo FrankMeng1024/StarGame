@@ -2,6 +2,18 @@
 
 ---
 
+## Sprint 74-mini Updates (2026-04-24)
+
+### Sprint 74-mini — PASS (MEDIUM confidence, code-path verification, DevTools infrastructure blocked)
+
+- STORY-00392: Level select completed node decoration — gold ring at r+4 (#ffd700) + 4 star dots at r+10 (45°/135°/225°/315°). `isCompleted = score && score.stars > 0`. Drawn after `ctx.restore()` — gold ring is outside save/restore scope. This is expected behavior (Arch flagged as non-blocking Medium in code review).
+- STORY-00393: Gallery hex edges: lineWidth=0.9, shadowBlur=6, per-edge group color shadow for unlocked edges. Node outer ring (animated alpha, group color, lineWidth=1.5, radius=r+3) + center white dot (r=3, shadowBlur=8). Constellation name label: 11px, truncated to 5 chars with `…` using nameZh fallback to nameEn.
+- STORY-00394: Arm color constants changed from SKIN_FILL=#FFDFC4 to rgba(80,100,180,0.92), SKIN_STROKE from #D4A882 to rgba(50,70,140,0.95). New SUIT_HIGHLIGHT=rgba(140,170,255,0.6). Arm thickness: thick=11*sc (was 9), thin=8*sc (was 7). Elbow highlight dot at thick*0.25 radius.
+- DevTools base lib "3.15.2 Fail" dialog: persistent since Sprint 73. Blocks game simulator load. Manual fix required: Toolbar > Details > Local Settings > select valid base lib version.
+- Arm color constants are named `SKIN_FILL`, `SKIN_STROKE`, `SUIT_HIGHLIGHT` in game.js — search these for future arm style changes.
+
+---
+
 ## Sprint 57-mini Updates (2026-04-22)
 
 - Shop screen now uses unified deep-space visual system (drawSkyBg + drawNebulae + drawBgStars + drawHeaderBar) — consistent with menu, levels, and gallery screens. Card layout is single-column with purple-blue gradient, circular icon zones with glow, and purple gradient buy buttons.
@@ -785,6 +797,15 @@ No backend, no network requests. All data in localStorage + local files.
   photo state（4 vars）在 `_cleanup()` + 3个导航时间点全部重置。
   `_drawDetail()` oy 流：info pills → +10 → photo(160+10) → divider → lore lines → +24 → `_detailTotalH`。
   Wikimedia 429 从 CI/自动化 IP 出现，但非 code bug；WeChat DevTools 用自己的网络栈，可能成功加载。
+
+## Sprint 70-mini Updates (2026-04-24)
+
+- **Bezier skeletal arms confirmed**: Arms drawn as sausage-shaped bezier fills (not lines). Visual check: sausage shape + skin fill color + elbow joint circle. Screenshot 5 (STORY-00381-04-game.png) confirms natural left-arm hang, right arm holding pole, net rope from hand wrist.
+- **Result screen button hitTest fix**: Fail-screen 重试 button navigation confirmed via console log `[nav] game W=844 H=390` appearing twice (retry fired → game loaded). hitTest coordinate compensation via `rty = ty - _cardSlideY` confirmed working.
+- **GLM misclassification**: GLM-4V classifies level-select screen as "game" when background is starfield constellation art. Use console `navigate:levels → [nav] levels` log to confirm level-select was reached — do NOT rely on GLM classification alone.
+- **Console log pattern**: `[nav] game W=844 H=390` is the reliable indicator of successful game-screen navigation; W/H confirm canvas dimensions.
+- **Net rope origin**: If rope visually starts from hand/wrist area (not fixed pole point), _skelRHandX/Y export is working correctly.
+- **Win state untested**: No win-state screenshot available. Fail-screen → retry path covers same code. Future QA: need strategy to win a level (short timer + few stars cheat mode).
 
 ## Sprint 67-mini Updates (2026-04-24)
 

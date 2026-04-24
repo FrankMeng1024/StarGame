@@ -632,6 +632,21 @@
 - Background depth: starfield + terrain silhouette + nebula glow. Atmospheric, non-interfering.
 - Low friction: triangular arrow icon in play area slightly ambiguous (not a blocker).
 
+## Sprint 74-mini Updates (2026-04-24)
+
+- Level select three-tier visual hierarchy: dim (locked) → blue-purple pulse glow (unlocked) → gold completion ring + star dots (completed). Gold accent language extended from character suit to level nodes — coherent reward visual language.
+- Gallery hexagon cells: glowing group-colored borders (shadowBlur=6, animated alpha), center white dot (r=3), 11px constellation name labels (5-char truncation + ellipsis). Creates "living star map" aesthetic. Low friction: 11px text is small on lower-DPI devices.
+- Character arms: fully spacesuit-consistent — blue-purple (rgba(80,100,180,0.92)) vs deep purple torso (#3a1f6b) creates natural material differentiation. Elbow highlight dot adds glossy suit surface quality. Character internal design consistency resolved from Sprint 74-mini.
+- Gold accent system: character suit details + level completion rings + star dot decorations = coherent achievement visual language across the full game.
+
+## Sprint 70-mini Updates (2026-04-24)
+
+- Bezier arms (Phase 1): sausage fills + elbow joint circles are functional and correctly positioned, but visually read as construction-quality vs the polished head/hat/dress. Two-tier quality perception on character. Expected Phase 1 state — Phase 2 will add sprite-based flesh rendering.
+- Fail screen buttons (重试/选关) confirmed working. Retry path verified: fail screen → retry click → new game launched. Fail screen card is clean, actionable, emotionally appropriate.
+- Fail screen card design: dark overlay, 1-3 star rating, caught/total stats, personalized constellation encouragement text, two clear action buttons. Consistent with dark-glass aesthetic.
+- Menu screen stable: 3 buttons, constellation art, info strip, purple-blue palette. No regression from Sprint 41-mini state.
+- Girl sprite: no white fringing after Sprint 67-mini transparency fix. Clean integration into dark starfield background.
+
 ## Sprint 67-mini Updates (2026-04-24)
 
 - Girl sprite edges confirmed clean after transparency fix — no white/grey fringing. Character blends naturally into starfield.
