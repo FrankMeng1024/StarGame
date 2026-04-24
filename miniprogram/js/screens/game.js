@@ -168,6 +168,10 @@ let _slots      = [];  // up to 3 active item slots
 let _slotBoxes  = [];  // [{x,y,w,h,slotIdx}] — tap zones, updated each draw frame
 let _passiveCoins = false; // double_coins passive item
 
+// STORY-00372: near-layer background sparkle stars + grass seeds (Sprint C bg upgrade)
+let _nearBgSparkles = []; // [{x,y,r,ph,spd}] — 6 bright near-layer bg stars with diffraction arms
+let _grassSeeds     = []; // [{x,dx,ph}] — grass stem positions near poleX
+
 const ITEM_CONFIG = {
   net_speed:    { icon: '⚡', duration: 15 },
   net_enlarge:  { icon: '🪢', duration: 15 },
@@ -259,6 +263,7 @@ export function showGame(navigate) {
   _initObstacles(W, H);
 
   initBgStars(W, H, 100);  // 100 stars for denser sky (STORY-00260)
+  _initBgEnhance(W, H);   // STORY-00372: near-layer sparkles + grass seeds
   _particles = [];
   _paused = false;
   _lorePage = 0;
@@ -472,7 +477,33 @@ function _initObstacles(W, H) {
   }
 }
 
-// ── Cleanup ───────────────────────────────────────────────────
+// STORY-00372: Initialize near-layer background sparkles + grass seeds (Sprint C bg upgrade)
+function _initBgEnhance(W, H) {
+  // 6 bright near-layer bg stars with diffraction arms — scattered across upper sky
+  _nearBgSparkles = [];
+  const nx = [0.08, 0.22, 0.45, 0.62, 0.78, 0.91];
+  const ny = [0.10, 0.20, 0.07, 0.18, 0.12, 0.22];
+  for (let i = 0; i < 6; i++) {
+    _nearBgSparkles.push({
+      x:   nx[i] * W,
+      y:   ny[i] * H,
+      r:   1.4 + i * 0.12,
+      ph:  i * 1.1,
+      spd: 0.35 + i * 0.07,
+    });
+  }
+
+  // 6 grass stems scattered near poleX: 3 left, 3 right, ±20-90px
+  _grassSeeds = [];
+  const offsets = [-80, -45, -22, 22, 48, 85];
+  for (let i = 0; i < 6; i++) {
+    _grassSeeds.push({
+      dx: offsets[i],               // x offset from _poleX
+      h:  H * (0.030 + 0.012 * (i % 3)), // stem height 3-5.4% of H
+      ph: i * 1.3,                  // phase offset for sway
+    });
+  }
+}
 function _cleanup() {
   if (_rafId !== null) {
     cancelAnimationFrame(_rafId);
@@ -548,6 +579,7 @@ function _loop(now) {
   // ── Background ──────────────────────────────────────────────
   drawSkyBg(ctx, W, H, _scene.sky0, _scene.sky1, _scene.sky2);
   drawBgStars(ctx, t);
+  _drawNearBgSparkles(ctx, t); // STORY-00372: near-layer sparkle stars
   if (_scene.aurora) {
     const auroraT = now * 0.0004;
     for (let i = 0; i < 3; i++) {
@@ -585,6 +617,7 @@ function _loop(now) {
     _drawObstacles(ctx, t); // STORY-00366
     _drawDebris(ctx);
     _drawParticles(ctx);
+    _drawGrass(ctx, t, W, H); // STORY-00372: grass stems
     _drawGirl(ctx);
     _drawNet(ctx);
 
@@ -608,6 +641,7 @@ function _loop(now) {
     _drawConLines(ctx);
     _drawStars(ctx, t);
     _drawParticles(ctx);
+    _drawGrass(ctx, t, W, H); // STORY-00372
     _drawGirl(ctx);
   } else if (_phase === 'starflash') {
     // STORY-00323: sequential star flash — each constellation-line star flashes before lines appear
@@ -617,6 +651,7 @@ function _loop(now) {
     _drawStars(ctx, t);
     _drawParticles(ctx);
     _drawStarFlash(ctx, t);
+    _drawGrass(ctx, t, W, H); // STORY-00372
     _drawGirl(ctx);
   } else if (_phase === 'linedraw') {
     _updateLineDrawProgress(dt);
@@ -624,6 +659,7 @@ function _loop(now) {
     _drawStars(ctx, t);
     _drawAnimatedConLines(ctx);
     _drawParticles(ctx);
+    _drawGrass(ctx, t, W, H); // STORY-00372
     _drawGirl(ctx);
   } else if (_phase === 'linger') {
     // STORY-00274: all lines drawn — stars pulse/flash for 1.5s before result
@@ -632,6 +668,7 @@ function _loop(now) {
     _drawStars(ctx, t);
     _drawAnimatedConLines(ctx);
     _drawLingerFlash(ctx, t);
+    _drawGrass(ctx, t, W, H); // STORY-00372
     _drawGirl(ctx);
     if (_lingerTimer <= 0) {
       _phase = 'result';
@@ -641,6 +678,7 @@ function _loop(now) {
     _drawConLines(ctx);
     _drawStars(ctx, t);
     _drawDebris(ctx);
+    _drawGrass(ctx, t, W, H); // STORY-00372
     _drawGirl(ctx);
     _drawResultOverlay(ctx, W, H);
   }
@@ -1083,6 +1121,61 @@ function _drawLingerFlash(ctx, t) {
     ctx.beginPath();
     ctx.arc(s.x, s.y, s.r * 1.3, 0, TWO_PI);
     ctx.fill();
+  }
+  ctx.restore();
+}
+
+// ── Draw: near-layer bg sparkles (STORY-00372 Sprint C) ──
+// 6 bright near-layer background stars with cross diffraction arms
+// Called after drawBgStars — adds depth without touching canvas-utils
+function _drawNearBgSparkles(ctx, t) {
+  ctx.save();
+  for (const s of _nearBgSparkles) {
+    const a = 0.30 + 0.28 * Math.abs(Math.sin(t * s.spd + s.ph));
+    const armLen = s.r * (3.5 + 2.0 * Math.abs(Math.sin(t * s.spd * 1.4 + s.ph)));
+
+    // Core
+    ctx.globalAlpha = a;
+    ctx.fillStyle   = '#e8f4ff';
+    ctx.shadowColor = '#cce8ff';
+    ctx.shadowBlur  = s.r * 5;
+    ctx.beginPath();
+    ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    // Cross diffraction arms
+    ctx.strokeStyle = _hexAlpha('#ddeeff', a * 0.55);
+    ctx.lineWidth   = 0.8;
+    ctx.lineCap     = 'round';
+    ctx.shadowColor = '#cce8ff';
+    ctx.shadowBlur  = 3;
+    ctx.beginPath(); ctx.moveTo(s.x - armLen, s.y); ctx.lineTo(s.x + armLen, s.y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(s.x, s.y - armLen); ctx.lineTo(s.x, s.y + armLen); ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+// ── Draw: grass stems (STORY-00372 Sprint C) ──
+// 6 bezier grass stems near poleX base — decorative foreground
+function _drawGrass(ctx, t, W, H) {
+  const baseY = _poleY + 6; // slightly below pole base
+  ctx.save();
+  ctx.strokeStyle = '#050810';
+  ctx.lineWidth   = 1.2;
+  ctx.lineCap     = 'round';
+  ctx.globalAlpha = 0.85;
+  for (const g of _grassSeeds) {
+    const sway = Math.sin(t * 0.8 + g.ph) * 3; // ±3px sway
+    const tipX  = _poleX + g.dx + sway;
+    const tipY  = baseY - g.h;
+    const ctrlX = _poleX + g.dx + sway * 0.5;
+    const ctrlY = baseY - g.h * 0.5;
+    ctx.beginPath();
+    ctx.moveTo(_poleX + g.dx, baseY);
+    ctx.quadraticCurveTo(ctrlX, ctrlY, tipX, tipY);
+    ctx.stroke();
   }
   ctx.restore();
 }
