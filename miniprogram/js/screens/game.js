@@ -1619,15 +1619,15 @@ function _drawNet(ctx) {
   ctx.translate(headX, headY);
   ctx.rotate(angle);
 
-  // Bag fill
-  const bagGrd = ctx.createLinearGradient(0, 0, 0, bagD);
+  // Bag fill — mouth at headX/headY (pole tip), bag extends toward throw direction (-y in rotated frame)
+  const bagGrd = ctx.createLinearGradient(0, 0, 0, -bagD);
   bagGrd.addColorStop(0, flashAlpha > 0 ? 'rgba(255,230,150,0.18)' : 'rgba(160,200,255,0.14)');
   bagGrd.addColorStop(1, 'rgba(80,120,200,0.04)');
   ctx.fillStyle = bagGrd;
   ctx.beginPath();
-  ctx.arc(0, 0, mouthR, Math.PI, 0, false);
-  ctx.bezierCurveTo(mouthR * 0.9, bagD * 0.5, mouthR * 0.4, bagD, 0, bagD);
-  ctx.bezierCurveTo(-mouthR * 0.4, bagD, -mouthR * 0.9, bagD * 0.5, -mouthR, 0);
+  ctx.arc(0, 0, mouthR, 0, Math.PI, false);
+  ctx.bezierCurveTo(-mouthR * 0.9, -bagD * 0.5, -mouthR * 0.4, -bagD, 0, -bagD);
+  ctx.bezierCurveTo(mouthR * 0.4, -bagD, mouthR * 0.9, -bagD * 0.5, mouthR, 0);
   ctx.closePath();
   ctx.fill();
 
@@ -1637,25 +1637,25 @@ function _drawNet(ctx) {
     : 'rgba(180,210,255,0.65)';
   ctx.lineWidth = 1.5;
   ctx.beginPath();
-  ctx.arc(0, 0, mouthR, Math.PI, 0, false);
-  ctx.bezierCurveTo(mouthR * 0.9, bagD * 0.5, mouthR * 0.4, bagD, 0, bagD);
-  ctx.bezierCurveTo(-mouthR * 0.4, bagD, -mouthR * 0.9, bagD * 0.5, -mouthR, 0);
+  ctx.arc(0, 0, mouthR, 0, Math.PI, false);
+  ctx.bezierCurveTo(-mouthR * 0.9, -bagD * 0.5, -mouthR * 0.4, -bagD, 0, -bagD);
+  ctx.bezierCurveTo(mouthR * 0.4, -bagD, mouthR * 0.9, -bagD * 0.5, mouthR, 0);
   ctx.stroke();
 
-  // Net mesh
+  // Net mesh — horizontal arcs and vertical seams toward -y (throw direction)
   ctx.save();
   ctx.globalAlpha = 0.30;
   ctx.strokeStyle = flashAlpha > 0 ? 'rgba(255,240,180,0.6)' : 'rgba(180,210,255,0.6)';
   ctx.lineWidth = 0.6;
   for (let i = 1; i <= 3; i++) {
-    const yt = (i / 4) * bagD;
+    const yt = -(i / 4) * bagD;
     const xr = mouthR * (1 - i * 0.18);
-    ctx.beginPath(); ctx.arc(0, yt, xr, Math.PI, 0, false); ctx.stroke();
+    ctx.beginPath(); ctx.arc(0, yt, xr, 0, Math.PI, false); ctx.stroke();
   }
   for (let xi = -1; xi <= 1; xi += 2) {
     ctx.beginPath();
     ctx.moveTo(xi * mouthR * 0.5, 0);
-    ctx.quadraticCurveTo(xi * mouthR * 0.35, bagD * 0.5, xi * mouthR * 0.1, bagD);
+    ctx.quadraticCurveTo(xi * mouthR * 0.35, -bagD * 0.5, xi * mouthR * 0.1, -bagD);
     ctx.stroke();
   }
   ctx.restore();
