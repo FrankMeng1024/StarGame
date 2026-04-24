@@ -81,8 +81,8 @@ var STAR_COL    = '#FFD700';
 var POSES = {
   idle: {
     lUpper: -80,  lLower: -10,  // left arm raised up-left (counterbalance)
-    rUpper:  140, rLower:  10,  // right arm raised high — nearly straight up, tilted right
-    poleAngle: 145,             // pole continues upward from wrist — net hangs from tip above
+    rUpper:  130, rLower:  10,  // right arm raised — wrist roughly overhead
+    poleAngle: 48,              // pole center: midpoint of -50°↔145° sweep arc
     bob: true
   },
   throw: {
@@ -108,10 +108,16 @@ var POSES = {
 // ---- Swing oscillation ----
 // In idle/swing state, right arm swings left↔right continuously
 var swingPhase = 0;
-var SWING_SPEED = 0.0022;   // radians per ms — one full swing ~2.8s
-var SWING_AMP   = 35;       // pole sweep amplitude (arm only moves at 30% of this)
-var SWING_CENTER_R = 140;   // center angle of right upper arm during swing
-var SWING_CENTER_POLE = 145; // pole angle center during swing
+// ---- Swing: direct shoulder pivot for wide arc ----
+// During idle, we override the right arm+pole as a single rigid rod from shoulder.
+// This gives the clearest left↔right sweep across the full canvas.
+var SWING_SPEED  = 0.0018;  // rad/ms, ~3.5s per cycle
+var SWING_AMP    = 50;      // ±50° from center → total 100° arc
+var SWING_CENTER = 130;     // center: 130°. Left=180°(straight up), Right=80°(lower-right)
+                            // keeps tip inside 680×440 canvas at both extremes
+
+var SWING_CENTER_R    = 130;  // kept for blend-out reference (unused during swing)
+var SWING_CENTER_POLE = 48;   // kept for blend-out reference (unused during swing)
 
 // Net head position (computed from pole tip)
 // During swing, net dangles from pole tip — shown as a small circle
@@ -315,13 +321,20 @@ function render(now) {
     swingPhase += SWING_SPEED * dt;
   }
   var swingWeight = 0;
-  if (targetPose === 'idle')   swingWeight = Math.min(1, (blendT - 0.5) * 2);
-  if (currentPose === 'idle')  swingWeight = Math.max(0, (0.4 - blendT) * 2.5);
+  if (targetPose === 'idle')        swingWeight = Math.min(1, (blendT - 0.5) * 2);
+  else if (currentPose === 'idle')  swingWeight = Math.max(0, (0.4 - blendT) * 2.5);
   swingWeight = Math.max(0, Math.min(1, swingWeight));
 
   var swingOsc = Math.sin(swingPhase) * SWING_AMP;
-  pose.rUpper    += swingOsc * swingWeight * 0.3;   // arm moves subtly (±30% of AMP)
-  pose.poleAngle += swingOsc * swingWeight;          // pole sweeps the full arc
+  // In full swing, override rUpper+poleAngle with rigid-rod angle from shoulder
+  // rodAngle = single angle that drives the whole arm+pole as one unit
+  var rodAngle = SWING_CENTER + swingOsc * swingWeight;
+  if (swingWeight > 0) {
+    // Blend: in swing, drive arm angle directly; pole stays straight (continuation of arm)
+    pose.rUpper    = lerp(pose.rUpper,    rodAngle,           swingWeight);
+    pose.rLower    = lerp(pose.rLower,    0,                  swingWeight * 0.5);
+    pose.poleAngle = lerp(pose.poleAngle, rodAngle + 10,      swingWeight);
+  }
 
   if (pose.bob) bob = Math.sin(bobPhase) * BOB_AMP;
 
@@ -358,8 +371,8 @@ function render(now) {
     if (poleTip) {
       var netSwing = swingWeight > 0.1;
       // Net rope hangs DOWNWARD from pole tip, with pendulum lag (phase offset behind pole)
-      // ropeAngle: 0 = straight down. Pendulum lags the pole by ~0.5 rad (about 90ms lag)
-      var pendulumSwing = netSwing ? Math.sin(swingPhase - 0.5) * SWING_AMP * 0.6 : 0;
+      // ropeAngle: 0 = straight down. Pendulum lags the pole by ~0.8 rad (bigger lag for wide swing)
+      var pendulumSwing = netSwing ? Math.sin(swingPhase - 0.8) * SWING_AMP * 0.5 : 0;
       var ropeAngle = pendulumSwing * Math.PI / 180;
       var netX = poleTip.x + Math.sin(ropeAngle) * NET_LEN * s;
       var netY = poleTip.y + Math.cos(ropeAngle) * NET_LEN * s;
