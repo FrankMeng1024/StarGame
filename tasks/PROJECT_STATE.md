@@ -1,8 +1,8 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: Sprint 61-mini COMPLETE — pill截断修复+行距增大+4张ESA图片. PO acceptance pending.
-**Current Sprint**: Sprint 61-mini
-**Last Updated**: 2026-04-23
+**Status**: Sprint 66-mini COMPLETE — VU ACCEPTED 9.5/10. Visual upgrade plan (Sprint A-D) ALL COMPLETE. PROJECT COMPLETE.
+**Current Sprint**: Sprint 66-mini
+**Last Updated**: 2026-04-24
 
 > **Sprint 37-mini COMPLETE**: 2 Stories STORY-00323~00324 Done. Star flash sequence before linedraw (STORY-00323): new 'starflash' phase, 150ms intervals, scale 1→2→1. Victory→levels flicker fix (STORY-00324): _cleanup() before all result navigation buttons. Arch PASS. QA PASS (STORY-00323 LOW confidence — miniprogram Canvas only). UX no Blockers. VU ACCEPTED 9.6/10 — PROJECT COMPLETE. All 11 user-reported issues (CR-113~CR-121) resolved across Sprint 35/36/37-mini.
 
@@ -74,7 +74,10 @@
 | Sprint 43-mini | COMPLETE | 背景星空去规律化 — sin-hash替换LCG，消除对角线星串伪影 (STORY-00337) — Arch PASS + QA PASS + UX no Blockers |
 | Sprint 44-mini | COMPLETE | 主菜单视觉对标开场动画 — 书法字体+随机星座reveal+168颗sin-hash星空 (STORY-00338~00340) — Arch PASS + QA PASS + UX no Blockers |
 | Sprint 45-mini | COMPLETE | 主菜单布局均衡化 — 消除拥挤/空白，title+buttons垂直居中 (STORY-00341) — Arch PASS + QA PASS + UX no Blockers |
-| Sprint 60-mini | COMPLETE | 图鉴详情页全屏升级+真实天文图片 (STORY-00368/369) — fullscreen zoom/star tap/header buttons/cover mode |
+| Sprint 63-mini | COMPLETE | 游戏视觉升级 Sprint A — SVG少女+三角网袋+touch修复 (STORY-00370) — Arch PASS + QA PASS |
+| Sprint 64-mini | COMPLETE | 游戏视觉升级 Sprint B — 3档星等分级渲染 (STORY-00371) — Arch PASS + QA PASS |
+| Sprint 65-mini | COMPLETE | 游戏视觉升级 Sprint C — 草地层+近景闪烁星 (STORY-00372) — Arch PASS + QA PASS |
+| Sprint 66-mini | COMPLETE | 游戏视觉升级 Sprint D — 结算卡入场动画+失败界面情绪化 (STORY-00373) — Arch PASS + QA PASS |
 | Sprint 61-mini | COMPLETE | 图鉴详情页二轮精修 — 圆圈放大/照片过滤/WeChat胶囊/字体增大/pill截断修复/行距/ESA 4张图 |
 
 ## VU Acceptance History
@@ -116,7 +119,7 @@
 | Sprint 32-mini | 9.6/10 | ACCEPTED | 视觉品质全面升级: 女角色/道具覆盖层/全流程Web对标 + 全8个PRD特性真实截图验收 — PROJECT COMPLETE |
 | Sprint 33-mini | 9.6/10 | ACCEPTED | Web跨平台对标: 商店2列网格/失败统计行+鼓励语/游戏HUD位置对齐 — PROJECT COMPLETE |
 | Sprint 13-mini | 9.5/10 | ACCEPTED | 展厅5张图片达PRD最低要求 + lore完成按钮确认 — PROJECT COMPLETE |
-| Sprint 37-mini | 9.6/10 | ACCEPTED | 2 Stories: 胜利星星顺序闪烁(starflash phase)/选关闪烁修复(_cleanup on all nav buttons) — PROJECT COMPLETE. All 11 user issues (CR-113~CR-121) Done. |
+| Sprint 66-mini | 9.5/10 | ACCEPTED | Visual upgrade plan Sprint D: 结算卡入场动画+失败界面情绪化 + Sprint A-D plan COMPLETE — PROJECT COMPLETE |
 
 ## 微信小游戏分支（mini branch）
 
