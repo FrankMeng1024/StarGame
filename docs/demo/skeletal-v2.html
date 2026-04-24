@@ -36,7 +36,7 @@ button.active { background:#1a1a50; color:#aaccff; border-color:#3344aa; }
 <script>
 // ---- Canvas setup ----
 var SCALE = 2;
-var FW = 220, FH = 220;
+var FW = 340, FH = 220;   // wider canvas to accommodate pole swing
 var canvas = document.getElementById('c');
 canvas.width  = FW * SCALE;
 canvas.height = FH * SCALE;
@@ -80,9 +80,9 @@ var STAR_COL    = '#FFD700';
 // Catch: both arms up-and-outward → left ~-160, right ~160
 var POSES = {
   idle: {
-    lUpper: -15,  lLower: -10,  // left arm hangs outward-left
-    rUpper:  15,  rLower:  10,  // right arm hangs outward-right
-    poleAngle: 95,              // pole at hip, pointing right
+    lUpper: -80,  lLower: -10,  // left arm raised up-left (counterbalance)
+    rUpper:  140, rLower:  10,  // right arm raised high — nearly straight up, tilted right
+    poleAngle: 145,             // pole continues upward from wrist — net hangs from tip above
     bob: true
   },
   throw: {
@@ -104,6 +104,18 @@ var POSES = {
     bob: false
   }
 };
+
+// ---- Swing oscillation ----
+// In idle/swing state, right arm swings left↔right continuously
+var swingPhase = 0;
+var SWING_SPEED = 0.0022;   // radians per ms — one full swing ~2.8s
+var SWING_AMP   = 35;       // pole sweep amplitude (arm only moves at 30% of this)
+var SWING_CENTER_R = 140;   // center angle of right upper arm during swing
+var SWING_CENTER_POLE = 145; // pole angle center during swing
+
+// Net head position (computed from pole tip)
+// During swing, net dangles from pole tip — shown as a small circle
+var NET_LEN = 32;  // net rope length from pole tip
 
 // ---- State machine ----
 var currentPose = 'idle';
@@ -232,13 +244,12 @@ function drawArm(ctx, ox, oy, upperAngleDeg, lowerAngleDeg, upperLen, lowerLen, 
   return { ex: ex, ey: ey, wx: wx, wy: wy };
 }
 
-// ---- Draw pole ----
+// ---- Draw pole — returns tip position ----
 function drawPole(ctx, wx, wy, poleAngleDeg, poleLen, s) {
   var pA = poleAngleDeg * Math.PI / 180;
   var px = wx + Math.sin(pA) * poleLen * s;
   var py = wy + Math.cos(pA) * poleLen * s;
 
-  // Bamboo pole (thick line)
   ctx.lineCap = 'round';
   ctx.beginPath();
   ctx.moveTo(wx, wy);
@@ -250,8 +261,8 @@ function drawPole(ctx, wx, wy, poleAngleDeg, poleLen, s) {
   ctx.lineWidth = 5 * s;
   ctx.stroke();
 
-  // Star at tip
   drawStar(ctx, px, py, 8 * s, 5);
+  return { x: px, y: py };
 }
 
 function drawStar(ctx, cx, cy, r, points) {
@@ -298,6 +309,20 @@ function render(now) {
   var dstP = POSES[targetPose]  || POSES.idle;
   var pose = blendPose(srcP, dstP, blendT);
 
+  // Apply swing oscillation when in idle/swing state
+  var isSwinging = (targetPose === 'idle' && blendT > 0.6);
+  if (isSwinging || (currentPose === 'idle' && blendT < 0.4)) {
+    swingPhase += SWING_SPEED * dt;
+  }
+  var swingWeight = 0;
+  if (targetPose === 'idle')   swingWeight = Math.min(1, (blendT - 0.5) * 2);
+  if (currentPose === 'idle')  swingWeight = Math.max(0, (0.4 - blendT) * 2.5);
+  swingWeight = Math.max(0, Math.min(1, swingWeight));
+
+  var swingOsc = Math.sin(swingPhase) * SWING_AMP;
+  pose.rUpper    += swingOsc * swingWeight * 0.3;   // arm moves subtly (±30% of AMP)
+  pose.poleAngle += swingOsc * swingWeight;          // pole sweeps the full arc
+
   if (pose.bob) bob = Math.sin(bobPhase) * BOB_AMP;
 
   var s = SCALE;
@@ -307,12 +332,12 @@ function render(now) {
   ctx.save();
   ctx.translate(0, bob * s);
 
-  // 1. Draw body sprite (no arms)
+  // 1. Draw body sprite (no arms) — sprite is 220×220, draw at actual size
   var useImg = isBlinking ? blinkImg : bodyImg;
   if (!useImg) useImg = bodyImg;
   if (useImg) {
     ctx.globalAlpha = 1;
-    ctx.drawImage(useImg, 0, 0, CW, CH);
+    ctx.drawImage(useImg, 0, 0, FH * SCALE, FH * SCALE);
   }
 
   // 2. Draw left arm (behind body in idle, could layer later)
@@ -327,7 +352,40 @@ function render(now) {
 
   // Pole attached to right hand wrist
   if (rs) {
-    drawPole(ctx, rs.wx, rs.wy, pose.poleAngle, POLE_LEN, s);
+    var poleTip = drawPole(ctx, rs.wx, rs.wy, pose.poleAngle, POLE_LEN, s);
+
+    // Net hangs from pole tip — rope + net bag
+    if (poleTip) {
+      var netSwing = swingWeight > 0.1;
+      // Net rope hangs DOWNWARD from pole tip, with pendulum lag (phase offset behind pole)
+      // ropeAngle: 0 = straight down. Pendulum lags the pole by ~0.5 rad (about 90ms lag)
+      var pendulumSwing = netSwing ? Math.sin(swingPhase - 0.5) * SWING_AMP * 0.6 : 0;
+      var ropeAngle = pendulumSwing * Math.PI / 180;
+      var netX = poleTip.x + Math.sin(ropeAngle) * NET_LEN * s;
+      var netY = poleTip.y + Math.cos(ropeAngle) * NET_LEN * s;
+
+      // Rope line
+      ctx.beginPath();
+      ctx.moveTo(poleTip.x, poleTip.y);
+      ctx.lineTo(netX, netY);
+      ctx.strokeStyle = '#888866';
+      ctx.lineWidth = 1.5 * s;
+      ctx.stroke();
+
+      // Net bag (circle)
+      ctx.beginPath();
+      ctx.arc(netX, netY, 9 * s, 0, Math.PI * 2);
+      ctx.strokeStyle = '#aaaaaa';
+      ctx.lineWidth = 2 * s;
+      ctx.stroke();
+      // Net mesh lines
+      ctx.beginPath();
+      ctx.moveTo(netX - 7*s, netY); ctx.lineTo(netX + 7*s, netY);
+      ctx.moveTo(netX, netY - 7*s); ctx.lineTo(netX, netY + 7*s);
+      ctx.strokeStyle = '#888888';
+      ctx.lineWidth = 1 * s;
+      ctx.stroke();
+    }
   }
 
   ctx.restore();
