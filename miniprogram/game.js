@@ -43,7 +43,7 @@ let _navigated   = false;  // 已成功调用过 navigate()
 
 // ── 导航路由 ──────────────────────────────────────────────────
 let _lastNavTime = 0;
-function navigate(key) {
+function navigate(key, opts = {}) {
   const now = Date.now();
   if (now - _lastNavTime < 100) { console.log('[nav] throttled:', key); return; }
   _lastNavTime = now;
@@ -54,16 +54,16 @@ function navigate(key) {
   hideGallery(); hideShop(); hideAchievement(); hideIntro();
 
   switch (key) {
-    case 'intro':       showIntro(navigate);       break;
-    case 'menu':        showMenu(navigate);         break;
+    case 'intro':       showIntro(navigate);              break;
+    case 'menu':        showMenu(navigate);               break;
     case 'levels':
       _lastNavTime = 0;
       showLevels(navigate);
       break;
-    case 'game':        showGame(navigate);         break;
-    case 'gallery':     showGallery(navigate);      break;
-    case 'shop':        showShop(navigate);         break;
-    case 'achievement': showAchievement(navigate);  break;
+    case 'game':        showGame(navigate);               break;
+    case 'gallery':     showGallery(navigate, opts);      break;
+    case 'shop':        showShop(navigate, opts);         break;
+    case 'achievement': showAchievement(navigate);        break;
     default:            showMenu(navigate);
   }
 }

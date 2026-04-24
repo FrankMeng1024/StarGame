@@ -94,7 +94,7 @@ let _result     = null;   // {victory, timeLeft, coins, stars, uncaught}
 let _starPopTimers = [0, 0, 0]; // per-star elapsed time, starts counting on result phase enter
 // STORY-00373: Card entrance animation (translateY lerp + alpha fade)
 let _resultEnterTimer = 0;  // seconds since result phase entered; drives entrance animation
-let _cardSlideY = 0;        // STORY-00382: current slide offset (px) for result card entrance — stored for hitTest compensation
+let _cardSlideY = 0;        // current slide offset (px) for result card entrance animation
 
 // Pause state
 let _paused     = false;
@@ -2457,8 +2457,15 @@ function _drawResultOverlay(ctx, W, H) {
   }
 
   // STORY-00373: end entrance animation transform
-  // STORY-00382: buttons stored at logical (un-offset) coords; _cardSlideY used in hitTest
+  // STORY-00386: after ctx.restore(), update button rects to screen coords
+  // (buttons were drawn inside ctx.translate(0, cardSlideY), so visual y = stored y + cardSlideY)
   ctx.restore();
+  const _slide = cardSlideY;
+  if (_btnNext)     _btnNext     = { x: _btnNext.x,     y: _btnNext.y     + _slide, w: _btnNext.w,     h: _btnNext.h     };
+  if (_btnRetry)    _btnRetry    = { x: _btnRetry.x,    y: _btnRetry.y    + _slide, w: _btnRetry.w,    h: _btnRetry.h    };
+  if (_btnReplay)   _btnReplay   = { x: _btnReplay.x,   y: _btnReplay.y   + _slide, w: _btnReplay.w,   h: _btnReplay.h   };
+  if (_btnLevels)   _btnLevels   = { x: _btnLevels.x,   y: _btnLevels.y   + _slide, w: _btnLevels.w,   h: _btnLevels.h   };
+  if (_btnLoreNext) _btnLoreNext = { x: _btnLoreNext.x, y: _btnLoreNext.y + _slide, w: _btnLoreNext.w, h: _btnLoreNext.h };
 }
 
 // ── Helper: draw 5-point star shape ──────────────────────────
@@ -2593,11 +2600,9 @@ function _onTouch(e) {
 
   // Result screen buttons
   if (_phase === 'result') {
-    // STORY-00382: buttons stored at logical coords; card is translated down by _cardSlideY.
-    // Compensate by subtracting _cardSlideY from ty before hitTest.
-    const rty = ty - _cardSlideY;
+    // STORY-00386: buttons are stored at screen coords (slide-adjusted); use ty directly.
     // Lore page navigation (STORY-00238 / STORY-00239)
-    if (_btnLoreNext && hitTest(_btnLoreNext, tx, rty)) {
+    if (_btnLoreNext && hitTest(_btnLoreNext, tx, ty)) {
       if (_lorePage < _lorePages.length - 1) {
         _lorePage++;
       } else {
@@ -2608,7 +2613,7 @@ function _onTouch(e) {
       }
       return;
     }
-    if (_btnNext && hitTest(_btnNext, tx, rty)) {
+    if (_btnNext && hitTest(_btnNext, tx, ty)) {
       if (_levelIdx >= 29) {
         // Last level completed → go to achievement screen
         if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('achievement'); });
@@ -2619,23 +2624,23 @@ function _onTouch(e) {
       }
       return;
     }
-    if (_btnRetry && hitTest(_btnRetry, tx, rty)) {
+    if (_btnRetry && hitTest(_btnRetry, tx, ty)) {
       if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('game'); });
       return;
     }
-    if (_btnReplay && hitTest(_btnReplay, tx, rty)) {
+    if (_btnReplay && hitTest(_btnReplay, tx, ty)) {
       if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('game'); });
       return;
     }
-    if (_btnLevels && hitTest(_btnLevels, tx, rty)) {
+    if (_btnLevels && hitTest(_btnLevels, tx, ty)) {
       if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('levels'); });
       return;
     }
-    if (_btnShop && hitTest(_btnShop, tx, rty)) {
+    if (_btnShop && hitTest(_btnShop, tx, ty)) {
       if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('shop'); });
       return;
     }
-    if (_btnGallery && hitTest(_btnGallery, tx, rty)) {
+    if (_btnGallery && hitTest(_btnGallery, tx, ty)) {
       if (_navigate) fadeNavigate(() => { _cleanup(); _navigate('gallery'); });
       return;
     }
