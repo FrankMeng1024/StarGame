@@ -129,6 +129,11 @@ const _GIRL_FRAME_W = 220;  // px per frame in the sprite sheet
 const _GIRL_FRAME_H = 220;
 let _girlFrame     = 0;    // 0=idle, 1=blink, 2=throw, 3=catch
 let _girlLastBlink = 0;    // ms timestamp of last blink start
+// Smooth pose transitions (Sprint 67)
+let _girlPrevFrame  = 0;   // previous frame for cross-fade
+let _girlTransT     = 1.0; // 0→1 during cross-fade; 1 = no transition active
+let _girlTransStart = 0;   // ms timestamp when transition started
+const _GIRL_TRANS_MS = 180; // cross-fade duration in ms
 
 // Victory animation state
 let _celebrateTimer = 0;  // seconds remaining in celebrate phase
@@ -559,6 +564,8 @@ function _cleanup() {
   _flashPhaseTimer = 0;    // STORY-00323: reset star flash state
   _flashedStarSet.clear();
   _flashingStars = [];
+  // Sprint 67: reset girl animation state
+  _girlFrame = 0; _girlPrevFrame = 0; _girlTransT = 1.0; _girlLastBlink = Date.now();
   // Destroy cached line-draw SFX context to prevent cross-game leak (Arch review fix)
   if (_lineDrawSfxCtx) {
     try { _lineDrawSfxCtx.destroy(); } catch (e) {}
@@ -1486,43 +1493,68 @@ function _drawParticles(ctx) {
   }
 }
 
-// ── Draw: girl character (Sprint A — PNG sprite) ──────────────
+// ── Draw: girl character (Sprint A — PNG sprite; Sprint 67 — smooth transitions) ──
 // girl.png: 880×220px, 4 frames × 220px wide. Frame 0=idle, 1=blink, 2=throw, 3=catch.
 // Origin: center-bottom aligned to (_poleX, _poleY).
 function _drawGirl(ctx) {
   const now = Date.now();
 
-  // Pick frame
+  // Pick target frame
+  let targetFrame;
   if (_netState === 'extend') {
-    _girlFrame = 2;  // throw
+    targetFrame = 2;  // throw
   } else if (_catchFlashFrames > 0) {
-    _girlFrame = 3;  // catch/joy
+    targetFrame = 3;  // catch/joy
   } else {
     // idle / blink cycle
     const elapsed = now - _girlLastBlink;
     if (_girlFrame === 0 && elapsed > 3500) {
-      _girlFrame = 1;
       _girlLastBlink = now;
+      targetFrame = 1;
     } else if (_girlFrame === 1 && elapsed > 150) {
-      _girlFrame = 0;
       _girlLastBlink = now;
+      targetFrame = 0;
+    } else {
+      targetFrame = _girlFrame;
     }
   }
 
+  // Start cross-fade if frame changed
+  if (targetFrame !== _girlFrame) {
+    _girlPrevFrame  = _girlFrame;
+    _girlFrame      = targetFrame;
+    _girlTransStart = now;
+    _girlTransT     = 0;
+  }
+
+  // Update transition progress
+  if (_girlTransT < 1) {
+    _girlTransT = Math.min(1, (now - _girlTransStart) / _GIRL_TRANS_MS);
+  }
+
   if (_girlImg && (_girlImg.complete !== false)) {
-    // Sprite sheet: 880x220, each frame 220x220 (2x scale of 110x110 design)
-    const sx = _girlFrame * _GIRL_FRAME_W;
-    // Draw at original design size 110x110
-    ctx.drawImage(_girlImg, sx, 0, _GIRL_FRAME_W, _GIRL_FRAME_H,
-      _poleX - 55, _poleY - 110 + 12, 110, 110);
+    const dstX = _poleX - 55, dstY = _poleY - 110 + 12, dstW = 110, dstH = 110;
+    ctx.save();
+    if (_girlTransT < 1 && _girlPrevFrame !== _girlFrame) {
+      // Draw previous frame fading out
+      ctx.globalAlpha = 1 - _girlTransT;
+      ctx.drawImage(_girlImg, _girlPrevFrame * _GIRL_FRAME_W, 0, _GIRL_FRAME_W, _GIRL_FRAME_H,
+        dstX, dstY, dstW, dstH);
+      // Draw new frame fading in
+      ctx.globalAlpha = _girlTransT;
+    }
+    ctx.drawImage(_girlImg, _girlFrame * _GIRL_FRAME_W, 0, _GIRL_FRAME_W, _GIRL_FRAME_H,
+      dstX, dstY, dstW, dstH);
+    ctx.restore();
   }
 }
 
-// ── Draw: net — triangle bag (Sprint A, 方案B) ───────────────
+// ── Draw: net — triangle bag (Sprint A, 方案B; Sprint 67 — swing visibility) ───────────────
 function _drawNet(ctx) {
   const extended  = _netState !== 'swing';
-  const showLen   = extended ? _netLen : 20;
+  const showLen   = extended ? _netLen : 28;  // Sprint 67: 28px visible pole during swing
   const angle     = _netAngle;
+  const swingAlpha = extended ? 1.0 : 0.55;   // Sprint 67: swing state is semi-transparent
 
   // Rope origin — SVG girl sprite: idle=hand at (+13,-17), extend=glove at (+27,-78)
   const ropeOriX = extended ? _poleX + 27 : _poleX + 13;
@@ -1550,13 +1582,15 @@ function _drawNet(ctx) {
   }
 
   // ── Bamboo pole ───────────────────────────────────────────────
-  if (_netLen > 0 || extended) {
-    const poleLen = Math.min(_netLen + 22, 90);
+  // Sprint 67: always draw during swing to show direction
+  {
+    const poleLen = Math.min(showLen + 22, 90);
     const px2 = ropeOriX + Math.sin(angle) * poleLen;
     const py2 = ropeOriY - Math.cos(angle) * poleLen;
     const pg = ctx.createLinearGradient(ropeOriX, ropeOriY, px2, py2);
     pg.addColorStop(0, '#6a4520'); pg.addColorStop(0.5, '#a07840'); pg.addColorStop(1, '#7a5828');
     ctx.save();
+    ctx.globalAlpha = swingAlpha;
     ctx.strokeStyle = pg; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
     ctx.beginPath(); ctx.moveTo(ropeOriX, ropeOriY); ctx.lineTo(px2, py2); ctx.stroke();
     ctx.restore();
@@ -1574,13 +1608,14 @@ function _drawNet(ctx) {
     ctx.restore();
   }
 
-  if (_netLen < 5 && _netState === 'swing') return;
+  // Sprint 67: removed early-return that hid net bag during swing — now always draw with swingAlpha
 
   const mouthR = (extended ? 16 : 10) * _netRadiusMult;
   const bagD   = mouthR * 1.9;
   const flashAlpha = _catchFlashFrames / 6;
 
   ctx.save();
+  ctx.globalAlpha = swingAlpha;  // Sprint 67: semi-transparent during swing
   ctx.translate(headX, headY);
   ctx.rotate(angle);
 
