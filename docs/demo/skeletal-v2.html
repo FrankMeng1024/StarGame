@@ -16,6 +16,7 @@ button:hover { background:#1e1e40; color:#fff; }
 button.active { background:#1a1a50; color:#aaccff; border-color:#3344aa; }
 .info { margin-top:10px; font-size:10px; color:#333; max-width:480px; text-align:center; line-height:1.5; }
 .status { margin-top:6px; font-size:10px; color:#3a3a55; }
+#story-label { margin-top:8px; font-size:14px; color:#ccddff; min-height:1.2em; letter-spacing:1px; }
 </style>
 </head>
 <body>
@@ -27,7 +28,9 @@ button.active { background:#1a1a50; color:#aaccff; border-color:#3344aa; }
   <button id="btn-catch"   onclick="setState('catch')">Catch</button>
   <button id="btn-retract" onclick="setState('retract')">Retract</button>
   <button id="btn-auto"    onclick="toggleAuto()">&#9654; Auto</button>
+  <button id="btn-story"   onclick="startStory()">&#9654; Story</button>
 </div>
+<div id="story-label"></div>
 <div class="status" id="status">loading...</div>
 <div class="info">
   Body sprite has arms removed. Arms = Canvas bone segments rotating around shoulder joints.
@@ -148,6 +151,28 @@ var AUTO_SEQ = [
 var autoIdx = 0;
 var autoHold = 0;
 
+// ---- Story mode (one-shot, non-looping) ----
+// Step: { pose, hold (ms), label }
+// catchFlash: show a star catch flash effect
+var STORY_SEQ = [
+  { pose:'idle',    hold:2200, label:'挥动中...' },
+  { pose:'throw',   hold:700,  label:'发射！' },
+  { pose:'catch',   hold:1000, label:'抓到了！★' },
+  { pose:'retract', hold:700,  label:'收回中（抓到）' },
+  { pose:'idle',    hold:2000, label:'继续挥动...' },
+  { pose:'throw',   hold:700,  label:'再次发射！' },
+  { pose:'retract', hold:700,  label:'没抓到，收回' },
+  { pose:'idle',    hold:1200, label:'结束' },
+];
+var storyMode = false;
+var storyIdx  = 0;
+var storyHold = 0;
+var storyDone = false;
+
+// Catch flash: brief star-burst when catching
+var catchFlash = 0;      // countdown ms
+var CATCH_FLASH_MS = 500;
+
 var lastTime = 0;
 var bodyImg = null, blinkImg = null;
 
@@ -190,6 +215,35 @@ function toggleAuto() {
     autoIdx = 0;
     autoHold = AUTO_SEQ[0].hold;
     setState(AUTO_SEQ[0].pose);
+    // stop story if running
+    storyMode = false;
+    storyDone = false;
+    document.getElementById('story-label').textContent = '';
+    document.getElementById('btn-story').textContent = '▶ Story';
+  }
+}
+
+function startStory() {
+  if (storyMode && !storyDone) {
+    // stop mid-story
+    storyMode = false;
+    storyDone = false;
+    document.getElementById('story-label').textContent = '';
+    document.getElementById('btn-story').textContent = '▶ Story';
+    return;
+  }
+  storyMode = true;
+  storyDone = false;
+  storyIdx = 0;
+  storyHold = STORY_SEQ[0].hold;
+  catchFlash = 0;
+  setState(STORY_SEQ[0].pose);
+  document.getElementById('story-label').textContent = STORY_SEQ[0].label;
+  document.getElementById('btn-story').textContent = '⏹ Stop';
+  // stop auto if running
+  if (autoMode) {
+    autoMode = false;
+    document.getElementById('btn-auto').textContent = '▶ Auto';
   }
 }
 
@@ -302,6 +356,8 @@ function render(now) {
   if (!isBlinking && blinkTimer > BLINK_INTERVAL) { isBlinking = true; blinkTimer = 0; }
   if (isBlinking && blinkTimer > BLINK_DURATION)  { isBlinking = false; blinkTimer = 0; }
 
+  if (catchFlash > 0) catchFlash -= dt;
+
   if (autoMode) {
     autoHold -= dt;
     if (autoHold <= 0 && blendT >= 1) {
@@ -311,18 +367,39 @@ function render(now) {
     }
   }
 
+  // Story mode
+  if (storyMode && !storyDone) {
+    storyHold -= dt;
+    if (storyHold <= 0 && blendT >= 1) {
+      storyIdx++;
+      if (storyIdx >= STORY_SEQ.length) {
+        storyDone = true;
+        storyMode = false;
+        document.getElementById('story-label').textContent = '— 完 —';
+        document.getElementById('btn-story').textContent = '▶ Story';
+      } else {
+        var step = STORY_SEQ[storyIdx];
+        storyHold = step.hold;
+        setState(step.pose);
+        document.getElementById('story-label').textContent = step.label;
+        // trigger catch flash on step index 2 (抓到了)
+        if (storyIdx === 2) catchFlash = CATCH_FLASH_MS;
+      }
+    }
+  }
+
   var srcP = POSES[currentPose] || POSES.idle;
   var dstP = POSES[targetPose]  || POSES.idle;
   var pose = blendPose(srcP, dstP, blendT);
 
   // Apply swing oscillation when in idle/swing state
   var isSwinging = (targetPose === 'idle' && blendT > 0.6);
-  if (isSwinging || (currentPose === 'idle' && blendT < 0.4)) {
+  if (isSwinging || (currentPose === 'idle' && blendT < 1.0)) {
     swingPhase += SWING_SPEED * dt;
   }
   var swingWeight = 0;
   if (targetPose === 'idle')        swingWeight = Math.min(1, (blendT - 0.5) * 2);
-  else if (currentPose === 'idle')  swingWeight = Math.max(0, (0.4 - blendT) * 2.5);
+  else if (currentPose === 'idle')  swingWeight = Math.max(0, 1 - blendT);
   swingWeight = Math.max(0, Math.min(1, swingWeight));
 
   var swingOsc = Math.sin(swingPhase) * SWING_AMP;
@@ -402,6 +479,31 @@ function render(now) {
   }
 
   ctx.restore();
+
+  // Catch flash overlay — star burst when catching
+  if (catchFlash > 0) {
+    var flashAlpha = catchFlash / CATCH_FLASH_MS;
+    // Draw several stars scattered around pole tip area (approx screen center-right)
+    var flashStars = [
+      { x: 260, y: 60 }, { x: 300, y: 80 }, { x: 240, y: 90 },
+      { x: 320, y: 55 }, { x: 270, y: 100 }
+    ];
+    ctx.save();
+    ctx.globalAlpha = flashAlpha * 0.9;
+    for (var fi = 0; fi < flashStars.length; fi++) {
+      var fs = flashStars[fi];
+      var fr = (8 + fi * 4) * SCALE * flashAlpha;
+      drawStar(ctx, fs.x * SCALE, fs.y * SCALE, fr, 5);
+    }
+    // Central glow ring
+    ctx.beginPath();
+    ctx.arc(280 * SCALE, 75 * SCALE, 28 * SCALE * flashAlpha, 0, Math.PI * 2);
+    ctx.strokeStyle = '#FFD700';
+    ctx.lineWidth = 3 * SCALE * flashAlpha;
+    ctx.globalAlpha = flashAlpha * 0.4;
+    ctx.stroke();
+    ctx.restore();
+  }
 
   document.getElementById('status').textContent =
     'pose: ' + currentPose + ' > ' + targetPose +

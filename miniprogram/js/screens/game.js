@@ -125,6 +125,12 @@ const _girlImg = (typeof wx !== 'undefined' && wx.createImage) ? (() => {
   img.src = 'assets/sprites/girl.png';
   return img;
 })() : null;
+// Body-without-arms sprite (Phase 1 skeletal) — same source frame 0 with arms/pole erased
+const _bodyNoArmsImg = (typeof wx !== 'undefined' && wx.createImage) ? (() => {
+  const img = wx.createImage();
+  img.src = 'assets/sprites/body_no_arms.png';
+  return img;
+})() : null;
 // Sprite sheet dimensions: 880x220, 4 frames of 220x220 each
 const _GIRL_FRAME_W = 220;  // px per frame in the sprite sheet
 const _GIRL_FRAME_H = 220;
@@ -135,6 +141,14 @@ let _girlPrevFrame  = 0;   // previous frame for cross-fade
 let _girlTransT     = 1.0; // 0→1 during cross-fade; 1 = no transition active
 let _girlTransStart = 0;   // ms timestamp when transition started
 const _GIRL_TRANS_MS = 180; // cross-fade duration in ms
+// Skeletal arm animation state (Phase 1)
+let _skelLastMs    = 0;    // previous frame timestamp for dt
+let _skelBlendT    = 1.0;  // 0→1: blend from swing→pose (1 = fully in target pose)
+let _skelBlendDir  = 1;    // +1 = blending in, -1 = unused
+const _SKEL_BLEND_MS = 280; // blend duration ms
+// Right wrist position (canvas pixels) — updated each frame by _drawGirl, used by _updateNetHead/_drawNet
+let _skelRHandX    = 0;
+let _skelRHandY    = 0;
 
 // Victory animation state
 let _celebrateTimer = 0;  // seconds remaining in celebrate phase
@@ -322,6 +336,9 @@ export function showGame(navigate) {
   }
 
   onTouch('start', _onTouch);
+  // Suppress system scroll indicator: register no-op touchmove handler.
+  // WeChat mini-game shows a scroll bar residual if touchmove is unhandled.
+  onTouch('move', _onTouchMove);
   _lastNow = 0;
   _rafId = requestAnimationFrame(_loop);
 
@@ -526,6 +543,7 @@ function _cleanup() {
   } catch (e) {}
   if (G.CANVAS) {
     offTouch('start', _onTouch);
+    offTouch('move', _onTouchMove);
   }
   // Remove wx.onHide listener to prevent stacking (STORY-00247 fix)
   if (_onHideCb) {
@@ -850,10 +868,10 @@ function _updateNet(dt) {
 }
 
 function _updateNetHead(dt) {
-  // Rope origin: extend / retract → raised (+27,-78); swing → lowered (+20,-58)
-  const handRaised = _netState === 'extend' || _netState === 'retract';
-  const ropeOriX = handRaised ? _poleX + 27 : _poleX + 20;
-  const ropeOriY = handRaised ? _poleY - 78  : _poleY - 58;
+  // Rope origin: use right wrist position from skeletal arm (_skelRHandX/Y).
+  // Falls back to hardcoded offset if _drawGirl hasn't run yet (first frame).
+  const ropeOriX = _skelRHandX > 0 ? _skelRHandX : _poleX + 20;
+  const ropeOriY = _skelRHandY > 0 ? _skelRHandY : _poleY - 65;
 
   // STORY-00366: Magnetic zone deflection — when net head enters a zone, deflect angle
   if (_netState === 'extend') {
@@ -1503,64 +1521,175 @@ function _drawParticles(ctx) {
 }
 
 // ── Draw: girl character (Sprint A — PNG sprite; Sprint 67 — smooth transitions) ──
-// girl.png: 880×220px, 4 frames × 220px wide. Frame 0=idle, 1=blink, 2=throw, 3=catch.
-// Origin: center-bottom aligned to (_poleX, _poleY).
+// Skeletal girl drawing — Phase 1 (bones only, no flesh).
+// Body sprite: body_no_arms.png (220×220, arms/pole erased), scaled to 110×110 in-game.
+// Right arm + pole: Canvas bone segments driven by _netAngle (swing) or pose keyframes.
+// Left arm: Canvas bone segments, pose-driven.
+// Scale: 110/220 = 0.5. Sprite origin: (dstX, dstY) = (_poleX-55, _poleY-98).
+// Shoulder positions (sprite coords → canvas): L=(83,117)*0.5+origin, R=(133,117)*0.5+origin.
 function _drawGirl(ctx) {
   const now = Date.now();
+  const dt  = _skelLastMs > 0 ? Math.min(now - _skelLastMs, 50) : 16;
+  _skelLastMs = now;
 
-  // Pick target frame
-  // extend                    → throw (2)     手举起发射
-  // retract + catchFlash      → catch/joy (3) 抓到欢呼
-  // retract (no flash)        → throw (2)     没抓到，手仍举着直到网收完
-  // swing                     → idle/blink    网彻底回来，手放下
-  let targetFrame;
-  if (_netState === 'extend') {
-    targetFrame = 2;  // throw — hand raised
-  } else if (_netState === 'retract' && _catchFlashFrames > 0) {
-    targetFrame = 3;  // catch/joy — celebrating
-  } else if (_netState === 'retract') {
-    targetFrame = 2;  // still holding — net not back yet
-  } else {
-    // idle / blink cycle
+  // ── Blink logic (frame 0/1 cycle for body sprite) ──
+  if (_netState === 'swing') {
     const elapsed = now - _girlLastBlink;
-    if (_girlFrame === 0 && elapsed > 3500) {
-      _girlLastBlink = now;
-      targetFrame = 1;
-    } else if (_girlFrame === 1 && elapsed > 150) {
-      _girlLastBlink = now;
-      targetFrame = 0;
-    } else {
-      targetFrame = _girlFrame;
+    let targetFrame;
+    if (_girlFrame === 0 && elapsed > 3500) { _girlLastBlink = now; targetFrame = 1; }
+    else if (_girlFrame === 1 && elapsed > 150) { _girlLastBlink = now; targetFrame = 0; }
+    else targetFrame = _girlFrame;
+    if (targetFrame !== _girlFrame) {
+      _girlPrevFrame = _girlFrame; _girlFrame = targetFrame;
+      _girlTransStart = now; _girlTransT = 0;
+    }
+  } else {
+    // Non-swing: reset to frame 0 body (no blink during action)
+    if (_girlFrame !== 0) {
+      _girlPrevFrame = _girlFrame; _girlFrame = 0;
+      _girlTransStart = now; _girlTransT = 0;
     }
   }
+  if (_girlTransT < 1) _girlTransT = Math.min(1, (now - _girlTransStart) / _GIRL_TRANS_MS);
 
-  // Start cross-fade if frame changed
-  if (targetFrame !== _girlFrame) {
-    _girlPrevFrame  = _girlFrame;
-    _girlFrame      = targetFrame;
-    _girlTransStart = now;
-    _girlTransT     = 0;
+  // ── Blend control: skeletal blends smoothly when state changes ──
+  if (_netState === 'swing') {
+    _skelBlendT = Math.max(0, _skelBlendT - dt / _SKEL_BLEND_MS);
+  } else {
+    _skelBlendT = Math.min(1, _skelBlendT + dt / _SKEL_BLEND_MS);
   }
 
-  // Update transition progress
-  if (_girlTransT < 1) {
-    _girlTransT = Math.min(1, (now - _girlTransStart) / _GIRL_TRANS_MS);
+  // ── Geometry constants (all in canvas pixels) ──
+  const sc   = 0.5;                              // sprite → canvas scale
+  const dstX = _poleX - 55;
+  const dstY = _poleY - 110 + 12;               // = _poleY - 98
+  const lShX = dstX + 83 * sc;                  // left  shoulder x
+  const lShY = dstY + 117 * sc;                 // left  shoulder y
+  const rShX = dstX + 133 * sc;                 // right shoulder x
+  const rShY = dstY + 117 * sc;                 // right shoulder y
+  const uLen = 28 * sc;                          // upper-arm length
+  const fLen = 26 * sc;                          // forearm length
+  const hR   = 6  * sc;                          // hand radius
+  const pLen = 68 * sc;                          // pole length
+
+  // ── Arm pose keyframes (degrees, same convention as demo) ──
+  // 0=down, 90=right, 180=up. lLower/rLower = elbow bend relative to upper arm.
+  const POSES_SKEL = {
+    swing:   { lUpper: -80, lLower: -10, rUpper: 155, rLower: 10, poleAngle: 165 },
+    extend:  { lUpper: -20, lLower: -10, rUpper: 155, rLower: 10, poleAngle: 145 },
+    retract: { lUpper: -15, lLower: -10, rUpper: 155, rLower: 10, poleAngle: 145 },
+    catch:   { lUpper: -155, lLower: -10, rUpper: 155, rLower: 10, poleAngle: 150 },
+  };
+
+  // Determine target pose
+  let poseName;
+  if (_netState === 'extend') poseName = 'extend';
+  else if (_netState === 'retract' && _catchFlashFrames > 0) poseName = 'catch';
+  else if (_netState === 'retract') poseName = 'retract';
+  else poseName = 'swing';
+
+  const pose = POSES_SKEL[poseName];
+  const swingPose = POSES_SKEL.swing;
+
+  // Blend swing ↔ action pose based on _skelBlendT
+  function lerp(a, b, t) { return a + (b - a) * t; }
+  function eio(t) { return t < 0.5 ? 2*t*t : -1+(4-2*t)*t; }
+  const et = eio(_skelBlendT);
+  let lUpper    = lerp(swingPose.lUpper,    pose.lUpper,    et);
+  let lLower    = lerp(swingPose.lLower,    pose.lLower,    et);
+  let rUpper    = lerp(swingPose.rUpper,    pose.rUpper,    et);
+  let rLower    = lerp(swingPose.rLower,    pose.rLower,    et);
+  let poleAngle = lerp(swingPose.poleAngle, pose.poleAngle, et);
+
+  // During swing, override right arm+pole with net angle (rigid-rod from shoulder)
+  // _netAngle: 0=up, positive=right (same as game physics).
+  // Convert to bone degrees: bone 180=up, so rodAngle = 180 - netAngleDeg.
+  const swingWeight = 1 - _skelBlendT;
+  if (swingWeight > 0) {
+    const netDeg = _netAngle * 180 / Math.PI;
+    const rodAngle = 180 - netDeg;
+    rUpper    = lerp(rUpper,    rodAngle,      swingWeight);
+    rLower    = lerp(rLower,    0,             swingWeight * 0.5);
+    poleAngle = lerp(poleAngle, rodAngle + 10, swingWeight);
   }
 
-  if (_girlImg && (_girlImg.complete !== false)) {
-    const dstX = _poleX - 55, dstY = _poleY - 110 + 12, dstW = 110, dstH = 110;
+  // ── Draw body sprite (no arms) ──
+  const bodyImg = _bodyNoArmsImg;
+  const fallbackImg = _girlImg;
+  const img = (bodyImg && bodyImg.complete !== false) ? bodyImg
+            : (fallbackImg && fallbackImg.complete !== false) ? fallbackImg : null;
+  if (img) {
     ctx.save();
-    if (_girlTransT < 1 && _girlPrevFrame !== _girlFrame) {
-      // Draw previous frame fading out
+    if (img === fallbackImg && _girlTransT < 1 && _girlPrevFrame !== _girlFrame) {
       ctx.globalAlpha = 1 - _girlTransT;
-      ctx.drawImage(_girlImg, _girlPrevFrame * _GIRL_FRAME_W, 0, _GIRL_FRAME_W, _GIRL_FRAME_H,
-        dstX, dstY, dstW, dstH);
-      // Draw new frame fading in
+      ctx.drawImage(img, _girlPrevFrame * _GIRL_FRAME_W, 0, _GIRL_FRAME_W, _GIRL_FRAME_H, dstX, dstY, 110, 110);
       ctx.globalAlpha = _girlTransT;
     }
-    ctx.drawImage(_girlImg, _girlFrame * _GIRL_FRAME_W, 0, _GIRL_FRAME_W, _GIRL_FRAME_H,
-      dstX, dstY, dstW, dstH);
+    // body_no_arms: blink handled by drawing the girl.png frame 1 (eyes closed) on top at low alpha
+    ctx.globalAlpha = 1;
+    ctx.drawImage(img, 0, 0, _GIRL_FRAME_W, _GIRL_FRAME_H, dstX, dstY, 110, 110);
+    // Blink overlay: draw frame 1 (blink) from original girl.png on top when blinking
+    if (img === bodyImg && fallbackImg && fallbackImg.complete !== false && _girlFrame === 1) {
+      ctx.globalAlpha = _girlTransT < 1 ? _girlTransT : 1;
+      ctx.drawImage(fallbackImg, 1 * _GIRL_FRAME_W, 0, _GIRL_FRAME_W, _GIRL_FRAME_H, dstX, dstY, 110, 110);
+    }
     ctx.restore();
+  }
+
+  // ── Bone drawing helpers ──
+  const SKIN_FILL   = '#FFDFC4';
+  const SKIN_STROKE = '#D4A882';
+  const POLE_COL    = '#EAB045';
+  const POLE_STROKE = '#C8882A';
+
+  function drawArm(ox, oy, uAng, lAng) {
+    const uRad = uAng * Math.PI / 180;
+    const ex = ox + Math.sin(uRad) * uLen;
+    const ey = oy + Math.cos(uRad) * uLen;
+    const lRad = uRad + lAng * Math.PI / 180;
+    const wx2 = ex + Math.sin(lRad) * fLen;
+    const wy2 = ey + Math.cos(lRad) * fLen;
+    const thick = 12 * sc;
+    ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+    // Upper arm
+    ctx.beginPath(); ctx.moveTo(ox, oy); ctx.lineTo(ex, ey);
+    ctx.strokeStyle = SKIN_STROKE; ctx.lineWidth = thick; ctx.stroke();
+    ctx.strokeStyle = SKIN_FILL;   ctx.lineWidth = thick - 3*sc; ctx.stroke();
+    // Forearm
+    ctx.beginPath(); ctx.moveTo(ex, ey); ctx.lineTo(wx2, wy2);
+    ctx.strokeStyle = SKIN_STROKE; ctx.lineWidth = thick - 2*sc; ctx.stroke();
+    ctx.strokeStyle = SKIN_FILL;   ctx.lineWidth = thick - 5*sc; ctx.stroke();
+    // Hand
+    ctx.beginPath(); ctx.arc(wx2, wy2, hR, 0, TWO_PI);
+    ctx.fillStyle = SKIN_STROKE; ctx.fill();
+    ctx.beginPath(); ctx.arc(wx2, wy2, hR - 1.5*sc, 0, TWO_PI);
+    ctx.fillStyle = SKIN_FILL; ctx.fill();
+    return { wx: wx2, wy: wy2 };
+  }
+
+  function drawPole(wx2, wy2, pAng) {
+    const pRad = pAng * Math.PI / 180;
+    const px = wx2 + Math.sin(pRad) * pLen;
+    const py = wy2 + Math.cos(pRad) * pLen;
+    ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(wx2, wy2); ctx.lineTo(px, py);
+    ctx.strokeStyle = POLE_STROKE; ctx.lineWidth = 7*sc; ctx.stroke();
+    ctx.strokeStyle = POLE_COL;    ctx.lineWidth = 5*sc; ctx.stroke();
+    return { px, py };
+  }
+
+  // ── Draw left arm ──
+  drawArm(lShX, lShY, lUpper, lLower);
+
+  // ── Draw right arm + pole ──
+  const rHand = drawArm(rShX, rShY, rUpper, rLower);
+  // Export wrist position for _updateNetHead / _drawNet (rope origin sync)
+  _skelRHandX = rHand.wx;
+  _skelRHandY = rHand.wy;
+
+  // Draw pole only during swing/retract (extend uses existing _drawNet pole rendering)
+  if (_netState !== 'extend') {
+    drawPole(rHand.wx, rHand.wy, poleAngle);
   }
 }
 
@@ -1571,10 +1700,10 @@ function _drawNet(ctx) {
   const angle     = _netAngle;
   const swingAlpha = _netState === 'extend' ? 1.0 : 0.55;   // Sprint 67: swing/retract semi-transparent
 
-  // Rope origin: extend / retract-celebrating → raised; swing / retract-returning → lowered
-  const handRaised = _netState === 'extend' || (_netState === 'retract' && _catchFlashFrames > 0);
-  const ropeOriX = handRaised ? _poleX + 27 : _poleX + 20;
-  const ropeOriY = handRaised ? _poleY - 78  : _poleY - 58;
+  // Rope origin: use right wrist position from skeletal arm (_skelRHandX/Y).
+  // Falls back to hardcoded offset if skeletal data not yet available.
+  const ropeOriX = _skelRHandX > 0 ? _skelRHandX : _poleX + 20;
+  const ropeOriY = _skelRHandY > 0 ? _skelRHandY : _poleY - 65;
 
   // Net head position
   const headX = ropeOriX + Math.sin(angle) * showLen;
@@ -2377,6 +2506,9 @@ function _drawPauseOverlay(ctx, W, H) {
 }
 
 // ── Touch handling ────────────────────────────────────────────
+// No-op touchmove handler — prevents WeChat mini-game scroll bar residual
+function _onTouchMove() {}
+
 function _onTouch(e) {
   const touch = e.touches[0];
   if (!touch) return;
