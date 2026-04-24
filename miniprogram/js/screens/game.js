@@ -841,8 +841,8 @@ function _updateNet(dt) {
 }
 
 function _updateNetHead(dt) {
-  // Rope origin — idle: hand/shoulder area (+20,-58); extend: glove at (+27,-78) relative to _poleX/Y
-  const extended  = _netState !== 'swing';
+  // Rope origin — extend: glove raised at (+27,-78); swing/retract: hand lowered at (+20,-58)
+  const extended  = _netState === 'extend';
   const ropeOriX = extended ? _poleX + 27 : _poleX + 20;
   const ropeOriY = extended ? _poleY - 78  : _poleY - 58;
 
@@ -1551,12 +1551,12 @@ function _drawGirl(ctx) {
 
 // ── Draw: net — triangle bag (Sprint A, 方案B; Sprint 67 — swing visibility) ───────────────
 function _drawNet(ctx) {
-  const extended  = _netState !== 'swing';
-  const showLen   = extended ? _netLen : 28;  // Sprint 67: 28px visible pole during swing
+  const extended  = _netState === 'extend';
+  const showLen   = _netState !== 'swing' ? _netLen : 28;  // Sprint 67: 28px visible pole during swing
   const angle     = _netAngle;
-  const swingAlpha = extended ? 1.0 : 0.55;   // Sprint 67: swing state is semi-transparent
+  const swingAlpha = _netState === 'extend' ? 1.0 : 0.55;   // Sprint 67: swing/retract semi-transparent
 
-  // Rope origin — idle: hand/shoulder area (+20,-58); extend: glove at (+27,-78)
+  // Rope origin — extend: glove raised at (+27,-78); swing/retract: hand lowered at (+20,-58)
   const ropeOriX = extended ? _poleX + 27 : _poleX + 20;
   const ropeOriY = extended ? _poleY - 78  : _poleY - 58;
 
