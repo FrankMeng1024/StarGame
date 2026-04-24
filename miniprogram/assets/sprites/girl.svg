@@ -1,0 +1,267 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 440 110" width="440" height="110">
+  <!-- 4 frames: idle1, idle2 (blink), throw, catch — each 110x110 px -->
+  <defs>
+    <!-- Skin tone -->
+    <radialGradient id="skinG" cx="50%" cy="40%" r="55%">
+      <stop offset="0%" stop-color="#ffe0c4"/>
+      <stop offset="100%" stop-color="#f0c090"/>
+    </radialGradient>
+    <!-- Hair dark brown -->
+    <linearGradient id="hairG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#5c3a1e"/>
+      <stop offset="100%" stop-color="#3d2010"/>
+    </linearGradient>
+    <!-- Purple dress -->
+    <linearGradient id="dressG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#7c3aed"/>
+      <stop offset="100%" stop-color="#5b21b6"/>
+    </linearGradient>
+    <!-- Gold staff -->
+    <linearGradient id="staffG" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#fde68a"/>
+      <stop offset="100%" stop-color="#d97706"/>
+    </linearGradient>
+    <!-- Eye white with blue iris -->
+    <radialGradient id="eyeG" cx="40%" cy="35%" r="60%">
+      <stop offset="0%" stop-color="#6ea8e0"/>
+      <stop offset="100%" stop-color="#2563eb"/>
+    </radialGradient>
+    <!-- Blush -->
+    <radialGradient id="blushG" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" stop-color="rgba(255,150,120,0.55)"/>
+      <stop offset="100%" stop-color="rgba(255,150,120,0)"/>
+    </radialGradient>
+    <!-- Shoe -->
+    <linearGradient id="shoeG" x1="0%" y1="0%" x2="0%" y2="100%">
+      <stop offset="0%" stop-color="#1e1b4b"/>
+      <stop offset="100%" stop-color="#312e81"/>
+    </linearGradient>
+  </defs>
+
+  <!-- ═══════════════ FRAME 0 — IDLE ═══════════════ (x=0) -->
+  <g transform="translate(0,0)">
+    <!-- Shadow -->
+    <ellipse cx="55" cy="107" rx="22" ry="5" fill="rgba(0,0,0,0.25)"/>
+    <!-- Staff (behind body) -->
+    <line x1="68" y1="18" x2="60" y2="100" stroke="url(#staffG)" stroke-width="3.5" stroke-linecap="round"/>
+    <!-- Star ornament on staff -->
+    <polygon points="68,14 70,19 75,19 71,22 73,27 68,24 63,27 65,22 61,19 66,19" fill="#fde68a" stroke="#d97706" stroke-width="0.5"/>
+    <!-- Body/torso (dress) -->
+    <rect x="46" y="60" width="18" height="22" rx="3" fill="url(#dressG)"/>
+    <!-- Skirt flare -->
+    <path d="M40,82 Q55,95 70,82 L67,100 Q55,106 43,100 Z" fill="#6d28d9"/>
+    <!-- White collar -->
+    <path d="M50,60 Q55,64 60,60" fill="none" stroke="white" stroke-width="1.5"/>
+    <!-- Star badge on dress -->
+    <polygon points="55,67 56.5,71 61,71 57.5,73.5 59,78 55,75.5 51,78 52.5,73.5 49,71 53.5,71" fill="#fde68a" opacity="0.85"/>
+    <!-- Left arm (down) -->
+    <path d="M46,62 Q38,72 40,85" fill="none" stroke="url(#skinG)" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="40" cy="86" rx="5" ry="4" fill="#ffe0c4"/>
+    <!-- Right arm (holding staff) -->
+    <path d="M64,62 Q70,68 68,80" fill="none" stroke="url(#skinG)" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="68" cy="81" rx="5" ry="4" fill="#ffe0c4"/>
+    <!-- Legs -->
+    <rect x="47" y="100" width="7" height="8" rx="2" fill="#c4b5fd"/>
+    <rect x="56" y="100" width="7" height="8" rx="2" fill="#c4b5fd"/>
+    <!-- Shoes -->
+    <ellipse cx="50" cy="108" rx="6" ry="3" fill="url(#shoeG)"/>
+    <ellipse cx="60" cy="108" rx="6" ry="3" fill="url(#shoeG)"/>
+    <!-- Neck -->
+    <rect x="51" y="52" width="8" height="10" rx="3" fill="#ffe0c4"/>
+    <!-- Head -->
+    <ellipse cx="55" cy="38" rx="18" ry="20" fill="url(#skinG)"/>
+    <!-- Hair back layer -->
+    <ellipse cx="55" cy="32" rx="20" ry="19" fill="url(#hairG)"/>
+    <!-- Face (skin over hair) -->
+    <ellipse cx="55" cy="40" rx="16" ry="17" fill="#ffe0c4"/>
+    <!-- Hair top -->
+    <path d="M36,33 Q38,12 55,10 Q72,12 74,33 Q65,20 55,22 Q45,20 36,33Z" fill="#5c3a1e"/>
+    <!-- Left twin tail -->
+    <path d="M37,35 Q24,40 22,58 Q28,55 32,62 Q38,48 40,42Z" fill="#5c3a1e"/>
+    <!-- Right twin tail -->
+    <path d="M73,35 Q86,40 88,58 Q82,55 78,62 Q72,48 70,42Z" fill="#5c3a1e"/>
+    <!-- Hair highlights -->
+    <path d="M44,14 Q48,11 53,12" fill="none" stroke="rgba(255,220,180,0.4)" stroke-width="2" stroke-linecap="round"/>
+    <!-- Gold star ornament in hair -->
+    <polygon points="55,15 56,18 59,18 57,20 58,23 55,21 52,23 53,20 51,18 54,18" fill="#fde68a" stroke="#d97706" stroke-width="0.3"/>
+    <!-- Eyes open -->
+    <ellipse cx="47" cy="39" rx="6" ry="5.5" fill="white"/>
+    <ellipse cx="63" cy="39" rx="6" ry="5.5" fill="white"/>
+    <ellipse cx="47" cy="39" rx="4.5" ry="4.5" fill="url(#eyeG)"/>
+    <ellipse cx="63" cy="39" rx="4.5" ry="4.5" fill="url(#eyeG)"/>
+    <ellipse cx="47" cy="39" rx="3" ry="3" fill="#1e3a5f"/>
+    <ellipse cx="63" cy="39" rx="3" ry="3" fill="#1e3a5f"/>
+    <!-- Pupils -->
+    <ellipse cx="47" cy="39" rx="1.5" ry="1.5" fill="#0a0a1a"/>
+    <ellipse cx="63" cy="39" rx="1.5" ry="1.5" fill="#0a0a1a"/>
+    <!-- Catchlights -->
+    <ellipse cx="49" cy="37" rx="1.2" ry="1.2" fill="white"/>
+    <ellipse cx="65" cy="37" rx="1.2" ry="1.2" fill="white"/>
+    <!-- Eyebrows -->
+    <path d="M42,33 Q47,31 52,33" fill="none" stroke="#3d2010" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M58,33 Q63,31 68,33" fill="none" stroke="#3d2010" stroke-width="1.5" stroke-linecap="round"/>
+    <!-- Eyelashes -->
+    <path d="M41,36 L40,34 M42,35 L41,33 M52,35 L53,33 M53,36 L54,34" fill="none" stroke="#1a0a00" stroke-width="1"/>
+    <path d="M57,35 L56,33 M58,35 L57,33 M68,35 L69,33 M69,36 L70,34" fill="none" stroke="#1a0a00" stroke-width="1"/>
+    <!-- Blush -->
+    <ellipse cx="42" cy="43" rx="6" ry="4" fill="url(#blushG)"/>
+    <ellipse cx="68" cy="43" rx="6" ry="4" fill="url(#blushG)"/>
+    <!-- Nose -->
+    <path d="M54,45 Q55,47 56,45" fill="none" stroke="rgba(180,100,80,0.5)" stroke-width="1"/>
+    <!-- Smile -->
+    <path d="M49,50 Q55,54 61,50" fill="none" stroke="rgba(180,80,60,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- ═══════════════ FRAME 1 — IDLE BLINK ═══════════════ (x=110) -->
+  <g transform="translate(110,0)">
+    <!-- Shadow -->
+    <ellipse cx="55" cy="107" rx="22" ry="5" fill="rgba(0,0,0,0.25)"/>
+    <!-- Staff (behind body) -->
+    <line x1="68" y1="18" x2="60" y2="100" stroke="url(#staffG)" stroke-width="3.5" stroke-linecap="round"/>
+    <polygon points="68,14 70,19 75,19 71,22 73,27 68,24 63,27 65,22 61,19 66,19" fill="#fde68a" stroke="#d97706" stroke-width="0.5"/>
+    <!-- Body -->
+    <rect x="46" y="60" width="18" height="22" rx="3" fill="url(#dressG)"/>
+    <path d="M40,82 Q55,95 70,82 L67,100 Q55,106 43,100 Z" fill="#6d28d9"/>
+    <path d="M50,60 Q55,64 60,60" fill="none" stroke="white" stroke-width="1.5"/>
+    <polygon points="55,67 56.5,71 61,71 57.5,73.5 59,78 55,75.5 51,78 52.5,73.5 49,71 53.5,71" fill="#fde68a" opacity="0.85"/>
+    <path d="M46,62 Q38,72 40,85" fill="none" stroke="url(#skinG)" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="40" cy="86" rx="5" ry="4" fill="#ffe0c4"/>
+    <path d="M64,62 Q70,68 68,80" fill="none" stroke="url(#skinG)" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="68" cy="81" rx="5" ry="4" fill="#ffe0c4"/>
+    <rect x="47" y="100" width="7" height="8" rx="2" fill="#c4b5fd"/>
+    <rect x="56" y="100" width="7" height="8" rx="2" fill="#c4b5fd"/>
+    <ellipse cx="50" cy="108" rx="6" ry="3" fill="url(#shoeG)"/>
+    <ellipse cx="60" cy="108" rx="6" ry="3" fill="url(#shoeG)"/>
+    <rect x="51" y="52" width="8" height="10" rx="3" fill="#ffe0c4"/>
+    <ellipse cx="55" cy="38" rx="18" ry="20" fill="url(#skinG)"/>
+    <ellipse cx="55" cy="32" rx="20" ry="19" fill="url(#hairG)"/>
+    <ellipse cx="55" cy="40" rx="16" ry="17" fill="#ffe0c4"/>
+    <path d="M36,33 Q38,12 55,10 Q72,12 74,33 Q65,20 55,22 Q45,20 36,33Z" fill="#5c3a1e"/>
+    <path d="M37,35 Q24,40 22,58 Q28,55 32,62 Q38,48 40,42Z" fill="#5c3a1e"/>
+    <path d="M73,35 Q86,40 88,58 Q82,55 78,62 Q72,48 70,42Z" fill="#5c3a1e"/>
+    <path d="M44,14 Q48,11 53,12" fill="none" stroke="rgba(255,220,180,0.4)" stroke-width="2" stroke-linecap="round"/>
+    <polygon points="55,15 56,18 59,18 57,20 58,23 55,21 52,23 53,20 51,18 54,18" fill="#fde68a" stroke="#d97706" stroke-width="0.3"/>
+    <!-- BLINK — closed eyes instead of open -->
+    <ellipse cx="47" cy="39" rx="6" ry="5.5" fill="white"/>
+    <ellipse cx="63" cy="39" rx="6" ry="5.5" fill="white"/>
+    <!-- Closed eyelid -->
+    <path d="M41,39 Q47,43 53,39" fill="#c4b5fd" stroke="#7c3aed" stroke-width="0.8"/>
+    <path d="M57,39 Q63,43 69,39" fill="#c4b5fd" stroke="#7c3aed" stroke-width="0.8"/>
+    <path d="M41,36 L40,34 M42,35 L41,33 M52,35 L53,33 M53,36 L54,34" fill="none" stroke="#1a0a00" stroke-width="1"/>
+    <path d="M57,35 L56,33 M58,35 L57,33 M68,35 L69,33 M69,36 L70,34" fill="none" stroke="#1a0a00" stroke-width="1"/>
+    <path d="M42,33 Q47,31 52,33" fill="none" stroke="#3d2010" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M58,33 Q63,31 68,33" fill="none" stroke="#3d2010" stroke-width="1.5" stroke-linecap="round"/>
+    <ellipse cx="42" cy="43" rx="6" ry="4" fill="url(#blushG)"/>
+    <ellipse cx="68" cy="43" rx="6" ry="4" fill="url(#blushG)"/>
+    <path d="M54,45 Q55,47 56,45" fill="none" stroke="rgba(180,100,80,0.5)" stroke-width="1"/>
+    <path d="M49,50 Q55,54 61,50" fill="none" stroke="rgba(180,80,60,0.6)" stroke-width="1.5" stroke-linecap="round"/>
+  </g>
+
+  <!-- ═══════════════ FRAME 2 — THROW (arm raised) ═══════════════ (x=220) -->
+  <g transform="translate(220,0)">
+    <ellipse cx="55" cy="107" rx="22" ry="5" fill="rgba(0,0,0,0.25)"/>
+    <!-- Body -->
+    <rect x="46" y="60" width="18" height="22" rx="3" fill="url(#dressG)"/>
+    <path d="M40,82 Q55,95 70,82 L67,100 Q55,106 43,100 Z" fill="#6d28d9"/>
+    <path d="M50,60 Q55,64 60,60" fill="none" stroke="white" stroke-width="1.5"/>
+    <polygon points="55,67 56.5,71 61,71 57.5,73.5 59,78 55,75.5 51,78 52.5,73.5 49,71 53.5,71" fill="#fde68a" opacity="0.85"/>
+    <!-- Left arm down -->
+    <path d="M46,62 Q38,72 40,85" fill="none" stroke="url(#skinG)" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="40" cy="86" rx="5" ry="4" fill="#ffe0c4"/>
+    <!-- Right arm RAISED (throw pose) -->
+    <path d="M64,62 Q78,40 82,20" fill="none" stroke="url(#skinG)" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="82" cy="20" rx="5" ry="4" fill="#ffe0c4"/>
+    <!-- Staff in raised hand -->
+    <line x1="82" y1="20" x2="55" y2="95" stroke="url(#staffG)" stroke-width="3.5" stroke-linecap="round"/>
+    <polygon points="82,14 84,19 89,19 85,22 87,27 82,24 77,27 79,22 75,19 80,19" fill="#fde68a" stroke="#d97706" stroke-width="0.5"/>
+    <rect x="47" y="100" width="7" height="8" rx="2" fill="#c4b5fd"/>
+    <rect x="56" y="100" width="7" height="8" rx="2" fill="#c4b5fd"/>
+    <ellipse cx="50" cy="108" rx="6" ry="3" fill="url(#shoeG)"/>
+    <ellipse cx="60" cy="108" rx="6" ry="3" fill="url(#shoeG)"/>
+    <rect x="51" y="52" width="8" height="10" rx="3" fill="#ffe0c4"/>
+    <ellipse cx="55" cy="38" rx="18" ry="20" fill="url(#skinG)"/>
+    <ellipse cx="55" cy="32" rx="20" ry="19" fill="url(#hairG)"/>
+    <ellipse cx="55" cy="40" rx="16" ry="17" fill="#ffe0c4"/>
+    <path d="M36,33 Q38,12 55,10 Q72,12 74,33 Q65,20 55,22 Q45,20 36,33Z" fill="#5c3a1e"/>
+    <!-- Tails blown back slightly -->
+    <path d="M37,35 Q20,38 16,55 Q24,53 28,60 Q36,46 38,40Z" fill="#5c3a1e"/>
+    <path d="M73,35 Q86,40 88,58 Q82,55 78,62 Q72,48 70,42Z" fill="#5c3a1e"/>
+    <path d="M44,14 Q48,11 53,12" fill="none" stroke="rgba(255,220,180,0.4)" stroke-width="2" stroke-linecap="round"/>
+    <polygon points="55,15 56,18 59,18 57,20 58,23 55,21 52,23 53,20 51,18 54,18" fill="#fde68a" stroke="#d97706" stroke-width="0.3"/>
+    <!-- Determined eyes -->
+    <ellipse cx="47" cy="39" rx="6" ry="5.5" fill="white"/>
+    <ellipse cx="63" cy="39" rx="6" ry="5.5" fill="white"/>
+    <ellipse cx="47" cy="39" rx="4.5" ry="4.5" fill="url(#eyeG)"/>
+    <ellipse cx="63" cy="39" rx="4.5" ry="4.5" fill="url(#eyeG)"/>
+    <ellipse cx="47" cy="39" rx="3" ry="3" fill="#1e3a5f"/>
+    <ellipse cx="63" cy="39" rx="3" ry="3" fill="#1e3a5f"/>
+    <ellipse cx="47" cy="39" rx="1.5" ry="1.5" fill="#0a0a1a"/>
+    <ellipse cx="63" cy="39" rx="1.5" ry="1.5" fill="#0a0a1a"/>
+    <ellipse cx="49" cy="37" rx="1.2" ry="1.2" fill="white"/>
+    <ellipse cx="65" cy="37" rx="1.2" ry="1.2" fill="white"/>
+    <!-- Determined brows (angled) -->
+    <path d="M42,32 Q47,30 52,32" fill="none" stroke="#3d2010" stroke-width="2" stroke-linecap="round"/>
+    <path d="M58,32 Q63,30 68,32" fill="none" stroke="#3d2010" stroke-width="2" stroke-linecap="round"/>
+    <path d="M41,36 L40,34 M42,35 L41,33 M52,35 L53,33 M53,36 L54,34" fill="none" stroke="#1a0a00" stroke-width="1"/>
+    <path d="M57,35 L56,33 M58,35 L57,33 M68,35 L69,33 M69,36 L70,34" fill="none" stroke="#1a0a00" stroke-width="1"/>
+    <ellipse cx="42" cy="43" rx="6" ry="4" fill="url(#blushG)"/>
+    <ellipse cx="68" cy="43" rx="6" ry="4" fill="url(#blushG)"/>
+    <path d="M54,45 Q55,47 56,45" fill="none" stroke="rgba(180,100,80,0.5)" stroke-width="1"/>
+    <!-- Excited open mouth -->
+    <path d="M49,50 Q55,56 61,50" fill="none" stroke="rgba(180,80,60,0.7)" stroke-width="2" stroke-linecap="round"/>
+  </g>
+
+  <!-- ═══════════════ FRAME 3 — CATCH (arms out, joy) ═══════════════ (x=330) -->
+  <g transform="translate(330,0)">
+    <ellipse cx="55" cy="107" rx="22" ry="5" fill="rgba(0,0,0,0.25)"/>
+    <!-- Body -->
+    <rect x="46" y="60" width="18" height="22" rx="3" fill="url(#dressG)"/>
+    <path d="M40,82 Q55,95 70,82 L67,100 Q55,106 43,100 Z" fill="#6d28d9"/>
+    <path d="M50,60 Q55,64 60,60" fill="none" stroke="white" stroke-width="1.5"/>
+    <polygon points="55,67 56.5,71 61,71 57.5,73.5 59,78 55,75.5 51,78 52.5,73.5 49,71 53.5,71" fill="#fde68a" opacity="0.85"/>
+    <!-- Both arms raised/out (joy pose) -->
+    <path d="M46,62 Q32,50 28,35" fill="none" stroke="url(#skinG)" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="28" cy="34" rx="5" ry="4" fill="#ffe0c4"/>
+    <path d="M64,62 Q78,50 82,35" fill="none" stroke="url(#skinG)" stroke-width="7" stroke-linecap="round"/>
+    <ellipse cx="82" cy="34" rx="5" ry="4" fill="#ffe0c4"/>
+    <!-- Staff pointing up -->
+    <line x1="82" y1="34" x2="55" y2="95" stroke="url(#staffG)" stroke-width="3.5" stroke-linecap="round"/>
+    <polygon points="82,28 84,33 89,33 85,36 87,41 82,38 77,41 79,36 75,33 80,33" fill="#fde68a" stroke="#d97706" stroke-width="0.5"/>
+    <rect x="47" y="100" width="7" height="8" rx="2" fill="#c4b5fd"/>
+    <rect x="56" y="100" width="7" height="8" rx="2" fill="#c4b5fd"/>
+    <ellipse cx="50" cy="108" rx="6" ry="3" fill="url(#shoeG)"/>
+    <ellipse cx="60" cy="108" rx="6" ry="3" fill="url(#shoeG)"/>
+    <rect x="51" y="52" width="8" height="10" rx="3" fill="#ffe0c4"/>
+    <ellipse cx="55" cy="38" rx="18" ry="20" fill="url(#skinG)"/>
+    <ellipse cx="55" cy="32" rx="20" ry="19" fill="url(#hairG)"/>
+    <ellipse cx="55" cy="40" rx="16" ry="17" fill="#ffe0c4"/>
+    <path d="M36,33 Q38,12 55,10 Q72,12 74,33 Q65,20 55,22 Q45,20 36,33Z" fill="#5c3a1e"/>
+    <path d="M37,35 Q18,36 14,52 Q22,52 26,58 Q34,44 38,40Z" fill="#5c3a1e"/>
+    <path d="M73,35 Q92,36 96,52 Q88,52 84,58 Q76,44 72,40Z" fill="#5c3a1e"/>
+    <path d="M44,14 Q48,11 53,12" fill="none" stroke="rgba(255,220,180,0.4)" stroke-width="2" stroke-linecap="round"/>
+    <polygon points="55,15 56,18 59,18 57,20 58,23 55,21 52,23 53,20 51,18 54,18" fill="#fde68a" stroke="#d97706" stroke-width="0.3"/>
+    <!-- Happy crescent eyes -->
+    <ellipse cx="47" cy="39" rx="6" ry="5.5" fill="white"/>
+    <ellipse cx="63" cy="39" rx="6" ry="5.5" fill="white"/>
+    <ellipse cx="47" cy="39" rx="4.5" ry="4.5" fill="url(#eyeG)"/>
+    <ellipse cx="63" cy="39" rx="4.5" ry="4.5" fill="url(#eyeG)"/>
+    <ellipse cx="47" cy="39" rx="3" ry="3" fill="#1e3a5f"/>
+    <ellipse cx="63" cy="39" rx="3" ry="3" fill="#1e3a5f"/>
+    <ellipse cx="47" cy="39" rx="1.5" ry="1.5" fill="#0a0a1a"/>
+    <ellipse cx="63" cy="39" rx="1.5" ry="1.5" fill="#0a0a1a"/>
+    <ellipse cx="49" cy="37" rx="1.5" ry="1.5" fill="white"/>
+    <ellipse cx="65" cy="37" rx="1.5" ry="1.5" fill="white"/>
+    <ellipse cx="51" cy="35" rx="0.8" ry="0.8" fill="white"/>
+    <ellipse cx="67" cy="35" rx="0.8" ry="0.8" fill="white"/>
+    <path d="M42,32 Q47,30 52,32" fill="none" stroke="#3d2010" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M58,32 Q63,30 68,32" fill="none" stroke="#3d2010" stroke-width="1.5" stroke-linecap="round"/>
+    <path d="M41,36 L40,34 M42,35 L41,33 M52,35 L53,33 M53,36 L54,34" fill="none" stroke="#1a0a00" stroke-width="1"/>
+    <path d="M57,35 L56,33 M58,35 L57,33 M68,35 L69,33 M69,36 L70,34" fill="none" stroke="#1a0a00" stroke-width="1"/>
+    <!-- Bigger blush for joy -->
+    <ellipse cx="41" cy="44" rx="8" ry="5" fill="url(#blushG)"/>
+    <ellipse cx="69" cy="44" rx="8" ry="5" fill="url(#blushG)"/>
+    <path d="M54,45 Q55,47 56,45" fill="none" stroke="rgba(180,100,80,0.5)" stroke-width="1"/>
+    <!-- Big smile / open joy mouth -->
+    <path d="M48,49 Q55,57 62,49" fill="rgba(255,120,100,0.3)" stroke="rgba(180,80,60,0.8)" stroke-width="1.5"/>
+  </g>
+</svg>

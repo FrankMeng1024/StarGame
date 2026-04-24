@@ -1087,7 +1087,7 @@ function _drawLingerFlash(ctx, t) {
   ctx.restore();
 }
 
-// ── Draw: stars (STORY-00260 sparkle upgrade) ────────────────
+// ── Draw: stars (STORY-00260 sparkle upgrade, STORY-00371 mag tiering) ──
 function _drawStars(ctx, t) {
   // STORY-00303: in linedraw/linger phase, dim unrevealed stars; brighten revealed ones (web parity)
   // STORY-00323: also dim stars during starflash — only _flashedStarSet members are bright
@@ -1111,62 +1111,90 @@ function _drawStars(ctx, t) {
     const alphaBase = revealed ? (0.35 + 0.65 * Math.abs(Math.sin(t * s.speed + s.phase))) : 0.3;
     const alpha = alphaBase;
 
+    // STORY-00371: 3-tier magnitude rendering
+    const mag = s.mag != null ? s.mag : 3;
+    let tierColor, coreR, haloR, sparkDirs;
+    if (mag < 2.5) {
+      // Bright star: blue-white, large halo, 8-direction sparkle
+      tierColor = '#ddeeff';
+      coreR     = 6 + 2 * Math.abs(Math.sin(t * s.speed * 0.7 + s.phase));   // 6-8px
+      haloR     = 30 + 10 * Math.abs(Math.sin(t * s.speed * 0.5 + s.phase)); // 30-40px
+      sparkDirs = 8;
+    } else if (mag < 4) {
+      // Medium star: warm gold, moderate halo, 4-direction sparkle
+      tierColor = '#ffe0a0';
+      coreR     = 4 + 1 * Math.abs(Math.sin(t * s.speed * 0.7 + s.phase));   // 4-5px
+      haloR     = 16 + 6 * Math.abs(Math.sin(t * s.speed * 0.5 + s.phase));  // 16-22px
+      sparkDirs = 4;
+    } else {
+      // Dim star: cool white, small halo, no sparkle
+      tierColor = '#ccddff';
+      coreR     = 2 + 1 * Math.abs(Math.sin(t * s.speed * 0.7 + s.phase));   // 2-3px
+      haloR     = 8 + 4 * Math.abs(Math.sin(t * s.speed * 0.5 + s.phase));   // 8-12px
+      sparkDirs = 0;
+    }
+
     // Glow halo
-    const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 4.5);
-    grd.addColorStop(0, _hexAlpha(s.color, alpha * 0.35));
+    const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, haloR);
+    grd.addColorStop(0, _hexAlpha(tierColor, alpha * 0.40));
+    grd.addColorStop(0.4, _hexAlpha(tierColor, alpha * 0.15));
     grd.addColorStop(1, 'rgba(0,0,0,0)');
     ctx.save();
     ctx.fillStyle = grd;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r * 4.5, 0, TWO_PI);
+    ctx.arc(s.x, s.y, haloR, 0, TWO_PI);
     ctx.fill();
     ctx.restore();
 
     // Core
     ctx.save();
     ctx.globalAlpha = alpha;
-    ctx.fillStyle   = s.color;
-    ctx.shadowColor = s.color;
-    // STORY-00303: revealed stars get 3× glow (web parity)
-    ctx.shadowBlur  = revealed ? s.r * 7.5 : s.r * 2.5;
+    ctx.fillStyle   = tierColor;
+    ctx.shadowColor = tierColor;
+    ctx.shadowBlur  = revealed ? coreR * 7.5 : coreR * 2.5;
     ctx.beginPath();
-    ctx.arc(s.x, s.y, s.r, 0, TWO_PI);
+    ctx.arc(s.x, s.y, coreR, 0, TWO_PI);
     ctx.fill();
     ctx.restore();
 
-    // 4-point cross sparkle (STORY-00260) + pulsing arm length + 8-point at peak (STORY-00294)
-    const sparkleLen = s.r * (2.5 + 1.5 * Math.abs(Math.sin(t * s.speed * 1.3 + s.phase)));  // arms pulse with twinkle
-    const sparkleAlpha = alpha * 0.65;
-    ctx.save();
-    ctx.strokeStyle = _hexAlpha(s.color, sparkleAlpha);
-    ctx.lineWidth   = 0.9;
-    ctx.lineCap     = 'round';
-    ctx.shadowColor = s.color;
-    ctx.shadowBlur  = 3;
-    // Horizontal arm
-    ctx.beginPath();
-    ctx.moveTo(s.x - sparkleLen, s.y);
-    ctx.lineTo(s.x + sparkleLen, s.y);
-    ctx.stroke();
-    // Vertical arm
-    ctx.beginPath();
-    ctx.moveTo(s.x, s.y - sparkleLen);
-    ctx.lineTo(s.x, s.y + sparkleLen);
-    ctx.stroke();
-    // Diagonal arms at peak brightness (STORY-00294: 8-point star effect)
-    if (alpha > 0.85) {
-      const diagLen = sparkleLen * 0.55;
-      ctx.globalAlpha = (alpha - 0.85) / 0.15 * 0.5;  // fade in only at peak
+    // Sparkle arms (0 = none, 4 = cross, 8 = cross + diagonal)
+    if (sparkDirs > 0) {
+      const sparkleLen  = coreR * (2.2 + 1.3 * Math.abs(Math.sin(t * s.speed * 1.3 + s.phase)));
+      const sparkleAlpha = alpha * 0.70;
+      ctx.save();
+      ctx.strokeStyle = _hexAlpha(tierColor, sparkleAlpha);
+      ctx.lineWidth   = mag < 2.5 ? 1.2 : 0.9;
+      ctx.lineCap     = 'round';
+      ctx.shadowColor = tierColor;
+      ctx.shadowBlur  = 4;
+      // Horizontal arm
       ctx.beginPath();
-      ctx.moveTo(s.x - diagLen, s.y - diagLen);
-      ctx.lineTo(s.x + diagLen, s.y + diagLen);
+      ctx.moveTo(s.x - sparkleLen, s.y);
+      ctx.lineTo(s.x + sparkleLen, s.y);
       ctx.stroke();
+      // Vertical arm
       ctx.beginPath();
-      ctx.moveTo(s.x + diagLen, s.y - diagLen);
-      ctx.lineTo(s.x - diagLen, s.y + diagLen);
+      ctx.moveTo(s.x, s.y - sparkleLen);
+      ctx.lineTo(s.x, s.y + sparkleLen);
       ctx.stroke();
+      // Diagonal arms for 8-direction (bright stars always show, plus peak fade-in for medium)
+      if (sparkDirs === 8 || alpha > 0.85) {
+        const diagLen = sparkleLen * 0.60;
+        const diagAlpha = sparkDirs === 8
+          ? sparkleAlpha * 0.80
+          : (alpha - 0.85) / 0.15 * 0.5;
+        ctx.globalAlpha = diagAlpha;
+        ctx.beginPath();
+        ctx.moveTo(s.x - diagLen, s.y - diagLen);
+        ctx.lineTo(s.x + diagLen, s.y + diagLen);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(s.x + diagLen, s.y - diagLen);
+        ctx.lineTo(s.x - diagLen, s.y + diagLen);
+        ctx.stroke();
+      }
+      ctx.restore();
     }
-    ctx.restore();
   }
 }
 

@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>追星少女 — 游戏视觉Demo</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { background: #020408; color: #c0c8e8; font-family: sans-serif; }
+  .header {
+    text-align: center; padding: 18px 0 8px;
+    font-size: 13px; color: #7080b0; letter-spacing: 2px;
+  }
+  .header strong { color: #ffd700; font-size: 16px; }
+  .panels {
+    display: flex; gap: 12px; padding: 0 16px 16px;
+    justify-content: center; flex-wrap: wrap;
+  }
+  .panel { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+  .label {
+    font-size: 11px; color: #7080b0; letter-spacing: 1px;
+    text-transform: uppercase;
+  }
+  canvas { border-radius: 12px; display: block; cursor: pointer; }
+  .hint { font-size: 10px; color: #505878; margin-top: 2px; }
+  .divider {
+    width: 1px; background: rgba(80,90,150,0.3);
+    align-self: stretch; margin: 0 4px;
+  }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <strong>追星少女 · 游戏视觉设计稿</strong><br>
+  点击画布发射网 &nbsp;|&nbsp; 对比两种网造型
+</div>
+
+<div class="panels">
+  <!-- Panel 1: 圆形捕蝶网版 -->
+  <div class="panel">
+    <div class="label">方案A · 圆形捕蝶网</div>
+    <canvas id="cvA" width="340" height="520"></canvas>
+    <div class="hint">点击发射 / 自动摇摆</div>
+  </div>
+
+  <!-- Panel 2: 改良三角网袋版 -->
+  <div class="panel">
+    <div class="label">方案B · 改良三角网袋</div>
+    <canvas id="cvB" width="340" height="520"></canvas>
+    <div class="hint">点击发射 / 自动摇摆</div>
+  </div>
+</div>
+
+<script>
+'use strict';
+
+// ─── Constants ──────────────────────────────────────────────────
+const TWO_PI = Math.PI * 2;
+const W = 340, H = 520;
+const POLE_X = W / 2;
+const POLE_Y = H * 0.87;
+const NET_MAX_LEN = H * 0.85;
+const SWING_AMP  = (78 * Math.PI) / 180;   // ±78°
+const SWING_SPD  = TWO_PI / (3.5 * 60);    // 3.5s cycle
+const NET_SPEED  = 9;                        // px/frame
+
+// Palette
+const SKY0 = '#040818';
+const SKY1 = '#0a1035';
+const SKY2 = '#180d2e';
+const GIRL_FILL  = '#060a1c';      // near-black silhouette
+const GIRL_GLOW  = 'rgba(80,130,255,0.22)';
+const GIRL_EDGE  = 'rgba(100,160,255,0.45)';
+
+// ─── Shared star data ────────────────────────────────────────────
+function hash(n) { return Math.abs((Math.sin(n * 127.1 + 311.7) * 43758.5453) % 1); }
+const BG_STARS = Array.from({ length: 160 }, (_, i) => ({
+  x: hash(i) * W,
+  y: hash(i + 500) * H,
+  r: 0.3 + hash(i + 1000) * (i < 100 ? 0.4 : i < 140 ? 0.8 : 1.6),
+  base: 0.10 + hash(i + 2000) * (i < 100 ? 0.20 : i < 140 ? 0.30 : 0.50),
+  ph: hash(i + 3000) * TWO_PI,
+  spd: 0.4 + hash(i + 4000) * 1.2,
+  bright: i >= 140,
+}));
+
+// Game stars (the ones you catch)
+const GAME_STARS = [
+  // bright (mag < 2.5)
+  { x: 0.20, y: 0.12, mag: 1.5, caught: false, flashT: 0 },
+  { x: 0.65, y: 0.08, mag: 2.0, caught: false, flashT: 0 },
+  { x: 0.82, y: 0.22, mag: 2.2, caught: false, flashT: 0 },
+  // medium
+  { x: 0.38, y: 0.18, mag: 3.0, caught: false, flashT: 0 },
+  { x: 0.55, y: 0.30, mag: 3.5, caught: false, flashT: 0 },
+  { x: 0.72, y: 0.38, mag: 3.2, caught: false, flashT: 0 },
+  { x: 0.20, y: 0.32, mag: 2.8, caught: false, flashT: 0 },
+  // dim
+  { x: 0.45, y: 0.42, mag: 4.2, caught: false, flashT: 0 },
+  { x: 0.30, y: 0.50, mag: 4.8, caught: false, flashT: 0 },
+  { x: 0.60, y: 0.48, mag: 5.0, caught: false, flashT: 0 },
+  { x: 0.78, y: 0.55, mag: 4.5, caught: false, flashT: 0 },
+];
+
+// Grass
+const GRASS = Array.from({ length: 32 }, (_, i) => ({
+  x: hash(i + 9000) * W,
+  h: 8 + hash(i + 9100) * 16,
+  lean: (hash(i + 9200) - 0.5) * 0.4,
+  spd: 0.5 + hash(i + 9300) * 0.8,
+  ph: hash(i + 9400) * TWO_PI,
+}));
+
+// ─── State factory (one per canvas) ─────────────────────────────
+function makeState() {
+  return {
+    swingT: 0,
+    netAngle: 0,
+    netLen: 0,
+    netState: 'swing',   // 'swing' | 'extend' | 'retract'
+    catchFlash: 0,
+    stars: GAME_STARS.map(s => ({ ...s })),
+  };
+}
+
+const stateA = makeState();
+const stateB = makeState();
+
+// ─── Update net physics ──────────────────────────────────────────
+function updateNet(st) {
+  if (st.netState === 'swing') {
+    st.swingT += SWING_SPD;
+    st.netAngle = Math.sin(st.swingT) * SWING_AMP;
+    st.netLen   = 0;
+  } else if (st.netState === 'extend') {
+    st.netLen += NET_SPEED;
+    if (st.netLen >= NET_MAX_LEN) { st.netLen = NET_MAX_LEN; st.netState = 'retract'; }
+  } else { // retract
+    st.netLen -= NET_SPEED * 1.3;
+    if (st.netLen <= 0) { st.netLen = 0; st.netState = 'swing'; }
+  }
+  // Collision check
+  const hx = POLE_X + Math.sin(st.netAngle) * st.netLen;
+  const hy = POLE_Y - Math.cos(st.netAngle) * st.netLen;
+  if (st.netState === 'extend') {
+    for (const s of st.stars) {
+      if (s.caught) continue;
+      const sx = s.x * W, sy = s.y * H;
+      const catchR = s.mag < 2.5 ? 22 : s.mag < 4 ? 18 : 14;
+      if (Math.hypot(sx - hx, sy - hy) < catchR) {
+        s.caught = true;
+        s.flashT = 1.0;
+        st.catchFlash = 6;
+        st.netState = 'retract';
+        break;
+      }
+    }
+  }
+  if (st.catchFlash > 0) st.catchFlash--;
+  for (const s of st.stars) {
+    if (s.flashT > 0) s.flashT = Math.max(0, s.flashT - 0.04);
+  }
+}
+
+// ─── Draw background ─────────────────────────────────────────────
+function drawBg(ctx, t) {
+  // Sky gradient
+  const g = ctx.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, SKY0); g.addColorStop(0.6, SKY1); g.addColorStop(1, SKY2);
+  ctx.fillStyle = g; ctx.fillRect(0, 0, W, H);
+
+  // Nebula glow
+  const ng = ctx.createRadialGradient(W*0.3, H*0.25, 20, W*0.3, H*0.25, 180);
+  ng.addColorStop(0, 'rgba(60,30,120,0.07)'); ng.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = ng; ctx.fillRect(0, 0, W, H);
+  const ng2 = ctx.createRadialGradient(W*0.75, H*0.4, 15, W*0.75, H*0.4, 150);
+  ng2.addColorStop(0, 'rgba(20,60,140,0.06)'); ng2.addColorStop(1, 'rgba(0,0,0,0)');
+  ctx.fillStyle = ng2; ctx.fillRect(0, 0, W, H);
+
+  // Background stars
+  for (const s of BG_STARS) {
+    const tw = 0.5 + 0.5 * Math.sin(t * s.spd + s.ph);
+    const alpha = s.base * (0.7 + 0.3 * tw);
+    if (s.bright) {
+      const grd = ctx.createRadialGradient(s.x, s.y, 0, s.x, s.y, s.r * 3.5);
+      grd.addColorStop(0, `rgba(220,235,255,${alpha})`);
+      grd.addColorStop(1, 'rgba(150,180,255,0)');
+      ctx.fillStyle = grd;
+      ctx.beginPath(); ctx.arc(s.x, s.y, s.r * 3.5, 0, TWO_PI); ctx.fill();
+      // diffraction cross
+      ctx.save();
+      ctx.strokeStyle = `rgba(200,220,255,${alpha * 0.5})`;
+      ctx.lineWidth = 0.6;
+      const cl = s.r * 5 * tw;
+      ctx.beginPath(); ctx.moveTo(s.x - cl, s.y); ctx.lineTo(s.x + cl, s.y); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(s.x, s.y - cl); ctx.lineTo(s.x, s.y + cl); ctx.stroke();
+      ctx.restore();
+    }
+    ctx.fillStyle = `rgba(200,220,255,${alpha})`;
+    ctx.beginPath(); ctx.arc(s.x, s.y, s.r, 0, TWO_PI); ctx.fill();
+  }
+}
+
+// ─── Draw game stars (the catchable ones) ────────────────────────
+function drawGameStars(ctx, t, stars) {
+  for (const s of stars) {
+    if (s.caught && s.flashT <= 0) continue;
+    const sx = s.x * W, sy = s.y * H;
+    const bright = s.mag < 2.5, medium = s.mag < 4;
+    const r = bright ? 5 : medium ? 3.5 : 2;
+    const glowR = bright ? 28 : medium ? 18 : 10;
+    const spd   = bright ? 1.4 : medium ? 2.0 : 2.8;
+    const tw    = 0.5 + 0.5 * Math.abs(Math.sin(t * spd + s.x * 10));
+    const col   = bright ? '#d0e8ff' : medium ? '#ffe8a0' : '#c0d4ff';
+    const colRGB = bright ? '200,230,255' : medium ? '255,220,120' : '180,210,255';
+
+    let alpha = s.caught ? s.flashT : (0.6 + 0.4 * tw);
+
+    // Halo
+    const gr = ctx.createRadialGradient(sx, sy, 0, sx, sy, glowR);
+    gr.addColorStop(0, `rgba(${colRGB},${alpha * 0.7})`);
+    gr.addColorStop(0.3, `rgba(${colRGB},${alpha * 0.3})`);
+    gr.addColorStop(1, `rgba(${colRGB},0)`);
+    ctx.fillStyle = gr;
+    ctx.beginPath(); ctx.arc(sx, sy, glowR, 0, TWO_PI); ctx.fill();
+
+    // Core
+    ctx.fillStyle = s.caught ? `rgba(255,230,100,${s.flashT})` : col;
+    ctx.beginPath(); ctx.arc(sx, sy, r * (1 + tw * 0.25), 0, TWO_PI); ctx.fill();
+
+    // Diffraction arms
+    if (!s.caught) {
+      const arms = bright ? 8 : medium ? 4 : 0;
+      if (arms > 0) {
+        ctx.save();
+        ctx.strokeStyle = `rgba(${colRGB},${alpha * 0.5})`;
+        ctx.lineWidth = 0.7;
+        const al = r * (1.8 + tw * 1.2);
+        for (let a = 0; a < arms; a++) {
+          const ang = (a / arms) * TWO_PI;
+          ctx.beginPath();
+          ctx.moveTo(sx + Math.cos(ang) * r, sy + Math.sin(ang) * r);
+          ctx.lineTo(sx + Math.cos(ang) * (r + al), sy + Math.sin(ang) * (r + al));
+          ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+  }
+}
+
+// ─── Draw ground silhouette ──────────────────────────────────────
+function drawGround(ctx, t) {
+  const baseY = H * 0.92;
+  // Ground fill
+  const gg = ctx.createLinearGradient(0, baseY - 20, 0, H);
+  gg.addColorStop(0, 'rgba(5,8,20,0)');
+  gg.addColorStop(0.3, '#060810');
+  gg.addColorStop(1, '#030508');
+  ctx.fillStyle = gg;
+  ctx.beginPath();
+  ctx.moveTo(0, baseY);
+  ctx.bezierCurveTo(W*0.1, baseY-12, W*0.3, baseY-8, W*0.5, baseY-4);
+  ctx.bezierCurveTo(W*0.7, baseY, W*0.85, baseY-10, W, baseY-5);
+  ctx.lineTo(W, H); ctx.lineTo(0, H); ctx.closePath();
+  ctx.fill();
+
+  // Grass blades
+  ctx.save();
+  ctx.strokeStyle = '#060c16';
+  ctx.lineWidth = 1.2;
+  ctx.lineCap = 'round';
+  for (const g of GRASS) {
+    const sway = Math.sin(t * g.spd + g.ph) * 0.18;
+    const lean = g.lean + sway;
+    const gx = g.x;
+    const gy = baseY - 4 + Math.sin(g.x * 0.05) * 6;
+    const tipX = gx + Math.sin(lean) * g.h;
+    const tipY = gy - Math.cos(lean) * g.h;
+    ctx.globalAlpha = 0.7 + Math.sin(t * g.spd * 0.5 + g.ph) * 0.3;
+    ctx.beginPath();
+    ctx.moveTo(gx, gy);
+    ctx.quadraticCurveTo(
+      gx + Math.sin(lean) * g.h * 0.6,
+      gy - g.h * 0.5,
+      tipX, tipY
+    );
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+  ctx.restore();
+}
+
+// ─── Load girl sprite ────────────────────────────────────────────
+const GIRL_IMG = new Image();
+GIRL_IMG.src = 'girl.svg';
+const GIRL_FRAME_W = 110;
+const GIRL_FRAME_H = 110;
+// Frame indices: 0=idle, 1=blink, 2=throw, 3=catch
+let _girlFrameA = 0, _girlLastBlinkA = 0;
+let _girlFrameB = 0, _girlLastBlinkB = 0;
+
+// ─── Draw girl via sprite ────────────────────────────────────────
+function drawGirl(ctx, t, netAngle, stateObj, isA) {
+  const cx = POLE_X;
+  const cy = POLE_Y;
+
+  // Pick frame based on net state
+  let frame;
+  if (stateObj.netState === 'extend') {
+    frame = 2; // throw
+  } else if (stateObj.catchFlash > 0) {
+    frame = 3; // catch/joy
+  } else {
+    // idle blink cycle
+    const lastBlink = isA ? _girlLastBlinkA : _girlLastBlinkB;
+    let curFrame   = isA ? _girlFrameA : _girlFrameB;
+    const elapsed  = t * 1000 - lastBlink;
+    if (curFrame === 0 && elapsed > 3500) {
+      curFrame = 1;
+      if (isA) { _girlFrameA = 1; _girlLastBlinkA = t * 1000; }
+      else      { _girlFrameB = 1; _girlLastBlinkB = t * 1000; }
+    } else if (curFrame === 1 && elapsed > 150) {
+      curFrame = 0;
+      if (isA) { _girlFrameA = 0; _girlLastBlinkA = t * 1000; }
+      else      { _girlFrameB = 0; _girlLastBlinkB = t * 1000; }
+    }
+    frame = curFrame;
+  }
+
+  const sx = frame * GIRL_FRAME_W;
+  const DRAW_H = 110;
+  const DRAW_W = 110;
+
+  if (GIRL_IMG.complete && GIRL_IMG.naturalWidth > 0) {
+    ctx.drawImage(
+      GIRL_IMG,
+      sx, 0, GIRL_FRAME_W, GIRL_FRAME_H,
+      cx - DRAW_W / 2, cy - DRAW_H + 12, DRAW_W, DRAW_H
+    );
+  }
+}
+
+// ─── Net: Round butterfly style (A) ─────────────────────────────
+function drawNetRound(ctx, t, st) {
+  const isExtended = st.netState !== 'swing';
+  const ropeOriX = isExtended ? POLE_X + 27 : POLE_X + 13;
+  const ropeOriY = isExtended ? POLE_Y - 78  : POLE_Y - 17;
+  const hx = ropeOriX + Math.sin(st.netAngle) * st.netLen;
+  const hy = ropeOriY - Math.cos(st.netAngle) * st.netLen;
+  const flashAlpha = st.catchFlash / 6;
+
+  // Pole (bamboo-style rod from hand toward net)
+  if (st.netLen > 0 || isExtended) {
+    const poleLen = Math.min(st.netLen + 22, 90);
+    const px1 = ropeOriX, py1 = ropeOriY;
+    const px2 = ropeOriX + Math.sin(st.netAngle) * poleLen;
+    const py2 = ropeOriY - Math.cos(st.netAngle) * poleLen;
+    ctx.save();
+    ctx.strokeStyle = '#8a6030';
+    ctx.lineWidth = 2.5;
+    ctx.lineCap = 'round';
+    // Pole gradient
+    const pg = ctx.createLinearGradient(px1, py1, px2, py2);
+    pg.addColorStop(0, '#6a4520');
+    pg.addColorStop(0.5, '#a07840');
+    pg.addColorStop(1, '#7a5828');
+    ctx.strokeStyle = pg;
+    ctx.beginPath(); ctx.moveTo(px1, py1); ctx.lineTo(px2, py2); ctx.stroke();
+    ctx.restore();
+  }
+
+  // String (thin line from pole end to net)
+  if (st.netLen > 40) {
+    const poleLen = Math.min(st.netLen + 22, 90);
+    const px2 = ropeOriX + Math.sin(st.netAngle) * poleLen;
+    const py2 = ropeOriY - Math.cos(st.netAngle) * poleLen;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(200,200,220,0.55)';
+    ctx.lineWidth = 0.8;
+    ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(px2, py2); ctx.lineTo(hx, hy); ctx.stroke();
+    ctx.setLineDash([]);
+    ctx.restore();
+  }
+
+  if (st.netLen < 5 && st.netState === 'swing') return;
+
+  // Net circle
+  const mouthR = isExtended ? 16 : 10;
+  const ang = st.netAngle;
+
+  // Rotate entire net to face swing direction
+  ctx.save();
+  ctx.translate(hx, hy);
+  ctx.rotate(ang);
+
+  // Net bag fill (translucent gauze)
+  const netFill = ctx.createRadialGradient(0, mouthR * 0.6, 0, 0, mouthR * 0.6, mouthR * 1.5);
+  netFill.addColorStop(0, `rgba(180,210,255,${flashAlpha > 0 ? 0.5 + flashAlpha * 0.4 : 0.12})`);
+  netFill.addColorStop(0.6, `rgba(140,180,255,${flashAlpha > 0 ? 0.3 + flashAlpha * 0.3 : 0.06})`);
+  netFill.addColorStop(1, 'rgba(100,140,255,0)');
+  ctx.fillStyle = netFill;
+  ctx.beginPath();
+  ctx.arc(0, 0, mouthR, 0, TWO_PI);
+  ctx.fill();
+
+  // Net rim (the circular hoop)
+  ctx.strokeStyle = flashAlpha > 0
+    ? `rgba(255,220,100,${0.7 + flashAlpha * 0.3})`
+    : 'rgba(160,200,255,0.70)';
+  ctx.lineWidth = 1.8;
+  ctx.beginPath(); ctx.arc(0, 0, mouthR, 0, TWO_PI); ctx.stroke();
+
+  // Net mesh lines (sparse, hexagonal feel)
+  ctx.save();
+  ctx.globalAlpha = 0.35;
+  ctx.strokeStyle = flashAlpha > 0 ? 'rgba(255,240,160,0.5)' : 'rgba(160,200,255,0.5)';
+  ctx.lineWidth = 0.7;
+  // Cross dividers
+  for (let a = 0; a < 3; a++) {
+    const da = (a / 3) * Math.PI;
+    ctx.beginPath();
+    ctx.moveTo(Math.cos(da) * mouthR, Math.sin(da) * mouthR);
+    ctx.lineTo(-Math.cos(da) * mouthR, -Math.sin(da) * mouthR);
+    ctx.stroke();
+  }
+  // Concentric ring
+  ctx.beginPath(); ctx.arc(0, 0, mouthR * 0.55, 0, TWO_PI); ctx.stroke();
+  ctx.restore();
+
+  // Handle tube (short stick at bottom)
+  ctx.strokeStyle = '#8a6030';
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+  ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(0, mouthR * 1.5); ctx.stroke();
+
+  ctx.restore();
+
+  // Catch flash sparkles
+  if (flashAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = flashAlpha;
+    for (let i = 0; i < 6; i++) {
+      const fa = (i / 6) * TWO_PI + t * 4;
+      const fr = mouthR * 1.4 + (1 - flashAlpha) * 10;
+      const fx = hx + Math.cos(fa) * fr;
+      const fy = hy + Math.sin(fa) * fr;
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath(); ctx.arc(fx, fy, 1.5 + flashAlpha * 1.5, 0, TWO_PI); ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+// ─── Net: Improved triangle bag style (B) ───────────────────────
+function drawNetTriangle(ctx, t, st) {
+  const extended = st.netState !== 'swing';
+  const ropeOriX = extended ? POLE_X + 27 : POLE_X + 13;
+  const ropeOriY = extended ? POLE_Y - 78  : POLE_Y - 17;
+  const hx = ropeOriX + Math.sin(st.netAngle) * st.netLen;
+  const hy = ropeOriY - Math.cos(st.netAngle) * st.netLen;
+  const flashAlpha = st.catchFlash / 6;
+
+  // Pole
+  if (st.netLen > 0 || extended) {
+    const poleLen = Math.min(st.netLen + 22, 90);
+    const px2 = ropeOriX + Math.sin(st.netAngle) * poleLen;
+    const py2 = ropeOriY - Math.cos(st.netAngle) * poleLen;
+    const pg = ctx.createLinearGradient(ropeOriX, ropeOriY, px2, py2);
+    pg.addColorStop(0, '#6a4520'); pg.addColorStop(0.5, '#a07840'); pg.addColorStop(1, '#7a5828');
+    ctx.save(); ctx.strokeStyle = pg; ctx.lineWidth = 2.5; ctx.lineCap = 'round';
+    ctx.beginPath(); ctx.moveTo(ropeOriX, ropeOriY); ctx.lineTo(px2, py2); ctx.stroke();
+    ctx.restore();
+  }
+
+  // String
+  if (st.netLen > 40) {
+    const poleLen = Math.min(st.netLen + 22, 90);
+    const px2 = ropeOriX + Math.sin(st.netAngle) * poleLen;
+    const py2 = ropeOriY - Math.cos(st.netAngle) * poleLen;
+    ctx.save();
+    ctx.strokeStyle = 'rgba(200,180,140,0.60)';
+    ctx.lineWidth = 1.0;
+    ctx.beginPath(); ctx.moveTo(px2, py2); ctx.lineTo(hx, hy); ctx.stroke();
+    ctx.restore();
+  }
+
+  if (st.netLen < 5 && st.netState === 'swing') return;
+
+  const mouthR = extended ? 16 : 10;
+  const bagD   = mouthR * 1.9;
+
+  ctx.save();
+  ctx.translate(hx, hy);
+  ctx.rotate(st.netAngle);
+
+  // Bag fill (deeper, more opaque than round version)
+  const bagGrd = ctx.createLinearGradient(0, 0, 0, bagD);
+  bagGrd.addColorStop(0, flashAlpha > 0 ? `rgba(255,230,150,0.18)` : 'rgba(160,200,255,0.14)');
+  bagGrd.addColorStop(1, 'rgba(80,120,200,0.04)');
+  ctx.fillStyle = bagGrd;
+
+  // Bag shape: half-circle mouth + tapered body
+  ctx.beginPath();
+  ctx.arc(0, 0, mouthR, Math.PI, 0, false);           // top mouth (half circle)
+  ctx.bezierCurveTo(mouthR * 0.9, bagD * 0.5, mouthR * 0.4, bagD, 0, bagD);
+  ctx.bezierCurveTo(-mouthR * 0.4, bagD, -mouthR * 0.9, bagD * 0.5, -mouthR, 0);
+  ctx.closePath();
+  ctx.fill();
+
+  // Bag outline
+  ctx.strokeStyle = flashAlpha > 0
+    ? `rgba(255,220,100,${0.65 + flashAlpha * 0.35})`
+    : 'rgba(180,210,255,0.65)';
+  ctx.lineWidth = 1.5;
+  ctx.beginPath();
+  ctx.arc(0, 0, mouthR, Math.PI, 0, false);
+  ctx.bezierCurveTo(mouthR * 0.9, bagD * 0.5, mouthR * 0.4, bagD, 0, bagD);
+  ctx.bezierCurveTo(-mouthR * 0.4, bagD, -mouthR * 0.9, bagD * 0.5, -mouthR, 0);
+  ctx.stroke();
+
+  // Net mesh inside bag
+  ctx.save();
+  ctx.globalAlpha = 0.30;
+  ctx.strokeStyle = flashAlpha > 0 ? 'rgba(255,240,180,0.6)' : 'rgba(180,210,255,0.6)';
+  ctx.lineWidth = 0.6;
+  // Horizontal arcs
+  for (let i = 1; i <= 3; i++) {
+    const yt = (i / 4) * bagD;
+    const xr = mouthR * (1 - i * 0.18);
+    ctx.beginPath(); ctx.arc(0, yt, xr, Math.PI, 0, false); ctx.stroke();
+  }
+  // Vertical lines
+  for (let xi = -1; xi <= 1; xi += 2) {
+    ctx.beginPath();
+    ctx.moveTo(xi * mouthR * 0.5, 0);
+    ctx.quadraticCurveTo(xi * mouthR * 0.35, bagD * 0.5, xi * mouthR * 0.1, bagD);
+    ctx.stroke();
+  }
+  ctx.restore();
+
+  ctx.restore();
+
+  // Catch flash
+  if (flashAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = flashAlpha;
+    for (let i = 0; i < 6; i++) {
+      const fa = (i / 6) * TWO_PI + t * 4;
+      const fr = mouthR * 1.5 + (1 - flashAlpha) * 10;
+      ctx.fillStyle = '#ffd700';
+      ctx.beginPath();
+      ctx.arc(hx + Math.cos(fa) * fr, hy + Math.sin(fa) * fr, 1.5 + flashAlpha * 1.5, 0, TWO_PI);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+}
+
+// ─── Main render loop ────────────────────────────────────────────
+const cvA = document.getElementById('cvA');
+const cvB = document.getElementById('cvB');
+const ctxA = cvA.getContext('2d');
+const ctxB = cvB.getContext('2d');
+
+cvA.addEventListener('click', () => { if (stateA.netState === 'swing') stateA.netState = 'extend'; });
+cvB.addEventListener('click', () => { if (stateB.netState === 'swing') stateB.netState = 'extend'; });
+
+let startTime = null;
+
+function render(ts) {
+  if (!startTime) startTime = ts;
+  const t = (ts - startTime) * 0.001;
+
+  updateNet(stateA);
+  updateNet(stateB);
+
+  // ── Canvas A: Round net ──
+  drawBg(ctxA, t);
+  drawGameStars(ctxA, t, stateA.stars);
+  drawGround(ctxA, t);
+  drawGirl(ctxA, t, stateA.netAngle, stateA, true);
+  drawNetRound(ctxA, t, stateA);
+
+  // Labels
+  ctxA.save();
+  ctxA.font = '12px sans-serif';
+  ctxA.textAlign = 'center';
+  ctxA.fillStyle = 'rgba(140,180,255,0.65)';
+  ctxA.fillText('点击发射 ↑', W/2, H - 14);
+  ctxA.restore();
+
+  // ── Canvas B: Triangle bag ──
+  drawBg(ctxB, t);
+  drawGameStars(ctxB, t, stateB.stars);
+  drawGround(ctxB, t);
+  drawGirl(ctxB, t, stateB.netAngle, stateB, false);
+  drawNetTriangle(ctxB, t, stateB);
+
+  ctxB.save();
+  ctxB.font = '12px sans-serif';
+  ctxB.textAlign = 'center';
+  ctxB.fillStyle = 'rgba(140,180,255,0.65)';
+  ctxB.fillText('点击发射 ↑', W/2, H - 14);
+  ctxB.restore();
+
+  requestAnimationFrame(render);
+}
+
+requestAnimationFrame(render);
+</script>
+</body>
+</html>
