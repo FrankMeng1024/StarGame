@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: Sprint 66-mini COMPLETE — VU ACCEPTED 9.5/10. Visual upgrade plan (Sprint A-D) ALL COMPLETE. PROJECT COMPLETE.
-**Current Sprint**: Sprint 66-mini
+**Status**: Sprint 67-mini IN PROGRESS — STORY-00375 Done (3 fixes: girl透明背景/网兜摆动可见/动画平滑过渡)
+**Current Sprint**: Sprint 67-mini
 **Last Updated**: 2026-04-24
 
 > **Sprint 37-mini COMPLETE**: 2 Stories STORY-00323~00324 Done. Star flash sequence before linedraw (STORY-00323): new 'starflash' phase, 150ms intervals, scale 1→2→1. Victory→levels flicker fix (STORY-00324): _cleanup() before all result navigation buttons. Arch PASS. QA PASS (STORY-00323 LOW confidence — miniprogram Canvas only). UX no Blockers. VU ACCEPTED 9.6/10 — PROJECT COMPLETE. All 11 user-reported issues (CR-113~CR-121) resolved across Sprint 35/36/37-mini.
@@ -78,6 +78,7 @@
 | Sprint 64-mini | COMPLETE | 游戏视觉升级 Sprint B — 3档星等分级渲染 (STORY-00371) — Arch PASS + QA PASS |
 | Sprint 65-mini | COMPLETE | 游戏视觉升级 Sprint C — 草地层+近景闪烁星 (STORY-00372) — Arch PASS + QA PASS |
 | Sprint 66-mini | COMPLETE | 游戏视觉升级 Sprint D — 结算卡入场动画+失败界面情绪化 (STORY-00373) — Arch PASS + QA PASS |
+| Sprint 67-mini | IN PROGRESS | 游戏三项体验修复 — girl透明背景+网兜摆动可见+动画平滑过渡 (STORY-00375) |
 | Sprint 61-mini | COMPLETE | 图鉴详情页二轮精修 — 圆圈放大/照片过滤/WeChat胶囊/字体增大/pill截断修复/行距/ESA 4张图 |
 
 ## VU Acceptance History
