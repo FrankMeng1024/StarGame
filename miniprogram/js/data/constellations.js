@@ -14,9 +14,9 @@ export const CONSTELLATIONS = [
     mainStars: '参宿四、参宿七、腰带三星',
     photos: [
       'assets/images/constellations/0-Orion.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0505a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/potw1345a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic1402a.jpg',
+      'assets/images/constellations/0-Orion-2.jpg',
+      'assets/images/constellations/0-Orion-3.jpg',
+      'assets/images/constellations/0-Orion-4.jpg',
     ],
     // Lines: pairs of star indices to connect
     lines: [[0,1],[1,2],[2,3],[3,4],[2,5],[5,6],[3,6]],
@@ -49,9 +49,9 @@ export const CONSTELLATIONS = [
     mainStars: '北斗七星（天枢、玉衡、开阳等）',
     photos: [
       'assets/images/constellations/1-Ursa_Major.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/potw1410a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0715a.jpg',
+      'assets/images/constellations/1-Ursa_Major-2.jpg',
+      'assets/images/constellations/1-Ursa_Major-3.jpg',
+      'assets/images/constellations/1-Ursa_Major-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,0],[3,4],[4,5],[5,6]],
     stars: [
@@ -76,9 +76,9 @@ export const CONSTELLATIONS = [
     mainStars: '心宿二（Antares）、蝎尾双星',
     photos: [
       'assets/images/constellations/2-Scorpius.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0706a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0719a.jpg',
+      'assets/images/constellations/2-Scorpius-2.jpg',
+      'assets/images/constellations/2-Scorpius-3.jpg',
+      'assets/images/constellations/2-Scorpius-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[3,11]],
     stars: [
@@ -108,9 +108,9 @@ export const CONSTELLATIONS = [
     mainStars: '轩辕十四（Regulus）、五帝座一',
     photos: [
       'assets/images/constellations/3-Leo.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0908a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0516a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/potw1924a.jpg',
+      'assets/images/constellations/3-Leo-2.jpg',
+      'assets/images/constellations/3-Leo-3.jpg',
+      'assets/images/constellations/3-Leo-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,0],[4,8]],
     stars: [
@@ -137,9 +137,9 @@ export const CONSTELLATIONS = [
     mainStars: '娄宿三（Hamal）、娄宿一',
     photos: [
       'assets/images/constellations/4-Aries.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic1310a.jpg',
+      'assets/images/constellations/4-Aries-2.jpg',
+      'assets/images/constellations/4-Aries-3.jpg',
+      'assets/images/constellations/4-Aries-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3]],
     stars: [
@@ -161,9 +161,9 @@ export const CONSTELLATIONS = [
     mainStars: '毕宿五（Aldebaran）、昴星团七姐妹',
     photos: [
       'assets/images/constellations/5-Taurus.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0705a.jpg',
+      'assets/images/constellations/5-Taurus-2.jpg',
+      'assets/images/constellations/5-Taurus-3.jpg',
+      'assets/images/constellations/5-Taurus-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5]],
     stars: [
@@ -187,9 +187,9 @@ export const CONSTELLATIONS = [
     mainStars: '北河三（Pollux）、北河二（Castor）',
     photos: [
       'assets/images/constellations/6-Gemini.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0604a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0702a.jpg',
+      'assets/images/constellations/6-Gemini-2.jpg',
+      'assets/images/constellations/6-Gemini-3.jpg',
+      'assets/images/constellations/6-Gemini-4.jpg',
     ],
     lines: [[0,2],[2,4],[4,6],[1,3],[3,5],[5,7],[0,1]],
     stars: [
@@ -215,9 +215,9 @@ export const CONSTELLATIONS = [
     mainStars: 'Tarf（柳宿增三）、蜂巢星团',
     photos: [
       'assets/images/constellations/7-Cancer.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/potw1345a.jpg',
+      'assets/images/constellations/7-Cancer-2.jpg',
+      'assets/images/constellations/7-Cancer-3.jpg',
+      'assets/images/constellations/7-Cancer-4.jpg',
     ],
     lines: [[0,2],[2,1],[2,3],[3,4]],
     stars: [
@@ -240,9 +240,9 @@ export const CONSTELLATIONS = [
     mainStars: '角宿一（Spica）、Porrima双星',
     photos: [
       'assets/images/constellations/8-Virgo.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0908a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0715a.jpg',
+      'assets/images/constellations/8-Virgo-2.jpg',
+      'assets/images/constellations/8-Virgo-3.jpg',
+      'assets/images/constellations/8-Virgo-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9]],
     stars: [
@@ -270,9 +270,9 @@ export const CONSTELLATIONS = [
     mainStars: '氐宿一（Zuben Elgenubi）、氐宿四',
     photos: [
       'assets/images/constellations/9-Libra.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0706a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0805a.jpg',
+      'assets/images/constellations/9-Libra-2.jpg',
+      'assets/images/constellations/9-Libra-3.jpg',
+      'assets/images/constellations/9-Libra-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,0],[0,4]],
     stars: [
@@ -295,9 +295,9 @@ export const CONSTELLATIONS = [
     mainStars: '斗宿南斗六星、礁湖星云M8',
     photos: [
       'assets/images/constellations/10-Sagittarius.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0719a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic1520a.jpg',
+      'assets/images/constellations/10-Sagittarius-2.jpg',
+      'assets/images/constellations/10-Sagittarius-3.jpg',
+      'assets/images/constellations/10-Sagittarius-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[2,6],[6,7]],
     stars: [
@@ -323,9 +323,9 @@ export const CONSTELLATIONS = [
     mainStars: '牛宿增六（Deneb Algedi）、牛宿二',
     photos: [
       'assets/images/constellations/11-Capricornus.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0913a.jpg',
+      'assets/images/constellations/11-Capricornus-2.jpg',
+      'assets/images/constellations/11-Capricornus-3.jpg',
+      'assets/images/constellations/11-Capricornus-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0]],
     stars: [
@@ -349,9 +349,9 @@ export const CONSTELLATIONS = [
     mainStars: '虚宿一（Sadalsuud）、螺旋星云NGC 7293',
     photos: [
       'assets/images/constellations/12-Aquarius.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0706a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
+      'assets/images/constellations/12-Aquarius-2.jpg',
+      'assets/images/constellations/12-Aquarius-3.jpg',
+      'assets/images/constellations/12-Aquarius-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6]],
     stars: [
@@ -376,9 +376,9 @@ export const CONSTELLATIONS = [
     mainStars: '外屏七（Alrescha）、右更二',
     photos: [
       'assets/images/constellations/13-Pisces.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/potw1924a.jpg',
+      'assets/images/constellations/13-Pisces-2.jpg',
+      'assets/images/constellations/13-Pisces-3.jpg',
+      'assets/images/constellations/13-Pisces-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[5,7],[7,8],[8,9]],
     stars: [
@@ -406,9 +406,9 @@ export const CONSTELLATIONS = [
     mainStars: '王良四（Schedar）、第谷超新星遗迹',
     photos: [
       'assets/images/constellations/14-Cassiopeia.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic1310a.jpg',
+      'assets/images/constellations/14-Cassiopeia-2.jpg',
+      'assets/images/constellations/14-Cassiopeia-3.jpg',
+      'assets/images/constellations/14-Cassiopeia-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4]],
     stars: [
@@ -431,9 +431,9 @@ export const CONSTELLATIONS = [
     mainStars: '天船三（Mirfak）、大陵五（Algol）',
     photos: [
       'assets/images/constellations/15-Perseus.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0706a.jpg',
+      'assets/images/constellations/15-Perseus-2.jpg',
+      'assets/images/constellations/15-Perseus-3.jpg',
+      'assets/images/constellations/15-Perseus-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[3,7],[7,8]],
     stars: [
@@ -460,9 +460,9 @@ export const CONSTELLATIONS = [
     mainStars: '河鼓二/牛郎星（Altair）、夏季大三角',
     photos: [
       'assets/images/constellations/16-Aquila.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0706a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
+      'assets/images/constellations/16-Aquila-2.jpg',
+      'assets/images/constellations/16-Aquila-3.jpg',
+      'assets/images/constellations/16-Aquila-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[1,5]],
     stars: [
@@ -486,9 +486,9 @@ export const CONSTELLATIONS = [
     mainStars: '天津四（Deneb）、辇道增七（Albireo）',
     photos: [
       'assets/images/constellations/17-Cygnus.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0706a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic1310a.jpg',
+      'assets/images/constellations/17-Cygnus-2.jpg',
+      'assets/images/constellations/17-Cygnus-3.jpg',
+      'assets/images/constellations/17-Cygnus-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[1,6],[6,7],[7,8]],
     stars: [
@@ -515,9 +515,9 @@ export const CONSTELLATIONS = [
     mainStars: '织女一（Vega）、环状星云M57',
     photos: [
       'assets/images/constellations/18-Lyra.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0706a.jpg',
+      'assets/images/constellations/18-Lyra-2.jpg',
+      'assets/images/constellations/18-Lyra-3.jpg',
+      'assets/images/constellations/18-Lyra-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,1]],
     stars: [
@@ -540,9 +540,9 @@ export const CONSTELLATIONS = [
     mainStars: '十字架一（Acrux）、十字架二（Mimosa）',
     photos: [
       'assets/images/constellations/19-Crux.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
+      'assets/images/constellations/19-Crux-2.jpg',
+      'assets/images/constellations/19-Crux-3.jpg',
+      'assets/images/constellations/19-Crux-4.jpg',
     ],
     lines: [[0,1],[2,3]],
     stars: [
@@ -564,9 +564,9 @@ export const CONSTELLATIONS = [
     mainStars: '北极星/勾陈一（Polaris）、北极二（Kochab）',
     photos: [
       'assets/images/constellations/20-Ursa_Minor.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0706a.jpg',
+      'assets/images/constellations/20-Ursa_Minor-2.jpg',
+      'assets/images/constellations/20-Ursa_Minor-3.jpg',
+      'assets/images/constellations/20-Ursa_Minor-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,3]],
     stars: [
@@ -591,9 +591,9 @@ export const CONSTELLATIONS = [
     mainStars: '大角（Arcturus）、招摇（Izar）',
     photos: [
       'assets/images/constellations/21-Bootes.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
+      'assets/images/constellations/21-Bo_tes-2.jpg',
+      'assets/images/constellations/21-Bo_tes-3.jpg',
+      'assets/images/constellations/21-Bo_tes-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[2,6]],
     stars: [
@@ -618,9 +618,9 @@ export const CONSTELLATIONS = [
     mainStars: '五车二（Capella）、御夫座三星团M36/37/38',
     photos: [
       'assets/images/constellations/22-Auriga.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic1310a.jpg',
+      'assets/images/constellations/22-Auriga-2.jpg',
+      'assets/images/constellations/22-Auriga-3.jpg',
+      'assets/images/constellations/22-Auriga-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,0]],
     stars: [
@@ -644,9 +644,9 @@ export const CONSTELLATIONS = [
     mainStars: '危宿一（Enif）、秋季大四边形四星',
     photos: [
       'assets/images/constellations/23-Pegasus.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0706a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0908a.jpg',
+      'assets/images/constellations/23-Pegasus-2.jpg',
+      'assets/images/constellations/23-Pegasus-3.jpg',
+      'assets/images/constellations/23-Pegasus-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,0],[0,4],[4,5]],
     stars: [
@@ -670,9 +670,9 @@ export const CONSTELLATIONS = [
     mainStars: 'Sualocin、Rotanev（逆读人名趣闻）',
     photos: [
       'assets/images/constellations/24-Delphinus.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
+      'assets/images/constellations/24-Delphinus-2.jpg',
+      'assets/images/constellations/24-Delphinus-3.jpg',
+      'assets/images/constellations/24-Delphinus-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,0],[0,2]],
     stars: [
@@ -695,9 +695,9 @@ export const CONSTELLATIONS = [
     mainStars: '北落师门（Fomalhaut）、第一颗直接拍摄的系外行星',
     photos: [
       'assets/images/constellations/25-Piscis_Austrinus.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0706a.jpg',
+      'assets/images/constellations/25-Piscis_Austrinus-2.jpg',
+      'assets/images/constellations/25-Piscis_Austrinus-3.jpg',
+      'assets/images/constellations/25-Piscis_Austrinus-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,0]],
     stars: [
@@ -720,9 +720,9 @@ export const CONSTELLATIONS = [
     mainStars: '天棓四（Eltanin）、古北极星右枢（Thuban）',
     photos: [
       'assets/images/constellations/26-Draco.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic1310a.jpg',
+      'assets/images/constellations/26-Draco-2.jpg',
+      'assets/images/constellations/26-Draco-3.jpg',
+      'assets/images/constellations/26-Draco-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10],[10,11],[11,12],[12,13]],
     stars: [
@@ -754,9 +754,9 @@ export const CONSTELLATIONS = [
     mainStars: '候（Rasalhague）、开普勒超新星遗迹',
     photos: [
       'assets/images/constellations/27-Ophiuchus.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0719a.jpg',
+      'assets/images/constellations/27-Ophiuchus-2.jpg',
+      'assets/images/constellations/27-Ophiuchus-3.jpg',
+      'assets/images/constellations/27-Ophiuchus-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,0],[2,6]],
     stars: [
@@ -781,9 +781,9 @@ export const CONSTELLATIONS = [
     mainStars: '南门二（Alpha Cen）、比邻星（最近恒星4.24光年）',
     photos: [
       'assets/images/constellations/28-Centaurus.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0506a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
+      'assets/images/constellations/28-Centaurus-2.jpg',
+      'assets/images/constellations/28-Centaurus-3.jpg',
+      'assets/images/constellations/28-Centaurus-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3],[3,4],[4,5],[5,6],[6,7],[7,8],[8,9],[9,10]],
     stars: [
@@ -812,9 +812,9 @@ export const CONSTELLATIONS = [
     mainStars: '常陈一（Cor Caroli）、漩涡星系M51',
     photos: [
       'assets/images/constellations/29-Canes_Venatici.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0601a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0715a.jpg',
-      'https://cdn.esahubble.org/archives/images/thumb700x/heic0712a.jpg',
+      'assets/images/constellations/29-Canes_Venatici-2.jpg',
+      'assets/images/constellations/29-Canes_Venatici-3.jpg',
+      'assets/images/constellations/29-Canes_Venatici-4.jpg',
     ],
     lines: [[0,1],[1,2],[2,3]],
     stars: [
