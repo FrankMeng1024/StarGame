@@ -841,10 +841,10 @@ function _updateNet(dt) {
 }
 
 function _updateNetHead(dt) {
-  // Rope origin matches SVG sprite: idle=(+13,-17), extend=(+27,-78) relative to _poleX/Y
+  // Rope origin — idle: hand/shoulder area (+20,-58); extend: glove at (+27,-78) relative to _poleX/Y
   const extended  = _netState !== 'swing';
-  const ropeOriX = extended ? _poleX + 27 : _poleX + 13;
-  const ropeOriY = extended ? _poleY - 78  : _poleY - 17;
+  const ropeOriX = extended ? _poleX + 27 : _poleX + 20;
+  const ropeOriY = extended ? _poleY - 78  : _poleY - 58;
 
   // STORY-00366: Magnetic zone deflection — when net head enters a zone, deflect angle
   if (_netState === 'extend') {
@@ -1556,9 +1556,9 @@ function _drawNet(ctx) {
   const angle     = _netAngle;
   const swingAlpha = extended ? 1.0 : 0.55;   // Sprint 67: swing state is semi-transparent
 
-  // Rope origin — SVG girl sprite: idle=hand at (+13,-17), extend=glove at (+27,-78)
-  const ropeOriX = extended ? _poleX + 27 : _poleX + 13;
-  const ropeOriY = extended ? _poleY - 78  : _poleY - 17;
+  // Rope origin — idle: hand/shoulder area (+20,-58); extend: glove at (+27,-78)
+  const ropeOriX = extended ? _poleX + 27 : _poleX + 20;
+  const ropeOriY = extended ? _poleY - 78  : _poleY - 58;
 
   // Net head position
   const headX = ropeOriX + Math.sin(angle) * showLen;
