@@ -2242,13 +2242,70 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.shadowBlur = 14;
     ctx.fillText('星座揭秘！', cx, titleY);
   } else {
-    // Cold blue-white for fail (STORY-00367: no emoji as main decoration)
-    ctx.fillStyle = '#a8c4ff';
-    ctx.shadowColor = '#4060c0';
-    ctx.shadowBlur = 12;
-    ctx.fillText('星光消逝了\u2026', cx, titleY); // STORY-00373: more evocative wording
+    // STORY-00388: "星光消逝" cold-blue title
+    ctx.fillStyle = '#a8d0ff';
+    ctx.shadowColor = '#3060c0';
+    ctx.shadowBlur = 16;
+    ctx.fillText('星光消逝', cx, titleY);
   }
   ctx.restore();
+
+  // STORY-00388: Fail screen — star-dust particle animation (8 animated dots)
+  if (!r.victory) {
+    ctx.save();
+    const dustCount = 8;
+    for (let i = 0; i < dustCount; i++) {
+      // Deterministic pseudo-random per particle using prime offsets
+      const seed1 = (i * 137 + 41) % 100 / 100;
+      const seed2 = (i * 89 + 17) % 100 / 100;
+      const seed3 = (i * 53 + 7) % 100 / 100;
+      const px = cardX + seed1 * cardW;
+      const py = cardY + seed2 * (cardH - 30);
+      const speed = 0.3 + seed3 * 0.4;
+      const phase = seed1 * TWO_PI;
+      const alpha = 0.15 + 0.25 * Math.abs(Math.sin(t * speed + phase));
+      const radius = 1.5 + seed3 * 2;
+      ctx.globalAlpha = alpha;
+      ctx.fillStyle = '#a8d0ff';
+      ctx.shadowColor = '#6090ff';
+      ctx.shadowBlur = 6;
+      ctx.beginPath();
+      ctx.arc(px + Math.sin(t * speed * 0.7 + phase) * 8, py + Math.cos(t * speed * 0.5 + phase) * 5, radius, 0, TWO_PI);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // STORY-00388: Victory sparkle particles — animate for first 3s on result card
+  if (r.victory) {
+    const sparkleAge = _resultEnterTimer || 0;
+    const sparkleCount = 12;
+    ctx.save();
+    for (let i = 0; i < sparkleCount; i++) {
+      const seed1 = (i * 157 + 31) % 100 / 100;
+      const seed2 = (i * 73 + 11) % 100 / 100;
+      const seed3 = (i * 41 + 3) % 100 / 100;
+      const px = cardX + 12 + seed1 * (cardW - 24);
+      const py = cardY + 20 + seed2 * (cardH - 80);
+      const speed = 0.5 + seed3 * 0.8;
+      const phase = seed1 * TWO_PI;
+      const cycle = 3.0;
+      const cyclePos = ((sparkleAge * speed + seed3 * cycle) % cycle) / cycle;
+      let alpha = cyclePos < 0.15 ? cyclePos / 0.15 : cyclePos < 0.6 ? 1 : 1 - (cyclePos - 0.6) / 0.4;
+      alpha = Math.max(0, Math.min(1, alpha)) * 0.6;
+      const r2 = 1.5 + seed3 * 2.5;
+      ctx.globalAlpha = alpha;
+      const sparkleColor = seed3 > 0.5 ? '#ffd700' : '#ffffff';
+      ctx.fillStyle = sparkleColor;
+      ctx.shadowColor = sparkleColor;
+      ctx.shadowBlur = 8;
+      ctx.beginPath();
+      ctx.arc(px + Math.sin(t * speed * 0.5 + phase) * 4,
+              py + Math.cos(t * speed * 0.4 + phase) * 3, r2, 0, TWO_PI);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
 
   // ── Stars row (STORY-00367: pop-out animation for victory) ─────
   const starsY = titleY + 24;
