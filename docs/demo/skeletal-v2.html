@@ -81,8 +81,8 @@ var STAR_COL    = '#FFD700';
 var POSES = {
   idle: {
     lUpper: -80,  lLower: -10,  // left arm raised up-left (counterbalance)
-    rUpper:  130, rLower:  10,  // right arm raised — wrist roughly overhead
-    poleAngle: 48,              // pole center: midpoint of -50°↔145° sweep arc
+    rUpper:  155, rLower:  10,  // right arm at swing center (overhead)
+    poleAngle: 165,             // pole pointing up from wrist at center position
     bob: true
   },
   throw: {
@@ -112,8 +112,8 @@ var swingPhase = 0;
 // During idle, we override the right arm+pole as a single rigid rod from shoulder.
 // This gives the clearest left↔right sweep across the full canvas.
 var SWING_SPEED  = 0.0018;  // rad/ms, ~3.5s per cycle
-var SWING_AMP    = 50;      // ±50° from center → total 100° arc
-var SWING_CENTER = 130;     // center: 130°. Left=180°(straight up), Right=80°(lower-right)
+var SWING_AMP    = 75;      // ±75° → 80°(right) to 230°(left), symmetric arc through overhead
+var SWING_CENTER = 155;     // center: overhead. Right=80°, Left=230°
                             // keeps tip inside 680×440 canvas at both extremes
 
 var SWING_CENTER_R    = 130;  // kept for blend-out reference (unused during swing)
