@@ -631,3 +631,10 @@
 - HUD: level name (top-left), circular timer (top-center, blue), star counter (top-right). Clean separation.
 - Background depth: starfield + terrain silhouette + nebula glow. Atmospheric, non-interfering.
 - Low friction: triangular arrow icon in play area slightly ambiguous (not a blocker).
+
+## Sprint 67-mini Updates (2026-04-24)
+
+- Girl sprite edges confirmed clean after transparency fix — no white/grey fringing. Character blends naturally into starfield.
+- Bamboo pole and net clearly visible during throw state — clear directional feedback for player.
+- Fail screen UX unchanged and functional — "重试"/"选关" buttons legible and correctly positioned.
+- Navigation screenshot tooling: must capture game state before timer expires to observe menu/levels/game screens. Captures during fail state are not useful for regression verification.

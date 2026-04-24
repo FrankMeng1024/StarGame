@@ -785,3 +785,10 @@ No backend, no network requests. All data in localStorage + local files.
   photo state（4 vars）在 `_cleanup()` + 3个导航时间点全部重置。
   `_drawDetail()` oy 流：info pills → +10 → photo(160+10) → divider → lore lines → +24 → `_detailTotalH`。
   Wikimedia 429 从 CI/自动化 IP 出现，但非 code bug；WeChat DevTools 用自己的网络栈，可能成功加载。
+
+## Sprint 67-mini Updates (2026-04-24)
+
+- **girl.png transparency fix confirmed**: Flood-fill from 4 corners removed 129,520 background pixels (alpha=0). No white/grey lines visible on either side of sprite in gameplay screenshots. Character integrates cleanly into dark navy starfield.
+- **Net swing visibility**: Early-return guard removed from `_drawNet()`. Bamboo pole always rendered regardless of `_netLen`. `swingAlpha=0.55` applied during swing state. Confirmed visible in extend-state screenshot; swing-state direct capture not achieved (game timer transitions state too quickly).
+- **Girl cross-fade animation**: `_GIRL_TRANS_MS=180`, `_girlTransT` 0→1 progress variable. Cannot verify 180ms timing in static screenshots — logic-only AC. No visual regression.
+- **Screenshot timing lesson**: Navigation scripts must capture game state early in the timer (within 5–10s of level start) before fail state triggers. Once game ends, all subsequent navigate captures show fail overlay instead of target screens. Use dedicated quick-capture script for mid-game states.
