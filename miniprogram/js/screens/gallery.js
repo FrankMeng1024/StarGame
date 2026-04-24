@@ -143,6 +143,7 @@ const _NEBULAE = [
 
 // ── 模块状态 ──────────────────────────────────────────────────
 let _navigate     = null;
+let _galleryFrom  = 'menu';  // tracks caller screen for back navigation
 let _rafId        = null;
 let _currentGroup = 0;
 let _pendingGroup = 0;    // spring lerp 目标组
@@ -182,8 +183,9 @@ let _carouselNextRect = null;
 let _msz = false;
 
 // ── Public API ────────────────────────────────────────────────
-export function showGallery(navigate) {
+export function showGallery(navigate, opts = {}) {
   _navigate = navigate;
+  _galleryFrom = opts.from || 'menu';
   _cleanup();
   _currentGroup = 0;
   _computeLayout();
@@ -1454,7 +1456,7 @@ function _onTouchEnd(e) {
 
   // ── 固定按钮 ─────────────────────────────────────────────
   if (_backRect && hitTest(_backRect, tx, ty)) {
-    if (_navigate) _navigate('menu');
+    if (_navigate) _navigate(_galleryFrom);
     return;
   }
 

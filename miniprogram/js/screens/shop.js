@@ -36,12 +36,14 @@ const ROW_H      = 54;   // height of each compact row
 const ROW_GAP    = 6;
 const PAD_X      = 14;
 const PAD_TOP_EXTRA = 8;
-const SHEET_H    = 220;  // bottom sheet panel height
+const SHEET_H    = 260;  // bottom sheet panel height (increased for landscape readability)
 
 // ── Module state ──────────────────────────────────────────────
 let _navigate    = null;
+let _shopFrom    = 'menu';  // tracks caller screen for back navigation
 let _rafId       = null;
 let _backRect    = null;
+let _sheetCloseRect = null;  // ✕ close button in bottom sheet
 let _rowRects    = [];   // [{ rect, itemIdx }] rebuilt each frame
 let _sheetBuyRect = null;
 let _scrollY     = 0;
@@ -56,8 +58,9 @@ let _maShanZhengLoaded = false;
 let _sheet = null;  // null | { idx, slideY, targetSlideY }
 
 // ── Public API ────────────────────────────────────────────────
-export function showShop(navigate) {
+export function showShop(navigate, opts = {}) {
   _navigate = navigate;
+  _shopFrom = opts.from || 'menu';
   _cleanup();
   initBgStars(G.SCREEN_W, G.SCREEN_H, Date.now() % 100000);
   _computeLayout();
@@ -97,6 +100,7 @@ function _cleanup() {
   }
   _backRect    = null;
   _sheetBuyRect = null;
+  _sheetCloseRect = null;
   _rowRects    = [];
   _scrollY     = _scrollTarget = 0;
   _feedback    = null;
@@ -315,14 +319,15 @@ function _drawItemRow(ctx, W, item, idx, rowX, rowY, rowW, rowH, isSelected) {
 
 // ── Bottom sheet drawing ──────────────────────────────────────
 function _drawBottomSheet(ctx, W, H, item, slideY) {
-  _sheetBuyRect = null;
+  _sheetBuyRect  = null;
+  _sheetCloseRect = null;
   const owned  = state.getItemQty(item.id);
   const canBuy = state.coins >= item.cost;
 
   // Progress 0→1 as sheet slides up
   const progress = Math.max(0, Math.min(1, (H - slideY) / SHEET_H));
 
-  // Dim overlay
+  // Dim overlay (tappable area for dismiss)
   ctx.save();
   ctx.globalAlpha = progress * 0.55;
   ctx.fillStyle   = '#000';
@@ -364,13 +369,35 @@ function _drawBottomSheet(ctx, W, H, item, slideY) {
 
   // Content (only draw when mostly visible)
   if (progress < 0.15) return;
-  ctx.save();
-  ctx.globalAlpha = Math.max(0, (progress - 0.15) / 0.85);
+  const contentAlpha = Math.max(0, (progress - 0.15) / 0.85);
 
-  // Large icon
-  const iconR  = 28;
+  // ✕ Close button (top-right corner of panel)
+  const closeR = 14;
+  const closeCx = W - (G.SAFE_RIGHT || 0) - 20;
+  const closeCy = panelY + 18;
+  _sheetCloseRect = { x: closeCx - closeR, y: closeCy - closeR, w: closeR * 2, h: closeR * 2 };
+  ctx.save();
+  ctx.globalAlpha = contentAlpha;
+  ctx.fillStyle   = 'rgba(100,80,180,0.35)';
+  ctx.beginPath(); ctx.arc(closeCx, closeCy, closeR, 0, TWO_PI); ctx.fill();
+  ctx.strokeStyle = 'rgba(200,160,255,0.40)';
+  ctx.lineWidth   = 1;
+  ctx.stroke();
+  ctx.strokeStyle = 'rgba(220,200,255,0.80)';
+  ctx.lineWidth   = 1.5;
+  ctx.lineCap     = 'round';
+  const cd = closeR * 0.4;
+  ctx.beginPath(); ctx.moveTo(closeCx - cd, closeCy - cd); ctx.lineTo(closeCx + cd, closeCy + cd); ctx.stroke();
+  ctx.beginPath(); ctx.moveTo(closeCx + cd, closeCy - cd); ctx.lineTo(closeCx - cd, closeCy + cd); ctx.stroke();
+  ctx.restore();
+
+  ctx.save();
+  ctx.globalAlpha = contentAlpha;
+
+  // Large icon — shift left to avoid ✕ overlap on wide screens, center on narrow
+  const iconR  = 24;
   const iconCx = W / 2;
-  const iconCy = panelY + 22 + iconR;
+  const iconCy = panelY + 20 + iconR;
 
   const haloGrd = ctx.createRadialGradient(iconCx, iconCy, 0, iconCx, iconCy, iconR * 2);
   haloGrd.addColorStop(0, 'rgba(140,90,255,0.22)');
@@ -390,15 +417,15 @@ function _drawBottomSheet(ctx, W, H, item, slideY) {
   _drawItemIcon(ctx, item.id, iconCx, iconCy, iconR);
 
   // Name
-  let textY = iconCy + iconR + 12;
-  ctx.font         = 'bold 16px sans-serif';
+  let textY = iconCy + iconR + 10;
+  ctx.font         = 'bold 15px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'top';
   ctx.fillStyle    = '#ede6ff';
   ctx.shadowColor  = 'rgba(180,140,255,0.4)';
   ctx.shadowBlur   = 6;
   ctx.fillText(item.nameZh, W / 2, textY);
-  textY += 24;
+  textY += 20;
 
   // Type + duration badges centered
   const typeW    = _measurePillW(ctx, item.type);
@@ -408,7 +435,7 @@ function _drawBottomSheet(ctx, W, H, item, slideY) {
     item.type, item.type === '主动' ? 'rgba(160,100,255,0.40)' : 'rgba(80,130,220,0.40)', '#c0a0ff');
   _drawPillBadge(ctx, W / 2 - totalBadgeW / 2 + typeW + 6, textY,
     item.duration, 'rgba(60,80,120,0.40)', '#8899cc');
-  textY += 22;
+  textY += 20;
 
   // Description
   ctx.font         = '12px sans-serif';
@@ -419,37 +446,37 @@ function _drawBottomSheet(ctx, W, H, item, slideY) {
   const maxDescW = W - 48;
   let desc = item.desc;
   if (ctx.measureText(desc).width > maxDescW) {
-    // Try to split at a natural break point
     const half = Math.ceil(desc.length / 2);
     ctx.fillText(desc.slice(0, half), W / 2, textY);
-    ctx.fillText(desc.slice(half), W / 2, textY + 17);
-    textY += 17;
+    ctx.fillText(desc.slice(half), W / 2, textY + 16);
+    textY += 16;
   } else {
     ctx.fillText(desc, W / 2, textY);
   }
-  textY += 18;
+  textY += 16;
 
-  // Owned count
-  if (owned > 0) {
-    ctx.font      = '11px sans-serif';
-    ctx.fillStyle = '#ffd700';
-    ctx.fillText('已拥有 ' + owned + ' 个', W / 2, textY);
-    textY += 16;
-  }
+  // Owned count + current balance on same row
+  ctx.font      = '11px sans-serif';
+  const ownedText = owned > 0 ? '已拥有 ' + owned + ' 个' : '未持有';
+  ctx.fillStyle = owned > 0 ? '#ffd700' : 'rgba(180,160,200,0.55)';
+  ctx.textAlign = 'left';
+  ctx.fillText(ownedText, W / 2 - 80, textY);
+  ctx.fillStyle = state.coins >= item.cost ? '#ffd700' : '#ff7777';
+  ctx.textAlign = 'right';
+  ctx.fillText('余额 🪙 ' + state.coins, W / 2 + 80, textY);
 
   ctx.restore();
 
-  // Buy button — align with list/header button boundaries
+  // Buy button — only register hitRect when sheet fully open (slideY stable)
   const _safeL = G.SAFE_LEFT  || 0;
   const _safeR = G.SAFE_RIGHT || 0;
-  const btnX = _safeL + 90;
-  const btnW = (W - _safeR - 88 - 2) - btnX;
-  const btnH = 40;
-  const btnY = panelY + SHEET_H - btnH - 14;
-  _sheetBuyRect = { x: btnX, y: btnY, w: btnW, h: btnH };
+  const btnX = _safeL + 80;
+  const btnW = W - _safeR - _safeL - 160;
+  const btnH = 38;
+  const btnY = panelY + SHEET_H - btnH - (G.SAFE_BOTTOM || 0) - 14;
 
   ctx.save();
-  ctx.globalAlpha = Math.max(0, (progress - 0.15) / 0.85);
+  ctx.globalAlpha = contentAlpha;
 
   const btnGrd = ctx.createLinearGradient(btnX, btnY, btnX, btnY + btnH);
   if (canBuy) {
@@ -460,7 +487,7 @@ function _drawBottomSheet(ctx, W, H, item, slideY) {
     btnGrd.addColorStop(1, 'rgba(35,28,55,0.72)');
   }
   ctx.fillStyle = btnGrd;
-  _roundRect(ctx, btnX, btnY, btnW, btnH, 12);
+  _roundRect(ctx, btnX, btnY, btnW, btnH, 10);
   ctx.fill();
   if (canBuy) {
     ctx.strokeStyle = 'rgba(200,160,255,0.55)';
@@ -468,7 +495,7 @@ function _drawBottomSheet(ctx, W, H, item, slideY) {
     ctx.stroke();
   }
 
-  ctx.font         = 'bold 15px sans-serif';
+  ctx.font         = 'bold 14px sans-serif';
   ctx.textAlign    = 'center';
   ctx.textBaseline = 'middle';
   ctx.fillStyle    = canBuy ? '#f0e0ff' : 'rgba(200,180,220,0.45)';
@@ -477,6 +504,9 @@ function _drawBottomSheet(ctx, W, H, item, slideY) {
   ctx.fillText('购买  🪙 ' + item.cost, btnX + btnW / 2, btnY + btnH / 2);
 
   ctx.restore();
+
+  // Register hit rects (always use current panelY, not cached)
+  _sheetBuyRect = { x: btnX, y: btnY, w: btnW, h: btnH };
 }
 
 // ── Pill badge helpers ────────────────────────────────────────
@@ -627,18 +657,23 @@ function _onTouchEnd(e) {
 
   // Back button
   if (_backRect && hitTest(_backRect, tx, ty)) {
-    if (_navigate) _navigate('menu');
+    if (_navigate) _navigate(_shopFrom);
     return;
   }
 
-  // If sheet is open: buy button or dismiss
+  // If sheet is open: handle interactions inside/outside sheet
   if (_sheet && _sheet.slideY < G.SCREEN_H - 10) {
+    // ✕ Close button
+    if (_sheetCloseRect && hitTest(_sheetCloseRect, tx, ty)) {
+      _sheet.targetSlideY = G.SCREEN_H;
+      return;
+    }
     // Buy button in sheet
     if (_sheetBuyRect && hitTest(_sheetBuyRect, tx, ty)) {
       _tryBuy(_sheet.idx);
       return;
     }
-    // Tap above sheet → dismiss
+    // Tap above sheet (dark overlay) → dismiss
     if (ty < _sheet.slideY - 10) {
       _sheet.targetSlideY = G.SCREEN_H;
       return;

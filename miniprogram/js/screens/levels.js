@@ -992,7 +992,7 @@ function _onTouchEnd(e) {
     return;
   }
   if (_shopRect && hitTest(_shopRect, tx, ty)) {
-    if (_navigate) _navigate('shop');
+    if (_navigate) _navigate('shop', { from: 'levels' });
     return;
   }
 

@@ -1,0 +1,41 @@
+{
+  "sprint": 71,
+  "results": {
+    "menu": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": false
+    },
+    "levels": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": true
+    },
+    "shop_from_levels": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": false
+    },
+    "sheet_open": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": false
+    },
+    "shop_view": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": true
+    },
+    "buy_attempt": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": true
+    },
+    "back_to_source": {
+      "screen_type": "game",
+      "confidence": "high",
+      "pass": true
+    }
+  },
+  "pass": false
+}
