@@ -66,6 +66,7 @@ let _dynamicObstacleScale = 1.0;  // multiplier on obstacle movement speed
 let _comboCount  = 0;        // consecutive catches within 3s
 let _comboTimer  = 0;        // ticks remaining (3s = 180 at 60fps equiv)
 let _comboPopup  = null;     // {text, alpha, x, y}
+let _comboBreakFlash = 0;   // STORY-00413: frames countdown for combo-break red flash
 let _timeBonusPopup = null;  // STORY-00408: {alpha} — "+5s" indicator near timer
 
 // STORY-00401: Net charge state
@@ -122,6 +123,8 @@ let _starPopTimers = [0, 0, 0]; // per-star elapsed time, starts counting on res
 // STORY-00373: Card entrance animation (translateY lerp + alpha fade)
 let _resultEnterTimer = 0;  // seconds since result phase entered; drives entrance animation
 let _cardSlideY = 0;        // current slide offset (px) for result card entrance animation
+// STORY-00411: Victory card shimmer — one-shot light bar sweep
+let _shimmerX = null;       // null=not started, x=current bar position; stops when >= cardX+cardW
 
 // Pause state
 let _paused     = false;
@@ -292,7 +295,7 @@ export function showGame(navigate) {
 
   // STORY-00399~00402: Gameplay system resets
   _recentShots = 0; _recentHits = 0; _shotHistory = []; _diffEvalTimer = 0; _dynamicObstacleScale = 1.0;
-  _comboCount = 0; _comboTimer = 0; _comboPopup = null; _timeBonusPopup = null;
+  _comboCount = 0; _comboTimer = 0; _comboPopup = null; _timeBonusPopup = null; _comboBreakFlash = 0;
   _chargeCount = 0; _netCharged = false; _chargeBlendT = 0;
   _milestone50Fired = false; _milestone75Fired = false; _milestonePopup = null; _milestoneFlashT = 0;
 
@@ -326,8 +329,7 @@ export function showGame(navigate) {
   _lorePage = 0;
   _lorePages = [];
   _loreDismissed = false;
-  _resultEnterTimer = 0; _cardSlideY = 0;
-  _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
+  _resultEnterTimer = 0; _cardSlideY = 0; _shimmerX = null; // STORY-00411
   _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
 
   // Preload victory photo (STORY-00246)
@@ -605,7 +607,7 @@ function _cleanup() {
   _caughtDebris = null;
   _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
   _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
-  _resultEnterTimer = 0; _cardSlideY = 0;
+  _resultEnterTimer = 0; _cardSlideY = 0; _shimmerX = null; // STORY-00411
   _lorePage = 0;
   _lorePages = [];
   _loreDismissed = false;
@@ -695,6 +697,8 @@ function _loop(now) {
       // STORY-00402: Milestone flash + popup
       if (_milestoneFlashT > 0) _milestoneFlashT -= dt * 60;
       if (_milestonePopup && _milestonePopup.alpha > 0) _milestonePopup.alpha -= dt * 60 / 36;  // 0.6s
+      // STORY-00413: Combo break flash decrement
+      if (_comboBreakFlash > 0) _comboBreakFlash -= dt * 60;
       // STORY-00402: Check milestones
       if (_total > 0 && !_milestone50Fired && _caught >= Math.ceil(_total * 0.5)) {
         _milestone50Fired = true;
@@ -739,6 +743,14 @@ function _loop(now) {
       ctx.fillRect(0, 0, W, G.SCREEN_H);
       ctx.restore();
     }
+    // STORY-00413: Combo-break red flash overlay (when player breaks a combo ≥2 with debris)
+    if (_comboBreakFlash > 0) {
+      const breakAlpha = Math.max(0, (_comboBreakFlash / 12)) * 0.18;
+      ctx.save();
+      ctx.fillStyle = `rgba(200,30,30,${breakAlpha})`;
+      ctx.fillRect(0, 0, W, G.SCREEN_H);
+      ctx.restore();
+    }
     // STORY-00400: Combo popup text (center HUD area, AC: H*0.25)
     if (_comboPopup && _comboPopup.alpha > 0) {
       ctx.save();
@@ -752,19 +764,18 @@ function _loop(now) {
       ctx.fillText(_comboPopup.text, W / 2, G.SCREEN_H * 0.25);
       ctx.restore();
     }
-    // STORY-00408: Time bonus "+5s" popup near timer (top-left HUD area)
+    // STORY-00409: Time bonus "+5s" popup near timer ring (center-top, W/2)
     if (_timeBonusPopup && _timeBonusPopup.alpha > 0) {
       ctx.save();
       ctx.globalAlpha = _timeBonusPopup.alpha;
       ctx.font = 'bold 14px sans-serif';
-      ctx.textAlign = 'left';
+      ctx.textAlign = 'center';  // STORY-00409: centered at W/2 near timer ring
       ctx.textBaseline = 'middle';
       ctx.fillStyle = '#44ff88';
       ctx.shadowColor = '#00cc55';
       ctx.shadowBlur = 8;
-      // Offset upward slightly from timer (timer is at top-left)
       const popY = G.SCREEN_H * 0.08 - 14 * _timeBonusPopup.alpha;  // floats upward as it fades
-      ctx.fillText('+5s', W * 0.08, popY);
+      ctx.fillText('+5s', W * 0.5, popY);  // STORY-00409: near timer ring at W/2
       ctx.restore();
     }
     // STORY-00402: Milestone popup text (slightly below combo at H*0.35)
@@ -1088,6 +1099,7 @@ function _checkCollisions() {
       _netState   = 'retract';
       // STORY-00399: record miss; STORY-00400/401: reset combo/charge
       _recordShot(false);
+      if (_comboCount >= 2) _comboBreakFlash = 12;  // STORY-00413: flash when real combo broken
       _comboCount = 0; _comboTimer = 0;
       if (_netCharged) { _netCharged = false; _chargeBlendT = 0; }
       _chargeCount = 0;
@@ -2419,29 +2431,66 @@ function _drawResultOverlay(ctx, W, H) {
     bgGrd.addColorStop(0, 'rgba(25,18,55,0.97)');
     bgGrd.addColorStop(1, 'rgba(15,10,40,0.97)');
   } else {
-    bgGrd.addColorStop(0, 'rgba(8,15,45,0.97)');
-    bgGrd.addColorStop(1, 'rgba(5,8,30,0.97)');
+    bgGrd.addColorStop(0, 'rgba(10,20,60,0.96)');  // STORY-00410: cold blue-dark spec
+    bgGrd.addColorStop(1, 'rgba(20,40,90,0.96)');
   }
   ctx.fillStyle = bgGrd;
   _roundRect(ctx, cardX, cardY, cardW, cardH, 16);
   ctx.fill();
 
-  // Border: gold shimmer for victory, subtle cold-blue for fail
+  // STORY-00411: Constellation line decoration — faint star lines as card background detail
+  if (r.victory && _conDef && _conDef.lines && _conDef.stars) {
+    ctx.save();
+    ctx.beginPath();
+    _roundRect(ctx, cardX, cardY, cardW, cardH, 16);
+    ctx.clip(); // clip to card bounds
+    // Find bounding box of constellation
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const s of _conDef.stars) {
+      if (s.x < minX) minX = s.x; if (s.x > maxX) maxX = s.x;
+      if (s.y < minY) minY = s.y; if (s.y > maxY) maxY = s.y;
+    }
+    const conW = maxX - minX || 1;
+    const conH = maxY - minY || 1;
+    const scaleX = cardW * 0.75 / conW;
+    const scaleY = cardH * 0.65 / conH;
+    const drawScale = Math.min(scaleX, scaleY);
+    const offX = cardX + cardW / 2 - (minX + conW / 2) * drawScale;
+    const offY = cardY + cardH / 2 - (minY + conH / 2) * drawScale;
+    ctx.strokeStyle = 'rgba(180,200,255,0.10)';
+    ctx.lineWidth = 1;
+    ctx.globalAlpha = 1;
+    for (const [ai, bi] of _conDef.lines) {
+      const sa = _conDef.stars[ai]; const sb = _conDef.stars[bi];
+      if (!sa || !sb) continue;
+      ctx.beginPath();
+      ctx.moveTo(sa.x * drawScale + offX, sa.y * drawScale + offY);
+      ctx.lineTo(sb.x * drawScale + offX, sb.y * drawScale + offY);
+      ctx.stroke();
+    }
+    // small dot at each star
+    ctx.fillStyle = 'rgba(200,215,255,0.12)';
+    for (const s of _conDef.stars) {
+      ctx.beginPath();
+      ctx.arc(s.x * drawScale + offX, s.y * drawScale + offY, 2, 0, TWO_PI);
+      ctx.fill();
+    }
+    ctx.restore();
+  }
+
+  // Border: STORY-00411 gold glow for victory, subtle cold-blue for fail
   if (r.victory) {
-    // Animated gold border shimmer
-    const shimmerPos = (t * 0.8) % 1.0;
-    const bGrd = ctx.createLinearGradient(cardX, cardY, cardX + cardW, cardY + cardH);
-    bGrd.addColorStop(Math.max(0, shimmerPos - 0.3), 'rgba(255,215,0,0.30)');
-    bGrd.addColorStop(shimmerPos, 'rgba(255,215,0,0.85)');
-    bGrd.addColorStop(Math.min(1, shimmerPos + 0.3), 'rgba(255,215,0,0.30)');
-    ctx.strokeStyle = bGrd;
+    ctx.strokeStyle = '#ffd700';
     ctx.lineWidth = 2;
+    ctx.shadowColor = '#ffcc00';
+    ctx.shadowBlur = 8;
   } else {
     ctx.strokeStyle = 'rgba(80,120,200,0.30)';
     ctx.lineWidth = 1;
   }
   _roundRect(ctx, cardX, cardY, cardW, cardH, 16);
   ctx.stroke();
+  ctx.shadowBlur = 0; // clear shadow after border
   // Note: ctx.restore() for entrance animation is at end of _drawResultOverlay
 
   const cx = W / 2;
@@ -2464,9 +2513,9 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.shadowBlur = 6;
     ctx.fillText(_conDef ? _conDef.nameZh + '  ' + (_conDef.icon || '') : '', cx, titleY + 18);
   } else {
-    // STORY-00388: "星光消逝" cold-blue title
-    ctx.fillStyle = '#a8d0ff';
-    ctx.shadowColor = '#3060c0';
+    // STORY-00388/00410: "星光消逝" cold-blue title (#88aaff per spec)
+    ctx.fillStyle = '#88aaff';
+    ctx.shadowColor = '#4466cc';
     ctx.shadowBlur = 16;
     ctx.fillText('星光消逝', cx, titleY);
   }
@@ -2485,7 +2534,7 @@ function _drawResultOverlay(ctx, W, H) {
       const py = cardY + seed2 * (cardH - 30);
       const speed = 0.3 + seed3 * 0.4;
       const phase = seed1 * TWO_PI;
-      const alpha = 0.15 + 0.25 * Math.abs(Math.sin(t * speed + phase));
+      const alpha = 0.3 + 0.3 * Math.abs(Math.sin(t * speed + phase));  // STORY-00410: 0.3-0.6 per spec
       const radius = 1.5 + seed3 * 2;
       ctx.globalAlpha = alpha;
       ctx.fillStyle = '#a8d0ff';
@@ -2527,6 +2576,30 @@ function _drawResultOverlay(ctx, W, H) {
       ctx.fill();
     }
     ctx.restore();
+  }
+
+  // STORY-00411: Victory shimmer — one-shot light bar sweeps across card (0.8s / 48 frames)
+  if (r.victory) {
+    // Initialize on first frame
+    if (_shimmerX === null) _shimmerX = cardX;
+    // Advance only while bar is still inside card
+    if (_shimmerX < cardX + cardW) {
+      _shimmerX += (cardW / 48) * (_dt * 60);
+    }
+    const sxClamped = Math.min(_shimmerX, cardX + cardW + 30);
+    if (sxClamped < cardX + cardW + 30) {
+      ctx.save();
+      ctx.beginPath();
+      _roundRect(ctx, cardX, cardY, cardW, cardH, 16);
+      ctx.clip();
+      const shimGrd = ctx.createLinearGradient(sxClamped - 30, 0, sxClamped + 30, 0);
+      shimGrd.addColorStop(0, 'rgba(255,255,255,0)');
+      shimGrd.addColorStop(0.5, 'rgba(255,255,255,0.30)');
+      shimGrd.addColorStop(1, 'rgba(255,255,255,0)');
+      ctx.fillStyle = shimGrd;
+      ctx.fillRect(sxClamped - 30, cardY, 60, cardH);
+      ctx.restore();
+    }
   }
 
   // ── Stars row (STORY-00367: pop-out animation for victory) ─────

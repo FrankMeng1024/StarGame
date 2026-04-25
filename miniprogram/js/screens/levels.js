@@ -277,6 +277,22 @@ function _loop(now) {
   ctx.fillText('选择关卡', W / 2, G.SAFE_TOP + 30);
   ctx.restore();
 
+  // STORY-00412: Progress text "进度: X/30 星座" — count started constellations
+  {
+    let started = 0;
+    for (let ci = 0; ci < 30; ci++) {
+      const sc = state.getScore(ci);
+      if (sc && sc.stars > 0) started++;
+    }
+    ctx.save();
+    ctx.font = '11px sans-serif';
+    ctx.textAlign = 'right';
+    ctx.textBaseline = 'middle';
+    ctx.fillStyle = 'rgba(255,220,100,0.8)';
+    ctx.fillText(`进度: ${started}/30 星座`, W - 10, G.SAFE_TOP + 30);
+    ctx.restore();
+  }
+
   // ── 星系名称（随滑动淡入淡出） ───────────────────────────────
   const group = _GROUPS[_currentGroup];
   const penGroup = _GROUPS[_pendingGroup];
@@ -635,6 +651,19 @@ function _drawNode(ctx, node, t, groupIdx) {
       ctx.arc(sx, sy, 2.5, 0, TWO_PI);
       ctx.fill();
     }
+    ctx.restore();
+  }
+
+  // STORY-00412: Fully mastered (3-star) node — gold outer glow ring (radius+6)
+  if (score && score.stars >= 3) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,215,0,0.25)';
+    ctx.lineWidth = 3;
+    ctx.shadowColor = 'rgba(255,215,0,0.40)';
+    ctx.shadowBlur = 8;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 6, 0, TWO_PI);
+    ctx.stroke();
     ctx.restore();
   }
 }

@@ -2,7 +2,19 @@
 
 ---
 
-## Sprint 77-mini Updates (2026-04-24)
+## Sprint 78-mini Updates (2026-04-24)
+
+### Sprint 78-mini — PASS (MEDIUM confidence, code-path verification, DevTools infrastructure blocked — 8th consecutive Sprint)
+
+- STORY-00409: _timeBonusPopup "+5s" popup now at W*0.5 (center), textAlign='center'. Was W*0.08. Y=SCREEN_H*0.08 minus alpha-driven float. Near timer ring.
+- STORY-00410: Fail card gradient rgba(10,20,60,0.96)→rgba(20,40,90,0.96). Title "#88aaff" shadowColor "#4466cc". Star-dust alpha 0.3-0.6 range. Buttons unchanged.
+- STORY-00411: Victory card uses static gold border #ffd700 lw2 + shadowColor #ffcc00 shadowBlur 8 (cleared after). _shimmerX=null starts one-shot sweep cardW/48 per frame. Constellation watermark lines at rgba(180,200,255,0.10) clipped to card. Two resets confirmed.
+- STORY-00412: Progress "进度: X/30 星座" at W-10, SAFE_TOP+30, right-aligned, 11px, rgba(255,220,100,0.8). Counts ci 0-29 where getScore(ci)?.stars>0. Mastered glow ring (stars≥3): r+6, rgba(255,215,0,0.25), lw3. Previous completion ring (stars>0) preserved.
+- STORY-00413: _comboBreakFlash: declared after _comboPopup, reset 0 in resetGameState, trigger when comboCount≥2 before reset (=12 frames), decay dt*60/frame, draw rgba(200,30,30) overlay after milestone flash before HUD, alpha max 0.18.
+- Subtle alpha values to verify when visual testing resumes: combo break flash 0.18 (subtle by design), mastered glow 0.25 (may appear faint).
+- 8th consecutive Sprint with DevTools 3.15.2 base lib blocker — zero visual verification of game canvas. Systemic risk accumulating.
+
+---
 
 ### Sprint 77-mini — PASS (MEDIUM confidence, code-path verification, DevTools infrastructure blocked — 7th consecutive Sprint)
 

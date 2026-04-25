@@ -1,6 +1,13 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
-## Sprint 77-mini Updates (2026-04-24)
+## Sprint 78-mini Updates (2026-04-24)
+
+- Fail screen: "星光消逝" cold-blue title (#88aaff, shadow #4466cc). Deep-space gradient rgba(10,20,60)→rgba(20,40,90). 8 star-dust particles 0.3-0.6 alpha. Emotional arc: poetic loss → encouragement → retry.
+- Victory screen: Gold border #ffd700 lw2 shadowBlur8, one-shot shimmer sweep (48 frames, 0.8s), constellation line background at alpha 0.10 clipped to card. Elevates achievement moment.
+- +5s popup: moved from left edge (W*0.08) to center (W*0.5) near timer ring. Fixed Sprint 77 medium friction — spatial disconnect resolved.
+- Level select: Progress text "进度: X/30 星座" 11px right-aligned (W-10, SAFE_TOP+30). Mastered glow ring (stars≥3): r+6, rgba(255,215,0,0.25), lw3. Low: shares Y with title "选择关卡" — potential crowding.
+- Combo break flash: max alpha 0.18, 12 frames, red overlay. Well-calibrated. Only fires at combo≥2.
+- Pending UX concerns: (1) combo feedback asymmetry — break is visual overlay, achievement is text-only; (2) mastered ring vs completed ring almost same radius/color — Low severity but worth future attention.
 
 - Result screen touch fix: dedup 50ms→16ms in globals.js _wrapDedup. Tap to skip animation sets timestamp; immediate button tap was swallowed by 50ms window. Fixed.
 - Result fail card: retry=blue gradient, levels=purple gradient at 44px height. Victory card: constellation nameZh+icon subtitle below "星座揭秘！". starsY +16px offset when subtitle shown.
