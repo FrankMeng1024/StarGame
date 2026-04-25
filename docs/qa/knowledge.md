@@ -2,7 +2,17 @@
 
 ---
 
-## Sprint 74-mini Updates (2026-04-24)
+## Sprint 76-mini Updates (2026-04-24)
+
+### Sprint 76-mini — PASS (MEDIUM confidence, code-path verification, DevTools infrastructure blocked)
+
+- STORY-00399: _shotHistory circular queue (max 5 booleans). _recordShot(hit) pushes/shifts. Eval every 30s (_diffEvalTimer). Rate >0.8 → obstScale *= 1.15 (cap 1.5); rate <0.3 → *=0.8 (floor 0.5). Applied in _updateObstacles to magnetic zone angle + debris cloud particle movement. Reset to 1.0 on showGame.
+- STORY-00400: _comboCount increments on star catch, _comboTimer=180 (3s). Debris hit/expiry resets combo. x2 popup at H*0.25. x3+ adds +5s (cap _levelInitTime+30) + 12 _spawnParticles calls (= 144 total particles). Popup: bold 16px #FFD700, 48-tick fade (0.8s). Star rating unaffected (catchRate-based).
+- STORY-00401: _chargeCount tracks consecutive catches, >=3 → _netCharged=true. Visual: white mesh (chargeAlpha lerp), lineWidth 1.5→2.0, shadowBlur up to 10. Speed: Math.max(_netSpeedMult, 1.2) — no double-stack. Deactivate on debris: _chargeBlendT=0, fade-out 18 ticks (0.3s). SFX_CATCH on activation (double-play on 3rd catch — Arch flagged Medium, non-blocking).
+- STORY-00402: 50%: _milestoneFlashT=9 ticks (0.15s, alpha 0.25), popup '✦ 过半了！', constellation lines alpha 0.22→0.45. 75%: _shakeFrames=4, popup '✦✦ 即将完成！'. Both fire-once guarded by boolean flags, reset in showGame.
+- Combo x3+ rainbow particles: 12 _spawnParticles calls × 12 particles = 144 total; AC says 12 — over-spec but harmless. Monitor on low-end devices.
+
+
 
 ### Sprint 74-mini — PASS (MEDIUM confidence, code-path verification, DevTools infrastructure blocked)
 

@@ -55,6 +55,29 @@ let _total      = 0;
 // STORY-00397: HUD star count bounce animation
 let _hudStarFlashT = 0;  // ms remaining for HUD star count bounce (200ms total)
 
+// STORY-00399: Dynamic difficulty scaling
+let _recentShots = 0;        // shots fired in last 5 (circular)
+let _recentHits  = 0;        // hits in last 5
+let _shotHistory = [];       // circular queue of booleans (true=hit)
+let _diffEvalTimer = 0;      // countdown to next eval (ticks in dt units)
+let _dynamicObstacleScale = 1.0;  // multiplier on obstacle movement speed
+
+// STORY-00400: Combo system
+let _comboCount  = 0;        // consecutive catches within 3s
+let _comboTimer  = 0;        // ticks remaining (3s = 180 at 60fps equiv)
+let _comboPopup  = null;     // {text, alpha, x, y}
+
+// STORY-00401: Net charge state
+let _chargeCount  = 0;       // consecutive catches without debris collision
+let _netCharged   = false;   // true when charged (≥3 consecutive catches)
+let _chargeBlendT = 0;       // 0=charged color, 1=normal gold (for fade-out)
+
+// STORY-00402: Level milestone animations
+let _milestone50Fired = false;
+let _milestone75Fired = false;
+let _milestonePopup   = null; // {text, alpha}
+let _milestoneFlashT  = 0;   // ticks for white screen flash
+
 // Debris
 let _debris     = [];   // {x,y,r,type,spin,angle}
 
@@ -265,6 +288,12 @@ export function showGame(navigate) {
   _passiveCoins = false;
   _slots = [];
   _slotBoxes = [];
+
+  // STORY-00399~00402: Gameplay system resets
+  _recentShots = 0; _recentHits = 0; _shotHistory = []; _diffEvalTimer = 0; _dynamicObstacleScale = 1.0;
+  _comboCount = 0; _comboTimer = 0; _comboPopup = null;
+  _chargeCount = 0; _netCharged = false; _chargeBlendT = 0;
+  _milestone50Fired = false; _milestone75Fired = false; _milestonePopup = null; _milestoneFlashT = 0;
 
   for (const id of (state.selectedItems || [])) {
     if (id === 'double_coins') {
@@ -646,6 +675,34 @@ function _loop(now) {
       for (const s of _stars) {
         if (s.fadeMs > 0) { s.fadeMs = Math.max(0, s.fadeMs - dt * 60); s.fadeAlpha = s.fadeMs / 250; }
       }
+      // STORY-00399: Dynamic difficulty — eval every 30s
+      if (_diffEvalTimer > 0) {
+        _diffEvalTimer -= dt;
+      } else if (_shotHistory.length >= 5) {
+        _diffEvalTimer = 30;
+        const rate = _recentHits / Math.max(_recentShots, 1);
+        if (rate > 0.8) _dynamicObstacleScale = Math.min(1.5, _dynamicObstacleScale * 1.15);
+        else if (rate < 0.3) _dynamicObstacleScale = Math.max(0.5, _dynamicObstacleScale * 0.8);
+      }
+      // STORY-00400: Combo timer tick
+      if (_comboTimer > 0) { _comboTimer -= dt * 60; if (_comboTimer <= 0) _comboCount = 0; }
+      if (_comboPopup && _comboPopup.alpha > 0) _comboPopup.alpha -= dt * 60 / 48;  // 0.8s fade
+      // STORY-00401: Charge state — blend-out fade
+      if (!_netCharged && _chargeBlendT < 1) _chargeBlendT = Math.min(1, _chargeBlendT + dt * 60 / 18);
+      // STORY-00402: Milestone flash + popup
+      if (_milestoneFlashT > 0) _milestoneFlashT -= dt * 60;
+      if (_milestonePopup && _milestonePopup.alpha > 0) _milestonePopup.alpha -= dt * 60 / 36;  // 0.6s
+      // STORY-00402: Check milestones
+      if (_total > 0 && !_milestone50Fired && _caught >= Math.ceil(_total * 0.5)) {
+        _milestone50Fired = true;
+        _milestoneFlashT = 9; // 0.15s
+        _milestonePopup = { text: '✦ 过半了！', alpha: 1.0 };
+      }
+      if (_total > 0 && !_milestone75Fired && _caught >= Math.ceil(_total * 0.75)) {
+        _milestone75Fired = true;
+        _shakeFrames = 4;  // STORY-00402: ±2px screen shake (existing _updateShake uses ±3 fixed)
+        _milestonePopup = { text: '✦✦ 即将完成！', alpha: 1.0 };
+      }
     }
 
     // Apply screen shake offset (game world only — HUD stays fixed)
@@ -671,6 +728,40 @@ function _loop(now) {
 
     // HUD and overlays drawn after shake restore — always screen-space fixed
     _drawHUD(ctx, W);
+    // STORY-00402: Milestone white flash overlay (before popup so popup renders on top)
+    if (_milestoneFlashT > 0) {
+      const flashAlpha50 = (_milestoneFlashT / 9) * 0.25;
+      ctx.save();
+      ctx.fillStyle = `rgba(255,255,255,${flashAlpha50})`;
+      ctx.fillRect(0, 0, W, G.SCREEN_H);
+      ctx.restore();
+    }
+    // STORY-00400: Combo popup text (center HUD area, AC: H*0.25)
+    if (_comboPopup && _comboPopup.alpha > 0) {
+      ctx.save();
+      ctx.globalAlpha = _comboPopup.alpha;
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#FFD700';
+      ctx.shadowColor = '#ff8800';
+      ctx.shadowBlur = 8;
+      ctx.fillText(_comboPopup.text, W / 2, G.SCREEN_H * 0.25);
+      ctx.restore();
+    }
+    // STORY-00402: Milestone popup text (slightly below combo at H*0.35)
+    if (_milestonePopup && _milestonePopup.alpha > 0) {
+      ctx.save();
+      ctx.globalAlpha = _milestonePopup.alpha;
+      ctx.font = 'bold 16px sans-serif';
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#FFD700';
+      ctx.shadowColor = '#ffffff';
+      ctx.shadowBlur = 12;
+      ctx.fillText(_milestonePopup.text, W / 2, G.SCREEN_H * 0.35);
+      ctx.restore();
+    }
     if (_hintTimer > 0 && !_paused) _drawHint(ctx, W, H);
     if (_paused) _drawPauseOverlay(ctx, W, H);
   } else if (_phase === 'celebrate') {
@@ -826,7 +917,7 @@ function _updateNet(dt) {
     _netAngle = Math.sin(_swingT) * SWING_AMP;
     _netLen   = 0;
   } else if (_netState === 'extend') {
-    _netLen += NET_SPEED * _netSpeedMult * scale;
+    _netLen += NET_SPEED * Math.max(_netSpeedMult, _netCharged ? 1.2 : 1) * scale;  // STORY-00401: charge gives 1.2× speed
     if (_netLen >= _netMaxLen) {
       _netLen = _netMaxLen;
       if (_extendHold < 12) {
@@ -836,6 +927,7 @@ function _updateNet(dt) {
       } else {
         _extendHold = 0;
         _netState   = 'retract';
+        _recordShot(false);  // STORY-00399: missed — no star caught at full extension
       }
     } else {
       _updateNetHead(dt);
@@ -906,6 +998,14 @@ function _updateNetHead(dt) {
   _netHeadY = ropeOriY - Math.cos(_netAngle) * _netLen;
 }
 
+// STORY-00399: Record a shot result in the circular history buffer (max 5)
+function _recordShot(hit) {
+  if (_shotHistory.length >= 5) _shotHistory.shift();
+  _shotHistory.push(hit);
+  _recentShots = _shotHistory.length;
+  _recentHits  = _shotHistory.filter(Boolean).length;
+}
+
 function _checkCollisions() {
   if (_netState !== 'extend') return;
 
@@ -923,6 +1023,31 @@ function _checkCollisions() {
       _netState = 'retract';
       _catchFlashFrames = 18;  // ~0.3s gold flash + catch frame (was 3)
       AudioAdapter.playSFX(SFX_CATCH);
+
+      // STORY-00399: record hit in shot history
+      _recordShot(true);
+
+      // STORY-00400: combo system
+      _comboCount++;
+      _comboTimer = 180;  // 3s at 60fps
+      if (_comboCount >= 3) {
+        _comboPopup = { text: 'x' + _comboCount + ' 连击!!', alpha: 1.0 };
+        _timeLeft = Math.min(_timeLeft + 5, _levelInitTime + 30);  // +5s bonus, capped
+        for (let ci = 0; ci < 12; ci++) {
+          const h = Math.floor(Math.random() * 360);
+          _spawnParticles(s.x, s.y, 'hsl(' + h + ',100%,60%)');
+        }
+      } else if (_comboCount >= 2) {
+        _comboPopup = { text: 'x2 连击!', alpha: 1.0 };
+      }
+
+      // STORY-00401: charge system
+      _chargeCount++;
+      if (_chargeCount >= 3 && !_netCharged) {
+        _netCharged = true;
+        _chargeBlendT = 0;
+        AudioAdapter.playSFX(SFX_CATCH);
+      }
 
       if (_caught >= _total) {
         _triggerResult(true);
@@ -942,6 +1067,11 @@ function _checkCollisions() {
       _shakeFrames = 6;
       AudioAdapter.playSFX(SFX_DEBRIS);
       _netState   = 'retract';
+      // STORY-00399: record miss; STORY-00400/401: reset combo/charge
+      _recordShot(false);
+      _comboCount = 0; _comboTimer = 0;
+      if (_netCharged) { _netCharged = false; _chargeBlendT = 0; }
+      _chargeCount = 0;
       return;
     }
   }
@@ -1010,7 +1140,8 @@ function _updateShake() {
 function _drawConLines(ctx) {
   if (!_conDef.lines) return;
   // star_map item: show bright lines when active; dim lines otherwise (STORY-00296)
-  const alpha = _starMapActive ? 0.65 : 0.22;
+  // STORY-00402: milestone50 boosts completed lines alpha from 0.22→0.45
+  const alpha = _starMapActive ? 0.65 : (_milestone50Fired ? 0.45 : 0.22);
   ctx.save();
   ctx.strokeStyle = `rgba(255,210,100,${alpha})`;
   ctx.lineWidth   = _starMapActive ? 1.8 : 1;
@@ -1349,15 +1480,16 @@ function _drawStars(ctx, t) {
 
 // ── STORY-00366: Update obstacle state ───────────────────────
 function _updateObstacles(dt) {
+  const obstScale = _dynamicObstacleScale || 1;  // STORY-00399: dynamic difficulty
   // Rotate magnet zone border animation
   for (const mz of _magnetZones) {
-    mz.angle = (mz.angle || 0) + dt * 1.2;
+    mz.angle = (mz.angle || 0) + dt * 1.2 * obstScale;
   }
   // Drift debris cloud particles in slow orbit around cloud center
   for (const cloud of _debrisClouds) {
     for (const p of cloud.particles) {
-      p.x += p.vx;
-      p.y += p.vy;
+      p.x += p.vx * obstScale;
+      p.y += p.vy * obstScale;
       // Gentle spring back towards orbit
       const dx = p.x - p.baseX, dy = p.y - p.baseY;
       const dist = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -1846,11 +1978,15 @@ function _drawNet(ctx) {
   ctx.closePath();
   ctx.fill();
 
-  // Bag outline
+  // Bag outline — STORY-00401: charged = lineWidth 2, normal = 1.5
+  const chargeOutlineAlpha = _netCharged ? 1.0 : (1 - _chargeBlendT);
   ctx.strokeStyle = flashAlpha > 0
     ? `rgba(255,220,100,${0.65 + flashAlpha * 0.35})`
-    : 'rgba(180,210,255,0.65)';
-  ctx.lineWidth = 1.5;
+    : (chargeOutlineAlpha > 0
+        ? `rgba(${Math.round(180 + 75 * chargeOutlineAlpha)},${Math.round(210 + 45 * chargeOutlineAlpha)},255,${0.65 + 0.3 * chargeOutlineAlpha})`
+        : 'rgba(180,210,255,0.65)');
+  ctx.lineWidth = chargeOutlineAlpha > 0 ? 1.5 + 0.5 * chargeOutlineAlpha : 1.5;
+  if (chargeOutlineAlpha > 0) { ctx.shadowColor = '#aaddff'; ctx.shadowBlur = chargeOutlineAlpha * 10; }
   ctx.beginPath();
   ctx.arc(0, 0, mouthR, 0, Math.PI, false);
   ctx.bezierCurveTo(-mouthR * 0.9, -bagD * 0.5, -mouthR * 0.4, -bagD, 0, -bagD);
@@ -1858,22 +1994,31 @@ function _drawNet(ctx) {
   ctx.stroke();
 
   // Net mesh — horizontal arcs and vertical seams toward -y (throw direction)
-  ctx.save();
-  ctx.globalAlpha = 0.30;
-  ctx.strokeStyle = flashAlpha > 0 ? 'rgba(255,240,180,0.6)' : 'rgba(180,210,255,0.6)';
-  ctx.lineWidth = 0.6;
-  for (let i = 1; i <= 3; i++) {
-    const yt = -(i / 4) * bagD;
-    const xr = mouthR * (1 - i * 0.18);
-    ctx.beginPath(); ctx.arc(0, yt, xr, 0, Math.PI, false); ctx.stroke();
+  // STORY-00401: charged net has white mesh + glow; blends back to normal over _chargeBlendT
+  {
+    const chargeAlpha = _netCharged ? 1.0 : (1 - _chargeBlendT);
+    const meshColor = chargeAlpha > 0
+      ? `rgba(${Math.round(180 + 75 * chargeAlpha)},${Math.round(210 + 45 * chargeAlpha)},${Math.round(255)},${0.3 + 0.5 * chargeAlpha})`
+      : 'rgba(180,210,255,0.30)';
+    const meshLineW = chargeAlpha > 0 ? 0.6 + chargeAlpha * 0.6 : 0.6;
+    ctx.save();
+    ctx.globalAlpha = 0.30 + chargeAlpha * 0.50;
+    ctx.strokeStyle = meshColor;
+    ctx.lineWidth   = meshLineW;
+    if (chargeAlpha > 0) { ctx.shadowColor = '#aaddff'; ctx.shadowBlur = 4 + chargeAlpha * 6; }
+    for (let i = 1; i <= 3; i++) {
+      const yt = -(i / 4) * bagD;
+      const xr = mouthR * (1 - i * 0.18);
+      ctx.beginPath(); ctx.arc(0, yt, xr, 0, Math.PI, false); ctx.stroke();
+    }
+    for (let xi = -1; xi <= 1; xi += 2) {
+      ctx.beginPath();
+      ctx.moveTo(xi * mouthR * 0.5, 0);
+      ctx.quadraticCurveTo(xi * mouthR * 0.35, -bagD * 0.5, xi * mouthR * 0.1, -bagD);
+      ctx.stroke();
+    }
+    ctx.restore();
   }
-  for (let xi = -1; xi <= 1; xi += 2) {
-    ctx.beginPath();
-    ctx.moveTo(xi * mouthR * 0.5, 0);
-    ctx.quadraticCurveTo(xi * mouthR * 0.35, -bagD * 0.5, xi * mouthR * 0.1, -bagD);
-    ctx.stroke();
-  }
-  ctx.restore();
 
   ctx.restore();
 

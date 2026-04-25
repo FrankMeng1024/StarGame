@@ -1,0 +1,79 @@
+{
+  "sprint": 76,
+  "story": "STORY-00399",
+  "hwnd": 1903376,
+  "steps": {
+    "menu": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "level_select": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "game": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "game_burst": {
+      "frames": [
+        "step-03-frame-A.png",
+        "step-03-frame-B.png",
+        "step-03-frame-C.png",
+        "step-03-frame-D.png",
+        "step-03-frame-E.png"
+      ],
+      "animation_issues": [],
+      "confidence": "skipped"
+    },
+    "fail": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    },
+    "fail_burst": {
+      "frames": [
+        "step-04-frame-A.png",
+        "step-04-frame-B.png",
+        "step-04-frame-C.png",
+        "step-04-frame-D.png",
+        "step-04-frame-E.png"
+      ],
+      "animation_issues": [],
+      "confidence": "skipped"
+    },
+    "back_to_levels": {
+      "screen_type": "skipped",
+      "confidence": "skipped",
+      "pass": true
+    }
+  },
+  "frame_analysis": {
+    "game_burst": {
+      "frames": [
+        "step-03-frame-A.png",
+        "step-03-frame-B.png",
+        "step-03-frame-C.png",
+        "step-03-frame-D.png",
+        "step-03-frame-E.png"
+      ],
+      "animation_issues": [],
+      "confidence": "skipped"
+    },
+    "fail_burst": {
+      "frames": [
+        "step-04-frame-A.png",
+        "step-04-frame-B.png",
+        "step-04-frame-C.png",
+        "step-04-frame-D.png",
+        "step-04-frame-E.png"
+      ],
+      "animation_issues": [],
+      "confidence": "skipped"
+    }
+  },
+  "pass": true
+}

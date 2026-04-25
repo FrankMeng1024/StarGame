@@ -1,6 +1,15 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
-## Sprint 75-mini Updates (2026-04-24)
+## Sprint 76-mini Updates (2026-04-24)
+
+- Dynamic difficulty: obstacle speed 0.5x–1.5x based on 5-shot accuracy (eval every 30s). Invisible to player. Subtle "punishing success" risk noted for playtesting.
+- Combo system: 3s window. x2 = text only. x3+ = text + 5s time (invisible bonus — player cannot see it) + 12 rainbow particle spawns. Popup at H*0.25.
+- Net charge: 3 consecutive catches → white-blue glow + 1.2x speed. Charge activation has no distinct signal (SFX reuses catch sound, glow is subtle on moving object).
+- Milestones: 50%: white flash (alpha 0.25, 0.15s) + popup + conLines 0.22→0.45 alpha. 75%: screen shake (4 frames, same _updateShake as debris collision — signal ambiguity risk) + popup. Popups at H*0.35.
+- UX friction: combo time bonus invisible; 75% milestone shake conflicts with debris punishment shake signal; simultaneous combo+milestone can produce 5 concurrent effects.
+- Draw overlay order: game world (shaked) → HUD (fixed) → milestone flash → combo popup → milestone popup → hint → pause.
+
+
 
 - Left arm counter-sway (STORY-00396): During swing state, girl's left arm sways opposite to net direction at 30% amplitude. Biomechanically correct — adds "life" to character without noticeable distraction. Smooth blend via _skelBlendT.
 - HUD star count bounce (STORY-00397): _hudStarFlashT=200 on catch triggers sin-curve scale animation peaking at 1.4x. Located top-right corner; peripheral visibility during gameplay is limited but appropriate as secondary feedback.
