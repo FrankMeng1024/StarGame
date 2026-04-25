@@ -2,6 +2,20 @@
 
 ---
 
+## Sprint 80-mini Updates (2026-04-25)
+
+### Sprint 80-mini — PASS (HIGH confidence code-path, DevTools infrastructure blocked — 11th consecutive Sprint)
+
+- STORY-00419: allcaught_burst is a new phase (play→allcaught_burst→celebrate). Triggers only when _caught>=_total. 28 gold particles from _netHeadX/_netHeadY, 0.5s timer, gravity 0.05/frame. "已全部抓住！" text at W/2,H*0.38, bold 24px, white+gold shadow, fades via burstTimer/0.4 (100ms full opacity then 400ms fade). Tap-to-skip wired in touch handler. Partial victory skips burst entirely.
+- STORY-00420: Personal best line in victory card. prevBest captured BEFORE state.setScore() — timing-critical, correct. bestStars=max(stars3,prevBest||0). newRecord fires on null prevBest (first run) or genuine improvement. Personal best adds 18px to card layout via personalBestH offset.
+- STORY-00421: diffMap=[140,120,90,80,70]. Index=(difficulty-1), clamped 0-4. diff1:120→140, diff2:100→120. Others unchanged.
+- STORY-00422: gallery.js _drawHexEdges: unlocked strokeStyle rgba(160,120,255,0.32) (was 0.18). Locked rgba(80,70,120,0.10) unchanged.
+- STORY-00423: Levels star summary "本星座已获 N/18 ★" at groupY+16, 11px, color #c8b8ff, alpha*0.75. Iterates _GROUPS[idx].levels (actual indices — groups 0+1 have non-sequential level arrays). padTop shifted SAFE_TOP+72→76. Crossfades with nameAlpha/pendingAlpha.
+- Critical fix: STORY-00423 initial code used sequential base (groupIdx*6), caught by Arch review, corrected to _GROUPS[idx].levels before QA.
+- 11th consecutive Sprint with DevTools 3.15.2 canvas blocker. Visual ACs unverified.
+
+---
+
 ## Sprint 79-mini Updates (2026-04-25)
 
 ### Sprint 79-mini — PASS (MEDIUM confidence, code-path verification, DevTools infrastructure blocked — 10th consecutive Sprint)

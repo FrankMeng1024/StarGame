@@ -307,8 +307,42 @@ function _loop(now) {
     ctx.restore();
   }
 
+  // STORY-00423: Star summary line — "本星座已获 N/18 ★"
+  {
+    const summaryY = groupY + 16;
+    // Calculate stars for current group using actual level indices from _GROUPS
+    let grpStars = 0;
+    for (const li of _GROUPS[_currentGroup].levels) {
+      const sc = state.getScore(li);
+      if (sc && sc.stars) grpStars += sc.stars;
+    }
+    // Pending group summary for crossfade
+    let penStars = 0;
+    for (const li of _GROUPS[_pendingGroup].levels) {
+      const sc = state.getScore(li);
+      if (sc && sc.stars) penStars += sc.stars;
+    }
+    ctx.font = `11px ${titleFont}`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    if (nameAlpha > 0.01) {
+      ctx.save();
+      ctx.globalAlpha = nameAlpha * 0.75;
+      ctx.fillStyle = '#c8b8ff';
+      ctx.fillText(`本星座已获 ${grpStars}/18 ★`, W / 2, summaryY);
+      ctx.restore();
+    }
+    if (pendingAlpha > 0.01 && _pendingGroup !== _currentGroup) {
+      ctx.save();
+      ctx.globalAlpha = pendingAlpha * 0.75;
+      ctx.fillStyle = '#c8b8ff';
+      ctx.fillText(`本星座已获 ${penStars}/18 ★`, W / 2, summaryY);
+      ctx.restore();
+    }
+  }
+
   // ── 节点区域（clip + spring slideX，与图鉴完全一致） ─────────
-  const padTop = G.SAFE_TOP + 72;
+  const padTop = G.SAFE_TOP + 76;  // STORY-00423: shifted down 4px to make room for star summary
   const padBottom = H - G.SAFE_BOTTOM - 28;
   ctx.save();
   ctx.beginPath();

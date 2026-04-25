@@ -1,8 +1,8 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: IN PROGRESS — Sprint 79-mini implementation in progress. STORY-00414/415/416/417/418 being implemented.
-**Current Sprint**: Sprint 79-mini (implementation in progress)
-**Last Updated**: 2026-04-24
+**Status**: IN PROGRESS — Sprint 80-mini COMPLETE. Sprint 81 planning next.
+**Current Sprint**: Sprint 81-mini (planning)
+**Last Updated**: 2026-04-25
 
 > **Sprint 37-mini COMPLETE**: 2 Stories STORY-00323~00324 Done. Star flash sequence before linedraw (STORY-00323): new 'starflash' phase, 150ms intervals, scale 1→2→1. Victory→levels flicker fix (STORY-00324): _cleanup() before all result navigation buttons. Arch PASS. QA PASS (STORY-00323 LOW confidence — miniprogram Canvas only). UX no Blockers. VU ACCEPTED 9.6/10 — PROJECT COMPLETE. All 11 user-reported issues (CR-113~CR-121) resolved across Sprint 35/36/37-mini.
 
@@ -86,7 +86,8 @@
 | Sprint 75-mini | COMPLETE | 游戏手感精化: CR-144障碍验收+左臂摆动+抓星HUD弹跳渐隐+瞄准线 (STORY-00395~00398) — Arch PASS + QA PASS (MEDIUM) + UX no Blockers |
 | Sprint 74-mini | COMPLETE | 视觉精细化: 选关金环完成装饰+图鉴蜂巢发光边线+骨骼手臂宇航员配色 (STORY-00392~00394) — Arch PASS + QA PASS (MEDIUM) + UX no Blockers |
 | Sprint 73-mini | COMPLETE | 结算页按钮修复+骨骼动画Phase1+结算页深空视觉 (STORY-00386/387/388) — Arch PASS + QA PASS (MEDIUM) + UX no Blockers |
-| Sprint 61-mini | COMPLETE | 图鉴详情页二轮精修 — 圆圈放大/照片过滤/WeChat胶囊/字体增大/pill截断修复/行距/ESA 4张图 |
+| Sprint 80-mini | COMPLETE | 游戏体验强化 — 计时宽松化/全抓庆典/个人最佳/图鉴连线可见/选关星数 (STORY-00419~00423) — Arch PASS + QA PASS (HIGH) + UX no Blockers |
+| Sprint 79-mini | COMPLETE | UI全局风格统一化 — header统一/商店/节点视觉/图鉴hex边/连击成就 (STORY-00414~00418) — Arch PASS + QA PASS + UX no Blockers |
 
 ## VU Acceptance History
 | Sprint | Score | Verdict | Gap |

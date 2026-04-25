@@ -436,7 +436,7 @@ function _drawHexEdges(ctx, t, nodes, groupIdx) {
     const bothUnlocked = state.isUnlocked(na.idx) && state.isUnlocked(nb.idx);
     if (bothUnlocked) {
       ctx.globalAlpha = 1;
-      ctx.strokeStyle = 'rgba(160,120,255,0.18)';
+      ctx.strokeStyle = 'rgba(160,120,255,0.32)';  // STORY-00422: raised from 0.18 for visibility
     } else {
       ctx.globalAlpha = 0.5;
       ctx.strokeStyle = 'rgba(80,70,120,0.10)';

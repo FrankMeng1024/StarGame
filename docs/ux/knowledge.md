@@ -1,5 +1,15 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 80-mini Updates (2026-04-25)
+
+- allcaught_burst phase: 500ms gold particle burst + "已全部抓住！" text for perfect catches. Skippable. Adds pre-celebrate delay — acceptable with skip mechanism. Text only 100ms at full opacity (fades 400ms) — brevity risk for readability.
+- Personal best ("最高分: N ★") always shown on victory. "新纪录！" fires on first completion (prevBest=null) which may feel hollow — compare to what? Medium UX concern.
+- Timer relaxation (140s/120s) is invisible to users — silently beneficial. No UX communication needed.
+- Star summary "本星座已获 N/18 ★": 11px, 75% alpha, light purple — quite subtle vs 15px group name. Risk: may go unnoticed.
+- Gallery connections now at 32% alpha — should be perceptibly visible, improvement from 18%.
+- Node grid shifted 4px down in levels — monitor for bottom boundary crowding at smaller safe areas.
+- DevTools 3.15.2 blocker: 11th consecutive Sprint at MEDIUM confidence.
+
 ## Sprint 79-mini Updates (2026-04-25)
 
 - drawHeaderBar() unified across levels.js and gallery.js — both screens now use the same header function. backRect correctly wired for back navigation in both screens.

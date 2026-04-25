@@ -117,7 +117,7 @@ let _dt         = 0;      // last frame dt (seconds) — used by draw helpers ne
 let _timerFlash = 0;     // seconds of red flash remaining on HUD
 
 // Result state
-let _phase      = 'play'; // 'play' | 'celebrate' | 'linedraw' | 'linger' | 'result'
+let _phase      = 'play'; // 'play' | 'allcaught_burst' | 'celebrate' | 'linedraw' | 'linger' | 'result'
 let _result     = null;   // {victory, timeLeft, coins, stars, uncaught}
 // STORY-00367: Star pop-out animation for victory screen
 let _starPopTimers = [0, 0, 0]; // per-star elapsed time, starts counting on result phase enter
@@ -126,6 +126,11 @@ let _resultEnterTimer = 0;  // seconds since result phase entered; drives entran
 let _cardSlideY = 0;        // current slide offset (px) for result card entrance animation
 // STORY-00411: Victory card shimmer — one-shot light bar sweep
 let _shimmerX = null;       // null=not started, x=current bar position; stops when >= cardX+cardW
+// STORY-00419: All-caught burst phase state
+let _allcaughtBurstTimer = 0;      // seconds remaining in burst (0.5s total)
+let _allcaughtBurstParticles = []; // gold burst particles
+let _allcaughtBurstOriX = 0;       // burst origin X
+let _allcaughtBurstOriY = 0;       // burst origin Y
 
 // Pause state
 let _paused     = false;
@@ -276,7 +281,7 @@ export function showGame(navigate) {
 
   // Timer — STORY-00353 / CR-144: base time by difficulty
   // CR-144: times relaxed to give room for obstacle-based challenge
-  const diffMap = [120, 100, 90, 80, 70];
+  const diffMap = [140, 120, 90, 80, 70];  // STORY-00421: diff1 120→140s, diff2 100→120s
   const diff    = (_conDef.difficulty || 1) - 1;
   const baseTime = diffMap[Math.max(0, Math.min(4, diff))];
   const starCount = (_conDef.stars || []).length;
@@ -804,6 +809,53 @@ function _loop(now) {
     }
     if (_hintTimer > 0 && !_paused) _drawHint(ctx, W, H);
     if (_paused) _drawPauseOverlay(ctx, W, H);
+  } else if (_phase === 'allcaught_burst') {
+    // STORY-00419: All-caught burst — 500ms burst then transition to celebrate
+    _allcaughtBurstTimer -= dt;
+    // Update gold burst particles
+    for (const p of _allcaughtBurstParticles) {
+      p.x += p.vx;
+      p.y += p.vy;
+      p.vy += 0.05; // gentle gravity
+      p.life -= dt * 60;
+    }
+    _allcaughtBurstParticles = _allcaughtBurstParticles.filter(p => p.life > 0);
+    if (_allcaughtBurstTimer <= 0) {
+      _phase = 'celebrate';
+      _celebrateTimer = 1.5;
+      _starPopTimers = [0, 0, 0]; // STORY-00367: reset pop animation
+      _allcaughtBurstParticles = [];
+    } else {
+      // Draw game background
+      _drawConLines(ctx); _drawStars(ctx, t); _drawParticles(ctx); _drawGrass(ctx, t, W, H); _drawGirl(ctx);
+      // Draw gold burst particles
+      const burstAlpha = Math.min(1, _allcaughtBurstTimer / 0.5);
+      for (const p of _allcaughtBurstParticles) {
+        const lifeRatio = p.life / p.maxLife;
+        ctx.save();
+        ctx.globalAlpha = lifeRatio * burstAlpha;
+        ctx.fillStyle = '#ffd700';
+        ctx.shadowColor = 'rgba(255,200,0,0.8)';
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.r * lifeRatio, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+      }
+      // Draw "已全部抓住！" text
+      const textAlpha = Math.min(1, _allcaughtBurstTimer / 0.4);
+      const msgFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
+      ctx.save();
+      ctx.globalAlpha = textAlpha;
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = `bold 24px ${msgFont}`;
+      ctx.fillStyle = '#ffffff';
+      ctx.shadowColor = 'rgba(255,215,0,0.9)';
+      ctx.shadowBlur = 12;
+      ctx.fillText('已全部抓住！', W / 2, H * 0.38);
+      ctx.restore();
+    }
   } else if (_phase === 'celebrate') {
     _updateParticles(dt);
     _celebrateTimer -= dt;
@@ -2340,6 +2392,18 @@ function _triggerResult(victory) {
   const uncaught = _total - _caught;
 
   _result = { victory, timeLeft: _timeLeft, coins, stars: stars3, uncaught, caught: _caught, total: _total };
+
+  // STORY-00420: capture previous best BEFORE setScore overwrites it
+  if (victory) {
+    const prevScore = state.getScore(_levelIdx);
+    _result.prevBest = prevScore ? prevScore.stars : null;
+    _result.prevBestTime = prevScore ? prevScore.time : null;
+    const newRecord = _result.prevBest === null
+      || stars3 > _result.prevBest
+      || (stars3 === _result.prevBest && _timeLeft > (_result.prevBestTime || 0));
+    _result.newRecord = newRecord;
+    _result.bestStars = Math.max(stars3, _result.prevBest || 0);
+  }
   _lorePage  = 0;
   _lorePages = []; // will be built on first result overlay render
   _loreDismissed = false;
@@ -2372,9 +2436,32 @@ function _triggerResult(victory) {
         gravity: 0.04,
       });
     }
-    _phase = 'celebrate';
-    _celebrateTimer = 1.5;
-    _starPopTimers = [0, 0, 0]; // STORY-00367: reset pop animation
+    // STORY-00419: If all stars caught, show burst phase before celebrate
+    if (_caught >= _total) {
+      _allcaughtBurstTimer = 0.5;
+      _allcaughtBurstOriX = _netHeadX;
+      _allcaughtBurstOriY = _netHeadY;
+      _allcaughtBurstParticles = [];
+      const W2 = G.SCREEN_W;
+      const H2 = G.SCREEN_H;
+      for (let b = 0; b < 28; b++) {
+        const angle = (b / 28) * Math.PI * 2 + Math.random() * 0.3;
+        const speed = 2.5 + Math.random() * 3.5;
+        _allcaughtBurstParticles.push({
+          x: _netHeadX, y: _netHeadY,
+          vx: Math.cos(angle) * speed,
+          vy: Math.sin(angle) * speed - 1,
+          life: 30 + Math.random() * 20,
+          maxLife: 50,
+          r: 3 + Math.random() * 3,
+        });
+      }
+      _phase = 'allcaught_burst';
+    } else {
+      _phase = 'celebrate';
+      _celebrateTimer = 1.5;
+      _starPopTimers = [0, 0, 0]; // STORY-00367: reset pop animation
+    }
   } else {
     _phase = 'result';
     _starPopTimers = [0, 0, 0]; // STORY-00367: reset pop animation
@@ -2653,10 +2740,39 @@ function _drawResultOverlay(ctx, W, H) {
   }
   ctx.restore();
 
+  // STORY-00420: Personal best line (victory only)
+  let personalBestH = 0;
+  if (r.victory && r.bestStars !== undefined) {
+    personalBestH = 18;
+    const pbY = statsY + 14;
+    const bestFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'sans-serif';
+    ctx.save();
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    // Label
+    ctx.font = `11px ${bestFont}`;
+    ctx.fillStyle = 'rgba(200,200,220,0.70)';
+    ctx.fillText('最高分:', cx - 28, pbY);
+    // Stars count
+    ctx.font = `bold 13px ${bestFont}`;
+    ctx.fillStyle = '#ffffff';
+    ctx.fillText(r.bestStars + ' ★', cx + 8, pbY);
+    // New record badge
+    if (r.newRecord) {
+      ctx.font = `12px ${bestFont}`;
+      ctx.fillStyle = '#ffd700';
+      ctx.shadowColor = 'rgba(255,215,0,0.6)';
+      ctx.shadowBlur = 4;
+      ctx.fillText('新纪录！', cx + 52, pbY);
+      ctx.shadowBlur = 0;
+    }
+    ctx.restore();
+  }
+
   // ── Content area ───────────────────────────────────────────────
   const btnAreaH = 60;  // STORY-00405: increased from 52 for taller buttons
   const btnAreaY = cardY + cardH - btnAreaH;
-  const contentY = statsY + 14;
+  const contentY = statsY + 14 + personalBestH;  // STORY-00420: shift down by personal best line height
   const contentH = btnAreaY - contentY - 4;
 
   if (r.victory) {
@@ -2953,6 +3069,15 @@ function _onTouch(e) {
       _netState = 'extend';
       _netLen   = 0;
     }
+    return;
+  }
+
+  // Tap during allcaught_burst: skip to celebrate
+  if (_phase === 'allcaught_burst') {
+    _phase = 'celebrate';
+    _celebrateTimer = 1.5;
+    _starPopTimers = [0, 0, 0];
+    _allcaughtBurstParticles = [];
     return;
   }
 
