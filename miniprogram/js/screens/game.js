@@ -67,6 +67,7 @@ let _comboCount  = 0;        // consecutive catches within 3s
 let _comboTimer  = 0;        // ticks remaining (3s = 180 at 60fps equiv)
 let _comboPopup  = null;     // {text, alpha, x, y}
 let _comboBreakFlash = 0;   // STORY-00413: frames countdown for combo-break red flash
+let _comboAchieveFlash = 0; // STORY-00418: frames countdown for combo-achieve green flash
 let _timeBonusPopup = null;  // STORY-00408: {alpha} — "+5s" indicator near timer
 
 // STORY-00401: Net charge state
@@ -295,7 +296,7 @@ export function showGame(navigate) {
 
   // STORY-00399~00402: Gameplay system resets
   _recentShots = 0; _recentHits = 0; _shotHistory = []; _diffEvalTimer = 0; _dynamicObstacleScale = 1.0;
-  _comboCount = 0; _comboTimer = 0; _comboPopup = null; _timeBonusPopup = null; _comboBreakFlash = 0;
+  _comboCount = 0; _comboTimer = 0; _comboPopup = null; _timeBonusPopup = null; _comboBreakFlash = 0; _comboAchieveFlash = 0;
   _chargeCount = 0; _netCharged = false; _chargeBlendT = 0;
   _milestone50Fired = false; _milestone75Fired = false; _milestonePopup = null; _milestoneFlashT = 0;
 
@@ -699,6 +700,8 @@ function _loop(now) {
       if (_milestonePopup && _milestonePopup.alpha > 0) _milestonePopup.alpha -= dt * 60 / 36;  // 0.6s
       // STORY-00413: Combo break flash decrement
       if (_comboBreakFlash > 0) _comboBreakFlash -= dt * 60;
+      // STORY-00418: Combo achieve green flash decrement
+      if (_comboAchieveFlash > 0) _comboAchieveFlash -= dt * 60;
       // STORY-00402: Check milestones
       if (_total > 0 && !_milestone50Fired && _caught >= Math.ceil(_total * 0.5)) {
         _milestone50Fired = true;
@@ -748,6 +751,14 @@ function _loop(now) {
       const breakAlpha = Math.max(0, (_comboBreakFlash / 12)) * 0.18;
       ctx.save();
       ctx.fillStyle = `rgba(200,30,30,${breakAlpha})`;
+      ctx.fillRect(0, 0, W, G.SCREEN_H);
+      ctx.restore();
+    }
+    // STORY-00418: Combo-achieve green flash overlay (at combo multiples of 3)
+    if (_comboAchieveFlash > 0) {
+      const achieveAlpha = Math.max(0, (_comboAchieveFlash / 8)) * 0.12;
+      ctx.save();
+      ctx.fillStyle = `rgba(0,200,80,${achieveAlpha})`;
       ctx.fillRect(0, 0, W, G.SCREEN_H);
       ctx.restore();
     }
@@ -1059,6 +1070,8 @@ function _checkCollisions() {
       // STORY-00400: combo system
       _comboCount++;
       _comboTimer = 180;  // 3s at 60fps
+      // STORY-00418: green flash at multiples of 3
+      if (_comboCount >= 3 && _comboCount % 3 === 0) _comboAchieveFlash = 8;
       if (_comboCount >= 3) {
         _comboPopup = { text: 'x' + _comboCount + ' 连击!!', alpha: 1.0 };
         _timeLeft = Math.min(_timeLeft + 5, _levelInitTime + 30);  // +5s bonus, capped

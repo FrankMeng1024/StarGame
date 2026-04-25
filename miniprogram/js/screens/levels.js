@@ -4,7 +4,7 @@
 import { G, onTouch, offTouch } from '../engine/globals.js';
 import {
   COLORS,
-  drawButton, hitTest, drawFadeOverlay, tickFade,
+  drawButton, hitTest, drawFadeOverlay, tickFade, drawHeaderBar,
 } from '../engine/canvas-utils.js';
 import { CONSTELLATIONS } from '../data/constellations.js';
 import { ITEMS } from './shop.js';
@@ -262,38 +262,19 @@ function _loop(now) {
   }
   ctx.globalAlpha = 1;
 
-  // ── 固定Header ────────────────────────────────────────────
-  _backRect = _drawBackBtn(ctx, G.SAFE_LEFT + 90, G.SAFE_TOP + 10, 80, 32);
+  // ── 固定Header (STORY-00414: unified drawHeaderBar) ─────────
+  // Build progress text for right info
+  let _started = 0;
+  for (let ci = 0; ci < 30; ci++) { const sc = state.getScore(ci); if (sc && sc.stars > 0) _started++; }
+  const _hResult = drawHeaderBar(ctx, W, G.SCREEN_H, '选择关卡', {
+    safeLeft: G.SAFE_LEFT, safeTop: G.SAFE_TOP, safeRight: G.SAFE_RIGHT,
+    fontLoaded: _maShanZhengLoaded, rightText: `${_started}/30 星座`,
+  });
+  _backRect = _hResult.backRect;
   _shopRect = _drawShopBtn(ctx, W - G.SAFE_RIGHT - 90 - 68, G.SAFE_TOP + 10, 68, 32);
 
-  const titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
-  ctx.save();
-  ctx.font = `bold 22px ${titleFont}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = COLORS.starGold;
-  ctx.shadowColor = 'rgba(255,200,80,0.55)';
-  ctx.shadowBlur  = 10;
-  ctx.fillText('选择关卡', W / 2, G.SAFE_TOP + 30);
-  ctx.restore();
-
-  // STORY-00412: Progress text "进度: X/30 星座" — count started constellations
-  {
-    let started = 0;
-    for (let ci = 0; ci < 30; ci++) {
-      const sc = state.getScore(ci);
-      if (sc && sc.stars > 0) started++;
-    }
-    ctx.save();
-    ctx.font = '11px sans-serif';
-    ctx.textAlign = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle = 'rgba(255,220,100,0.8)';
-    ctx.fillText(`进度: ${started}/30 星座`, W - 10, G.SAFE_TOP + 30);
-    ctx.restore();
-  }
-
   // ── 星系名称（随滑动淡入淡出） ───────────────────────────────
+  const titleFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'serif';
   const group = _GROUPS[_currentGroup];
   const penGroup = _GROUPS[_pendingGroup];
   const groupY = G.SAFE_TOP + 58;
@@ -553,9 +534,9 @@ function _drawNode(ctx, node, t, groupIdx) {
   // 节点主体渐变
   const grad = ctx.createRadialGradient(cx - r * 0.25, cy - r * 0.25, r * 0.05, cx, cy, r);
   if (unlocked) {
-    grad.addColorStop(0, 'rgba(45,60,140,0.97)');
-    grad.addColorStop(0.6, 'rgba(22,32,100,0.95)');
-    grad.addColorStop(1, 'rgba(8,12,50,0.92)');
+    grad.addColorStop(0, 'rgba(12,8,40,0.90)');
+    grad.addColorStop(0.6, 'rgba(30,18,70,0.88)');
+    grad.addColorStop(1, 'rgba(8,5,28,0.92)');
   } else {
     grad.addColorStop(0, 'rgba(20,22,50,0.80)');
     grad.addColorStop(1, 'rgba(8,10,28,0.70)');
@@ -588,11 +569,20 @@ function _drawNode(ctx, node, t, groupIdx) {
   if (unlocked) {
     _drawMiniConstellation(ctx, c, cx, cy, r - 1, 1.0);
   } else {
+    // STORY-00416: Canvas-drawn lock icon (arc + rect)
     ctx.globalAlpha = 0.45;
-    ctx.font = `${r * 0.85}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🔒', cx, cy + r * 0.05);
+    ctx.strokeStyle = 'rgba(180,160,240,0.7)';
+    ctx.fillStyle = 'rgba(180,160,240,0.7)';
+    ctx.lineWidth = 1.5;
+    // shackle (arc top)
+    ctx.beginPath();
+    ctx.arc(cx, cy - r * 0.12, r * 0.22, Math.PI, 0, false);
+    ctx.stroke();
+    // lock body (rect)
+    const lw = r * 0.42, lh = r * 0.32;
+    ctx.beginPath();
+    ctx.rect(cx - lw / 2, cy - r * 0.05, lw, lh);
+    ctx.fill();
   }
   ctx.restore();
   ctx.restore();
@@ -615,15 +605,15 @@ function _drawNode(ctx, node, t, groupIdx) {
   }
   ctx.restore();
 
-  // 最新可玩节点的脉冲外环
+  // STORY-00416: Active (current group, unlocked, not completed) pulse ring
   if (isNewest) {
-    const pulse2 = 0.5 + 0.5 * Math.sin(t * 2.5);
+    const pulse2 = Math.sin(t * 2);
     ctx.save();
-    ctx.globalAlpha = 0.25 * pulse2;
+    ctx.globalAlpha = 0.30;
     ctx.strokeStyle = _GROUPS[groupIdx].color;
     ctx.lineWidth = 2;
     ctx.beginPath();
-    ctx.arc(cx, cy, r + 5 + pulse2 * 4, 0, TWO_PI);
+    ctx.arc(cx, cy, r + 3 + pulse2 * 3, 0, TWO_PI);
     ctx.stroke();
     ctx.restore();
   }

@@ -1,5 +1,15 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 79-mini Updates (2026-04-25)
+
+- drawHeaderBar() unified across levels.js and gallery.js — both screens now use the same header function. backRect correctly wired for back navigation in both screens.
+- Canvas lock icon replaces emoji in levels.js — arc+rect primitives ensure cross-device consistency. Monitor at actual node scale for contrast adequacy.
+- Gallery hex edges: lineWidth=1, no shadow blur. Unlocked pairs rgba(160,120,255,0.18), locked rgba(80,70,120,0.10). Very subtle — risk of imperceptibility on OLED/low-brightness screens.
+- Completed gallery nodes: 2px gold stroke border + 4 decorative corner dots at r+8.
+- Combo achieve green flash: max 12% opacity rgba(0,200,80), 8-frame fade. Symmetric with combo-break red flash (18% alpha, 12 frames). Flash opacity difference noted — green is slightly less visible than red.
+- Medium UX risk: progress text label format inconsistency ("X/30 星座" vs "X/N 已解锁"). Domain-specific terminology may confuse first-time users.
+- DevTools 3.15.2 blocker: 10th consecutive Sprint at LOW confidence for all visual assessments.
+
 ## Sprint 78-mini Updates (2026-04-24)
 
 - Fail screen: "星光消逝" cold-blue title (#88aaff, shadow #4466cc). Deep-space gradient rgba(10,20,60)→rgba(20,40,90). 8 star-dust particles 0.3-0.6 alpha. Emotional arc: poetic loss → encouragement → retry.

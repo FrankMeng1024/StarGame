@@ -1,7 +1,7 @@
 # PROJECT_STATE.md — 追星少女 (StarCatcher)
 
-**Status**: IN PROGRESS — Sprint 76-mini DONE (2026-04-24). STORY-00399~00403: 动态难度+连击+充能+里程碑. Arch PASS. QA PASS (MEDIUM — DevTools base lib blocked). UX no Blockers (2 Medium backlog). Committed 907dd8c. Pushed. Sprint 77 planning next.
-**Current Sprint**: Sprint 77-mini (planning)
+**Status**: IN PROGRESS — Sprint 79-mini implementation in progress. STORY-00414/415/416/417/418 being implemented.
+**Current Sprint**: Sprint 79-mini (implementation in progress)
 **Last Updated**: 2026-04-24
 
 > **Sprint 37-mini COMPLETE**: 2 Stories STORY-00323~00324 Done. Star flash sequence before linedraw (STORY-00323): new 'starflash' phase, 150ms intervals, scale 1→2→1. Victory→levels flicker fix (STORY-00324): _cleanup() before all result navigation buttons. Arch PASS. QA PASS (STORY-00323 LOW confidence — miniprogram Canvas only). UX no Blockers. VU ACCEPTED 9.6/10 — PROJECT COMPLETE. All 11 user-reported issues (CR-113~CR-121) resolved across Sprint 35/36/37-mini.

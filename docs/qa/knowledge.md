@@ -2,7 +2,21 @@
 
 ---
 
-## Sprint 78-mini Updates (2026-04-24)
+## Sprint 79-mini Updates (2026-04-25)
+
+### Sprint 79-mini — PASS (MEDIUM confidence, code-path verification, DevTools infrastructure blocked — 10th consecutive Sprint)
+
+- STORY-00418: _comboAchieveFlash: declared after _comboBreakFlash, reset 0 in showGame(), trigger at _comboCount >= 3 && % 3 === 0 (=8 frames), decay dt*60/frame, draw rgba(0,200,80) overlay after red flash before HUD, alpha max 0.12 (gentler than red 0.18).
+- STORY-00416: levels.js node gradient deepened to rgba(12,8,40,0.90). Canvas lock icon: arc shackle (r=r*0.22, Math.PI→0) + filled rect (lw=r*0.42, lh=r*0.32, top at cy-r*0.05). Pulse ring: r+3+sin(t*2)*3, alpha=0.30 (was r+5+sin*4, alpha 0.25*pulse).
+- STORY-00417: gallery.js hex edges: 1px solid rgba(160,120,255,0.18) (was 0.9px dashed group.color). Endpoint dots after each line: r=1.5 rgba(180,140,255,0.25) at both na and nb. Completed (explored) nodes: gold border #ffd700 lw2 + 4 dots at r+8 at 45°/135°/225°/315°.
+- STORY-00414: drawHeaderBar adopted in levels.js (rightText=${_started}/30 星座) and gallery.js (rightText=${_discovered}/${total} 已解锁). titleFont declared separately in each draw loop. _backRect from return value.backRect. detail-view back button in gallery still uses _drawBackBtnG (unchanged).
+- STORY-00415: Shop already implemented CR-135/136/141 from prior sprints — confirmed Done, no changes.
+- Arch Blocker fixed: titleFont undeclared in levels.js draw loop (was removed with old header code).
+- 10th consecutive Sprint with DevTools 3.15.2 base lib blocker. Critical visual ACs (lock icon legibility, hex line visibility at 1px, dot visibility at r=1.5) remain unverified.
+
+---
+
+
 
 ### Sprint 78-mini — PASS (MEDIUM confidence, code-path verification, DevTools infrastructure blocked — 8th consecutive Sprint)
 

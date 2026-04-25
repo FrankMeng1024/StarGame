@@ -3,7 +3,7 @@
 
 import { G, onTouch, offTouch } from '../engine/globals.js';
 import {
-  COLORS, drawFadeOverlay, tickFade, hitTest,
+  COLORS, drawFadeOverlay, tickFade, hitTest, drawHeaderBar,
 } from '../engine/canvas-utils.js';
 import { CONSTELLATIONS, magToRadius, typeToColor } from '../data/constellations.js';
 import state from '../engine/state.js';
@@ -317,56 +317,16 @@ function _loop(now) {
   }
   ctx.globalAlpha = 1;
 
-  // ── 固定 Header ──────────────────────────────────────────
-  _backRect = _drawBackBtnG(ctx, G.SAFE_LEFT + 90, G.SAFE_TOP + 10, 80, 32, '← 返回');
-
-  const titleFont = _msz ? "'Ma Shan Zheng', serif" : 'serif';
-  ctx.save();
-  ctx.font = `bold 22px ${titleFont}`;
-  ctx.textAlign = 'center';
-  ctx.textBaseline = 'middle';
-  ctx.fillStyle = COLORS.starGold;
-  ctx.shadowColor = 'rgba(255,200,80,0.55)';
-  ctx.shadowBlur  = 10;
-  ctx.fillText('星座图鉴', W / 2, G.SAFE_TOP + 30);
-  ctx.restore();
-
-  // 已发现计数 — 方案G金色风格
-  const discovered = CONSTELLATIONS.filter((_, i) => state.isUnlocked(i)).length;
-  {
-    const btnY = G.SAFE_TOP + 10;
-    const btnH = 32;
-    const rx   = W - (G.SAFE_RIGHT || 0) - 90;
-    const rw   = 80;
-    const lx   = rx - rw;
-    const cy   = btnY + btnH / 2;
-    const lineY = btnY + btnH - 1;
-    ctx.save();
-    const tg = ctx.createLinearGradient(lx, cy, rx, cy);
-    tg.addColorStop(0, 'rgba(255,220,80,0.95)');
-    tg.addColorStop(1, 'rgba(255,160,60,0.85)');
-    ctx.font         = 'bold 12px sans-serif';
-    ctx.textAlign    = 'right';
-    ctx.textBaseline = 'middle';
-    ctx.fillStyle    = tg;
-    ctx.shadowColor  = 'rgba(255,180,60,0.5)';
-    ctx.shadowBlur   = 5;
-    ctx.fillText(`${discovered}/${CONSTELLATIONS.length} 已解锁`, rx, cy - 1);
-    ctx.shadowBlur   = 0;
-    const lg = ctx.createLinearGradient(lx, 0, rx, 0);
-    lg.addColorStop(0,   'rgba(255,200,60,0.0)');
-    lg.addColorStop(0.3, 'rgba(255,160,40,0.7)');
-    lg.addColorStop(1,   'rgba(255,220,80,0.2)');
-    ctx.strokeStyle = lg;
-    ctx.lineWidth   = 1;
-    ctx.beginPath();
-    ctx.moveTo(lx, lineY);
-    ctx.lineTo(rx, lineY);
-    ctx.stroke();
-    ctx.restore();
-  }
+  // ── 固定 Header (STORY-00414: unified drawHeaderBar) ────────
+  const _discovered = CONSTELLATIONS.filter((_, i) => state.isUnlocked(i)).length;
+  const _hRes = drawHeaderBar(ctx, W, G.SCREEN_H, '星座图鉴', {
+    safeLeft: G.SAFE_LEFT, safeTop: G.SAFE_TOP, safeRight: G.SAFE_RIGHT,
+    fontLoaded: _msz, rightText: `${_discovered}/${CONSTELLATIONS.length} 已解锁`,
+  });
+  _backRect = _hRes.backRect;
 
   // ── 星系名（crossfade，无箭头按钮） ──────────────────────────
+  const titleFont = _msz ? "'Ma Shan Zheng', serif" : 'serif';
   const group  = _GROUPS[_currentGroup];
   const penGroup = _GROUPS[_pendingGroup];
   const groupY = G.SAFE_TOP + 58;
@@ -465,33 +425,34 @@ function _drawNebulaBg(ctx, W, H, t) {
 
 // ── 蜂巢连线 ──────────────────────────────────────────────────
 function _drawHexEdges(ctx, t, nodes, groupIdx) {
-  const group = _GROUPS[groupIdx];
   ctx.save();
-  ctx.setLineDash([3, 6]);
-  ctx.lineDashOffset = -(t * 5) % 9;
-  ctx.lineWidth = 0.9;
-  // CR-139: 添加发光效果
-  ctx.shadowBlur = 6;
+  ctx.setLineDash([]);
+  ctx.lineWidth = 1;
+  ctx.shadowBlur = 0;
   for (const [a, b] of _HEX_EDGES) {
     const na = nodes[a];
     const nb = nodes[b];
     if (!na || !nb) continue;
     const bothUnlocked = state.isUnlocked(na.idx) && state.isUnlocked(nb.idx);
-    ctx.globalAlpha = bothUnlocked ? 0.28 : 0.06;
     if (bothUnlocked) {
-      ctx.strokeStyle = group.color + '88';
-      ctx.shadowColor = group.color + '80';
+      ctx.globalAlpha = 1;
+      ctx.strokeStyle = 'rgba(160,120,255,0.18)';
     } else {
-      ctx.strokeStyle = '#445588';
-      ctx.shadowColor = 'transparent';
+      ctx.globalAlpha = 0.5;
+      ctx.strokeStyle = 'rgba(80,70,120,0.10)';
     }
     ctx.beginPath();
     ctx.moveTo(na.cx, na.cy);
     ctx.lineTo(nb.cx, nb.cy);
     ctx.stroke();
+    // STORY-00417: endpoint dots
+    if (bothUnlocked) {
+      ctx.fillStyle = 'rgba(180,140,255,0.25)';
+      ctx.globalAlpha = 1;
+      ctx.beginPath(); ctx.arc(na.cx, na.cy, 1.5, 0, TWO_PI); ctx.fill();
+      ctx.beginPath(); ctx.arc(nb.cx, nb.cy, 1.5, 0, TWO_PI); ctx.fill();
+    }
   }
-  ctx.setLineDash([]);
-  ctx.shadowBlur = 0;
   ctx.globalAlpha = 1;
   ctx.restore();
 }
@@ -599,12 +560,18 @@ function _drawNode(ctx, node, t, groupIdx) {
       ctx.restore();
     }
   } else {
-    // 锁
-    ctx.globalAlpha = 0.5;
-    ctx.font = `${r * 0.80}px sans-serif`;
-    ctx.textAlign = 'center';
-    ctx.textBaseline = 'middle';
-    ctx.fillText('🔒', cx, cy + r * 0.05);
+    // STORY-00417: Canvas-drawn lock icon (arc + rect), reuse logic from levels.js
+    ctx.globalAlpha = 0.50;
+    ctx.strokeStyle = 'rgba(180,160,240,0.7)';
+    ctx.fillStyle = 'rgba(180,160,240,0.7)';
+    ctx.lineWidth = 1.5;
+    ctx.beginPath();
+    ctx.arc(cx, cy - r * 0.12, r * 0.22, Math.PI, 0, false);
+    ctx.stroke();
+    const lw = r * 0.42, lh = r * 0.32;
+    ctx.beginPath();
+    ctx.rect(cx - lw / 2, cy - r * 0.05, lw, lh);
+    ctx.fill();
   }
   ctx.restore();
   ctx.restore();
@@ -632,6 +599,30 @@ function _drawNode(ctx, node, t, groupIdx) {
     ctx.beginPath();
     ctx.arc(cx, cy, 3, 0, TWO_PI);
     ctx.fill();
+    ctx.restore();
+  }
+
+  // STORY-00417: completed node gold border + 4 star decorations
+  if (explored) {
+    ctx.save();
+    ctx.strokeStyle = '#ffd700';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(255,215,0,0.5)';
+    ctx.shadowBlur = 5;
+    ctx.beginPath();
+    ctx.arc(cx, cy, r + 3, 0, TWO_PI);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+    ctx.fillStyle = '#ffd700';
+    ctx.globalAlpha = 0.85;
+    for (let i = 0; i < 4; i++) {
+      const ang = (i * Math.PI / 2) + Math.PI / 4;
+      const sx = cx + Math.cos(ang) * (r + 8);
+      const sy = cy + Math.sin(ang) * (r + 8);
+      ctx.beginPath();
+      ctx.arc(sx, sy, 1.5, 0, TWO_PI);
+      ctx.fill();
+    }
     ctx.restore();
   }
 
