@@ -131,6 +131,13 @@ let _allcaughtBurstTimer = 0;      // seconds remaining in burst (0.5s total)
 let _allcaughtBurstParticles = []; // gold burst particles
 let _allcaughtBurstOriX = 0;       // burst origin X
 let _allcaughtBurstOriY = 0;       // burst origin Y
+// STORY-00424: Catch ring VFX
+let _catchRings = [];              // [{x,y,r,maxR,alpha,color}] — expanding catch rings
+let _screenFlashAlpha = 0;         // 0–1 full-screen white flash (final star / 3+ combo)
+let _screenFlashRate  = 0;         // alpha decrement per second (= initialAlpha / durationSec)
+// STORY-00427: Miss cooldown (抓空惩罚)
+let _missCooldown   = 0;           // seconds remaining in miss cooldown (0.5s max)
+let _caughtThisShot = false;       // true if current extend/retract caught anything
 
 // Pause state
 let _paused     = false;
@@ -614,6 +621,8 @@ function _cleanup() {
   _btnNext = _btnRetry = _btnReplay = _btnLevels = _btnShop = _btnGallery = _btnBomb = null;
   _btnPause = _btnResume = _btnPauseRetry = _btnPauseLevels = _btnLoreNext = null;
   _resultEnterTimer = 0; _cardSlideY = 0; _shimmerX = null; // STORY-00411
+  _catchRings = []; _screenFlashAlpha = 0; _screenFlashRate = 0; // STORY-00424
+  _missCooldown = 0; _caughtThisShot = false; // STORY-00427
   _lorePage = 0;
   _lorePages = [];
   _loreDismissed = false;
@@ -675,6 +684,7 @@ function _loop(now) {
       _updateTimer(dt);
       _updateNet(dt);
       _updateParticles(dt);
+      _updateCatchRings(dt);
       _updateSlots(now);
       if (_starMapActive) { _starMapTimer -= dt; if (_starMapTimer <= 0) _starMapActive = false; }  // STORY-00296
       _updateShake();
@@ -683,6 +693,7 @@ function _loop(now) {
       if (_hudStarFlashT > 0) _hudStarFlashT = Math.max(0, _hudStarFlashT - dt * 60);
       for (const s of _stars) {
         if (s.fadeMs > 0) { s.fadeMs = Math.max(0, s.fadeMs - dt * 60); s.fadeAlpha = s.fadeMs / 250; }
+        if (s.flashMs > 0) s.flashMs = Math.max(0, s.flashMs - dt * 1000); // dt in seconds → ms
       }
       // STORY-00399: Dynamic difficulty — eval every 30s
       if (_diffEvalTimer > 0) {
@@ -736,6 +747,7 @@ function _loop(now) {
     _drawGrass(ctx, t, W, H); // STORY-00372: grass stems
     _drawGirl(ctx);
     _drawNet(ctx);
+    _drawCatchEffects(ctx, W, H);
 
     if (didShake) {
       ctx.restore();
@@ -1004,6 +1016,8 @@ function _activateSlot(slotIdx, nowMs) {
 function _updateNet(dt) {
   // dt in seconds; scale by 60 so constants remain calibrated at 60fps reference
   const scale = dt * 60;
+  // STORY-00427: decrement miss cooldown (dt-scaled, continues during all states)
+  if (_missCooldown > 0) _missCooldown = Math.max(0, _missCooldown - dt);
   if (_netState === 'swing') {
     _swingT += SWING_SPEED * scale;
     _netAngle = Math.sin(_swingT) * SWING_AMP;
@@ -1050,6 +1064,11 @@ function _updateNet(dt) {
       _netLen   = 0;
       _netState = 'swing';
       _trailPoints = [];  // clear trail when retracted
+      // STORY-00427: miss cooldown — 0.5s penalty if nothing was caught this shot
+      if (!_caughtThisShot) {
+        _missCooldown = 0.5;
+      }
+      _caughtThisShot = false;  // reset for next shot
       // Apply debris time penalty on arrival (STORY-00279)
       if (_caughtDebris) {
         if (!_gloveActive) {
@@ -1109,12 +1128,27 @@ function _checkCollisions() {
     if (dx * dx + dy * dy <= (s.r + 20 * _netRadiusMult) * (s.r + 20 * _netRadiusMult)) {
       s.caught = true;
       s.fadeMs = 250;          // STORY-00397: start fade-out
+      s.flashMs = 80;          // STORY-00424: white pop flash for 80ms (real ms)
       _caught++;
       _hudStarFlashT = 200;    // STORY-00397: trigger HUD bounce
       _spawnParticles(s.x, s.y, s.color);
       _netState = 'retract';
       _catchFlashFrames = 18;  // ~0.3s gold flash + catch frame (was 3)
       AudioAdapter.playSFX(SFX_CATCH);
+      // STORY-00427: mark this shot as a catch (no miss cooldown)
+      _caughtThisShot = true;
+      // STORY-00424: push expanding catch ring at star position (r:0→60px, alpha:0.6→0, 300ms)
+      _catchRings.push({ x: s.x, y: s.y, r: 0, maxR: 60, alpha: 0.6, color: s.color });
+      // STORY-00424: Screen flash per AC3/AC4 — final star 0.15 over 200ms, combo 0.10 over 150ms
+      if (_caught >= _total) {
+        _screenFlashAlpha = Math.max(_screenFlashAlpha, 0.15);
+        _screenFlashRate  = 0.15 / 0.20; // 0.75/s → drains 0.15 in 200ms
+      } else if (_comboCount >= 2) {
+        if (_screenFlashAlpha < 0.10) { // don't overwrite a brighter final-star flash
+          _screenFlashAlpha = 0.10;
+          _screenFlashRate  = 0.10 / 0.15; // 0.667/s → drains 0.10 in 150ms
+        }
+      }
 
       // STORY-00399: record hit in shot history
       _recordShot(true);
@@ -1158,6 +1192,8 @@ function _checkCollisions() {
     if (dx * dx + dy * dy <= (d.r + 18 * _netRadiusMult) * (d.r + 18 * _netRadiusMult)) {
       // STORY-00279: mark debris as caught — time penalty applied on retract complete
       _caughtDebris = d;
+      // STORY-00427: mark this shot as a catch (debris counts — no miss cooldown)
+      _caughtThisShot = true;
       // Screen shake on debris hit (STORY-00259)
       _shakeFrames = 6;
       AudioAdapter.playSFX(SFX_DEBRIS);
@@ -1216,6 +1252,19 @@ function _updateParticles(dt) {
     if (p.gravity) p.vy += p.gravity * scale;  // gravity for victory particles (STORY-00260)
     p.life -= scale;
     if (p.life <= 0) _particles.splice(i, 1);
+  }
+}
+
+// ── STORY-00424: Catch rings + screen flash update ──────────────
+function _updateCatchRings(dt) {
+  for (let i = _catchRings.length - 1; i >= 0; i--) {
+    const ring = _catchRings[i];
+    ring.r += (ring.maxR - ring.r) * Math.min(1, dt / 0.30);
+    ring.alpha -= 2.0 * dt; // linear: 0.6→0 over 300ms (0.6/0.30 = 2.0)
+    if (ring.alpha <= 0 || ring.r >= ring.maxR - 1) _catchRings.splice(i, 1);
+  }
+  if (_screenFlashAlpha > 0) {
+    _screenFlashAlpha = Math.max(0, _screenFlashAlpha - _screenFlashRate * dt);
   }
 }
 
@@ -1472,11 +1521,22 @@ function _drawStars(ctx, t) {
       const fa = (s.fadeAlpha != null) ? s.fadeAlpha : 0;
       if (fa <= 0) continue;  // fully faded, skip
       ctx.save();
-      ctx.globalAlpha = fa * 0.5;
-      ctx.fillStyle   = '#aaaacc';
-      ctx.beginPath();
-      ctx.arc(s.x, s.y, s.r * 0.4, 0, TWO_PI);
-      ctx.fill();
+      // STORY-00424: white pop flash for first 80ms after catch
+      if (s.flashMs > 0) {
+        ctx.globalAlpha = Math.min(1, s.flashMs / 80);
+        ctx.fillStyle   = '#ffffff';
+        ctx.shadowColor = '#ffffff';
+        ctx.shadowBlur  = s.r * 2;
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * 1.1, 0, TWO_PI);
+        ctx.fill();
+      } else {
+        ctx.globalAlpha = fa * 0.5;
+        ctx.fillStyle   = '#aaaacc';
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r * 0.4, 0, TWO_PI);
+        ctx.fill();
+      }
       ctx.restore();
       continue;
     }
@@ -1767,6 +1827,31 @@ function _drawParticles(ctx) {
   }
 }
 
+// ── STORY-00424: Draw catch rings + screen flash overlay ──────
+function _drawCatchEffects(ctx, W, H) {
+  // Expanding catch rings
+  for (const ring of _catchRings) {
+    ctx.save();
+    ctx.globalAlpha = Math.max(0, ring.alpha);
+    ctx.strokeStyle = ring.color;
+    ctx.lineWidth   = 2.5;
+    ctx.shadowColor = ring.color;
+    ctx.shadowBlur  = 8;
+    ctx.beginPath();
+    ctx.arc(ring.x, ring.y, ring.r, 0, TWO_PI);
+    ctx.stroke();
+    ctx.restore();
+  }
+  // Full-screen white flash
+  if (_screenFlashAlpha > 0) {
+    ctx.save();
+    ctx.globalAlpha = _screenFlashAlpha;
+    ctx.fillStyle   = '#ffffff';
+    ctx.fillRect(0, 0, W, H);
+    ctx.restore();
+  }
+}
+
 // ── Draw: girl character (Sprint A — PNG sprite; Sprint 67 — smooth transitions) ──
 // Skeletal girl drawing — Phase 1 (bones only, no flesh).
 // Body sprite: body_no_arms.png (220×220, arms/pole erased), scaled to 110×110 in-game.
@@ -1859,13 +1944,15 @@ function _drawGirl(ctx) {
   }
 
   // ── Draw body sprite (no arms) ──
+  // STORY-00427: dim whole character during miss cooldown
+  const missAlpha = _missCooldown > 0 ? 0.6 : 1.0;
   const bodyImg = _bodyNoArmsImg;
   const fallbackImg = _girlImg;
   const img = (bodyImg && bodyImg.complete !== false) ? bodyImg
             : (fallbackImg && fallbackImg.complete !== false) ? fallbackImg : null;
   if (img) {
     ctx.save();
-    ctx.globalAlpha = 1;
+    ctx.globalAlpha = missAlpha;
     // body_no_arms.png: single 220×220 frame. girl.png fallback: use frame 0 (idle).
     ctx.drawImage(img, 0, 0, _GIRL_FRAME_W, _GIRL_FRAME_H, dstX, dstY, 110, 110);
     // Blink overlay: draw girl.png frame 1 (eyes closed) on top when blinking
@@ -1959,6 +2046,9 @@ function _drawGirl(ctx) {
   }
 
   // ── Draw left arm ──
+  // STORY-00427: apply missAlpha to arms too (ctx.save wraps the arm+pole draws)
+  ctx.save();
+  ctx.globalAlpha = missAlpha;
   drawArm(lShX, lShY, lUpper, lLower);
 
   // ── Draw right arm + pole ──
@@ -1970,6 +2060,22 @@ function _drawGirl(ctx) {
   // Draw pole only during swing/retract (extend uses existing _drawNet pole rendering)
   if (_netState !== 'extend') {
     drawPole(rHand.wx, rHand.wy, poleAngle);
+  }
+  ctx.restore();
+
+  // STORY-00427: "..." fatigue text above girl's head during miss cooldown
+  if (_missCooldown > 0) {
+    const fadeT = _missCooldown / 0.5;  // 1→0 as cooldown expires
+    const dotAlpha = Math.max(0, 0.8 * fadeT);
+    const headY = dstY + 12;  // approximate head top position
+    ctx.save();
+    ctx.globalAlpha = dotAlpha;
+    ctx.font         = 'bold 11px sans-serif';
+    ctx.fillStyle    = 'rgba(200,200,255,1)';
+    ctx.textAlign    = 'center';
+    ctx.textBaseline = 'bottom';
+    ctx.fillText('...', _poleX, headY - 20);
+    ctx.restore();
   }
 }
 
@@ -2391,7 +2497,7 @@ function _triggerResult(victory) {
   const stars3  = catchRate >= 0.90 ? 3 : catchRate >= 0.60 ? 2 : 1;
   const uncaught = _total - _caught;
 
-  _result = { victory, timeLeft: _timeLeft, coins, stars: stars3, uncaught, caught: _caught, total: _total };
+  _result = { victory, timeLeft: _timeLeft, baseTime: _levelInitTime, coins, stars: stars3, uncaught, caught: _caught, total: _total };
 
   // STORY-00420: capture previous best BEFORE setScore overwrites it
   if (victory) {
@@ -2742,29 +2848,48 @@ function _drawResultOverlay(ctx, W, H) {
 
   // STORY-00420: Personal best line (victory only)
   let personalBestH = 0;
-  if (r.victory && r.bestStars !== undefined) {
+  if (r.victory) {
     personalBestH = 18;
     const pbY = statsY + 14;
     const bestFont = _maShanZhengLoaded ? "'Ma Shan Zheng', serif" : 'sans-serif';
     ctx.save();
     ctx.textAlign = 'center';
     ctx.textBaseline = 'middle';
-    // Label
-    ctx.font = `11px ${bestFont}`;
-    ctx.fillStyle = 'rgba(200,200,220,0.70)';
-    ctx.fillText('最高分:', cx - 28, pbY);
-    // Stars count
-    ctx.font = `bold 13px ${bestFont}`;
-    ctx.fillStyle = '#ffffff';
-    ctx.fillText(r.bestStars + ' ★', cx + 8, pbY);
-    // New record badge
-    if (r.newRecord) {
+    if (r.prevBest === null) {
+      // STORY-00425: First-ever completion — "首次通关！" in cyan with pulse
+      const pulseElapsed = _resultEnterTimer; // reuse existing timer (seconds since result entered)
+      const pulseAlpha = pulseElapsed < 2
+        ? 0.8 + 0.2 * Math.sin(pulseElapsed * 2 * Math.PI * 2)
+        : 1.0;
+      ctx.globalAlpha = pulseAlpha;
+      ctx.font = `bold 13px ${bestFont}`;
+      ctx.fillStyle = '#a0e0ff';
+      ctx.shadowColor = 'rgba(160,224,255,0.5)';
+      ctx.shadowBlur = 4;
+      ctx.fillText('首次通关！', cx, pbY);
+      ctx.shadowBlur = 0;
+    } else if (r.newRecord) {
+      // STORY-00425: Replay with improved score
+      ctx.font = `11px ${bestFont}`;
+      ctx.fillStyle = 'rgba(200,200,220,0.70)';
+      ctx.fillText('最高分:', cx - 28, pbY);
+      ctx.font = `bold 13px ${bestFont}`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(r.bestStars + ' ★', cx + 8, pbY);
       ctx.font = `12px ${bestFont}`;
       ctx.fillStyle = '#ffd700';
       ctx.shadowColor = 'rgba(255,215,0,0.6)';
       ctx.shadowBlur = 4;
       ctx.fillText('新纪录！', cx + 52, pbY);
       ctx.shadowBlur = 0;
+    } else {
+      // STORY-00425: Replay without improvement — show previous best, no badge
+      ctx.font = `11px ${bestFont}`;
+      ctx.fillStyle = 'rgba(200,200,220,0.70)';
+      ctx.fillText('最高分:', cx - 28, pbY);
+      ctx.font = `bold 13px ${bestFont}`;
+      ctx.fillStyle = '#ffffff';
+      ctx.fillText(r.bestStars + ' ★', cx + 8, pbY);
     }
     ctx.restore();
   }
@@ -2867,6 +2992,37 @@ function _drawResultOverlay(ctx, W, H) {
     _btnShop = null;
     _btnGallery = null;
 
+    // STORY-00426: Next level preview — above buttons, shown only when lore is absent/dismissed
+    if (!_conDef.lore || _loreDismissed) {
+      const previewY = btnAreaY - 10;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'middle';
+      ctx.font = '10px sans-serif';
+      if (_levelIdx >= 29) {
+        ctx.fillStyle = '#ffd700';
+        ctx.shadowColor = 'rgba(255,215,0,0.4)';
+        ctx.shadowBlur = 4;
+        ctx.fillText('全部关卡完成！', cx, previewY);
+        ctx.shadowBlur = 0;
+      } else {
+        const nextCon = CONSTELLATIONS[_levelIdx + 1];
+        if (nextCon) {
+          const diff = nextCon.difficulty || 1;
+          const dotColor = diff <= 2 ? '#60ff80' : diff === 3 ? '#ffcc40' : '#ff6060';
+          // Draw colored difficulty dot
+          ctx.fillStyle = dotColor;
+          ctx.beginPath();
+          ctx.arc(cx - 58, previewY, 4, 0, TWO_PI);
+          ctx.fill();
+          ctx.fillStyle = 'rgba(180,200,240,0.75)';
+          const starCount = (nextCon.stars || []).length;
+          ctx.fillText(`下一关: ${nextCon.nameZh} · ${starCount}颗星 · 难度${diff}`, cx + 2, previewY);
+        }
+      }
+      ctx.restore();
+    }
+
   } else {
     // STORY-00367: Fail screen — cold-blue stardust + constellation silhouette
     // Animated cold-blue stardust particles (pseudo-random, seeded from time)
@@ -2891,12 +3047,46 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.fillText(conName + '还在等你，再试一次！', cx, contentY + 2);
     ctx.restore();
 
+    // STORY-00428: Personalized fail stats — catch rate, time used, contextual tip
+    {
+      const caught = r.caught || 0;
+      const total = r.total || 0;
+      const catchRate = total > 0 ? caught / total : 0;
+      const timeUsed = Math.floor(Math.max(0, (r.baseTime || 0) - (r.timeLeft || 0)));
+      const baseT = Math.floor(r.baseTime || 0);
+      const pct = total > 0 ? Math.round(catchRate * 100) : null;
+      const catchText = total > 0 ? `捕获进度: ${caught}/${total} (${pct}%)` : '捕获进度: 0/0 (—)';
+      const timeText = `用时: ${timeUsed}s / 总计${baseT}s`;
+      let tipText, tipColor;
+      if (catchRate >= 0.80) {
+        tipText = '差一点就成功了！再试一次！'; tipColor = '#a0ffa0';
+      } else if (catchRate >= 0.50) {
+        tipText = '注意瞄准再发射网兜'; tipColor = '#ffd080';
+      } else {
+        tipText = '试试使用道具来帮助你'; tipColor = '#a0e0ff';
+      }
+      const statsTopY = contentY + 18;
+      ctx.save();
+      ctx.textAlign = 'center';
+      ctx.textBaseline = 'top';
+      ctx.font = '11px sans-serif';
+      ctx.fillStyle = 'rgba(160,190,255,0.85)';
+      ctx.fillText(catchText, cx, statsTopY);
+      ctx.fillStyle = 'rgba(200,200,220,0.70)';
+      ctx.fillText(timeText, cx, statsTopY + 14);
+      ctx.fillStyle = tipColor;
+      ctx.fillText(tipText, cx, statsTopY + 28);
+      ctx.restore();
+    }
+
     // Constellation silhouette (compact)
     if (_conDef.stars && _conDef.lines) {
-      const silH = Math.min(70, contentH - 22);
+      const silTopY = contentY + 46;
+      const silH = Math.max(0, Math.min(70, contentH - 48));
+      if (silH >= 50) {  // AC4: hide silhouette if < 50px available
       const silW = silH * 1.3;
       const silX0 = cx - silW / 2;
-      const silY0 = contentY + 22;
+      const silY0 = silTopY;
       let minX = 1, maxX = 0, minY = 1, maxY = 0;
       for (const s of _conDef.stars) {
         if (s.x < minX) minX = s.x; if (s.x > maxX) maxX = s.x;
@@ -2920,9 +3110,8 @@ function _drawResultOverlay(ctx, W, H) {
         ctx.beginPath(); ctx.arc(toSilX(s.x), toSilY(s.y), 2.5, 0, TWO_PI); ctx.fill();
       }
       ctx.restore();
-    }
-
-    // Buttons: 重试 / 选关
+      } // end silH >= 50
+    } // end constellation silhouette
     const btnH = 44;  // STORY-00405: increased from 36
     const totalBtnW = cardW - 24;
     const btnW2 = (totalBtnW - 8) / 2;
@@ -3066,8 +3255,11 @@ function _onTouch(e) {
 
     // Fire net on tap (ignore if already extending)
     if (_netState === 'swing') {
+      // STORY-00427: block launch during miss cooldown
+      if (_missCooldown > 0) return;
       _netState = 'extend';
       _netLen   = 0;
+      _caughtThisShot = false;  // reset at launch
     }
     return;
   }

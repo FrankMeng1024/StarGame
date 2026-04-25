@@ -1,5 +1,15 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 81-mini Updates (2026-04-24)
+
+- Catch ring VFX (0→60px/300ms, alpha 0.6→0 linear): well-calibrated tactile feedback, non-distracting at 60px max radius.
+- Screen flash: 0.15 alpha/200ms for final star, 0.10/150ms for 3+ combo. Appropriate hierarchy — final catch is more dramatic.
+- Miss cooldown 0.5s: girl alpha 0.6 + "..." text. Reads as "tired" — emotionally appropriate. No explicit wait countdown — Low severity concern.
+- STORY-00426 layout bug: next-level preview below buttons fails on 375px viewport (bY+btnH+6 > cardY+cardH-4). Fixed by repositioning to btnAreaY-10, conditioned on lore absent/dismissed.
+- Next-level preview conditionally hidden when lore is showing (correct UX: player is reading lore, not at next-level decision yet).
+- Fail screen tip colors (green/amber/cyan) for catch rate thresholds: clear emotional signal, guides reengagement.
+- DevTools 3.15.2 blocker: 12th consecutive Sprint at MEDIUM confidence.
+
 ## Sprint 80-mini Updates (2026-04-25)
 
 - allcaught_burst phase: 500ms gold particle burst + "已全部抓住！" text for perfect catches. Skippable. Adds pre-celebrate delay — acceptable with skip mechanism. Text only 100ms at full opacity (fades 400ms) — brevity risk for readability.

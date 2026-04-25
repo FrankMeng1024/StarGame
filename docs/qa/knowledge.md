@@ -2,6 +2,20 @@
 
 ---
 
+## Sprint 81-mini Updates (2026-04-25)
+
+### Sprint 81-mini — PASS (HIGH confidence code-path, DevTools canvas blocker — 12th consecutive Sprint)
+
+- STORY-00424: Catch ring VFX. _catchRings array: {x,y,r:0,maxR:60,alpha:0.6,color}. Update: ring.r eases toward 60, ring.alpha -= 2.0*dt (linear, 0.6→0 in 300ms). Cleanup: alpha<=0 or r>=59. Screen flash: _screenFlashAlpha + _screenFlashRate (pre-computed as initialAlpha/durationSec). Final-star: 0.15/0.75s rate = 200ms. Combo (≥3rd catch, _comboCount≥2 before ++): 0.10/0.667s rate = 150ms. Per-star flashMs: starts 80, decrements dt*1000 (real ms), draws white circle at r*1.1 during flashMs>0.
+- STORY-00425: prevBest===null → "首次通关！" #a0e0ff with pulse 0.8+0.2*sin(elapsed*2π*2) for 2s then static. newRecord=true → badge "新纪录！" gold. newRecord=false → "最高分: N ★" no badge. Three if/else-if/else branches, mutually exclusive.
+- STORY-00426: Victory card next-level preview. previewY = bY+btnH+6. Guard: (previewBottom-previewY)>=14. Reads CONSTELLATIONS[_levelIdx+1]. Difficulty dot: green diff≤2, amber diff=3, red diff≥4. _levelIdx>=29 → "全部关卡完成！" gold.
+- STORY-00427: Miss cooldown. _missCooldown=0.5 on empty retract (!_caughtThisShot). _caughtThisShot=true on star catch AND debris catch. Reset on retract complete AND on launch. Touch blocked (return early) when _missCooldown>0. missAlpha=_missCooldown>0?0.6:1.0 applied to body+arms. "..." text alpha=0.8*(missCooldown/0.5).
+- STORY-00428: Fail stats. _result.baseTime=_levelInitTime stored in _triggerResult. timeUsed=Math.floor(baseTime-timeLeft). pct=Math.round(caught/total*100). Tip thresholds: ≥0.8→green "差一点就成功了！再试一次！", ≥0.5→amber "注意瞄准再发射网兜", <0.5→cyan "试试使用道具来帮助你". Silhouette: silH=min(70,contentH-48), shown only if silH>=50.
+- Decay math lesson: `alpha -= dt/constant` drains alpha at 1/constant per second, not over `constant` seconds. Correct formula for "drain A in D seconds" = `rate = A/D; alpha -= rate*dt`.
+- 12th consecutive Sprint with DevTools 3.15.2 canvas blocker. Visual ACs unverified.
+
+---
+
 ## Sprint 80-mini Updates (2026-04-25)
 
 ### Sprint 80-mini — PASS (HIGH confidence code-path, DevTools infrastructure blocked — 11th consecutive Sprint)
