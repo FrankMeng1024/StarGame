@@ -2,6 +2,18 @@
 
 ---
 
+## Sprint 77-mini Updates (2026-04-24)
+
+### Sprint 77-mini — PASS (MEDIUM confidence, code-path verification, DevTools infrastructure blocked — 7th consecutive Sprint)
+
+- STORY-00404: Touch dedup in globals.js `_wrapDedup` reduced 50ms→16ms. This is global — affects all touch handlers. Future stories touching touch behavior must check this function first.
+- STORY-00405: Result card has separate success path (btnH=44, 3 buttons: 图鉴/下一关/重玩/选关) and fail path (btnH=44, 2 buttons: 重试/选关). Both paths updated. Success subtitle uses ternary `_conDef ? _conDef.nameZh : ''`.
+- STORY-00406: Shop sheet two-phase dismiss: feedback msg expires at +1400ms, sheet slides at +800ms (independent timers). "金币不足" label replaces price when canBuy=false.
+- STORY-00407: body_no_arms.png now exists at miniprogram/assets/sprites/. Game code (game.js:156-160) uses wx.createImage() referencing this path. Previously missing since Sprint 70.
+- STORY-00408: _timeBonusPopup = null lifecycle: init→null, trigger on combo>=3→{alpha:1.0}, fade in loop (Math.max clamp), draw at W*0.08/H*0.08 with #44ff88 fill + #00cc55 glow. Float-upward via alpha-driven Y offset.
+
+---
+
 ## Sprint 76-mini Updates (2026-04-24)
 
 ### Sprint 76-mini — PASS (MEDIUM confidence, code-path verification, DevTools infrastructure blocked)

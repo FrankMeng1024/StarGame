@@ -1,5 +1,13 @@
 # UX Knowledge — 星捕少女 (StarCatcher)
 
+## Sprint 77-mini Updates (2026-04-24)
+
+- Result screen touch fix: dedup 50ms→16ms in globals.js _wrapDedup. Tap to skip animation sets timestamp; immediate button tap was swallowed by 50ms window. Fixed.
+- Result fail card: retry=blue gradient, levels=purple gradient at 44px height. Victory card: constellation nameZh+icon subtitle below "星座揭秘！". starsY +16px offset when subtitle shown.
+- Shop buy button: "金币不足 (需 🪙 N)" when canBuy=false. Successful buy → feedback 1.4s + sheet auto-dismiss at 0.8s (orphan toast risk after dismiss: Low).
+- +5s combo popup: green #44ff88 text at W*0.08, H*0.08 (top-left — NOT near timer which is at W/2, center). 14px float-upward over 1.5s (subtle). UX note: spatial disconnect from timer is a Medium friction item for future Sprint.
+- body_no_arms.png now exists at assets/sprites/. Skeletal mode functional: armless torso + Canvas arms. Previously falling back to full sprite sheet with arm overlap.
+
 ## Sprint 76-mini Updates (2026-04-24)
 
 - Dynamic difficulty: obstacle speed 0.5x–1.5x based on 5-shot accuracy (eval every 30s). Invisible to player. Subtle "punishing success" risk noted for playtesting.

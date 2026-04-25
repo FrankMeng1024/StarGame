@@ -58,7 +58,7 @@ function _wrapDedup(fn) {
   const wrapped = function(e) {
     const now = Date.now();
     const last = _touchLastFired.get(fn) || 0;
-    if (now - last < 50) return;
+    if (now - last < 16) return;  // STORY-00404: 16ms (one frame) prevents dual-source double-fire; 50ms was swallowing legitimate sequential button taps
     _touchLastFired.set(fn, now);
     _normTouches(e);
     fn(e);

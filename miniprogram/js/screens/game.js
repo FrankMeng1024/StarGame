@@ -66,6 +66,7 @@ let _dynamicObstacleScale = 1.0;  // multiplier on obstacle movement speed
 let _comboCount  = 0;        // consecutive catches within 3s
 let _comboTimer  = 0;        // ticks remaining (3s = 180 at 60fps equiv)
 let _comboPopup  = null;     // {text, alpha, x, y}
+let _timeBonusPopup = null;  // STORY-00408: {alpha} — "+5s" indicator near timer
 
 // STORY-00401: Net charge state
 let _chargeCount  = 0;       // consecutive catches without debris collision
@@ -291,7 +292,7 @@ export function showGame(navigate) {
 
   // STORY-00399~00402: Gameplay system resets
   _recentShots = 0; _recentHits = 0; _shotHistory = []; _diffEvalTimer = 0; _dynamicObstacleScale = 1.0;
-  _comboCount = 0; _comboTimer = 0; _comboPopup = null;
+  _comboCount = 0; _comboTimer = 0; _comboPopup = null; _timeBonusPopup = null;
   _chargeCount = 0; _netCharged = false; _chargeBlendT = 0;
   _milestone50Fired = false; _milestone75Fired = false; _milestonePopup = null; _milestoneFlashT = 0;
 
@@ -687,6 +688,8 @@ function _loop(now) {
       // STORY-00400: Combo timer tick
       if (_comboTimer > 0) { _comboTimer -= dt * 60; if (_comboTimer <= 0) _comboCount = 0; }
       if (_comboPopup && _comboPopup.alpha > 0) _comboPopup.alpha -= dt * 60 / 48;  // 0.8s fade
+      // STORY-00408: Time bonus popup fade
+      if (_timeBonusPopup && _timeBonusPopup.alpha > 0) { _timeBonusPopup.alpha = Math.max(0, _timeBonusPopup.alpha - dt * 60 / 90); }  // 1.5s fade
       // STORY-00401: Charge state — blend-out fade
       if (!_netCharged && _chargeBlendT < 1) _chargeBlendT = Math.min(1, _chargeBlendT + dt * 60 / 18);
       // STORY-00402: Milestone flash + popup
@@ -747,6 +750,21 @@ function _loop(now) {
       ctx.shadowColor = '#ff8800';
       ctx.shadowBlur = 8;
       ctx.fillText(_comboPopup.text, W / 2, G.SCREEN_H * 0.25);
+      ctx.restore();
+    }
+    // STORY-00408: Time bonus "+5s" popup near timer (top-left HUD area)
+    if (_timeBonusPopup && _timeBonusPopup.alpha > 0) {
+      ctx.save();
+      ctx.globalAlpha = _timeBonusPopup.alpha;
+      ctx.font = 'bold 14px sans-serif';
+      ctx.textAlign = 'left';
+      ctx.textBaseline = 'middle';
+      ctx.fillStyle = '#44ff88';
+      ctx.shadowColor = '#00cc55';
+      ctx.shadowBlur = 8;
+      // Offset upward slightly from timer (timer is at top-left)
+      const popY = G.SCREEN_H * 0.08 - 14 * _timeBonusPopup.alpha;  // floats upward as it fades
+      ctx.fillText('+5s', W * 0.08, popY);
       ctx.restore();
     }
     // STORY-00402: Milestone popup text (slightly below combo at H*0.35)
@@ -1033,6 +1051,7 @@ function _checkCollisions() {
       if (_comboCount >= 3) {
         _comboPopup = { text: 'x' + _comboCount + ' 连击!!', alpha: 1.0 };
         _timeLeft = Math.min(_timeLeft + 5, _levelInitTime + 30);  // +5s bonus, capped
+        _timeBonusPopup = { alpha: 1.0 };  // STORY-00408: show "+5s" near timer
         for (let ci = 0; ci < 12; ci++) {
           const h = Math.floor(Math.random() * 360);
           _spawnParticles(s.x, s.y, 'hsl(' + h + ',100%,60%)');
@@ -2439,6 +2458,11 @@ function _drawResultOverlay(ctx, W, H) {
     ctx.shadowColor = '#ffd700';
     ctx.shadowBlur = 14;
     ctx.fillText('星座揭秘！', cx, titleY);
+    // STORY-00405: constellation name subtitle
+    ctx.font = `14px ${titleFont}`;
+    ctx.fillStyle = 'rgba(255,230,120,0.80)';
+    ctx.shadowBlur = 6;
+    ctx.fillText(_conDef ? _conDef.nameZh + '  ' + (_conDef.icon || '') : '', cx, titleY + 18);
   } else {
     // STORY-00388: "星光消逝" cold-blue title
     ctx.fillStyle = '#a8d0ff';
@@ -2506,7 +2530,7 @@ function _drawResultOverlay(ctx, W, H) {
   }
 
   // ── Stars row (STORY-00367: pop-out animation for victory) ─────
-  const starsY = titleY + 24;
+  const starsY = titleY + (r.victory ? 40 : 24);  // STORY-00405: more space when subtitle shown
   const starSpacing = 28;
   const starStartX = cx - starSpacing;
   for (let i = 0; i < 3; i++) {
@@ -2544,7 +2568,7 @@ function _drawResultOverlay(ctx, W, H) {
   ctx.restore();
 
   // ── Content area ───────────────────────────────────────────────
-  const btnAreaH = 52;
+  const btnAreaH = 60;  // STORY-00405: increased from 52 for taller buttons
   const btnAreaY = cardY + cardH - btnAreaH;
   const contentY = statsY + 14;
   const contentH = btnAreaY - contentY - 4;
@@ -2617,7 +2641,7 @@ function _drawResultOverlay(ctx, W, H) {
     }
 
     // Buttons: 下一关 / 重玩 / 选关
-    const btnH = 36;
+    const btnH = 44;  // STORY-00405: increased from 36 for larger tap target
     const btnGap = 6;
     const totalBtnW = cardW - 24;
     const btnW3 = (totalBtnW - btnGap * 2) / 3;
@@ -2697,16 +2721,16 @@ function _drawResultOverlay(ctx, W, H) {
     }
 
     // Buttons: 重试 / 选关
-    const btnH = 36;
+    const btnH = 44;  // STORY-00405: increased from 36
     const totalBtnW = cardW - 24;
     const btnW2 = (totalBtnW - 8) / 2;
     const bY = btnAreaY + (btnAreaH - btnH) / 2;
 
     _btnRetry  = drawButton(ctx, cardX + 12, bY, btnW2, btnH, '重试', {
-      fontSize: 14, color0: 'rgba(30,55,110,0.90)', color1: 'rgba(50,80,160,0.90)',
+      fontSize: 15, color0: 'rgba(20,80,160,0.92)', color1: 'rgba(40,120,200,0.92)',
     });
     _btnLevels = drawButton(ctx, cardX + 12 + btnW2 + 8, bY, btnW2, btnH, '选关', {
-      fontSize: 14, color0: 'rgba(60,40,100,0.90)', color1: 'rgba(80,55,150,0.90)',
+      fontSize: 15, color0: 'rgba(80,40,160,0.92)', color1: 'rgba(110,60,200,0.92)',
     });
     _btnNext = null;
   }

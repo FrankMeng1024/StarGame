@@ -1,6 +1,68 @@
 # tasks/lessons.md — 星捕少女 (StarCatcher)
 
-## Sprint 67-mini — 2026-04-24 (游戏三项视觉修复) — VU ACCEPTED 9.5/10
+## Sprint 76-mini — 2026-04-24 (游戏性核心机制 — 动态难度+连击奖励+充能特效+里程碑动画)
+
+Sprint 76-mini: lightweight retro. 5 Stories all Done. Zero QA-found bugs. No Integration restart loops. No Spec Drift escalations.
+
+Key outcomes:
+- STORY-00399 (动态难度): circular shot history queue max 5, 30s eval, obstScale 0.5×–1.5×, reset on showGame
+- STORY-00400 (连击奖励): 180-tick combo timer, x2/x3+ popups at H×0.25, +5s time bonus capped, rainbow particles ×12
+- STORY-00401 (充能特效): Math.max(netSpeedMult, 1.2) non-additive charge, lineWidth 2+shadowBlur 10, 18-tick fade-out
+- STORY-00402 (里程碑动画): 50% flash alpha 0.25 9ticks + constellation line 0.22→0.45; 75% shake 4 frames (removed _shakeAmp implicit global)
+- STORY-00403 (docs-only): Sprint 75 QA knowledge doc update
+
+Spec drift note:
+- [archived: game.js edit discipline] 75% shake used `_shakeAmp = 2` per spec but `_shakeAmp` undeclared. Fixed to use existing _updateShake ±3 fixed amplitude. Arch confirmed acceptable.
+
+DevTools QA blocker (6th Sprint):
+- [pending] DevTools base lib "3.15.2 Fail" dialog has now blocked live QA for 6 consecutive sprints (73-76). Persistent infrastructure blocker. All QA at MEDIUM confidence. User must resolve before live QA can resume.
+
+## Sprint 74-mini — 2026-04-24 (视觉精细化 — 选关金环+图鉴蜂巢+骨骼手臂配色)
+
+Sprint 74-mini: lightweight retro. 3 new Stories all Done. No QA-found bugs.
+
+Key outcomes:
+- STORY-00392 (选关金环): Done. `isCompleted = score && score.stars > 0`. Gold ring r+4 + 4 diagonal dots r+10 at levels.js:617-638.
+- STORY-00393 (图鉴蜂巢): Done. Edge shadowBlur=6, node outer ring (animated alpha), center white dot r=3, 11px name label. gallery.js:467-647.
+- STORY-00394 (手臂配色): Done. SKIN_FILL/SKIN_STROKE → spacesuit blue-purple. thick=11*sc, SUIT_HIGHLIGHT for elbow gloss. game.js:1631-1698.
+
+CR audit lesson:
+- [pending] CR-138 and CR-139 were approved Sprint 56 but not scheduled until Sprint 74 — 18 Sprint gap. SM must run CR audit at every Sprint 0 Backlog Refinement and surface "silent losses" per the CLAUDE.md process.
+
+DevTools QA blocker (3rd Sprint):
+- [pending] DevTools base lib dialog has now blocked live QA for 3 consecutive sprints (73, 74). Pattern confirmed: this is a persistent infrastructure issue, not a transient failure. User action required to resolve before Sprint 75 QA can be live. Same pending item from Sprint 73 — not yet acted on.
+
+## Sprint 73-mini — 2026-04-24 (结算页按钮修复+骨骼动画+UI深空视觉)
+
+
+Sprint 73-mini: lightweight retro. 3 Stories all Done. No QA-found bugs (infrastructure DevTools issue blocked full live QA).
+
+Key outcomes:
+- STORY-00386 (按钮修复): Done. _cardSlideY compensation + fadeNavigate/_cleanup ordering fixed.
+- STORY-00387 (骨骼动画Phase1): Done. Already implemented in Sprint 70 commit a17b253. Verified by code read lines 1533-1721 + sprint70 screenshot.
+- STORY-00388 (结算页UI): Done. Fail title "星光消逝", 8 star-dust dots, 12 victory sparkles. Card background + button colors deferred (DevTools blocked).
+
+Structural fix lesson:
+- [archived: game.js edit discipline] Victory sparkle block was accidentally inserted INSIDE the stars-row `for` loop during Edit. Root cause: Edit's old_string started with the for-loop opening line, causing the sparkle code to be appended as the loop body. Rule: when inserting a new block BEFORE a loop, the old_string must not include the loop's opening line. Use a unique anchor line ABOVE the loop as the split point.
+
+Infrastructure lesson:
+- [archived: DevTools base lib issue] "Download Base Lib Version 3.15.2 Fail" dialog appeared blocking simulator. Resolution: click Retry at physical coords ~(1220, 324) on hwnd=1903376. `project.private.config.json` libVersion should stay at "3.15.1" — changing it triggers additional issues ("Not Logged" panel). DevTools login must be manually maintained by user; cannot be automated.
+
+QA blocker pattern:
+- [pending] DevTools base lib dialog + "Not Logged" state has now blocked QA in 2+ consecutive sprints. These infrastructure issues are not solvable autonomously. User must periodically re-login to WeChat DevTools and ensure base lib is downloaded. Consider documenting a "QA session start checklist" for the user.
+
+## Sprint 70-mini — 2026-04-24 (骨骼动画Phase1+结算页按钮修复)
+
+Sprint 70-mini: clean Sprint. Arch PASS, QA PASS (MEDIUM-HIGH), UX no Blockers (1 Medium: arms Phase 1 construction-quality — expected).
+
+Key lessons:
+- [archived: fadeNavigate+cleanup ordering] STORY-00382 root bug: `_cleanup()` before `fadeNavigate()` kills the RAF that processes the fade callback → navigation never fires. Correct pattern established: `fadeNavigate(() => { _cleanup(); _navigate(screen); })`. This supersedes Sprint 37-mini lesson which said "_cleanup() before fadeNavigate" — the old pattern was correct only because the RAF remained active in that context. The fix here moves cleanup INSIDE the callback, preserving RAF until the fade completes.
+- [archived: cardSlideY hitTest compensation] When a canvas card uses ctx.translate(0, offset) for an entrance animation, button rects are stored in pre-translation coordinates. Touch y must be compensated: `rty = ty - cardSlideY`. Store the current offset in a module-level variable updated each frame so _onTouch can read it. Named _cardSlideY. Reset in both showGame() and _cleanup().
+- [pending] VU raised intermittent astrophotography image load failures (net::ERR_CONNECTION_RESET for external ESA CDN URLs). Not blocking acceptance at 9.5/10, but worth a Story for local fallback images or robust CDN handling.
+- [archived: GLM classification] GLM-4V classifies level-select screen as "game" when background contains starfield constellation art. Reliable level-select confirmation: use console `[nav] levels` log, NOT GLM classification.
+- [pending] Win state (victory result screen) is not yet verified by QA — hard to reach via automation (must catch all stars). Future Sprint should include a debug/cheat mechanism or a level with 1 star to make win-state capture reliable.
+
+ (游戏三项视觉修复) — VU ACCEPTED 9.5/10
 
 Sprint 67-mini: clean Sprint overall. Arch PASS, QA PASS (MEDIUM confidence), UX no Blockers. VU initial NOT ACCEPTED (7.0/10) due to evidence gap — only 3 of 7 features shown in first VU screenshots. After supplementary evidence provided from sprint37 flow archives, VU re-evaluated to ACCEPTED 9.5/10.
 

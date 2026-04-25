@@ -169,6 +169,11 @@ function _loop(ts) {
 
   // ── Bottom sheet animation ──
   if (_sheet) {
+    // STORY-00406: auto-dismiss after successful purchase
+    if (_sheet.dismissAt && Date.now() >= _sheet.dismissAt) {
+      _sheet.targetSlideY = H;
+      _sheet.dismissAt = null;
+    }
     _sheet.slideY += (_sheet.targetSlideY - _sheet.slideY) * 0.16;
     if (_sheet.targetSlideY >= H && _sheet.slideY > H - 4) {
       _sheet = null;
@@ -501,7 +506,9 @@ function _drawBottomSheet(ctx, W, H, item, slideY) {
   ctx.fillStyle    = canBuy ? '#f0e0ff' : 'rgba(200,180,220,0.45)';
   ctx.shadowColor  = canBuy ? 'rgba(200,160,255,0.4)' : 'none';
   ctx.shadowBlur   = canBuy ? 6 : 0;
-  ctx.fillText('购买  🪙 ' + item.cost, btnX + btnW / 2, btnY + btnH / 2);
+  // STORY-00406: show "金币不足" when cannot buy (clearer than greyed price)
+  const btnLabel = canBuy ? '购买  🪙 ' + item.cost : '金币不足  (需 🪙 ' + item.cost + ')';
+  ctx.fillText(btnLabel, btnX + btnW / 2, btnY + btnH / 2);
 
   ctx.restore();
 
@@ -703,6 +710,8 @@ function _tryBuy(itemIdx) {
   }
   state.addItem(item.id, 1);
   _feedback = { msg: '已购买 ' + item.nameZh + '！', expiresAt: Date.now() + 1400 };
+  // STORY-00406: auto-dismiss sheet 0.8s after successful purchase
+  if (_sheet) _sheet.dismissAt = Date.now() + 800;
 }
 
 // ── Helper ────────────────────────────────────────────────────
